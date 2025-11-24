@@ -1,13 +1,15 @@
 import base64
+import copy
+import datetime
 import json
 import unittest
 import urllib
 import urllib.parse
 import uuid
 from unittest.mock import ANY, Mock, create_autospec, patch
-from urllib.parse import urlencode
 
-from fhir.resources.R4B.bundle import Bundle
+from fhir.resources.R4B.bundle import Bundle, BundleEntry, BundleLink
+from fhir.resources.R4B.identifier import Identifier
 from fhir.resources.R4B.immunization import Immunization
 
 from common.models.errors import (
@@ -16,15 +18,13 @@ from common.models.errors import (
 )
 from controller.aws_apig_response_utils import create_response
 from controller.fhir_controller import FhirController
+from controller.parameter_parser import PATIENT_IDENTIFIER_SYSTEM
 from models.errors import (
-    ParameterExceptionError,
     UnauthorizedVaxError,
     UnhandledResponseError,
 )
-from parameter_parser import patient_identifier_system, process_search_params
 from repository.fhir_repository import ImmunizationRepository
 from service.fhir_service import FhirService
-from test_common.testing_utils.generic_utils import load_json_data
 from test_common.testing_utils.immunization_utils import create_covid_immunization
 
 
@@ -34,7 +34,7 @@ class TestFhirControllerBase(unittest.TestCase):
     def setUp(self):
         super().setUp()
         self.mock_redis = Mock()
-        self.redis_getter_patcher = patch("parameter_parser.get_redis_client")
+        self.redis_getter_patcher = patch("controller.parameter_parser.get_redis_client")
         self.mock_redis_getter = self.redis_getter_patcher.start()
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
@@ -75,6 +75,10 @@ class TestFhirController(TestFhirControllerBase):
 
 
 class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
+    test_local_identifier = Identifier.construct(
+        system="https://supplierABC/identifiers/vacc", value="f10b59b3-fc73-4616-99c9-9e882ab31184"
+    )
+
     def setUp(self):
         self.service = create_autospec(FhirService)
         self.controller = FhirController(self.service)
@@ -82,640 +86,323 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
         self.mock_logger_info = self.logger_info_patcher.start()
 
     def tearDown(self):
-        self.logger_info_patcher.stop()
+        patch.stopall()
 
-    def test_get_imms_by_identifer(self):
-        """it should return Immunization Id if it exists"""
+    def test_get_immunization_by_identifier_is_successful(self):
+        """it should return a searchset Bundle containing the immunization if it exists"""
         # Given
-        self.service.get_immunization_by_identifier.return_value = {
-            "id": "test",
-            "Version": 1,
-        }
+        self.service.get_immunization_by_identifier.return_value = Bundle.construct(
+            entry=[BundleEntry.construct(resource=Immunization.construct(**{"id": "something"}))],
+            link=[BundleLink.construct(relation="self", url="a-url")],
+            type="searchset",
+            total=1,
+        )
         lambda_event = {
             "headers": {"SupplierSystem": "test"},
-            "queryStringParameters": {
-                "identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
-                "_elements": "id,meta",
+            "multiValueQueryStringParameters": {
+                "identifier": [f"{self.test_local_identifier.system}|{self.test_local_identifier.value}"],
+                "_elements": ["id,meta"],
             },
             "body": None,
         }
-        identifier = lambda_event.get("queryStringParameters", {}).get("identifier")
-        _element = lambda_event.get("queryStringParameters", {}).get("_elements")
 
-        identifiers = identifier.replace("|", "#")
         # When
-        response = self.controller.get_immunization_by_identifier(lambda_event)
+        response = self.controller.search_immunizations(lambda_event)
         # Then
-        self.service.get_immunization_by_identifier.assert_called_once_with(identifiers, "test", identifier, _element)
-
+        self.service.get_immunization_by_identifier.assert_called_once_with(
+            self.test_local_identifier, "test", {"meta", "id"}
+        )
         self.assertEqual(response["statusCode"], 200)
-        body = json.loads(response["body"])
-        self.assertEqual(body["id"], "test")
+        self.assertEqual(
+            response["body"],
+            json.dumps(
+                {
+                    "resourceType": "Bundle",
+                    "type": "searchset",
+                    "link": [{"relation": "self", "url": "a-url"}],
+                    "entry": [{"resource": {"resourceType": "Immunization", "id": "something"}}],
+                    "total": 1,
+                }
+            ),
+        )
 
-    def test_get_imms_by_identifer_header_missing(self):
-        """it should return Immunization Id if it exists"""
+    def test_get_immunization_by_identifier_is_successful_when_using_post_endpoint(self):
+        """though not properly documented or really recommended, there is a /Immunization/_search POST endpoint which
+        can be used for performing searches"""
+        # Given
+        self.service.get_immunization_by_identifier.return_value = Bundle.construct(
+            entry=[BundleEntry.construct(resource=Immunization.construct(**{"id": "something"}))],
+            link=[BundleLink.construct(relation="self", url="a-url")],
+            type="searchset",
+            total=1,
+        )
+        form_data = {
+            "identifier": f"{self.test_local_identifier.system}|{self.test_local_identifier.value}",
+            "_elements": "id,meta",
+        }
+        url_encoded_test_str = urllib.parse.urlencode(form_data)
+        lambda_event = {
+            "headers": {"Content-Type": "xxx-www-form-urlencoded", "SupplierSystem": "test"},
+            "multiValueQueryStringParameters": {},
+            "body": base64.b64encode(url_encoded_test_str.encode("utf-8")).decode("utf-8"),
+        }
+
+        # When
+        response = self.controller.search_immunizations(lambda_event, is_post_endpoint_req=True)
+
+        # Then
+        self.service.get_immunization_by_identifier.assert_called_once_with(
+            self.test_local_identifier, "test", {"meta", "id"}
+        )
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(
+            response["body"],
+            json.dumps(
+                {
+                    "resourceType": "Bundle",
+                    "type": "searchset",
+                    "link": [{"relation": "self", "url": "a-url"}],
+                    "entry": [{"resource": {"resourceType": "Immunization", "id": "something"}}],
+                    "total": 1,
+                }
+            ),
+        )
+
+    def test_get_immunization_by_identifier_returns_no_entries_when_no_results(self):
+        """it should return a searchset Bundle containing with no entries if the immunization does not exist"""
+        # Given
+        self.service.get_immunization_by_identifier.return_value = Bundle.construct(
+            entry=[], link=[BundleLink.construct(relation="self", url="a-url")], type="searchset", total=1
+        )
+        lambda_event = {
+            "headers": {"SupplierSystem": "test"},
+            "multiValueQueryStringParameters": {
+                "identifier": [f"{self.test_local_identifier.system}|{self.test_local_identifier.value}"],
+                "_elements": ["id,meta"],
+            },
+            "body": None,
+        }
+
+        # When
+        response = self.controller.search_immunizations(lambda_event)
+        # Then
+        self.service.get_immunization_by_identifier.assert_called_once_with(
+            self.test_local_identifier, "test", {"meta", "id"}
+        )
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(
+            response["body"],
+            json.dumps(
+                {
+                    "resourceType": "Bundle",
+                    "type": "searchset",
+                    "link": [{"relation": "self", "url": "a-url"}],
+                    "entry": [],
+                    "total": 1,
+                }
+            ),
+        )
+
+    def test_get_imms_by_identifier_returns_authorization_error_when_header_missing(self):
+        """it should return a 403 status error when the header is not provided"""
         # Given
         lambda_event = {
-            "queryStringParameters": {
-                "identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
-                "_elements": "id,meta",
+            "multiValueQueryStringParameters": {
+                "identifier": ["https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184"],
+                "_elements": ["id,meta"],
             },
             "body": None,
         }
-        response = self.controller.get_immunization_by_identifier(lambda_event)
+        response = self.controller.search_immunizations(lambda_event)
 
         self.assertEqual(response["statusCode"], 403)
 
-    def test_not_found_for_identifier(self):
-        """it should return not-found OperationOutcome if it doesn't exist"""
+    def test_get_imms_by_identifier_returns_validation_error_when_no_params_provided(self):
+        """it should return a 400 status error if the client provides no search parameters"""
         # Given
-        self.service.get_immunization_by_identifier.return_value = {
-            "resourceType": "Bundle",
-            "type": "searchset",
-            "link": [
-                {
-                    "relation": "self",
-                    "url": "https://internal-dev.api.service.nhs.uk/immunisation-fhir-api-pr-224/Immunization?immunization.target=COVID&patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C1345678940",
-                }
-            ],
-            "entry": [],
-            "total": 0,
-        }
         lambda_event = {
             "headers": {"SupplierSystem": "test"},
-            "queryStringParameters": {
-                "identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
-                "_elements": "id,meta",
-                "SupplierSystem": "test",
-            },
+            "multiValueQueryStringParameters": {},
             "body": None,
         }
-        identifier = lambda_event.get("queryStringParameters", {}).get("identifier")
-        _element = lambda_event.get("queryStringParameters", {}).get("_elements")
+        response = self.controller.search_immunizations(lambda_event)
 
-        imms = identifier.replace("|", "#")
-        # When
-        response = self.controller.get_immunization_by_identifier(lambda_event)
-
-        # Then
-        self.service.get_immunization_by_identifier.assert_called_once_with(imms, "test", identifier, _element)
-
-        self.assertEqual(response["statusCode"], 200)
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "Bundle")
-        self.assertEqual(body["entry"], [])
-        self.assertEqual(body["total"], 0)
-
-    def test_get_imms_by_identifer_patient_identifier_and_element_present(self):
-        """it should return Immunization Id if it exists"""
-        # Given
-        self.service.get_immunization_by_identifier.return_value = {
-            "id": "test",
-            "Version": 1,
-        }
-        lambda_event = {
-            "headers": {"SupplierSystem": "test"},
-            "queryStringParameters": {
-                "patient.identifier": "test",
-                "_elements": "id,meta",
-            },
-            "body": None,
-        }
-        # When
-        response = self.controller.get_immunization_by_identifier(lambda_event)
-        # Then
+        self.assertEqual(response["statusCode"], 400)
+        self.assertEqual(
+            json.loads(response["body"])["issue"][0]["diagnostics"],
+            "No parameter provided. Search using either identifier or patient.identifier",
+        )
         self.service.get_immunization_by_identifier.assert_not_called()
 
-        self.assertEqual(response["statusCode"], 400)
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome")
-
-    def test_get_imms_by_identifer_both_body_and_query_params_present(self):
-        """it should return Immunization Id if it exists"""
+    def test_get_imms_by_identifier_returns_validation_error_when_params_are_duplicated(self):
+        """it should return a 400 status error if the client provides the same parameter key multiple times"""
         # Given
-        self.service.get_immunization_by_identifier.return_value = {
-            "id": "test",
-            "Version": 1,
-        }
         lambda_event = {
             "headers": {"SupplierSystem": "test"},
-            "queryStringParameters": {
-                "patient.identifier": "test",
-                "identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
-                "_elements": "id,meta",
+            "multiValueQueryStringParameters": {
+                "identifier": ["https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184"],
+                "_elements": ["id,meta", "another_one_oops_use_commas_instead"],
             },
-            "body": "aW1tdW5pemF0aW9uLmlkZW50aWZpZXI9aHR0cHMlM0ElMkYlMkZzdXBwbGllckFCQyUyRmlkZW50aWZpZXJzJTJGdmFjYyU3Q2YxMGI1OWIzLWZjNzMtNDYxNi05OWM5LTllODgyYWIzMTE4NCZfZWxlbWVudD1pZCUyQ21ldGEmaWQ9cw==",
+            "body": None,
         }
-        # When
-        response = self.controller.get_immunization_by_identifier(lambda_event)
-        # Then
+        response = self.controller.search_immunizations(lambda_event)
+
+        self.assertEqual(response["statusCode"], 400)
+        self.assertEqual(
+            json.loads(response["body"])["issue"][0]["diagnostics"],
+            'Parameters may not be duplicated. Use commas for "or".',
+        )
         self.service.get_immunization_by_identifier.assert_not_called()
 
-        self.assertEqual(response["statusCode"], 400)
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome")
-
-    def test_get_imms_by_identifer_both_identifier_present(self):
-        """it should return Immunization Id if it exists"""
+    def test_get_imms_by_identifier_returns_validation_error_when_patient_identifier_params_provided(self):
+        """it should return a 400 status error if the client also provides the patient.identifier parameter which is
+        used for the separate NHS Number + vaccination type(s) search"""
         # Given
-        self.service.get_immunization_by_identifier.return_value = {
-            "id": "test",
-            "Version": 1,
-        }
         lambda_event = {
             "headers": {"SupplierSystem": "test"},
-            "queryStringParameters": {
-                "patient.identifier": "test",
-                "identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
-                "_elements": "id,meta",
+            "multiValueQueryStringParameters": {
+                "identifier": ["https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184"],
+                "patient.identifier": ["system|12345"],
+                "_elements": ["id,meta"],
             },
             "body": None,
         }
-        # When
-        response = self.controller.get_immunization_by_identifier(lambda_event)
-        # Then
+        response = self.controller.search_immunizations(lambda_event)
+
+        self.assertEqual(response["statusCode"], 400)
+        self.assertEqual(
+            json.loads(response["body"])["issue"][0]["diagnostics"],
+            "Search parameter should have either identifier or patient.identifier",
+        )
         self.service.get_immunization_by_identifier.assert_not_called()
 
-        self.assertEqual(response["statusCode"], 400)
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome")
-
-    def test_get_imms_by_identifer_invalid_element(self):
-        """it should return 400 as it contain invalid _element if it exists"""
+    def test_get_imms_by_identifier_returns_validation_error_when_unsupported_search_keys_provided(self):
+        """it should return a 400 status error if the client provides search keys associated with the patient +
+        vaccination type(s) search e.g. -date.from"""
         # Given
-        self.service.get_immunization_by_identifier.return_value = {
-            "id": "test",
-            "Version": 1,
-        }
         lambda_event = {
             "headers": {"SupplierSystem": "test"},
-            "queryStringParameters": {
-                "identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
-                "_elements": "id,meta,name",
+            "multiValueQueryStringParameters": {
+                "identifier": ["https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184"],
+                "-date.from": ["2025-01-01"],
+                "_elements": ["id,meta"],
             },
             "body": None,
         }
-        # When
-        response = self.controller.get_immunization_by_identifier(lambda_event)
+        response = self.controller.search_immunizations(lambda_event)
 
         self.assertEqual(response["statusCode"], 400)
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome")
+        self.assertEqual(
+            json.loads(response["body"])["issue"][0]["diagnostics"],
+            "Identifier search included patient.identifier search parameters",
+        )
+        self.service.get_immunization_by_identifier.assert_not_called()
 
-    def test_validate_immunization_identifier_is_empty(self):
-        """it should return 400 as identifierSystem is missing"""
-        self.service.get_immunization_by_identifier.return_value = {
-            "resourceType": "OperationOutcome",
-            "id": "f6857e0e-40d0-4e5e-9e2f-463f87d357c6",
-            "meta": {"profile": ["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]},
-            "issue": [
-                {
-                    "severity": "error",
-                    "code": "invalid",
-                    "details": {
-                        "coding": [
-                            {
-                                "system": "https://fhir.nhs.uk/Codesystem/http-error-codes",
-                                "code": "INVALID",
-                            }
-                        ]
-                    },
-                    "diagnostics": "The provided identifiervalue is either missing or not in the expected format.",
-                }
-            ],
-        }
+    def test_get_imms_by_identifier_returns_validation_error_when_multiple_identifiers_provided(self):
+        """it should return a 400 status error if the client provides more than one identifier search param"""
+        # Given
         lambda_event = {
             "headers": {"SupplierSystem": "test"},
-            "queryStringParameters": {"identifier": "", "_elements": "id"},
-            "body": None,
-        }
-        response = self.controller.get_immunization_by_identifier(lambda_event)
-
-        self.assertEqual(self.service.get_immunization_by_identifier.call_count, 0)
-        self.assertEqual(response["statusCode"], 400)
-        outcome = json.loads(response["body"])
-        self.assertEqual(outcome["resourceType"], "OperationOutcome")
-
-    def test_validate_immunization_identifier_in_invalid_format(self):
-        """it should return 400 as identifierSystem is missing"""
-        self.service.get_immunization_by_identifier.return_value = {
-            "resourceType": "OperationOutcome",
-            "id": "f6857e0e-40d0-4e5e-9e2f-463f87d357c6",
-            "meta": {"profile": ["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]},
-            "issue": [
-                {
-                    "severity": "error",
-                    "code": "invalid",
-                    "details": {
-                        "coding": [
-                            {
-                                "system": "https://fhir.nhs.uk/Codesystem/http-error-codes",
-                                "code": "INVALID",
-                            }
-                        ]
-                    },
-                    "diagnostics": "identifier must be in the format of identifier.system|identifier.value e.g. http://pinnacle.org/vaccs|2345-gh3s-r53h7-12ny",
-                }
-            ],
-        }
-        lambda_event = {
-            "headers": {"SupplierSystem": "test"},
-            "queryStringParameters": {
-                "identifier": "https://supplierABC/identifiers/vaccf10b59b3-fc73-4616-99c9-9e882ab31184",
-                "_elements": "id",
+            "multiValueQueryStringParameters": {
+                "identifier": [
+                    "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184,"
+                    + "https://supplierABC/identifiers/vacc|additional-search"
+                ],
+                "_elements": ["id,meta"],
             },
             "body": None,
         }
-        response = self.controller.get_immunization_by_identifier(lambda_event)
+        response = self.controller.search_immunizations(lambda_event)
 
-        self.assertEqual(self.service.get_immunization_by_identifier.call_count, 0)
         self.assertEqual(response["statusCode"], 400)
-        outcome = json.loads(response["body"])
-        self.assertEqual(outcome["resourceType"], "OperationOutcome")
+        self.assertEqual(
+            json.loads(response["body"])["issue"][0]["diagnostics"],
+            "Search parameter identifier must have one value and must be in the format of "
+            '"identifier.system|identifier.value" "http://xyz.org/vaccs|2345-gh3s-r53h7-12ny"',
+        )
+        self.service.get_immunization_by_identifier.assert_not_called()
 
-    def test_validate_immunization_identifier_having_whitespace(self):
-        """it should return 400 as identifierSystem is missing"""
-        self.service.get_immunization_by_identifier.return_value = {
-            "resourceType": "OperationOutcome",
-            "id": "f6857e0e-40d0-4e5e-9e2f-463f87d357c6",
-            "meta": {"profile": ["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]},
-            "issue": [
-                {
-                    "severity": "error",
-                    "code": "invalid",
-                    "details": {
-                        "coding": [
-                            {
-                                "system": "https://fhir.nhs.uk/Codesystem/http-error-codes",
-                                "code": "INVALID",
-                            }
-                        ]
-                    },
-                    "diagnostics": "The provided identifiervalue is either missing or not in the expected format.",
-                }
-            ],
-        }
+    def test_get_imms_by_identifier_returns_validation_error_when_no_identifier_provided_but_elements_present(self):
+        """it should return a 400 status error if the client provides no identifier"""
+        # Given
         lambda_event = {
             "headers": {"SupplierSystem": "test"},
-            "queryStringParameters": {
-                "identifier": "https://supplierABC/identifiers/vacc  |   f10b59b3-fc73-4616-99c9-9e882ab31184",
-                "_elements": "id",
+            "multiValueQueryStringParameters": {
+                "identifier": [],
+                "_elements": ["id,meta"],
             },
             "body": None,
         }
-        response = self.controller.get_immunization_by_identifier(lambda_event)
+        response = self.controller.search_immunizations(lambda_event)
 
-        self.assertEqual(self.service.get_immunization_by_identifier.call_count, 0)
         self.assertEqual(response["statusCode"], 400)
-        outcome = json.loads(response["body"])
-        self.assertEqual(outcome["resourceType"], "OperationOutcome")
+        self.assertEqual(
+            json.loads(response["body"])["issue"][0]["diagnostics"],
+            "Search parameter _elements must have the following parameter: identifier",
+        )
+        self.service.get_immunization_by_identifier.assert_not_called()
 
-    def test_validate_imms_id_invalid_vaccinetype(self):
+    def test_get_imms_by_identifier_returns_validation_error_when_identifier_invalid(self):
+        """it should return a 400 status error if the client provides an invalid identifier i.e. not in the format of
+        {system}|{identifier}"""
+        # Given
+        lambda_event = {
+            "headers": {"SupplierSystem": "test"},
+            "multiValueQueryStringParameters": {
+                "identifier": ["incorrect-format-identifier"],
+            },
+            "body": None,
+        }
+        response = self.controller.search_immunizations(lambda_event)
+
+        self.assertEqual(response["statusCode"], 400)
+        self.assertEqual(
+            json.loads(response["body"])["issue"][0]["diagnostics"],
+            "Search parameter identifier must have one value and must be in the format of "
+            '"identifier.system|identifier.value" "http://xyz.org/vaccs|2345-gh3s-r53h7-12ny"',
+        )
+        self.service.get_immunization_by_identifier.assert_not_called()
+
+    def test_get_imms_by_identifier_returns_validation_error_when_elements_invalid(self):
+        """it should return a 400 status error if the client provides an _elements identifier i.e. not either meta, id
+        or both"""
+        # Given
+        lambda_event = {
+            "headers": {"SupplierSystem": "test"},
+            "multiValueQueryStringParameters": {
+                "identifier": [f"{self.test_local_identifier.system}|{self.test_local_identifier.value}"],
+                "_elements": ["id,invalid"],
+            },
+            "body": None,
+        }
+        response = self.controller.search_immunizations(lambda_event)
+
+        self.assertEqual(response["statusCode"], 400)
+        self.assertEqual(
+            json.loads(response["body"])["issue"][0]["diagnostics"],
+            "_elements must be one or more of the following: id,meta",
+        )
+        self.service.get_immunization_by_identifier.assert_not_called()
+
+    def test_validate_imms_id_handles_exception_thrown_in_service_layer(self):
         """it should validate lambda's Immunization id"""
         # Given
         self.service.get_immunization_by_identifier.side_effect = UnauthorizedVaxError()
         lambda_event = {
             "headers": {"SupplierSystem": "test"},
-            "queryStringParameters": {
-                "identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
-                "_elements": "id",
+            "multiValueQueryStringParameters": {
+                "identifier": [f"{self.test_local_identifier.system}|{self.test_local_identifier.value}"],
+                "_elements": ["id,meta"],
             },
             "body": None,
         }
-        identifier = lambda_event.get("queryStringParameters", {}).get("identifier")
-        _element = lambda_event.get("queryStringParameters", {}).get("_elements")
-        identifiers = identifier.replace("|", "#")
-        # When
-        response = self.controller.get_immunization_by_identifier(lambda_event)
-
-        # Then
-        self.service.get_immunization_by_identifier.assert_called_once_with(identifiers, "test", identifier, _element)
-
-        self.assertEqual(response["statusCode"], 403)
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome")
-        self.assertEqual(body["issue"][0]["code"], "forbidden")
-
-
-class TestFhirControllerGetImmunizationByIdentifierPost(unittest.TestCase):
-    def setUp(self):
-        self.service = create_autospec(FhirService)
-        self.controller = FhirController(self.service)
-
-    def set_up_lambda_event(self, body):
-        """Helper to create and set up a lambda event with the given body"""
-        return {
-            "headers": {"SupplierSystem": "test"},
-            "queryStringParameters": None,
-            "body": "aWRlbnRpZmllcj1odHRwcyUzQSUyRiUyRnN1cHBsaWVyQUJDJTJGaWRlbnRpZmllcnMlMkZ2YWNjJTdDZjEwYjU5YjMtZmM3My00NjE2LTk5YzktOWU4ODJhYjMxMTg0Jl9lbGVtZW50cz1pZCUyQ21ldGEmaWQ9cw==",
-        }
-
-    def parse_lambda_body(self, lambda_event):
-        """Helper to parse and decode lambda event body"""
-        decoded_body = base64.b64decode(lambda_event["body"]).decode("utf-8")
-        parsed_body = urllib.parse.parse_qs(decoded_body)
-        immunization_identifier = parsed_body.get("identifier", "")
-        converted_identifier = "".join(immunization_identifier)
-        element = parsed_body.get("_elements", "")
-        converted_element = "".join(element)
-        identifiers = converted_identifier.replace("|", "#")
-        return identifiers, converted_identifier, converted_element
-
-    def test_get_imms_by_identifier(self):
-        """It should return Immunization Id if it exists"""
-        # Given
-        self.service.get_immunization_by_identifier.return_value = {
-            "id": "test",
-            "Version": 1,
-        }
-        body = "identifier=https://supplierABC/identifiers/vacc#f10b59b3-fc73-4616-99c9-9e882ab31184&_elements=id|meta"
-        lambda_event = self.set_up_lambda_event(body)
-        identifiers, converted_identifier, converted_element = self.parse_lambda_body(lambda_event)
 
         # When
-        response = self.controller.get_immunization_by_identifier(lambda_event)
+        response = self.controller.search_immunizations(lambda_event)
 
         # Then
         self.service.get_immunization_by_identifier.assert_called_once_with(
-            identifiers, "test", converted_identifier, converted_element
-        )
-        self.assertEqual(response["statusCode"], 200)
-        body = json.loads(response["body"])
-        self.assertEqual(body["id"], "test")
-
-    def test_not_found_for_identifier(self):
-        """It should return not-found OperationOutcome if it doesn't exist"""
-        # Given
-        self.service.get_immunization_by_identifier.return_value = {
-            "resourceType": "Bundle",
-            "type": "searchset",
-            "link": [
-                {
-                    "relation": "self",
-                    "url": "https://internal-dev.api.service.nhs.uk/immunisation-fhir-api-pr-224/Immunization?immunization.target=COVID&patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C1345678940",
-                }
-            ],
-            "entry": [],
-            "total": 0,
-        }
-        body = "identifier=https://supplierABC/identifiers/vacc#f10b59b3-fc73-4616-99c9-9e882ab31184&_elements=id|meta"
-        lambda_event = self.set_up_lambda_event(body)
-        identifiers, converted_identifier, converted_element = self.parse_lambda_body(lambda_event)
-
-        # When
-        response = self.controller.get_immunization_by_identifier(lambda_event)
-
-        # Then
-        self.service.get_immunization_by_identifier.assert_called_once_with(
-            identifiers, "test", converted_identifier, converted_element
-        )
-        self.assertEqual(response["statusCode"], 200)
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "Bundle")
-        self.assertEqual(body["entry"], [])
-        self.assertEqual(body["total"], 0)
-
-    def test_get_imms_by_identifer_patient_identifier_and_element_present(self):
-        """it should return 400 as its having invalid request"""
-        # Given
-        self.service.get_immunization_by_identifier.return_value = {
-            "id": "test",
-            "Version": 1,
-        }
-        lambda_event = {
-            "headers": {"SupplierSystem": "test"},
-            "queryStringParameters": None,
-            "body": "cGF0aWVudC5pZGVudGlmaWVyPWh0dHBzJTNBJTJGJTJGZmhpci5uaHMudWslMkZJZCUyRm5ocy1udW1iZXIlN0M5NjkzNjMyMTA5Jl9lbGVtZW50cz1pZCUyQ21ldGE=",
-        }
-        # When
-        response = self.controller.get_immunization_by_identifier(lambda_event)
-        # Then
-        self.service.get_immunization_by_identifier.assert_not_called()
-
-        self.assertEqual(response["statusCode"], 400)
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome")
-
-    def test_get_imms_by_identifer_imms_identifier_and_element_not_present(self):
-        """it should return 400 as its having invalid request"""
-        # Given
-        self.service.get_immunization_by_identifier.return_value = {
-            "id": "test",
-            "Version": 1,
-        }
-        lambda_event = {
-            "headers": {"SupplierSystem": "test"},
-            "queryStringParameters": None,
-            "body": "aWRlbnRpZmllcj1odHRwcyUzQSUyRiUyRnN1cHBsaWVyQUJDJTJGaWRlbnRpZmllcnMlMkZ2YWNjJSAgN0NmMTBiNTliMy1mYzczLTQ2MTYtOTljOS05ZTg4MmFiMzExODQmX2VsZW1lbnRzPWlkJTJDbWV0YSZpZD1z",
-        }
-        # When
-        response = self.controller.get_immunization_by_identifier(lambda_event)
-        # Then
-        self.service.get_immunization_by_identifier.assert_not_called()
-
-        self.assertEqual(response["statusCode"], 400)
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome")
-
-    def test_validate_immunization_element_is_empty(self):
-        """it should return 400 as element is missing"""
-        self.service.get_immunization_by_identifier.return_value = {
-            "resourceType": "OperationOutcome",
-            "id": "f6857e0e-40d0-4e5e-9e2f-463f87d357c6",
-            "meta": {"profile": ["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]},
-            "issue": [
-                {
-                    "severity": "error",
-                    "code": "invalid",
-                    "details": {
-                        "coding": [
-                            {
-                                "system": "https://fhir.nhs.uk/Codesystem/http-error-codes",
-                                "code": "INVALID",
-                            }
-                        ]
-                    },
-                    "diagnostics": "The provided identifiervalue is either missing or not in the expected format.",
-                }
-            ],
-        }
-        lambda_event = {
-            "headers": {"SupplierSystem": "test"},
-            "queryStringParameters": None,
-            "body": "aW1tdW5pemF0aW9uLmlkZW50aWZpZXI9aHR0cHMlM0ElMkYlMkZzdXBwbGllckFCQyUyRmlkZW50aWZpZXJzJTJGdmFjYyU3Q2YxMGI1OWIzLWZjNzMtNDYxNi05OWM5LTllODgyYWIzMTE4NCZfZWxlbWVudD0nJw==",
-        }
-        response = self.controller.get_immunization_by_identifier(lambda_event)
-
-        self.assertEqual(self.service.get_immunization_by_identifier.call_count, 0)
-        self.assertEqual(response["statusCode"], 400)
-        outcome = json.loads(response["body"])
-        self.assertEqual(outcome["resourceType"], "OperationOutcome")
-
-    def test_validate_immunization_identifier_is_invalid(self):
-        """it should return 400 as identifierSystem is invalid"""
-        # Given
-        self.service.get_immunization_by_identifier.return_value = {
-            "resourceType": "OperationOutcome",
-            "id": "f6857e0e-40d0-4e5e-9e2f-463f87d357c6",
-            "meta": {"profile": ["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]},
-            "issue": [
-                {
-                    "severity": "error",
-                    "code": "invalid",
-                    "details": {
-                        "coding": [
-                            {
-                                "system": "https://fhir.nhs.uk/Codesystem/http-error-codes",
-                                "code": "INVALID",
-                            }
-                        ]
-                    },
-                    "diagnostics": "The provided identifiervalue is either missing or not in the expected format.",
-                }
-            ],
-        }
-        lambda_event = {
-            "headers": {"SupplierSystem": "test"},
-            "queryStringParameters": None,
-            "body": "aW1tdW5pemF0aW9uLmlkZW50aWZpZXI9aHR0cHMlM0ElMkYlMkZzdXBwbGllckFCQyUyRmlkZW50aWZpZXJzJTJGdmFjYzdDZjEwYjU5YjMtZmM3My00NjE2LTk5YzktOWU4ODJhYjMxMTg0Jl9lbGVtZW50PWlkJTJDbWV0YSZpZD1z",
-        }
-        response = self.controller.get_immunization_by_identifier(lambda_event)
-
-        self.assertEqual(self.service.get_immunization_by_identifier.call_count, 0)
-        self.assertEqual(response["statusCode"], 400)
-        outcome = json.loads(response["body"])
-        self.assertEqual(outcome["resourceType"], "OperationOutcome")
-
-    def test_get_imms_by_identifer_both_identifier_present(self):
-        """it should return 400 as its having invalid request"""
-        # Given
-        # Given
-        self.service.get_immunization_by_identifier.return_value = {
-            "id": "test",
-            "Version": 1,
-        }
-        lambda_event = {
-            "headers": {"SupplierSystem": "test"},
-            "queryStringParameters": None,
-            "body": "cGF0aWVudC5pZGVudGlmaWVyPWh0dHBzJTNBJTJGJTJGZmhpci5uaHMudWslMkZJZCUyRm5ocy1udW1iZXIlN0M5NjkzNjMyMTA5Ji1pbW11bml6YXRpb24udGFyZ2V0PUNPVklEMTkmX2luY2x1ZGU9SW1tdW5pemF0aW9uJTNBcGF0aWVudCZpZGVudGlmaWVyPWh0dHBzJTNBJTJGJTJGc3VwcGxpZXJBQkMlMkZpZGVudGlmaWVycyUyRnZhY2MlN0NmMTBiNTliMy1mYzczLTQ2MTYtOTljOS05ZTg4MmFiMzExODQmX2VsZW1lbnRzPWlkJTJDbWV0YSZpZD1z",
-        }
-        # When
-        response = self.controller.get_immunization_by_identifier(lambda_event)
-        # Then
-        self.service.get_immunization_by_identifier.assert_not_called()
-
-        self.assertEqual(response["statusCode"], 400)
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome")
-
-    def test_get_imms_by_identifer_invalid_element(self):
-        """it should return 400 as it contain invalid _element if it exists"""
-        # Given
-        lambda_event = {
-            "headers": {"SupplierSystem": "test"},
-            "queryStringParameters": None,
-            "body": "aWRlbnRpZmllcj1odHRwcyUzQSUyRiUyRnN1cHBsaWVyQUJDJTJGaWRlbnRpZmllcnMlMkZ2YWNjJTdDZjEwYjU5YjMtZmM3My00NjE2LTk5YzktOWU4ODJhYjMxMTg0Jl9lbGVtZW50cz1pZCUyQ21ldGElMkNuYW1l",
-        }
-        # When
-        response = self.controller.get_immunization_by_identifier(lambda_event)
-
-        self.assertEqual(response["statusCode"], 400)
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome")
-
-    def test_validate_immunization_identifier_is_empty(self):
-        """it should return 400 as identifierSystem is missing"""
-        self.service.get_immunization_by_identifier.return_value = {
-            "resourceType": "OperationOutcome",
-            "id": "f6857e0e-40d0-4e5e-9e2f-463f87d357c6",
-            "meta": {"profile": ["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]},
-            "issue": [
-                {
-                    "severity": "error",
-                    "code": "invalid",
-                    "details": {
-                        "coding": [
-                            {
-                                "system": "https://fhir.nhs.uk/Codesystem/http-error-codes",
-                                "code": "INVALID",
-                            }
-                        ]
-                    },
-                    "diagnostics": "identifier must be in the format of identifier.system|identifier.value e.g. http://pinnacle.org/vaccs|2345-gh3s-r53h7-12ny",
-                }
-            ],
-        }
-        lambda_event = {
-            "headers": {"SupplierSystem": "test"},
-            "queryStringParameters": None,
-            "body": "aWRlbnRpZmllcj0mX2VsZW1lbnRzPWlkJTJDbWV0YQ==",
-        }
-        response = self.controller.get_immunization_by_identifier(lambda_event)
-
-        self.assertEqual(self.service.get_immunization_by_identifier.call_count, 0)
-        self.assertEqual(response["statusCode"], 400)
-        outcome = json.loads(response["body"])
-        self.assertEqual(outcome["resourceType"], "OperationOutcome")
-
-    def test_validate_immunization_identifier_having_whitespace(self):
-        """it should return 400 as whitespace in id"""
-        self.service.get_immunization_by_identifier.return_value = {
-            "resourceType": "OperationOutcome",
-            "id": "f6857e0e-40d0-4e5e-9e2f-463f87d357c6",
-            "meta": {"profile": ["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]},
-            "issue": [
-                {
-                    "severity": "error",
-                    "code": "invalid",
-                    "details": {
-                        "coding": [
-                            {
-                                "system": "https://fhir.nhs.uk/Codesystem/http-error-codes",
-                                "code": "INVALID",
-                            }
-                        ]
-                    },
-                    "diagnostics": "The provided identifiervalue is either missing or not in the expected format.",
-                }
-            ],
-        }
-        lambda_event = {
-            "headers": {"SupplierSystem": "test"},
-            "queryStringParameters": None,
-            "body": "aWRlbnRpZmllcj1odHRwcyUzQSUyRiUyRnN1cHBsaWVyQUJDJTJGaWRlbnRpZmllcnMlMkZ2YWNjJSAgN0NmMTBiNTliMy1mYzczLTQ2MTYtOTljOS05ZTg4MmFiMzExODQmX2VsZW1lbnRzPWlkJTJDbWV0YSZpZD1z",
-        }
-        response = self.controller.get_immunization_by_identifier(lambda_event)
-
-        self.assertEqual(self.service.get_immunization_by_identifier.call_count, 0)
-        self.assertEqual(response["statusCode"], 400)
-        outcome = json.loads(response["body"])
-        self.assertEqual(outcome["resourceType"], "OperationOutcome")
-
-    def test_validate_imms_id_invalid_vaccinetype(self):
-        """it should validate lambda's Immunization id"""
-        # Given
-        self.service.get_immunization_by_identifier.side_effect = UnauthorizedVaxError()
-        lambda_event = {
-            "headers": {"SupplierSystem": "test"},
-            "queryStringParameters": None,
-            "body": "aWRlbnRpZmllcj1odHRwcyUzQSUyRiUyRnN1cHBsaWVyQUJDJTJGaWRlbnRpZmllcnMlMkZ2YWNjJTdDZjEwYjU5YjMtZmM3My00NjE2LTk5YzktOWU4ODJhYjMxMTg0Jl9lbGVtZW50cz1pZCUyQ21ldGEmaWQ9cw==",
-        }
-        decoded_body = base64.b64decode(lambda_event["body"]).decode("utf-8")
-        # Parse the URL encoded body
-        parsed_body = urllib.parse.parse_qs(decoded_body)
-
-        immunization_identifier = parsed_body.get("identifier", "")
-        converted_identifier = "".join(immunization_identifier)
-        element = parsed_body.get("_elements", "")
-        converted_element = "".join(element)
-
-        identifiers = converted_identifier.replace("|", "#")
-        # When
-        response = self.controller.get_immunization_by_identifier(lambda_event)
-
-        # Then
-        self.service.get_immunization_by_identifier.assert_called_once_with(
-            identifiers, "test", converted_identifier, converted_element
+            self.test_local_identifier, "test", {"meta", "id"}
         )
 
         self.assertEqual(response["statusCode"], 403)
@@ -1249,50 +936,52 @@ class TestDeleteImmunization(unittest.TestCase):
 
 
 class TestSearchImmunizations(TestFhirControllerBase):
-    MOCK_REDIS_V2D_HKEYS = {
-        "PERTUSSIS",
-        "RSV",
-        "3IN1",
-        "MMR",
-        "HPV",
-        "MMRV",
-        "PNEUMOCOCCAL",
-        "SHINGLES",
+    MOCK_REDIS_V2D_HKEYS = [
         "COVID",
         "FLU",
-        "MENACWY",
+    ]
+
+    patient_identifier_key = "patient.identifier"
+    immunization_target_key = "-immunization.target"
+    date_from_key = "-date.from"
+    date_to_key = "-date.to"
+    include_key = "_include"
+    nhs_number_valid_value = "9000000009"
+    patient_identifier_valid_value = f"{PATIENT_IDENTIFIER_SYSTEM}|{nhs_number_valid_value}"
+    test_lambda_event = {
+        "headers": {
+            "SupplierSystem": "test",
+        },
+        "multiValueQueryStringParameters": {
+            immunization_target_key: ["COVID"],
+            patient_identifier_key: [patient_identifier_valid_value],
+            date_from_key: ["2000-01-01"],
+            date_to_key: ["2024-01-01"],
+            include_key: ["Immunization:patient"],
+        },
     }
 
     def setUp(self):
         super().setUp()
         self.service = create_autospec(FhirService)
         self.controller = FhirController(self.service)
-        self.patient_identifier_key = "patient.identifier"
-        self.immunization_target_key = "-immunization.target"
-        self.date_from_key = "-date.from"
-        self.date_to_key = "-date.to"
-        self.nhs_number_valid_value = "9000000009"
-        self.patient_identifier_valid_value = f"{patient_identifier_system}|{self.nhs_number_valid_value}"
         self.mock_redis.hkeys.return_value = self.MOCK_REDIS_V2D_HKEYS
         self.mock_redis_getter.return_value = self.mock_redis
 
-    def test_get_search_immunizations(self):
+    def tearDown(self):
+        patch.stopall()
+
+    def test_search_immunizations_is_successful(self):
         """it should search based on patient_identifier and immunization_target"""
-        search_result = Bundle.construct()
-        self.service.search_immunizations.return_value = search_result, False
-
-        vaccine_type = "COVID"
-        params = f"{self.immunization_target_key}={vaccine_type}&" + urllib.parse.urlencode(
-            [
-                (
-                    f"{self.patient_identifier_key}",
-                    f"{self.patient_identifier_valid_value}",
-                )
-            ]
+        self.service.search_immunizations.return_value = Bundle.construct(
+            entry=[BundleEntry.construct(resource=Immunization.construct(**{"id": "something"}))],
+            link=[BundleLink.construct(relation="self", url="patient-search-url")],
+            type="searchset",
+            total=1,
         )
+        vaccine_type = "COVID"
         lambda_event = {
             "headers": {
-                "Content-Type": "application/x-www-form-urlencoded",
                 "SupplierSystem": "test",
             },
             "multiValueQueryStringParameters": {
@@ -1306,359 +995,200 @@ class TestSearchImmunizations(TestFhirControllerBase):
 
         # Then
         self.service.search_immunizations.assert_called_once_with(
-            self.nhs_number_valid_value, [vaccine_type], params, "test", ANY, ANY
+            self.nhs_number_valid_value, {vaccine_type}, "test", None, None, None
         )
         self.assertEqual(response["statusCode"], 200)
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "Bundle")
+        self.assertEqual(
+            response["body"],
+            json.dumps(
+                {
+                    "resourceType": "Bundle",
+                    "type": "searchset",
+                    "link": [{"relation": "self", "url": "patient-search-url"}],
+                    "entry": [{"resource": {"resourceType": "Immunization", "id": "something"}}],
+                    "total": 1,
+                }
+            ),
+        )
 
-    def test_get_search_immunizations_vax_permission_check(self):
-        """it should return a 403 error if the service raises an unauthorized error"""
-        self.service.search_immunizations.side_effect = UnauthorizedVaxError()
-
+    def test_search_immunizations_is_successful_when_using_the_post_endpoint(self):
+        """though not properly documented or really recommended, there is a /Immunization/_search POST endpoint which
+        can be used for performing patient and vacc type searches"""
+        # Given
+        self.service.search_immunizations.return_value = Bundle.construct(
+            entry=[BundleEntry.construct(resource=Immunization.construct(**{"id": "something"}))],
+            link=[BundleLink.construct(relation="self", url="patient-search-url")],
+            type="searchset",
+            total=1,
+        )
         vaccine_type = "COVID"
+        form_data = {
+            self.immunization_target_key: vaccine_type,
+            self.patient_identifier_key: self.patient_identifier_valid_value,
+        }
+        url_encoded_test_str = urllib.parse.urlencode(form_data)
         lambda_event = {
-            "SupplierSystem": "test",
-            "multiValueQueryStringParameters": {
-                self.immunization_target_key: [vaccine_type],
-                self.patient_identifier_key: [self.patient_identifier_valid_value],
-            },
+            "headers": {"Content-Type": "xxx-www-form-urlencoded", "SupplierSystem": "test"},
+            "multiValueQueryStringParameters": {},
+            "body": base64.b64encode(url_encoded_test_str.encode("utf-8")).decode("utf-8"),
         }
 
         # When
-        response = self.controller.search_immunizations(lambda_event)
+        response = self.controller.search_immunizations(lambda_event, is_post_endpoint_req=True)
 
         # Then
-        self.assertEqual(response["statusCode"], 403)
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome")
+        self.service.search_immunizations.assert_called_once_with(
+            self.nhs_number_valid_value, {vaccine_type}, "test", None, None, None
+        )
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(
+            response["body"],
+            json.dumps(
+                {
+                    "resourceType": "Bundle",
+                    "type": "searchset",
+                    "link": [{"relation": "self", "url": "patient-search-url"}],
+                    "entry": [{"resource": {"resourceType": "Immunization", "id": "something"}}],
+                    "total": 1,
+                }
+            ),
+        )
 
-    def test_get_search_immunizations_for_unauthorized_vaccine_type_search(
-        self,
-    ):
-        """it should return 200 and contains warning operation outcome as the user is not having authorization for one of the vaccine type"""
-        search_result = load_json_data("sample_immunization_response _for _not_done_event.json")
-        bundle = Bundle.parse_obj(search_result)
-        self.service.search_immunizations.return_value = bundle, True
-
-        vaccine_type = ["COVID", "FLU"]
-        vaccine_type = ",".join(vaccine_type)
-
+    def test_search_immunizations_returns_a_validation_error_when_duplicate_params_provided(self):
+        """it should return a 400 invalid error if the client provides duplicated keys in the parameters"""
         lambda_event = {
             "headers": {
-                "Content-Type": "application/x-www-form-urlencoded",
                 "SupplierSystem": "test",
             },
             "multiValueQueryStringParameters": {
-                self.immunization_target_key: [vaccine_type],
-                self.patient_identifier_key: [self.patient_identifier_valid_value],
+                self.immunization_target_key: ["COVID"],
+                self.patient_identifier_key: [self.patient_identifier_valid_value, "another-one"],
             },
         }
 
         # When
-        response = self.controller.search_immunizations(lambda_event)
-        self.assertEqual(response["statusCode"], 200)
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "Bundle")
-        # Check if any resource in entry has resourceType "OperationOutcome"
-        operation_outcome_present = any(
-            entry["resource"]["resourceType"] == "OperationOutcome" for entry in body.get("entry", [])
-        )
-        self.assertTrue(
-            operation_outcome_present,
-            "OperationOutcome resource is not present in the response",
-        )
-
-    def test_get_search_immunizations_for_unauthorized_vaccine_type_search_400(self):
-        """it should return 400 as the request has an invalid vaccine type"""
-        search_result = load_json_data("sample_immunization_response _for _not_done_event.json")
-        bundle = Bundle.parse_obj(search_result)
-        self.service.search_immunizations.return_value = bundle, False
-
-        vaccine_type = "FLUE"
-
-        lambda_event = {
-            "headers": {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "SupplierSystem": "test",
-            },
-            "multiValueQueryStringParameters": {
-                self.immunization_target_key: [vaccine_type],
-                self.patient_identifier_key: [self.patient_identifier_valid_value],
-            },
-        }
-
-        # When
-        response = self.controller.search_immunizations(lambda_event)
-        self.assertEqual(response["statusCode"], 400)
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome")
-
-    def test_post_search_immunizations(self):
-        """it should search based on patient_identifier and immunization_target"""
-        search_result = Bundle.construct()
-        self.service.search_immunizations.return_value = search_result, False
-
-        vaccine_type = "COVID"
-        params = f"{self.immunization_target_key}={vaccine_type}&" + urllib.parse.urlencode(
-            [
-                (
-                    f"{self.patient_identifier_key}",
-                    f"{self.patient_identifier_valid_value}",
-                )
-            ]
-        )
-        # Construct the application/x-www-form-urlencoded body
-        body = {
-            self.patient_identifier_key: self.patient_identifier_valid_value,
-            self.immunization_target_key: vaccine_type,
-        }
-        encoded_body = urlencode(body)
-        # Base64 encode the body
-        base64_encoded_body = base64.b64encode(encoded_body.encode("utf-8")).decode("utf-8")
-
-        # Construct the lambda event
-        lambda_event = {
-            "httpMethod": "POST",
-            "headers": {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "SupplierSystem": "Test",
-            },
-            "body": base64_encoded_body,
-        }
-        # When
-        response = self.controller.search_immunizations(lambda_event)
-        # Then
-        self.service.search_immunizations.assert_called_once_with(
-            self.nhs_number_valid_value, [vaccine_type], params, "Test", ANY, ANY
-        )
-        self.assertEqual(response["statusCode"], 200)
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "Bundle")
-
-    def test_post_search_immunizations_for_unauthorized_vaccine_type_search(self):
-        """it should return 200 and contains warning operation outcome as the user is not having authorization for one of the vaccine type"""
-        search_result = load_json_data("sample_immunization_response _for _not_done_event.json")
-        bundle = Bundle.parse_obj(search_result)
-        self.service.search_immunizations.return_value = bundle, True
-
-        vaccine_type = "COVID", "FLU"
-        vaccine_type = ",".join(vaccine_type)
-        # Construct the application/x-www-form-urlencoded body
-        body = {
-            self.patient_identifier_key: self.patient_identifier_valid_value,
-            self.immunization_target_key: vaccine_type,
-        }
-        encoded_body = urlencode(body)
-        # Base64 encode the body
-        base64_encoded_body = base64.b64encode(encoded_body.encode("utf-8")).decode("utf-8")
-
-        # Construct the lambda event
-        lambda_event = {
-            "httpMethod": "POST",
-            "headers": {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "SupplierSystem": "Test",
-            },
-            "body": base64_encoded_body,
-        }
-        # When
-        response = self.controller.search_immunizations(lambda_event)
-        self.assertEqual(response["statusCode"], 200)
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "Bundle")
-        # Check if any resource in entry has resourceType "OperationOutcome"
-        operation_outcome_present = any(
-            entry["resource"]["resourceType"] == "OperationOutcome" for entry in body.get("entry", [])
-        )
-        self.assertTrue(
-            operation_outcome_present,
-            "OperationOutcome resource is not present in the response",
-        )
-
-    def test_post_search_immunizations_for_unauthorized_vaccine_type_search_400(self):
-        """it should return 400 as the request is having invalid vaccine type"""
-        search_result = load_json_data("sample_immunization_response _for _not_done_event.json")
-        bundle = Bundle.parse_obj(search_result)
-        self.service.search_immunizations.return_value = bundle, False
-
-        vaccine_type = "FLUE"
-
-        # Construct the application/x-www-form-urlencoded body
-        body = {
-            self.patient_identifier_key: self.patient_identifier_valid_value,
-            self.immunization_target_key: vaccine_type,
-        }
-        encoded_body = urlencode(body)
-        # Base64 encode the body
-        base64_encoded_body = base64.b64encode(encoded_body.encode("utf-8")).decode("utf-8")
-
-        # Construct the lambda event
-        lambda_event = {
-            "httpMethod": "POST",
-            "headers": {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "VaccineTypePermissions": "flu:search",
-            },
-            "body": base64_encoded_body,
-        }
-        # When
-        response = self.controller.search_immunizations(lambda_event)
-        self.assertEqual(response["statusCode"], 400)
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome")
-
-    def test_post_search_immunizations_for_unauthorized_vaccine_type_search_403(self):
-        """it should return 403 as the user doesnt have vaccinetype permission"""
-        self.service.search_immunizations.side_effect = UnauthorizedVaxError()
-
-        vaccine_type = ["COVID", "FLU"]
-        vaccine_type = ",".join(vaccine_type)
-
-        # Construct the application/x-www-form-urlencoded body
-        body = {
-            self.patient_identifier_key: self.patient_identifier_valid_value,
-            self.immunization_target_key: vaccine_type,
-        }
-        encoded_body = urlencode(body)
-        # Base64 encode the body
-        base64_encoded_body = base64.b64encode(encoded_body.encode("utf-8")).decode("utf-8")
-
-        # Construct the lambda event
-        lambda_event = {
-            "httpMethod": "POST",
-            "headers": {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "SupplierSystem": "Test",
-            },
-            "body": base64_encoded_body,
-        }
-        # When
-        response = self.controller.search_immunizations(lambda_event)
-        self.assertEqual(response["statusCode"], 403)
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome")
-
-    @patch("controller.fhir_controller.process_search_params", wraps=process_search_params)
-    def test_uses_parameter_parser(self, process_search_params: Mock):
-        self.mock_redis.hkeys.return_value = self.MOCK_REDIS_V2D_HKEYS
-        self.mock_redis_getter.return_value = self.mock_redis
-        lambda_event = {
-            "multiValueQueryStringParameters": {
-                self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
-                self.immunization_target_key: ["a-disease-type"],
-            }
-        }
-
-        self.controller.search_immunizations(lambda_event)
-
-        process_search_params.assert_called_once_with(
-            {
-                self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
-                self.immunization_target_key: ["a-disease-type"],
-            }
-        )
-
-    @patch("controller.fhir_controller.process_search_params")
-    def test_search_immunizations_returns_400_on_ParameterException_from_parameter_parser(
-        self, process_search_params: Mock
-    ):
-        lambda_event = {
-            "multiValueQueryStringParameters": {
-                self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
-                self.immunization_target_key: ["a-disease-type"],
-            }
-        }
-
-        process_search_params.side_effect = ParameterExceptionError("Test")
         response = self.controller.search_immunizations(lambda_event)
 
         # Then
         self.assertEqual(response["statusCode"], 400)
-        outcome = json.loads(response["body"])
-        self.assertEqual(outcome["resourceType"], "OperationOutcome")
+        self.assertEqual(
+            json.loads(response["body"])["issue"][0]["diagnostics"],
+            'Parameters may not be duplicated. Use commas for "or".',
+        )
+        self.service.search_immunizations.assert_not_called()
 
-    def test_search_immunizations_returns_400_on_passing_superseded_nhs_number(self):
-        """This method should return 400 as input parameter has superseded nhs number."""
-        search_result = {
-            "diagnostics": "Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value does not exists"
-        }
-        self.service.search_immunizations.return_value = search_result, False
+    def test_search_immunizations_returns_a_validation_error_when_patient_identifier_invalid(self):
+        """it should return a 400 invalid error for multiple invalid patient identifier scenarios"""
+        test_cases = [
+            (
+                [f"{self.patient_identifier_valid_value},and-another-id"],
+                "Search parameter patient.identifier must have one value.",
+            ),
+            (
+                ["https://not-fhir.nhs.uk/Id/nhs-number|9000000009"],
+                'patient.identifier must be in the format of "https://fhir.nhs.uk/Id/nhs-number|{NHS number}" e.g. '
+                '"https://fhir.nhs.uk/Id/nhs-number|9000000009"',
+            ),
+            (
+                ["https://fhir.nhs.uk/Id/nhs-number|9000450007"],
+                "Search parameter patient.identifier must be a valid NHS number.",
+            ),
+        ]
 
-        vaccine_type = "COVID"
-        lambda_event = {
-            "headers": {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "SupplierSystem": "Test",
-            },
-            "multiValueQueryStringParameters": {
-                self.immunization_target_key: [vaccine_type],
-                self.patient_identifier_key: [self.patient_identifier_valid_value],
-            },
-        }
+        for test_patient_id, expected_error in test_cases:
+            with self.subTest(msg=expected_error):
+                test_lambda_event = copy.deepcopy(self.test_lambda_event)
+                test_lambda_event["multiValueQueryStringParameters"]["patient.identifier"] = test_patient_id
 
-        # When
-        response = self.controller.search_immunizations(lambda_event)
+                # When
+                response = self.controller.search_immunizations(test_lambda_event)
 
-        self.assertEqual(response["statusCode"], 400)
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome")
-
-    def test_search_immunizations_returns_200_remove_vaccine_not_done(self):
-        """This method should return 200 but remove the data which has status as not done."""
-        search_result = load_json_data("sample_immunization_response _for _not_done_event.json")
-        bundle = Bundle.parse_obj(search_result)
-        self.service.search_immunizations.return_value = bundle, False
-        vaccine_type = "COVID"
-        lambda_event = {
-            "headers": {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "SupplierSystem": "Test",
-            },
-            "multiValueQueryStringParameters": {
-                self.immunization_target_key: [vaccine_type],
-                self.patient_identifier_key: [self.patient_identifier_valid_value],
-            },
-        }
-
-        # When
-        response = self.controller.search_immunizations(lambda_event)
-
-        self.assertEqual(response["statusCode"], 200)
-        body = json.loads(response["body"])
-        for entry in body.get("entry", []):
-            self.assertNotEqual(entry.get("resource", {}).get("status"), "not-done", "entered-in-error")
-
-    def test_self_link_excludes_extraneous_params(self):
-        search_result = Bundle.construct()
-        self.service.search_immunizations.return_value = search_result, False
-        vaccine_type = "COVID"
-        params = f"{self.immunization_target_key}={vaccine_type}&" + urllib.parse.urlencode(
-            [
-                (
-                    f"{self.patient_identifier_key}",
-                    f"{self.patient_identifier_valid_value}",
+                # Then
+                self.assertEqual(response["statusCode"], 400)
+                self.assertEqual(
+                    json.loads(response["body"])["issue"][0]["diagnostics"],
+                    expected_error,
                 )
-            ]
+                self.service.search_immunizations.assert_not_called()
+
+    def test_search_immunizations_returns_a_validation_error_when_immunization_target_invalid(self):
+        """it should return a 400 invalid error for multiple invalid -immunization.target scenarios"""
+        test_cases = [
+            ([], "Search parameter -immunization.target must have one or more values."),
+            (["COVID,FLU,CHICKENS"], "-immunization.target must be one or more of the following: COVID, FLU"),
+        ]
+
+        for test_patient_id, expected_error in test_cases:
+            with self.subTest(msg=expected_error):
+                test_lambda_event = copy.deepcopy(self.test_lambda_event)
+                test_lambda_event["multiValueQueryStringParameters"]["-immunization.target"] = test_patient_id
+
+                # When
+                response = self.controller.search_immunizations(test_lambda_event)
+
+                # Then
+                self.assertEqual(response["statusCode"], 400)
+                self.assertEqual(
+                    json.loads(response["body"])["issue"][0]["diagnostics"],
+                    expected_error,
+                )
+                self.service.search_immunizations.assert_not_called()
+
+    def test_search_immunizations_returns_a_validation_error_when_optional_params_invalid(self):
+        """it should return a 400 invalid error for multiple invalid optional parameter scenarios"""
+        test_cases = [
+            ("-date.to", ["2000-01-01,2000-10-10"], "Search parameter -date.to may have one value at most."),
+            ("-date.to", ["hello-world"], "Search parameter -date.to must be in format: YYYY-MM-DD"),
+            ("-date.from", ["2000-01-01,2000-10-10"], "Search parameter -date.from may have one value at most."),
+            ("-date.from", ["hello-world"], "Search parameter -date.from must be in format: YYYY-MM-DD"),
+            (
+                "_include",
+                ["not-permitted-for-inclusion"],
+                "Search parameter _include may only be 'Immunization:patient' if provided.",
+            ),
+        ]
+
+        for key_with_error, test_data, expected_error in test_cases:
+            with self.subTest(msg=expected_error):
+                test_lambda_event = copy.deepcopy(self.test_lambda_event)
+                test_lambda_event["multiValueQueryStringParameters"][key_with_error] = test_data
+
+                # When
+                response = self.controller.search_immunizations(test_lambda_event)
+
+                # Then
+                self.assertEqual(response["statusCode"], 400)
+                self.assertEqual(
+                    json.loads(response["body"])["issue"][0]["diagnostics"],
+                    expected_error,
+                )
+                self.service.search_immunizations.assert_not_called()
+
+    @patch("controller.fhir_controller.MAX_RESPONSE_SIZE_BYTES", 5)
+    def test_search_immunizations_raises_error_if_too_many_results_found(self):
+        """it should return an error if there are too many results in the response for Lambda to handle. In reality,
+        highly unlikely. If a concern, pagination should be implemented."""
+        self.service.search_immunizations.return_value = Bundle.construct(
+            entry=[BundleEntry.construct(resource=Immunization.construct(**{"id": "something"}))],
+            link=[BundleLink.construct(relation="self", url="patient-search-url")],
+            type="searchset",
+            total=1,
         )
 
-        lambda_event = {
-            "multiValueQueryStringParameters": {
-                self.patient_identifier_key: [self.patient_identifier_valid_value],
-                self.immunization_target_key: [vaccine_type],
-                "b": ["b,a"],
-                "a": ["b,a"],
-            },
-            "body": None,
-            "headers": {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "SupplierSystem": "Test",
-            },
-            "httpMethod": "POST",
-        }
+        # When
+        response = self.controller.search_immunizations(self.test_lambda_event)
 
-        self.controller.search_immunizations(lambda_event)
-
+        # Then
         self.service.search_immunizations.assert_called_once_with(
-            self.nhs_number_valid_value, [vaccine_type], params, "Test", ANY, ANY
+            self.nhs_number_valid_value,
+            {"COVID"},
+            "test",
+            datetime.date(2000, 1, 1),
+            datetime.date(2024, 1, 1),
+            "Immunization:patient",
+        )
+        self.assertEqual(response["statusCode"], 400)
+        self.assertEqual(
+            json.loads(response["body"])["issue"][0]["diagnostics"],
+            "Search returned too many results. Please narrow down the search",
         )

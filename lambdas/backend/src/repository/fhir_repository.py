@@ -12,7 +12,6 @@ from fhir.resources.R4B.fhirtypes import Id
 from fhir.resources.R4B.identifier import Identifier
 from fhir.resources.R4B.immunization import Immunization
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
-from responses import logger
 
 from common.models.constants import Constants
 from common.models.errors import ResourceNotFoundError
@@ -95,24 +94,29 @@ class ImmunizationRepository:
     def __init__(self, table: Table):
         self.table = table
 
-    def get_immunization_by_identifier(self, identifier_pk: str) -> tuple[Optional[dict], Optional[str]]:
+    def get_immunization_by_identifier(
+        self, identifier: Identifier
+    ) -> tuple[Optional[dict], Optional[ImmunizationRecordMetadata]]:
         response = self.table.query(
             IndexName="IdentifierGSI",
-            KeyConditionExpression=Key("IdentifierPK").eq(identifier_pk),
+            KeyConditionExpression=Key("IdentifierPK").eq(self._make_identifier_pk(identifier)),
         )
+        item = response.get("Items")
 
-        if "Items" in response and len(response["Items"]) > 0:
-            item = response["Items"][0]
-            vaccine_type = self._vaccine_type(item["PatientSK"])
-            resource = json.loads(item["Resource"])
-            version = int(response["Items"][0]["Version"])
-            return {
-                "resource": resource,
-                "id": resource.get("id"),
-                "version": version,
-            }, vaccine_type
-        else:
+        if not item:
             return None, None
+
+        item = response["Items"][0]
+        resource = json.loads(item.get("Resource", {}))
+
+        # VED-915 - investigate and hopefully stop returning deleted items
+        imms_record_meta = ImmunizationRecordMetadata(
+            identifier,
+            int(item.get("Version")),
+            is_deleted=self._is_logically_deleted_item(item),
+            is_reinstated=self._is_reinstated_item(item),
+        )
+        return resource, imms_record_meta
 
     def get_immunization_resource_and_metadata_by_id(
         self, imms_id: str, include_deleted: bool = False
@@ -124,10 +128,8 @@ class ImmunizationRepository:
         if not item:
             return None, None
 
-        deleted_at_attr = item.get("DeletedAt")
-
-        is_deleted = deleted_at_attr is not None and deleted_at_attr != Constants.REINSTATED_RECORD_STATUS
-        is_reinstated = deleted_at_attr == Constants.REINSTATED_RECORD_STATUS
+        is_deleted = self._is_logically_deleted_item(item)
+        is_reinstated = self._is_reinstated_item(item)
 
         if is_deleted and not include_deleted:
             return None, None
@@ -300,30 +302,28 @@ class ImmunizationRepository:
             else:
                 raise error
 
-    def find_immunizations(self, patient_identifier: str, vaccine_types: set):
-        """it should find all of the specified patient's Immunization events for all of the specified vaccine_types"""
+    def find_immunizations(self, patient_identifier: str, vaccine_types: set) -> list[dict]:
         condition = Key("PatientPK").eq(_make_patient_pk(patient_identifier))
         is_not_deleted = Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated")
 
-        raw_items = self.get_all_items(condition, is_not_deleted)
+        ieds_resources = self.get_all_items(condition, is_not_deleted)
 
-        if raw_items:
-            # Filter the response to contain only the requested vaccine types
-            items = [x for x in raw_items if x["PatientSK"].split("#")[0] in vaccine_types]
-
-            # Return a list of the FHIR immunization resource JSON items
-            final_resources = [
-                {
-                    **json.loads(item["Resource"]),
-                    "meta": {"versionId": int(item.get("Version", 1))},
-                }
-                for item in items
-            ]
-
-            return final_resources
-        else:
-            logger.warning("no items matched patient_identifier filter!")
+        if not ieds_resources:
             return []
+
+        # Filter the response to contain only the requested vaccine types
+        filtered_ieds_resources = [x for x in ieds_resources if self._vaccine_type(x["PatientSK"]) in vaccine_types]
+
+        # Return a list of the FHIR immunization resource JSON items
+        final_resources = [
+            {
+                **json.loads(item["Resource"]),
+                "meta": {"versionId": int(item.get("Version", 1))},
+            }
+            for item in filtered_ieds_resources
+        ]
+
+        return final_resources
 
     def get_all_items(self, condition, is_not_deleted):
         """Query DynamoDB and paginate through all results."""
@@ -353,6 +353,19 @@ class ImmunizationRepository:
         return all_items
 
     @staticmethod
-    def _vaccine_type(patientsk) -> str:
-        parsed = [str.strip(str.lower(s)) for s in patientsk.split("#")]
+    def _vaccine_type(patient_sk: str) -> str:
+        parsed = [str.strip(s) for s in patient_sk.split("#")]
         return parsed[0]
+
+    @staticmethod
+    def _make_identifier_pk(identifier: Identifier) -> str:
+        return f"{identifier.system}#{identifier.value}"
+
+    @staticmethod
+    def _is_logically_deleted_item(ieds_item: dict) -> bool:
+        deleted_at_attr = ieds_item.get("DeletedAt")
+        return deleted_at_attr is not None and deleted_at_attr != Constants.REINSTATED_RECORD_STATUS
+
+    @staticmethod
+    def _is_reinstated_item(ieds_item: dict) -> bool:
+        return ieds_item.get("DeletedAt") == Constants.REINSTATED_RECORD_STATUS
