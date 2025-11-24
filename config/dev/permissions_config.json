@@ -28,11 +28,8 @@
   {
     "supplier": "MAVIS",
     "permissions": [
-      "3IN1.CRUDS",
       "FLU.CRUDS",
-      "HPV.CRUDS",
-      "MENACWY.CRUDS",
-      "MMR.CRUDS"
+      "HPV.CUD"
     ],
     "ods_codes": ["V0V8L"]
   },
