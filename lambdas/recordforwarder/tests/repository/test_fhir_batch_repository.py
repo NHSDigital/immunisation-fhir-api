@@ -6,6 +6,7 @@ from uuid import uuid4
 import boto3
 import botocore.exceptions
 import simplejson as json
+from boto3.dynamodb.conditions import Key
 from moto import mock_aws
 
 from common.models.errors import (
@@ -137,6 +138,53 @@ class TestCreateImmunization(TestImmunizationBatchRepository):
         ):
             with self.assertRaises(ResourceFoundError):
                 self.repository.create_immunization(self.immunization, "supplier", "vax-type", self.table, False)
+
+    def create_immunization_uses_separate_identifier_pk_for_legacy_identifiers_test_logic(
+        self, legacy_identifier_system: str, new_identifier_system: str
+    ):
+        """it should use a new identifier_pk for a legacy identifier"""
+        self.mock_redis_getter.return_value = self.mock_redis
+
+        legacy_immunization = create_covid_immunization_dict(imms_id)
+        legacy_immunization["identifier"][0]["system"] = legacy_identifier_system
+
+        self.repository.create_immunization(legacy_immunization, "supplier", "vax-type", self.table, False)
+        item = self.table.put_item.call_args.kwargs["Item"]
+
+        self.table.query.assert_called_with(
+            IndexName="IdentifierGSI",
+            KeyConditionExpression=Key("IdentifierPK").eq(new_identifier_system + "#" + "ACME-vacc123456"),
+            Limit=1,
+        )
+
+        self.table.put_item.assert_called_with(
+            Item={
+                "PK": ANY,
+                "PatientPK": ANY,
+                "PatientSK": ANY,
+                "Resource": json.dumps(
+                    legacy_immunization, use_decimal=True
+                ),  # resource should contain legacy identifier
+                "IdentifierPK": new_identifier_system + "#" + "ACME-vacc123456",
+                "Operation": "CREATE",
+                "Version": 1,
+                "SupplierSystem": "supplier",
+            },
+            ConditionExpression=ANY,
+        )
+        self.assertEqual(item["PK"], f"Immunization#{legacy_immunization['id']}")
+
+    def test_create_immunization_uses_separate_identifier_pk_for_legacy_identifiers_tpp(self):
+        """it should use a V5 identifier_pk for a legacy TPP identifier"""
+        self.create_immunization_uses_separate_identifier_pk_for_legacy_identifiers_test_logic(
+            "YGA", "https://tpp-uk.com/Id/ve/vacc"
+        )
+
+    def test_create_immunization_uses_separate_identifier_pk_for_legacy_identifiers_emis(self):
+        """it should use a V5 identifier_pk for a legacy EMIS identifier"""
+        self.create_immunization_uses_separate_identifier_pk_for_legacy_identifiers_test_logic(
+            "YGJ", "https://emishealth.com/identifiers/vacc"
+        )
 
 
 class TestUpdateImmunization(TestImmunizationBatchRepository):
@@ -300,6 +348,63 @@ class TestUpdateImmunization(TestImmunizationBatchRepository):
                 )
                 self.repository.update_immunization(self.immunization, "supplier", "vax-type", self.table, False)
 
+    def update_immunization_uses_separate_identifier_pk_for_legacy_identifiers_test_logic(
+        self, legacy_identifier_system: str, new_identifier_system: str
+    ):
+        """it should use a new identifier_pk for a legacy identifier"""
+        legacy_immunization = create_covid_immunization_dict(imms_id)
+        legacy_immunization["identifier"][0]["system"] = legacy_identifier_system
+
+        self.table.query = MagicMock(
+            return_value={
+                "Count": 1,
+                "Items": [
+                    {
+                        "PK": _make_immunization_pk(imms_id),
+                        "Resource": json.dumps(legacy_immunization),
+                        "Version": 1,
+                    }
+                ],
+            }
+        )
+
+        self.repository.update_immunization(legacy_immunization, "supplier", "vax-type", self.table, True)
+
+        self.table.query.assert_called_with(
+            IndexName="IdentifierGSI",
+            KeyConditionExpression=Key("IdentifierPK").eq(new_identifier_system + "#" + "ACME-vacc123456"),
+            Limit=1,
+        )
+
+        expected_values = {
+            ":timestamp": ANY,
+            ":patient_pk": ANY,
+            ":patient_sk": ANY,
+            ":imms_resource_val": json.dumps(legacy_immunization),  # resource should contain legacy identifier
+            ":operation": "UPDATE",
+            ":version": 2,
+            ":supplier_system": "supplier",
+        }
+
+        self.table.update_item.assert_called_with(
+            Key={"PK": _make_immunization_pk(imms_id)},
+            UpdateExpression=ANY,
+            ExpressionAttributeNames={"#imms_resource": "Resource"},
+            ExpressionAttributeValues=expected_values,
+            ReturnValues=ANY,
+            ConditionExpression=ANY,
+        )
+
+    def test_update_immunization_uses_separate_identifier_pk_for_legacy_identifiers_tpp(self):
+        self.update_immunization_uses_separate_identifier_pk_for_legacy_identifiers_test_logic(
+            "YGA", "https://tpp-uk.com/Id/ve/vacc"
+        )
+
+    def test_update_immunization_uses_separate_identifier_pk_for_legacy_identifiers_emis(self):
+        self.update_immunization_uses_separate_identifier_pk_for_legacy_identifiers_test_logic(
+            "YGJ", "https://emishealth.com/identifiers/vacc"
+        )
+
 
 class TestDeleteImmunization(TestImmunizationBatchRepository):
     def test_delete_immunization(self):
@@ -412,6 +517,58 @@ class TestDeleteImmunization(TestImmunizationBatchRepository):
                     }
                 )
                 self.repository.delete_immunization(self.immunization, "supplier", "vax-type", self.table, False)
+
+    def delete_immunization_uses_separate_identifier_pk_for_legacy_identifiers_test_logic(
+        self, legacy_identifier_system: str, new_identifier_system: str
+    ):
+        """it should use a new identifier_pk for a legacy identifier"""
+        legacy_immunization = create_covid_immunization_dict(imms_id)
+        legacy_immunization["identifier"][0]["system"] = legacy_identifier_system
+
+        self.table.query = MagicMock(
+            return_value={
+                "Count": 1,
+                "Items": [
+                    {
+                        "PK": _make_immunization_pk(imms_id),
+                        "Resource": json.dumps(legacy_immunization),
+                        "Version": 1,
+                    }
+                ],
+            }
+        )
+
+        response = self.repository.delete_immunization(legacy_immunization, "supplier", "vax-type", self.table, True)
+
+        self.table.query.assert_called_with(
+            IndexName="IdentifierGSI",
+            KeyConditionExpression=Key("IdentifierPK").eq(new_identifier_system + "#" + "ACME-vacc123456"),
+            Limit=1,
+        )
+
+        self.table.update_item.assert_called_with(
+            Key={"PK": _make_immunization_pk(imms_id)},
+            UpdateExpression="SET DeletedAt = :timestamp, Operation = :operation, SupplierSystem = :supplier_system",
+            ExpressionAttributeValues={
+                ":timestamp": ANY,
+                ":operation": "DELETE",
+                ":supplier_system": "supplier",
+            },
+            ReturnValues=ANY,
+            ConditionExpression=ANY,
+        )
+
+        self.assertEqual(response, f"Immunization#{self.immunization['id']}")
+
+    def test_delete_immunization_uses_separate_identifier_pk_for_legacy_identifiers_tpp(self):
+        self.delete_immunization_uses_separate_identifier_pk_for_legacy_identifiers_test_logic(
+            "YGA", "https://tpp-uk.com/Id/ve/vacc"
+        )
+
+    def test_delete_immunization_uses_separate_identifier_pk_for_legacy_identifiers_emis(self):
+        self.delete_immunization_uses_separate_identifier_pk_for_legacy_identifiers_test_logic(
+            "YGJ", "https://emishealth.com/identifiers/vacc"
+        )
 
 
 @mock_aws
