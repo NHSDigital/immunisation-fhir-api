@@ -26,11 +26,13 @@ from constants import (
     ACK_BUCKET,
     ACK_PREFIX,
     DUPLICATE,
+    EMIS_V5_SUPPLIER_IDENTIFIER_SYSTEM,
     FILE_NAME_VAL_ERROR,
     FORWARDEDFILE_PREFIX,
     HEADER_RESPONSE_CODE_COLUMN,
     RAVS_URI,
     SOURCE_BUCKET,
+    TPP_V5_SUPPLIER_IDENTIFIER_SYSTEM,
     ActionFlag,
     environment,
 )
@@ -260,6 +262,14 @@ def extract_identifier_pk(row, index):
     """Extract LOCAL_ID and convert to IdentifierPK."""
     try:
         local_id, unique_id_uri = row["LOCAL_ID"].split("^")
+
+        # Identifier PK will be different to Identifier in the resource due to data uplift as part of VED-893. This
+        # only affects TPP and EMIS
+        if unique_id_uri == "YGA":
+            unique_id_uri = TPP_V5_SUPPLIER_IDENTIFIER_SYSTEM
+        if unique_id_uri == "YGJ":
+            unique_id_uri = EMIS_V5_SUPPLIER_IDENTIFIER_SYSTEM
+
         return f"{unique_id_uri}#{local_id}"
     except ValueError:
         raise AssertionError(f"Row {index + 1}: Invalid LOCAL_ID format - {row['LOCAL_ID']}")
@@ -350,6 +360,7 @@ def generate_csv_with_ordered_100000_rows(file_name=None):
     for i in range(special_row_count // 3):  # 100 sets
         new_row = create_row(
             unique_id=unique_ids[i],
+            unique_id_uri=RAVS_URI,
             fore_name="PHYLIS",
             dose_amount="0.3",
             action_flag="NEW",
@@ -357,6 +368,7 @@ def generate_csv_with_ordered_100000_rows(file_name=None):
         )
         update_row = create_row(
             unique_id=unique_ids[i],
+            unique_id_uri=RAVS_URI,
             fore_name="PHYLIS",
             dose_amount="0.4",
             action_flag="UPDATE",
@@ -364,6 +376,7 @@ def generate_csv_with_ordered_100000_rows(file_name=None):
         )
         delete_row = create_row(
             unique_id=unique_ids[i],
+            unique_id_uri=RAVS_URI,
             fore_name="PHYLIS",
             dose_amount="0.1",
             action_flag="DELETE",
@@ -449,10 +462,9 @@ def delete_filename_from_audit_table(filename) -> bool:
         return False
 
 
-def delete_filename_from_events_table(identifier) -> bool:
+def delete_filename_from_events_table(identifier_pk) -> bool:
     # 1. Query the GSI to get all items with the given filename
     try:
-        identifier_pk = f"{RAVS_URI}#{identifier}"
         response = events_table.query(
             IndexName="IdentifierGSI",
             KeyConditionExpression=Key("IdentifierPK").eq(identifier_pk),
@@ -480,13 +492,13 @@ def poll_s3_file_pattern(prefix, search_pattern):
     return None
 
 
-def aws_cleanup(key, identifier, ack_keys):
+def aws_cleanup(key, identifier_pk, ack_keys):
     if key:
         archive_file = f"archive/{key}"
         if not delete_file_from_s3(SOURCE_BUCKET, archive_file):
             logger.warning(f"S3 delete fail {SOURCE_BUCKET}: {archive_file}")
         delete_filename_from_audit_table(key)
-        delete_filename_from_events_table(identifier)
+        delete_filename_from_events_table(identifier_pk)
     for ack_key in ack_keys.values():
         if ack_key:
             if not delete_file_from_s3(ACK_BUCKET, ack_key):
@@ -507,7 +519,7 @@ def purge_sqs_queues() -> bool:
     return False
 
 
-def create_row(unique_id, dose_amount, action_flag: str, header, inject_cp1252=None):
+def create_row(unique_id, unique_id_uri, dose_amount, action_flag: str, header, inject_cp1252=None):
     """Helper function to create a single row with the specified UNIQUE_ID and ACTION_FLAG."""
 
     name = "James" if not inject_cp1252 else b"Jam\xe9s"
@@ -522,7 +534,7 @@ def create_row(unique_id, dose_amount, action_flag: str, header, inject_cp1252=N
         "SITE_CODE": "RVVKC",
         "SITE_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
         "UNIQUE_ID": unique_id,
-        "UNIQUE_ID_URI": RAVS_URI,
+        "UNIQUE_ID_URI": unique_id_uri,
         "ACTION_FLAG": action_flag,
         "PERFORMING_PROFESSIONAL_FORENAME": "PHYLIS",
         "PERFORMING_PROFESSIONAL_SURNAME": name,
