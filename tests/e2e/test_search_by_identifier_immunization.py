@@ -182,8 +182,8 @@ class TestSearchImmunizationByIdentifier(ImmunizationBaseTest):
                 "POST",
                 f"identifier={identifier_system}|{identifier_value}",
                 f"identifier={identifier_system}|{identifier_value}",
-                False,
-                400,
+                True,
+                200,
             ),
         ]
         for search in searches:

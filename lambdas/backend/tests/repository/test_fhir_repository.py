@@ -53,8 +53,8 @@ class TestGetImmunizationByIdentifier(TestFhirRepositoryBase):
         patch.stopall()
 
     def test_get_immunization_by_identifier(self):
-        """it should find an Immunization by id"""
-        imms_id = "a-id#an-id"
+        """it should find an Immunization by identifier"""
+        test_identifier = Identifier.construct(system="a-system", value="a-value")
         resource = dict()
         resource["Resource"] = {"foo": "bar", "id": "test"}
         self.table.query = MagicMock(
@@ -69,26 +69,25 @@ class TestGetImmunizationByIdentifier(TestFhirRepositoryBase):
             }
         )
 
-        immunisation, immunisation_type = self.repository.get_immunization_by_identifier(imms_id)
+        immunisation, immunisation_resource_meta = self.repository.get_immunization_by_identifier(test_identifier)
 
         self.table.query.assert_called_once_with(
             IndexName="IdentifierGSI",
-            KeyConditionExpression=Key("IdentifierPK").eq(imms_id),
+            KeyConditionExpression=Key("IdentifierPK").eq("a-system#a-value"),
         )
 
-        self.assertDictEqual(immunisation["resource"], resource["Resource"])
-        self.assertEqual(immunisation["version"], 1)
-        self.assertEqual(immunisation["id"], "test")
-        self.assertEqual(immunisation_type, "covid")
+        self.assertDictEqual(immunisation, resource["Resource"])
+        self.assertEqual(immunisation_resource_meta.resource_version, 1)
+        self.assertEqual(immunisation_resource_meta.is_deleted, False)
 
     def test_immunization_not_found(self):
         """it should return None if Immunization doesn't exist"""
-        imms_id = "non-existent-id"
+        test_identifier = Identifier.construct(system="a-system", value="a-value-not-exist")
         self.table.query = MagicMock(return_value={})
 
-        immunisation, immunisation_type = self.repository.get_immunization_by_identifier(imms_id)
+        immunisation, immunisation_resource_meta = self.repository.get_immunization_by_identifier(test_identifier)
         self.assertIsNone(immunisation)
-        self.assertIsNone(immunisation_type)
+        self.assertIsNone(immunisation_resource_meta)
 
     def test_check_immunization_identifier_exists_returns_true(self):
         """it should return true when a record does exist with the given identifier"""
@@ -587,40 +586,24 @@ class TestFindImmunizations(unittest.TestCase):
     def tearDown(self):
         patch.stopall()
 
-    def test_find_immunizations(self):
-        """it should find events with patient_identifier"""
+    def test_find_immunizations_returns_empty_list_when_not_found(self):
+        """it should return an empty list when nothing is found for the given query"""
         nhs_number = "a-patient-id"
         dynamo_response = {"ResponseMetadata": {"HTTPStatusCode": 200}, "Items": []}
         self.table.query = MagicMock(return_value=dynamo_response)
 
-        condition = Key("PatientPK").eq(_make_patient_pk(nhs_number))
-
         # When
-        _ = self.repository.find_immunizations(nhs_number, vaccine_types={"COVID"})
+        result = self.repository.find_immunizations(nhs_number, vaccine_types={"COVID"})
 
         # Then
         self.table.query.assert_called_once_with(
             IndexName="PatientGSI",
-            KeyConditionExpression=condition,
-            FilterExpression=ANY,
+            KeyConditionExpression=Key("PatientPK").eq(_make_patient_pk(nhs_number)),
+            FilterExpression=Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated"),
         )
+        self.assertEqual(result, [])
 
-    def test_exclude_deleted(self):
-        """it should exclude records with DeletedAt attribute"""
-        dynamo_response = {"ResponseMetadata": {"HTTPStatusCode": 200}, "Items": []}
-        self.table.query = MagicMock(return_value=dynamo_response)
-
-        is_ = Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated")
-
-        # When
-        _ = self.repository.find_immunizations("an-id", {"COVID"})
-
-        # Then
-        self.table.query.assert_called_once_with(
-            IndexName="PatientGSI", KeyConditionExpression=ANY, FilterExpression=is_
-        )
-
-    def test_map_results_to_immunizations(self):
+    def test_find_immunizations_returns_resources_including_meta(self):
         """it should map Resource list into a list of Immunizations"""
         imms1 = {"id": 1, "meta": {"versionId": 1}}
         imms2 = {"id": 2, "meta": {"versionId": 1}}
@@ -642,6 +625,38 @@ class TestFindImmunizations(unittest.TestCase):
 
         # When
         results = self.repository.find_immunizations("an-id", {"COVID"})
+
+        # Then
+        self.assertListEqual(results, [imms1, imms2])
+
+    def test_find_immunizations_filters_any_vacc_types_not_in_the_request(self):
+        """it should filter out any returns vacc types that we not in the requested parameters"""
+        imms1 = {"id": 1, "meta": {"versionId": 1}}
+        imms2 = {"id": 2, "meta": {"versionId": 2}}
+        imms3 = {"id": 3, "meta": {"versionId": 4}}
+        items = [
+            {
+                "Resource": json.dumps(imms1),
+                "PatientSK": "COVID#some_other_text",
+                "Version": "1",
+            },
+            {
+                "Resource": json.dumps(imms2),
+                "PatientSK": "FLU#some_other_text",
+                "Version": "2",
+            },
+            {
+                "Resource": json.dumps(imms3),
+                "PatientSK": "MMR#some_other_text",
+                "Version": "4",
+            },
+        ]
+
+        dynamo_response = {"ResponseMetadata": {"HTTPStatusCode": 200}, "Items": items}
+        self.table.query = MagicMock(return_value=dynamo_response)
+
+        # When
+        results = self.repository.find_immunizations("an-id", {"COVID", "FLU"})
 
         # Then
         self.assertListEqual(results, [imms1, imms2])

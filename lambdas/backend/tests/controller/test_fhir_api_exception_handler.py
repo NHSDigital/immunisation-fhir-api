@@ -15,6 +15,7 @@ from models.errors import (
     InvalidJsonError,
     InvalidResourceVersionError,
     InvalidStoredDataError,
+    ParameterExceptionError,
     ResourceVersionNotProvidedError,
     UnauthorizedError,
     UnauthorizedVaxError,
@@ -58,6 +59,7 @@ class TestFhirApiExceptionHandler(unittest.TestCase):
             (InconsistentIdentifierError("Identifiers do not match"), 400, "invariant", "Identifiers do not match"),
             (InvalidJsonError("Invalid JSON provided"), 400, "invalid", "Invalid JSON provided"),
             (CustomValidationError("This field was invalid"), 400, "invariant", "This field was invalid"),
+            (ParameterExceptionError("Invalid parameter"), 400, "invalid", "Invalid parameter"),
             (
                 ResourceVersionNotProvidedError(resource_type="Immunization"),
                 400,

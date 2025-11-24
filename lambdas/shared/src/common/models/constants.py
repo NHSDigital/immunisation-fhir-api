@@ -57,6 +57,7 @@ class Constants:
     VACCINE_TYPE_TO_DISEASES_HASH_KEY = "vacc_to_diseases"
     DISEASES_TO_VACCINE_TYPE_HASH_KEY = "diseases_to_vacc"
 
+    COMPLETED_STATUS = "completed"
     REINSTATED_RECORD_STATUS = "reinstated"
 
 
