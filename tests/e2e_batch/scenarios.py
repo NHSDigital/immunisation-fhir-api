@@ -133,19 +133,10 @@ class TestCase:
         logger.info(f'Test "{self.name}" File {self.file_name}')
         data = []
         self.identifier = str(uuid.uuid4())
-
-        unique_id_uri = RAVS_URI
-
-        if self.ods == "YGA":
-            unique_id_uri = TPP_V5_SUPPLIER_IDENTIFIER_SYSTEM
-
-        if self.ods == "YGJ":
-            unique_id_uri = EMIS_V5_SUPPLIER_IDENTIFIER_SYSTEM
-
         for action in self.actions:
             row = create_row(
                 self.identifier,
-                unique_id_uri,
+                self.ods,
                 self.dose_amount,
                 action.action,
                 self.header,
