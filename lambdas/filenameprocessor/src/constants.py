@@ -17,6 +17,7 @@ VALID_VERSIONS = ["V5"]
 
 VACCINE_TYPE_TO_DISEASES_HASH_KEY = "vacc_to_diseases"
 ODS_CODE_TO_SUPPLIER_SYSTEM_HASH_KEY = "ods_code_to_supplier"
+EXTENDED_ATTRIBUTES_PREFIXES = "Vaccination_Extended_Attributes"
 
 ERROR_TYPE_TO_STATUS_CODE_MAP = {
     VaccineTypePermissionsError: 403,

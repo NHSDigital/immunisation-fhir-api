@@ -27,10 +27,18 @@ class FileDetails:
     vaccine type.
     """
 
-    def __init__(self, supplier: str, vaccine_type: str, ods_code: str, file_number: int = 1):
-        self.vaccine_type = vaccine_type.upper()
-        self.ods_code = ods_code.upper()
-        self.supplier = supplier.upper()
+    def __init__(
+        self,
+        supplier: str = "RAVS",
+        vaccine_type: str = None,
+        ods_code: str = None,
+        file_number: int = 1,
+        organization_code: str = None,
+    ):
+        self.vaccine_type = vaccine_type.upper() if vaccine_type else None
+        self.ods_code = ods_code.upper() if ods_code else "X8E5B"
+        self.organization_code = organization_code
+        self.supplier = supplier.upper() if supplier else None
         self.queue_name = f"{self.supplier}_{self.vaccine_type}"
 
         self.created_at_formatted_string = f"200{file_number}0101T00000000"
@@ -39,7 +47,14 @@ class FileDetails:
         self.name = f"{self.vaccine_type}/ {self.supplier} file"
 
         file_date_and_time_string = f"20000101T0000000{file_number}"
-        self.file_key = f"{vaccine_type}_Vaccinations_v5_{ods_code}_{file_date_and_time_string}.csv"
+        extended_attributes_prefix = "Vaccination_Extended_Attributes"
+        if self.vaccine_type.startswith(extended_attributes_prefix):
+            file_key = f"{extended_attributes_prefix}_v1_5_{organization_code}_{file_date_and_time_string}.csv"
+        else:
+            file_key = f"{vaccine_type}_Vaccinations_v5_{ods_code}_{file_date_and_time_string}.csv"
+
+        self.file_key = file_key
+
         self.ack_file_key = f"ack/{self.file_key[:-4]}_InfAck_{self.created_at_formatted_string}.csv"
 
         self.permissions_list = [f"{self.vaccine_type}_FULL"]
@@ -78,6 +93,9 @@ class MockFileDetails:
     emis_flu = FileDetails("EMIS", "FLU", "YGM41")
     emis_rsv = FileDetails("EMIS", "RSV", "YGM41")
     ravs_flu = FileDetails("RAVS", "FLU", "X8E5B")
+    extended_attributes_file = FileDetails(
+        vaccine_type="Vaccination_Extended_Attributes", file_number=1, organization_code="RJ123"
+    )
 
 
 MOCK_FILE_HEADERS = (

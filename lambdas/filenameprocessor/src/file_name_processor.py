@@ -16,6 +16,7 @@ from common.log_decorator import logging_decorator
 from common.models.errors import UnhandledAuditTableError
 from constants import (
     ERROR_TYPE_TO_STATUS_CODE_MAP,
+    EXTENDED_ATTRIBUTES_PREFIXES,
     SOURCE_BUCKET_NAME,
     FileNotProcessedReason,
     FileStatus,
@@ -76,10 +77,12 @@ def handle_record(record) -> dict:
         message_id = str(uuid4())
         s3_response = get_s3_client().get_object(Bucket=bucket_name, Key=file_key)
         created_at_formatted_string, expiry_timestamp = get_creation_and_expiry_times(s3_response)
+        if file_key.startswith(EXTENDED_ATTRIBUTES_PREFIXES):
+            pass
+        else:
+            vaccine_type, supplier = validate_file_key(file_key)
 
-        vaccine_type, supplier = validate_file_key(file_key)
         permissions = validate_vaccine_type_permissions(vaccine_type=vaccine_type, supplier=supplier)
-
         queue_name = f"{supplier}_{vaccine_type}"
         upsert_audit_table(
             message_id,
