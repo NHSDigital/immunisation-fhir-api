@@ -46,8 +46,8 @@
       "MENACWY.CRUDS",
       "MMR.CRUDS",
       "MMRV.CRUDS",
-      "PNEUMOCOCCAL.CRUDS",
       "PERTUSSIS.CRUDS",
+      "PNEUMOCOCCAL.CRUDS",
       "RSV.CRUDS",
       "SHINGLES.CRUDS"
     ],
@@ -63,8 +63,8 @@
       "MENACWY.CRUDS",
       "MMR.CRUDS",
       "MMRV.CRUDS",
-      "PNEUMOCOCCAL.CRUDS",
       "PERTUSSIS.CRUDS",
+      "PNEUMOCOCCAL.CRUDS",
       "RSV.CRUDS",
       "SHINGLES.CRUDS"
     ],
@@ -74,12 +74,14 @@
     "supplier": "TPP",
     "permissions": [
       "3IN1.CRUDS",
+      "COVID.CRUDS",
+      "FLU.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
       "MMR.CRUDS",
       "MMRV.CRUDS",
-      "PNEUMOCOCCAL.CRUDS",
       "PERTUSSIS.CRUDS",
+      "PNEUMOCOCCAL.CRUDS",
       "RSV.CRUDS",
       "SHINGLES.CRUDS"
     ],
@@ -89,10 +91,16 @@
     "supplier": "MEDICUS",
     "permissions": [
       "3IN1.CRUDS",
+      "COVID.CRUDS",
+      "FLU.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
       "MMR.CRUDS",
-      "RSV.CRUDS"
+      "MMRV.CRUDS",
+      "PERTUSSIS.CRUDS",
+      "PNEUMOCOCCAL.CRUDS",
+      "RSV.CRUDS",
+      "SHINGLES.CRUDS"
     ],
     "ods_codes": ["YGMYW"]
   },
@@ -110,8 +118,8 @@
       "MENACWY.CRUDS",
       "MMR.CRUDS",
       "MMRV.CRUDS",
-      "PNEUMOCOCCAL.CRUDS",
       "PERTUSSIS.CRUDS",
+      "PNEUMOCOCCAL.CRUDS",
       "RSV.CRUDS",
       "SHINGLES.CRUDS"
     ]
@@ -126,8 +134,8 @@
       "MENACWY.CRUDS",
       "MMR.CRUDS",
       "MMRV.CRUDS",
-      "PNEUMOCOCCAL.CRUDS",
       "PERTUSSIS.CRUDS",
+      "PNEUMOCOCCAL.CRUDS",
       "RSV.CRUDS",
       "SHINGLES.CRUDS"
     ]
