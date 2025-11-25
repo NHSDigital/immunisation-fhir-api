@@ -96,7 +96,7 @@ class TestCase:
         if not self.identifier:
             raise Exception("Identifier not set. Generate the CSV file first.")
 
-        # Identifier PK could be different to Identifier in the resource due to data uplift as part of VED-893. This
+        # Identifier PK will be different to Identifier in the resource due to data uplift as part of VED-893. This
         # only affects TPP and EMIS
         if self.ods == "YGA":
             return f"{TPP_V5_SUPPLIER_IDENTIFIER_SYSTEM}#{self.identifier}"
@@ -136,7 +136,6 @@ class TestCase:
         for action in self.actions:
             row = create_row(
                 self.identifier,
-                self.ods,
                 self.dose_amount,
                 action.action,
                 self.header,
@@ -153,7 +152,7 @@ class TestCase:
         return f"{vax_type}_Vaccinations_v{version}_{ods}_{timestamp}.csv"
 
     def cleanup(self):
-        aws_cleanup(self.key, self.get_identifier_pk(), self.ack_keys)
+        aws_cleanup(self.key, self.identifier, self.ack_keys)
 
 
 def create_test_cases(test_case_dict: dict) -> list[TestCase]:
