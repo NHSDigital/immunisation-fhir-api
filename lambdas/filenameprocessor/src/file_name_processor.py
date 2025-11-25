@@ -112,9 +112,6 @@ def handle_record(record) -> dict:
         s3_response = get_s3_client().get_object(Bucket=bucket_name, Key=file_key)
         created_at_formatted_string, expiry_timestamp = get_creation_and_expiry_times(s3_response)
 
-        vaccine_type, supplier = validate_file_key(file_key)
-        permissions = validate_vaccine_type_permissions(vaccine_type=vaccine_type, supplier=supplier)
-
         # here: if it's an EA file, move it, and upsert it to PROCESSING; use the bucket name as the queue name
         if TEST_EA_FILENAME in file_key:
             dest_bucket_name = TEST_EA_BUCKET
@@ -133,6 +130,12 @@ def handle_record(record) -> dict:
 
             # TODO: check the file is in the dest bucket, upsert again accordingly.
             # NB: not clear yet whether we need to do this in an entirely new lambda.
+            # Current thoughts is that we don't, because s3_client.copy_object is synchronous,
+            # therefore the only time we should fail is if the dest bucket is unavailable or we don't
+            # have permissions.
+            # NB - in this situation, surely we should not delete the original file, but move it somewhere?
+            # hence, break up move_file_to_bucket()
+
             if is_file_in_bucket(dest_bucket_name, file_key):
                 status_code = 200
                 message = (f"Successfully sent to {dest_bucket_name} for further processing",)
@@ -158,6 +161,9 @@ def handle_record(record) -> dict:
                 "message_id": message_id,
             }
         else:
+            vaccine_type, supplier = validate_file_key(file_key)
+            permissions = validate_vaccine_type_permissions(vaccine_type=vaccine_type, supplier=supplier)
+
             queue_name = f"{supplier}_{vaccine_type}"
             upsert_audit_table(
                 message_id,
