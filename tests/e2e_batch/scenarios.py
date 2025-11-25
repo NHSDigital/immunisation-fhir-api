@@ -5,13 +5,12 @@ from datetime import datetime, timezone
 import pandas as pd
 from clients import logger
 from errors import DynamoDBMismatchError
+from tests.e2e_batch.constants import EMIS_V5_SUPPLIER_IDENTIFIER_SYSTEM, TPP_V5_SUPPLIER_IDENTIFIER_SYSTEM
 from vax_suppliers import OdsVax, TestPair
 
 from constants import (
     ACK_BUCKET,
-    EMIS_V5_SUPPLIER_IDENTIFIER_SYSTEM,
     RAVS_URI,
-    TPP_V5_SUPPLIER_IDENTIFIER_SYSTEM,
     ActionFlag,
     BusRowResult,
     DestinationType,
