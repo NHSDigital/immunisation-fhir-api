@@ -9,6 +9,8 @@ NOTE: The expected file format for incoming files from the data sources bucket i
 import argparse
 from uuid import uuid4
 
+from botocore.exceptions import ClientError
+
 from audit_table import upsert_audit_table
 from common.aws_s3_utils import move_file
 from common.clients import STREAM_NAME, get_s3_client, logger
@@ -30,6 +32,39 @@ from models.errors import (
 from send_sqs_message import make_and_send_sqs_message
 from supplier_permissions import validate_vaccine_type_permissions
 from utils_for_filenameprocessor import get_creation_and_expiry_times
+
+# PoC for VED-902:
+# 1. if a filename containing a certain string appears in our bucket,
+# move it into a test bucket and upsert in-progress to the audit table (this bit is 901)
+# 2. check that the filename has arrived in the bucket. if so, upsert completed, if not, upsert an error.
+# Thoughts:- there is naturally going to be a delay on the file move; when do we check?
+# We could implement a new lambda triggered on it BUT if it's never triggered, we never get the upsert.
+
+TEST_EA_BUCKET = "902-test-ea-bucket"
+TEST_EA_FILENAME = "Vaccination_Extended_Attributes"
+
+
+# this is a copy of the move_file from mesh_processor
+def move_file_to_bucket(source_bucket: str, source_key: str, destination_bucket: str, destination_key: str) -> None:
+    s3_client = get_s3_client()
+    s3_client.copy_object(
+        CopySource={"Bucket": source_bucket, "Key": source_key},
+        Bucket=destination_bucket,
+        Key=destination_key,
+    )
+    s3_client.delete_object(
+        Bucket=source_bucket,
+        Key=source_key,
+    )
+
+
+def is_file_in_bucket(bucket_name: str, file_key: str) -> bool:
+    try:
+        s3_client = get_s3_client()
+        s3_client.head_object(Bucket=bucket_name, Key=file_key)
+    except ClientError:
+        return False
+    return True
 
 
 # NOTE: logging_decorator is applied to handle_record function, rather than lambda_handler, because
@@ -80,35 +115,78 @@ def handle_record(record) -> dict:
         vaccine_type, supplier = validate_file_key(file_key)
         permissions = validate_vaccine_type_permissions(vaccine_type=vaccine_type, supplier=supplier)
 
-        queue_name = f"{supplier}_{vaccine_type}"
-        upsert_audit_table(
-            message_id,
-            file_key,
-            created_at_formatted_string,
-            expiry_timestamp,
-            queue_name,
-            FileStatus.QUEUED,
-        )
-        make_and_send_sqs_message(
-            file_key,
-            message_id,
-            permissions,
-            vaccine_type,
-            supplier,
-            created_at_formatted_string,
-        )
+        # here: if it's an EA file, move it, and upsert it to PROCESSING; use the bucket name as the queue name
+        if TEST_EA_FILENAME in file_key:
+            dest_bucket_name = TEST_EA_BUCKET
 
-        logger.info("Lambda invocation successful for file '%s'", file_key)
+            move_file_to_bucket(bucket_name, file_key, dest_bucket_name, file_key)
 
-        # Return details for logs
-        return {
-            "statusCode": 200,
-            "message": "Successfully sent to SQS for further processing",
-            "file_key": file_key,
-            "message_id": message_id,
-            "vaccine_type": vaccine_type,
-            "supplier": supplier,
-        }
+            upsert_audit_table(
+                message_id,
+                file_key,
+                created_at_formatted_string,
+                expiry_timestamp,
+                dest_bucket_name,
+                FileStatus.PROCESSING,
+            )
+            logger.info("Lambda invocation successful for file '%s'", file_key)
+
+            # TODO: check the file is in the dest bucket, upsert again accordingly.
+            # NB: not clear yet whether we need to do this in an entirely new lambda.
+            if is_file_in_bucket(dest_bucket_name, file_key):
+                status_code = 200
+                message = (f"Successfully sent to {dest_bucket_name} for further processing",)
+                file_status = FileStatus.PROCESSED
+                upsert_audit_table(
+                    message_id,
+                    file_key,
+                    created_at_formatted_string,
+                    expiry_timestamp,
+                    dest_bucket_name,
+                    file_status,
+                )
+            else:
+                status_code = 400
+                message = (f"Failed to send to {dest_bucket_name} for further processing",)
+                file_status = FileStatus.FAILED
+
+            # Return details for logs
+            return {
+                "statusCode": status_code,
+                "message": message,
+                "file_key": file_key,
+                "message_id": message_id,
+            }
+        else:
+            queue_name = f"{supplier}_{vaccine_type}"
+            upsert_audit_table(
+                message_id,
+                file_key,
+                created_at_formatted_string,
+                expiry_timestamp,
+                queue_name,
+                FileStatus.QUEUED,
+            )
+            make_and_send_sqs_message(
+                file_key,
+                message_id,
+                permissions,
+                vaccine_type,
+                supplier,
+                created_at_formatted_string,
+            )
+
+            logger.info("Lambda invocation successful for file '%s'", file_key)
+
+            # Return details for logs
+            return {
+                "statusCode": 200,
+                "message": "Successfully sent to SQS for further processing",
+                "file_key": file_key,
+                "message_id": message_id,
+                "vaccine_type": vaccine_type,
+                "supplier": supplier,
+            }
 
     except (  # pylint: disable=broad-exception-caught
         VaccineTypePermissionsError,
