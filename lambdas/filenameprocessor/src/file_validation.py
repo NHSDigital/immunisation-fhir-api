@@ -37,7 +37,12 @@ def is_valid_datetime(timestamp: str) -> bool:
     return True
 
 
-def validate_file_key(file_key: str) -> tuple[str, str]:
+def validate_extended_attributes_file_key(file_key: str) -> tuple[str, str]:
+    if not match(r"^[^_.]*_[^_.]*_[^_.]*_[^_.]*_[^_.]*_[^_.]*_[^_.]*", file_key):
+        raise InvalidFileKeyError("Initial file validation failed: invalid extended attributes file key format")
+
+
+def validate_batch_file_key(file_key: str) -> tuple[str, str]:
     """
     Checks that all elements of the file key are valid, raises an exception otherwise.
     Returns a tuple containing the vaccine_type and supplier (both converted to upper case).

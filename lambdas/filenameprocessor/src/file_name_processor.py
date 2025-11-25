@@ -21,7 +21,7 @@ from constants import (
     FileNotProcessedReason,
     FileStatus,
 )
-from file_validation import is_file_in_directory_root, validate_file_key
+from file_validation import is_file_in_directory_root, validate_batch_file_key, validate_extended_attributes_file_key
 from make_and_upload_ack_file import make_and_upload_the_ack_file
 from models.errors import (
     InvalidFileKeyError,
@@ -77,10 +77,12 @@ def handle_record(record) -> dict:
         message_id = str(uuid4())
         s3_response = get_s3_client().get_object(Bucket=bucket_name, Key=file_key)
         created_at_formatted_string, expiry_timestamp = get_creation_and_expiry_times(s3_response)
+
         if file_key.startswith(EXTENDED_ATTRIBUTES_PREFIXES):
-            pass
+            validate_extended_attributes_file_key(file_key)
+            move_file(bucket_name, file_key, f"archive/{file_key}")
         else:
-            vaccine_type, supplier = validate_file_key(file_key)
+            vaccine_type, supplier = validate_batch_file_key(file_key)
 
         permissions = validate_vaccine_type_permissions(vaccine_type=vaccine_type, supplier=supplier)
         queue_name = f"{supplier}_{vaccine_type}"
@@ -166,21 +168,37 @@ def handle_unexpected_bucket_name(bucket_name: str, file_key: str) -> dict:
     """Handles scenario where Lambda was not invoked by the data-sources bucket. Should not occur due to terraform
     config and overarching design"""
     try:
-        vaccine_type, supplier = validate_file_key(file_key)
-        logger.error(
-            "Unable to process file %s due to unexpected bucket name %s",
-            file_key,
-            bucket_name,
-        )
-        message = f"Failed to process file due to unexpected bucket name {bucket_name}"
+        if file_key.startswith(EXTENDED_ATTRIBUTES_PREFIXES):
+            validate_extended_attributes_file_key(file_key)
+            logger.error(
+                "Unable to process file %s due to unexpected bucket name %s",
+                file_key,
+                bucket_name,
+            )
+            message = f"Failed to process file due to unexpected bucket name {bucket_name}"
+            return {
+                "statusCode": 500,
+                "message": message,
+                "file_key": file_key,
+                "vaccine_type": "extended_attributes",
+                "supplier": "unknown",
+            }
+        else:
+            vaccine_type, supplier = validate_batch_file_key(file_key)
+            logger.error(
+                "Unable to process file %s due to unexpected bucket name %s",
+                file_key,
+                bucket_name,
+            )
+            message = f"Failed to process file due to unexpected bucket name {bucket_name}"
 
-        return {
-            "statusCode": 500,
-            "message": message,
-            "file_key": file_key,
-            "vaccine_type": vaccine_type,
-            "supplier": supplier,
-        }
+            return {
+                "statusCode": 500,
+                "message": message,
+                "file_key": file_key,
+                "vaccine_type": vaccine_type,
+                "supplier": supplier,
+            }
 
     except Exception as error:
         logger.error(
