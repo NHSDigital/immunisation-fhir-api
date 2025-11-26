@@ -114,14 +114,18 @@ def handle_record(record) -> dict:
                 FileStatus.PROCESSING,
             )
 
-            s3_client = get_s3_client()
-            s3_client.copy_object(
-                CopySource={"Bucket": bucket_name, "Key": file_key},
-                Bucket=dest_bucket_name,
-                Key=file_key,
-                ExpectedBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT,
-                ExpectedSourceBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT,
-            )
+            logger.info(f"Copying file {file_key} to bucket {dest_bucket_name} with owner {EXPECTED_BUCKET_OWNER_ACCOUNT} ...")
+            try:
+                s3_client = get_s3_client()
+                s3_client.copy_object(
+                    CopySource={"Bucket": bucket_name, "Key": file_key},
+                    Bucket=dest_bucket_name,
+                    Key=file_key,
+                    ExpectedBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT,
+                    ExpectedSourceBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT,
+                )
+            except Exception as e:
+                e.printStackTrace()
 
             logger.info("Lambda invocation successful for file '%s'", file_key)
 
