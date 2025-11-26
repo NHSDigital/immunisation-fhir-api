@@ -7,6 +7,7 @@ NOTE: The expected file format for incoming files from the data sources bucket i
 """
 
 import argparse
+import os
 from uuid import uuid4
 
 from botocore.exceptions import ClientError
@@ -40,22 +41,9 @@ from utils_for_filenameprocessor import get_creation_and_expiry_times
 # Thoughts:- there is naturally going to be a delay on the file move; when do we check?
 # We could implement a new lambda triggered on it BUT if it's never triggered, we never get the upsert.
 
+EXPECTED_BUCKET_OWNER_ACCOUNT = os.getenv("ACCOUNT_ID")
 TEST_EA_BUCKET = "902-test-ea-bucket"
 TEST_EA_FILENAME = "Vaccination_Extended_Attributes"
-
-
-# this is a copy of the move_file from mesh_processor
-def move_file_to_bucket(source_bucket: str, source_key: str, destination_bucket: str, destination_key: str) -> None:
-    s3_client = get_s3_client()
-    s3_client.copy_object(
-        CopySource={"Bucket": source_bucket, "Key": source_key},
-        Bucket=destination_bucket,
-        Key=destination_key,
-    )
-    s3_client.delete_object(
-        Bucket=source_bucket,
-        Key=source_key,
-    )
 
 
 def is_file_in_bucket(bucket_name: str, file_key: str) -> bool:
@@ -114,9 +102,17 @@ def handle_record(record) -> dict:
 
         # here: if it's an EA file, move it, and upsert it to PROCESSING; use the bucket name as the queue name
         if TEST_EA_FILENAME in file_key:
+            queue_name = "TEST_COVID"
             dest_bucket_name = TEST_EA_BUCKET
 
-            move_file_to_bucket(bucket_name, file_key, dest_bucket_name, file_key)
+            s3_client = get_s3_client()
+            s3_client.copy_object(
+                CopySource={"Bucket": bucket_name, "Key": file_key},
+                Bucket=dest_bucket_name,
+                Key=file_key,
+                ExpectedBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT,
+                ExpectedSourceBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT,
+            )
 
             upsert_audit_table(
                 message_id,
@@ -136,6 +132,9 @@ def handle_record(record) -> dict:
             # NB - in this situation, surely we should not delete the original file, but move it somewhere?
             # hence, break up move_file_to_bucket()
 
+            # NB: we don't have the vaccine type & supplier - we have to rethink the queue_name field.
+            # Akin will talk to Paul
+
             if is_file_in_bucket(dest_bucket_name, file_key):
                 status_code = 200
                 message = (f"Successfully sent to {dest_bucket_name} for further processing",)
@@ -148,10 +147,16 @@ def handle_record(record) -> dict:
                     dest_bucket_name,
                     file_status,
                 )
+                s3_client.delete_object(
+                    Bucket=bucket_name,
+                    Key=file_key,
+                    ExpectedBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT,
+                )
             else:
                 status_code = 400
                 message = (f"Failed to send to {dest_bucket_name} for further processing",)
                 file_status = FileStatus.FAILED
+                move_file(bucket_name, file_key, f"archive/{file_key}")
 
             # Return details for logs
             return {
