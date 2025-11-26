@@ -4,7 +4,7 @@ import logging
 import os
 import urllib.parse
 import uuid
-from typing import Optional, cast
+from typing import Any, Optional, cast
 from uuid import uuid4
 
 from fhir.resources.R4B.bundle import (
@@ -36,7 +36,6 @@ from common.models.fhir_immunization import ImmunizationValidator
 from common.models.utils.generic_utils import (
     get_contained_patient,
     get_occurrence_datetime,
-    make_search_bundle,
 )
 from common.models.utils.validation_utils import (
     get_vaccine_type,
@@ -103,7 +102,7 @@ class FhirService:
         resource, resource_metadata = self.immunization_repo.get_immunization_by_identifier(identifier)
 
         if not resource:
-            return make_search_bundle(resource, None, elements, identifier, base_url)
+            return self.make_empty_identifier_search_bundle(base_url)
 
         vaccination_type = get_vaccine_type(resource)
 
@@ -113,7 +112,9 @@ class FhirService:
         patient_full_url = f"urn:uuid:{str(uuid4())}"
         filtered_resource = Filter.search(resource, patient_full_url)
 
-        return make_search_bundle(filtered_resource, resource_metadata.resource_version, elements, identifier, base_url)
+        return self.make_identifier_search_bundle(
+            filtered_resource, resource_metadata.resource_version, elements, identifier, base_url
+        )
 
     def get_immunization_and_version_by_id(self, imms_id: str, supplier_system: str) -> tuple[Immunization, str]:
         """
@@ -335,6 +336,58 @@ class FhirService:
             return True
 
         return occurrence_datetime.date() <= date_to
+
+    def make_identifier_search_bundle(
+        self,
+        resource: Optional[dict],
+        version_id: Optional[int],
+        elements: Optional[set[str]],
+        identifier: Identifier,
+        base_url: str,
+    ) -> FhirBundle:
+        searched_url = f"{base_url}?identifier={identifier.system}|{identifier.value}" + (
+            f"&_elements={','.join(sorted(elements))}" if elements else ""
+        )
+
+        if not resource:
+            return self.make_empty_identifier_search_bundle(searched_url)
+
+        meta = {"versionId": version_id}
+
+        # Full Immunization payload to be returned if only the identifier parameter was provided and truncated when
+        # _elements is used
+        if elements is not None:
+            resource_for_bundle: dict[str, Any] = {"resourceType": "Immunization"}
+            if "id" in elements:
+                resource_for_bundle["id"] = resource["id"]
+            if "meta" in elements:
+                resource_for_bundle["meta"] = meta
+
+        else:
+            resource_for_bundle = copy.deepcopy(resource)
+            resource_for_bundle["meta"] = meta
+
+        entry = BundleEntry.construct(
+            fullUrl=f"{base_url}/{resource['id']}",
+            resource=(
+                Immunization.construct(**resource_for_bundle)
+                if elements
+                else Immunization.parse_obj(resource_for_bundle)
+            ),
+            search=BundleEntrySearch.construct(mode="match") if not elements else None,
+        )
+
+        return FhirBundle(
+            type="searchset",
+            link=[BundleLink(relation="self", url=searched_url)],
+            entry=[entry],
+            total=1,
+        )
+
+    @staticmethod
+    def make_empty_identifier_search_bundle(base_url: str) -> FhirBundle:
+        no_results_url = f"{base_url}?identifier=None"
+        return FhirBundle(entry=[], link=[BundleLink(relation="self", url=no_results_url)], type="searchset", total=0)
 
     @staticmethod
     def process_patient_for_bundle(patient: dict):
