@@ -1,80 +1,22 @@
 import argparse
-import base64
 import json
-import logging
 import pprint
-import urllib.parse
-import uuid
 
-from aws_lambda_typing import context as context_
-from aws_lambda_typing import events
+from aws_lambda_typing.context import Context
+from aws_lambda_typing.events import APIGatewayProxyEventV1
 
-from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE, MAX_RESPONSE_SIZE_BYTES
-from controller.aws_apig_response_utils import create_response
+from controller.constants import SEARCH_IMMS_POST_PATH
 from controller.fhir_controller import FhirController, make_controller
 from log_structure import function_info
-from models.errors import Code, Severity, create_operation_outcome
-
-logging.basicConfig(level="INFO")
-logger = logging.getLogger()
 
 
 @function_info
-def search_imms_handler(event: events.APIGatewayProxyEventV1, _context: context_):
+def search_imms_handler(event: APIGatewayProxyEventV1, _context: Context):
     return search_imms(event, make_controller())
 
 
-def search_imms(event: events.APIGatewayProxyEventV1, controller: FhirController):
-    try:
-        query_params = event.get("queryStringParameters", {})
-        body = event.get("body")
-        body_has_immunization_identifier = False
-        query_string_has_immunization_identifier = False
-        query_string_has_element = False
-        body_has_immunization_element = False
-        if not (query_params is None and body is None):
-            if query_params:
-                query_string_has_immunization_identifier = "identifier" in event.get("queryStringParameters", {})
-                query_string_has_element = "_elements" in event.get("queryStringParameters", {})
-            # Decode body from base64
-            if body:
-                decoded_body = base64.b64decode(body).decode("utf-8")
-                # Parse the URL encoded body
-                parsed_body = urllib.parse.parse_qs(decoded_body)
-
-                # Check for 'identifier' in body
-                body_has_immunization_identifier = "identifier" in parsed_body
-                body_has_immunization_element = "_elements" in parsed_body
-            if (
-                query_string_has_immunization_identifier
-                or body_has_immunization_identifier
-                or query_string_has_element
-                or body_has_immunization_element
-            ):
-                return controller.get_immunization_by_identifier(event)
-        response = controller.search_immunizations(event)
-
-        result_json = json.dumps(response)
-        result_size = len(result_json.encode("utf-8"))
-
-        if result_size > MAX_RESPONSE_SIZE_BYTES:
-            exp_error = create_operation_outcome(
-                resource_id=str(uuid.uuid4()),
-                severity=Severity.error,
-                code=Code.invalid,
-                diagnostics="Search returned too many results. Please narrow down the search",
-            )
-            return create_response(400, exp_error)
-        return response
-    except Exception:  # pylint: disable = broad-exception-caught
-        logger.exception("Unhandled exception")
-        exp_error = create_operation_outcome(
-            resource_id=str(uuid.uuid4()),
-            severity=Severity.error,
-            code=Code.server_error,
-            diagnostics=GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE,
-        )
-        return create_response(500, exp_error)
+def search_imms(event: APIGatewayProxyEventV1, controller: FhirController):
+    return controller.search_immunizations(event, is_post_endpoint_req=event.get("path") == SEARCH_IMMS_POST_PATH)
 
 
 if __name__ == "__main__":
@@ -112,7 +54,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    event: events.APIGatewayProxyEventV1 = {
+    event: APIGatewayProxyEventV1 = {
         "multiValueQueryStringParameters": {
             "patient.identifier": [args.patient_identifier],
             "-immunization.target": [",".join(args.immunization_target)],

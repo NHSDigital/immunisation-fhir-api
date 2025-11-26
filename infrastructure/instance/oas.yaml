@@ -128,28 +128,6 @@ paths:
         httpMethod: "POST"
         timeoutInMillis: 30000
         type: "AWS_PROXY"
-      parameters:
-        - name: patient.identifier
-          in: query
-          required: true
-          schema:
-            type: string
-        - name: -immunization.target
-          in: query
-          schema:
-            type: string
-        - name: -date.from
-          in: query
-          schema:
-            type: string
-        - name: -date.to
-          in: query
-          schema:
-            type: string
-        - name: _include
-          in: query
-          schema:
-            type: string
       responses:
         "201":
           description: An Immunisation search event
