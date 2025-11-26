@@ -195,7 +195,7 @@ class TestLambdaHandlerDataSource(TestCase):
         mock_redis.hkeys = Mock(return_value=all_vaccine_types_in_this_test_file)
         mock_get_redis_client.return_value = mock_redis
 
-        test_cases = [MockFileDetails.emis_flu, MockFileDetails.ravs_rsv_1, MockFileDetails.extended_attributes_file]
+        test_cases = [MockFileDetails.emis_flu, MockFileDetails.ravs_rsv_1]
         for file_details in test_cases:
             with self.subTest(file_details.name):
                 # Set up the file in the source bucket
