@@ -107,6 +107,7 @@ def process_optional_params(
     """Parse optional params (date.from, date.to, _include).
     Raises ParameterExceptionError for any validation error.
     """
+    errors = []
     include = None
     date_from = None
     date_to = None
@@ -117,35 +118,30 @@ def process_optional_params(
 
     if date_froms:
         if len(date_froms) != 1:
-            raise ParameterExceptionError(
-                f"Search parameter {ImmunizationSearchParameterName.DATE_FROM} may have one value at most."
-            )
+            errors.append(f"Search parameter {ImmunizationSearchParameterName.DATE_FROM} may have one value at most.")
         try:
             date_from = datetime.datetime.strptime(date_froms[0], "%Y-%m-%d").date()
         except ValueError:
-            raise ParameterExceptionError(
-                f"Search parameter {ImmunizationSearchParameterName.DATE_FROM} must be in format: YYYY-MM-DD"
-            )
+            errors.append(f"Search parameter {ImmunizationSearchParameterName.DATE_FROM} must be in format: YYYY-MM-DD")
 
     if date_tos:
         if len(date_tos) != 1:
-            raise ParameterExceptionError(
-                f"Search parameter {ImmunizationSearchParameterName.DATE_TO} may have one value at most."
-            )
+            errors.append(f"Search parameter {ImmunizationSearchParameterName.DATE_TO} may have one value at most.")
         try:
             date_to = datetime.datetime.strptime(date_tos[0], "%Y-%m-%d").date()
         except ValueError:
-            raise ParameterExceptionError(
-                f"Search parameter {ImmunizationSearchParameterName.DATE_TO} must be in format: YYYY-MM-DD"
-            )
+            errors.append(f"Search parameter {ImmunizationSearchParameterName.DATE_TO} must be in format: YYYY-MM-DD")
 
     if includes:
         if includes[0].lower() != "immunization:patient":
-            raise ParameterExceptionError(
+            errors.append(
                 f"Search parameter {ImmunizationSearchParameterName.INCLUDE} may only be "
                 f"'Immunization:patient' if provided."
             )
         include = includes[0]
+
+    if errors:
+        raise ParameterExceptionError("; ".join(errors))
 
     return date_from, date_to, include
 
