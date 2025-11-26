@@ -15,7 +15,7 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from file_validation import (
         is_file_in_directory_root,
         is_valid_datetime,
-        validate_file_key,
+        validate_batch_file_key,
     )
     from models.errors import InvalidFileKeyError
 
@@ -90,7 +90,7 @@ class TestFileKeyValidation(TestCase):
                 mock_redis.hkeys.return_value = ["FLU", "RSV"]
                 mock_get_redis_client.return_value = mock_redis
 
-                self.assertEqual(validate_file_key(file_key), expected_result)
+                self.assertEqual(validate_batch_file_key(file_key), expected_result)
                 mock_redis.hkeys.assert_called_with("vacc_to_diseases")
                 mock_redis.hget.assert_called_with("ods_code_to_supplier", ods_code)
 
@@ -169,7 +169,7 @@ class TestFileKeyValidation(TestCase):
                 mock_get_redis_client.return_value = mock_redis
 
                 with self.assertRaises(InvalidFileKeyError) as context:
-                    validate_file_key(file_key)
+                    validate_batch_file_key(file_key)
                 self.assertEqual(str(context.exception), expected_result)
                 mock_redis.hkeys.assert_called_with("vacc_to_diseases")
 
@@ -207,6 +207,6 @@ class TestFileKeyValidation(TestCase):
                 mock_get_redis_client.return_value = mock_redis
 
                 with self.assertRaises(InvalidFileKeyError) as context:
-                    validate_file_key(file_key)
+                    validate_batch_file_key(file_key)
                 self.assertEqual(str(context.exception), expected_result)
                 mock_redis.hkeys.assert_not_called()

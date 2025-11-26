@@ -10,11 +10,12 @@ import argparse
 from uuid import uuid4
 
 from audit_table import upsert_audit_table
-from common.aws_s3_utils import move_file
+from common.aws_s3_utils import move_file, move_file_outside_bucket
 from common.clients import STREAM_NAME, get_s3_client, logger
 from common.log_decorator import logging_decorator
 from common.models.errors import UnhandledAuditTableError
 from constants import (
+    DPS_DESTINATION_BUCKET_NAME,
     ERROR_TYPE_TO_STATUS_CODE_MAP,
     EXTENDED_ATTRIBUTES_PREFIXES,
     SOURCE_BUCKET_NAME,
@@ -79,41 +80,49 @@ def handle_record(record) -> dict:
         created_at_formatted_string, expiry_timestamp = get_creation_and_expiry_times(s3_response)
 
         if file_key.startswith(EXTENDED_ATTRIBUTES_PREFIXES):
-            validate_extended_attributes_file_key(file_key)
-            move_file(bucket_name, file_key, f"archive/{file_key}")
+            queue_name = validate_extended_attributes_file_key(file_key)
+            move_file_outside_bucket(bucket_name, file_key, DPS_DESTINATION_BUCKET_NAME, f"archive/{file_key}")
+
+            upsert_audit_table(
+                message_id,
+                file_key,
+                created_at_formatted_string,
+                expiry_timestamp,
+                queue_name,
+                FileStatus.PROCESSING,
+            )
         else:
             vaccine_type, supplier = validate_batch_file_key(file_key)
+            permissions = validate_vaccine_type_permissions(vaccine_type=vaccine_type, supplier=supplier)
+            queue_name = f"{supplier}_{vaccine_type}"
+            upsert_audit_table(
+                message_id,
+                file_key,
+                created_at_formatted_string,
+                expiry_timestamp,
+                queue_name,
+                FileStatus.QUEUED,
+            )
+            make_and_send_sqs_message(
+                file_key,
+                message_id,
+                permissions,
+                vaccine_type,
+                supplier,
+                created_at_formatted_string,
+            )
 
-        permissions = validate_vaccine_type_permissions(vaccine_type=vaccine_type, supplier=supplier)
-        queue_name = f"{supplier}_{vaccine_type}"
-        upsert_audit_table(
-            message_id,
-            file_key,
-            created_at_formatted_string,
-            expiry_timestamp,
-            queue_name,
-            FileStatus.QUEUED,
-        )
-        make_and_send_sqs_message(
-            file_key,
-            message_id,
-            permissions,
-            vaccine_type,
-            supplier,
-            created_at_formatted_string,
-        )
+            logger.info("Lambda invocation successful for file '%s'", file_key)
 
-        logger.info("Lambda invocation successful for file '%s'", file_key)
-
-        # Return details for logs
-        return {
-            "statusCode": 200,
-            "message": "Successfully sent to SQS for further processing",
-            "file_key": file_key,
-            "message_id": message_id,
-            "vaccine_type": vaccine_type,
-            "supplier": supplier,
-        }
+            # Return details for logs
+            return {
+                "statusCode": 200,
+                "message": "Successfully sent to SQS for further processing",
+                "file_key": file_key,
+                "message_id": message_id,
+                "vaccine_type": vaccine_type,
+                "supplier": supplier,
+            }
 
     except (  # pylint: disable=broad-exception-caught
         VaccineTypePermissionsError,
