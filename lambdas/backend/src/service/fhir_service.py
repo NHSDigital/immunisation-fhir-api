@@ -2,6 +2,7 @@ import copy
 import datetime
 import logging
 import os
+import urllib.parse
 import uuid
 from typing import Optional, cast
 from uuid import uuid4
@@ -366,28 +367,20 @@ class FhirService:
         date_to: Optional[datetime.date],
         include: Optional[str],
     ) -> str:
-        """Creates url for the searchset Bundle Link. Existing logic always sorted the parameters in the given order
-        below, so this has been maintained"""
-        base_url = f"{get_service_url()}/Immunization?"
-        date_from_optional_part = (
-            f"{ImmunizationSearchParameterName.DATE_FROM}={date_from.isoformat()}&" if date_from is not None else ""
-        )
-        date_to_optional_part = (
-            f"{ImmunizationSearchParameterName.DATE_TO}={date_to.isoformat()}&" if date_to is not None else ""
-        )
+        """Creates url for the searchset Bundle Link."""
+        params = {
+            # Temporarily maintaining this for backwards compatibility with imms history, but we should remove it
+            IMMUNIZATION_TARGET_LEGACY_KEY_NAME: ",".join(immunization_targets),
+            ImmunizationSearchParameterName.IMMUNIZATION_TARGET: ",".join(immunization_targets),
+            ImmunizationSearchParameterName.PATIENT_IDENTIFIER: f"{PATIENT_IDENTIFIER_SYSTEM}|{patient_nhs_number}",
+        }
 
-        # Temporarily maintaining this for backwards compatibility with imms history, but we should remove it
-        immunization_targets_part = f"{IMMUNIZATION_TARGET_LEGACY_KEY_NAME}={','.join(immunization_targets)}&"
-        optional_include_part = f"{ImmunizationSearchParameterName.INCLUDE}={include}&" if include is not None else ""
-        patient_identifier_part = (
-            f"{ImmunizationSearchParameterName.PATIENT_IDENTIFIER}={PATIENT_IDENTIFIER_SYSTEM}|{patient_nhs_number}"
-        )
+        if date_from:
+            params[ImmunizationSearchParameterName.DATE_FROM] = date_from.isoformat()
+        if date_to:
+            params[ImmunizationSearchParameterName.DATE_TO] = date_to.isoformat()
+        if include:
+            params[ImmunizationSearchParameterName.INCLUDE] = include
 
-        return (
-            base_url
-            + date_from_optional_part
-            + date_to_optional_part
-            + immunization_targets_part
-            + optional_include_part
-            + patient_identifier_part
-        )
+        query = urllib.parse.urlencode(params)
+        return f"{get_service_url()}/Immunization?{query}"

@@ -28,4 +28,4 @@ class IdentifierSearchElement(StrEnum):
     META = "meta"
 
 
-IMMUNIZATION_TARGET_LEGACY_KEY_NAME = "immunization-target"
+IMMUNIZATION_TARGET_LEGACY_KEY_NAME = "immunization.target"
