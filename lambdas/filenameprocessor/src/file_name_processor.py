@@ -142,7 +142,7 @@ def handle_record(record) -> dict:
 
             # NB: we don't have the vaccine type & supplier - we have to rethink the queue_name field.
             # Akin will talk to Paul
-            
+
             # ** NB! the current upsert_audit_table() does not allow duplicate message_id.
             # Surely we want to overwrite the PROCESSING message. (as a state machine)
             # To do: fix that method, and its unit tests.
