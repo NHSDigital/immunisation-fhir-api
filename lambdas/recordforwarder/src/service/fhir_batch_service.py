@@ -16,7 +16,7 @@ def uplift_legacy_identifier(immunization: dict):
     # received for some reason. Please see issue VED-904 for more information.
     identifier = immunization.get("identifier")
 
-    if identifier is None or len(identifier) == 0:
+    if identifier is None or len(identifier) != 1:
         # Return here to allow validation to raise appropriate error
         return
 
