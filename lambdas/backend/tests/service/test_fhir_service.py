@@ -766,8 +766,10 @@ class TestSearchImmunizations(TestFhirServiceBase):
             result.link[0],
             BundleLink.construct(
                 relation="self",
-                url="https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization?immunization-target"
-                "=COVID&patient.identifier=https://fhir.nhs.uk/Id/nhs-number|9990548609",
+                url="https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization"
+                "?immunization.target=COVID"
+                "&-immunization.target=COVID"
+                "&patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C9990548609",
             ),
         )
         # Will contain the matched immunization and then the referenced patient resource
@@ -819,9 +821,12 @@ class TestSearchImmunizations(TestFhirServiceBase):
             result.link[0],
             BundleLink.construct(
                 relation="self",
-                url="https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization?-date.from=2021"
-                "-02-06&-date.to=2023-01-01&immunization-target=COVID&patient.identifier="
-                "https://fhir.nhs.uk/Id/nhs-number|9990548609",
+                url="https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization"
+                "?immunization.target=COVID"
+                "&-immunization.target=COVID"
+                "&patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C9990548609"
+                "&-date.from=2021-02-06"
+                "&-date.to=2023-01-01",
             ),
         )
         # Will contain the matched immunization and then the referenced patient resource
@@ -857,8 +862,11 @@ class TestSearchImmunizations(TestFhirServiceBase):
             result.link[0],
             BundleLink.construct(
                 relation="self",
-                url="https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization?immunization-target"
-                "=COVID&_include=Patient.identifier&patient.identifier=https://fhir.nhs.uk/Id/nhs-number|9990548609",
+                url="https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization"
+                "?immunization.target=COVID"
+                "&-immunization.target=COVID"
+                "&patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C9990548609"
+                "&_include=Patient.identifier",
             ),
         )
         # Will contain the matched immunization and then the referenced patient resource
@@ -889,8 +897,10 @@ class TestSearchImmunizations(TestFhirServiceBase):
             result.link[0],
             BundleLink.construct(
                 relation="self",
-                url="https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization?immunization-target"
-                "=FLU&patient.identifier=https://fhir.nhs.uk/Id/nhs-number|9990548609",
+                url="https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization"
+                "?immunization.target=FLU"
+                "&-immunization.target=FLU"
+                "&patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C9990548609",
             ),
         )
         self.assertEqual(len(result.entry), 0)
@@ -925,8 +935,10 @@ class TestSearchImmunizations(TestFhirServiceBase):
             result.link[0],
             BundleLink.construct(
                 relation="self",
-                url="https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization?immunization-target"
-                "=COVID&patient.identifier=https://fhir.nhs.uk/Id/nhs-number|9990548609",
+                url="https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization"
+                "?immunization.target=COVID"
+                "&-immunization.target=COVID"
+                "&patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C9990548609",
             ),
         )
         # Will contain the matched immunization, the referenced patient resource and an OperationOutcome
