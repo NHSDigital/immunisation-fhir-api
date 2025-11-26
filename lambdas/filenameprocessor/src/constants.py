@@ -11,6 +11,7 @@ from models.errors import (
 )
 
 SOURCE_BUCKET_NAME = os.getenv("SOURCE_BUCKET_NAME")
+EA_BUCKET_NAME = os.getenv("EA_BUCKET_NAME")
 AUDIT_TABLE_NAME = os.getenv("AUDIT_TABLE_NAME")
 AUDIT_TABLE_TTL_DAYS = os.getenv("AUDIT_TABLE_TTL_DAYS")
 VALID_VERSIONS = ["V5"]
