@@ -337,8 +337,8 @@ class FhirService:
 
         return occurrence_datetime.date() <= date_to
 
+    @staticmethod
     def make_identifier_search_bundle(
-        self,
         resource: Optional[dict],
         version_id: Optional[int],
         elements: Optional[set[str]],
@@ -348,9 +348,6 @@ class FhirService:
         searched_url = f"{base_url}?identifier={identifier.system}|{identifier.value}" + (
             f"&_elements={','.join(sorted(elements))}" if elements else ""
         )
-
-        if not resource:
-            return self.make_empty_identifier_search_bundle(searched_url)
 
         meta = {"versionId": version_id}
 
