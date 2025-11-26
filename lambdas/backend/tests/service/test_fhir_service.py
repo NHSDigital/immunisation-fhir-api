@@ -280,8 +280,7 @@ class TestGetImmunizationByIdentifier(TestFhirServiceBase):
             result.link[0],
             BundleLink.construct(
                 relation="self",
-                url="https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization?identifier=some-"
-                "system|some-value",
+                url="https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization?identifier=None",
             ),
         )
         self.assertEqual(result.entry, [])
