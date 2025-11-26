@@ -52,7 +52,7 @@ class ImmunizationBatchService:
         the record in the database.
         """
 
-        # TODO: Remove after DPS data migration to new identifiers
+        # This can be removed once DPS completes their identifier data migration.
         uplift_legacy_identifier(immunization)
 
         try:
@@ -76,7 +76,7 @@ class ImmunizationBatchService:
         the record in the database.
         """
 
-        # TODO: Remove after DPS data migration to new identifiers
+        # This can be removed once DPS completes their identifier data migration.
         uplift_legacy_identifier(immunization)
 
         try:
@@ -100,7 +100,7 @@ class ImmunizationBatchService:
         the record in the database.
         """
 
-        # TODO: Remove after DPS data migration to new identifiers
+        # This can be removed once DPS completes their identifier data migration.
         uplift_legacy_identifier(immunization)
 
         return self.immunization_repo.delete_immunization(immunization, supplier_system, vax_type, table, is_present)
