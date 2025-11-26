@@ -280,6 +280,7 @@ resource "aws_lambda_function" "file_processor_lambda" {
       ACCOUNT_ID           = var.immunisation_account_id
       SOURCE_BUCKET_NAME   = aws_s3_bucket.batch_data_source_bucket.bucket
       ACK_BUCKET_NAME      = aws_s3_bucket.batch_data_destination_bucket.bucket
+      EA_BUCKET_NAME       = aws_s3_bucket.batch_data_ea_bucket.bucket
       QUEUE_URL            = aws_sqs_queue.batch_file_created.url
       REDIS_HOST           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
       REDIS_PORT           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
