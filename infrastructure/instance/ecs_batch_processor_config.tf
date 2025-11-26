@@ -208,6 +208,10 @@ resource "aws_ecs_task_definition" "ecs_task" {
         value = aws_s3_bucket.batch_data_destination_bucket.bucket
       },
       {
+        name  = "EA_BUCKET_NAME"
+        value = aws_s3_bucket.batch_data_ea_bucket.bucket
+      },
+      {
         name  = "KINESIS_STREAM_ARN"
         value = local.kinesis_arn
       },

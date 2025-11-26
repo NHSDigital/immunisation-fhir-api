@@ -231,3 +231,78 @@ resource "aws_s3_bucket_policy" "batch_config_bucket_policy" {
     ]
   })
 }
+
+# ---
+# temp: test output bucket for EA files. pending DPS bucket.
+
+resource "aws_s3_bucket" "batch_data_ea_bucket" {
+  bucket        = "${local.batch_prefix}-data-ea"
+  force_destroy = local.is_temp
+}
+
+resource "aws_s3_bucket_public_access_block" "batch_data_ea_bucket_public_access_block" {
+  bucket = aws_s3_bucket.batch_data_ea_bucket.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_policy" "batch_data_ea_bucket_policy" {
+  bucket = aws_s3_bucket.batch_data_ea_bucket.id
+  policy = jsonencode({
+    Version : "2012-10-17",
+    Statement : [
+      {
+        Effect : "Allow",
+        Principal : {
+          AWS : "arn:aws:iam::${var.dspp_core_account_id}:root"
+        },
+        Action : var.environment == "prod" ? [
+          "s3:ListBucket",
+          "s3:GetObject",
+          ] : [
+          "s3:ListBucket",
+          "s3:GetObject",
+          "s3:DeleteObject"
+        ],
+        Resource : [
+          aws_s3_bucket.batch_data_ea_bucket.arn,
+          "${aws_s3_bucket.batch_data_ea_bucket.arn}/*"
+        ]
+      },
+      {
+        Sid    = "HTTPSOnly"
+        Effect = "Deny"
+        Principal = {
+          "AWS" : "*"
+        }
+        Action = "s3:*"
+        Resource = [
+          aws_s3_bucket.batch_data_ea_bucket.arn,
+          "${aws_s3_bucket.batch_data_ea_bucket.arn}/*",
+        ]
+        Condition = {
+          Bool = {
+            "aws:SecureTransport" = "false"
+          }
+        }
+      },
+    ]
+  })
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "s3_batch_ea_encryption" {
+  bucket = aws_s3_bucket.batch_data_ea_bucket.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      kms_master_key_id = data.aws_kms_key.existing_s3_encryption_key.arn
+      sse_algorithm     = "aws:kms"
+    }
+  }
+}
+
+# ---
+

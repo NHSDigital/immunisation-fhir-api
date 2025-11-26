@@ -18,6 +18,7 @@ from common.clients import STREAM_NAME, get_s3_client, logger
 from common.log_decorator import logging_decorator
 from common.models.errors import UnhandledAuditTableError
 from constants import (
+    EA_BUCKET_NAME,
     ERROR_TYPE_TO_STATUS_CODE_MAP,
     SOURCE_BUCKET_NAME,
     FileNotProcessedReason,
@@ -42,7 +43,6 @@ from utils_for_filenameprocessor import get_creation_and_expiry_times
 # We could implement a new lambda triggered on it BUT if it's never triggered, we never get the upsert.
 
 EXPECTED_BUCKET_OWNER_ACCOUNT = os.getenv("ACCOUNT_ID")
-TEST_EA_BUCKET = "902-test-ea-bucket"
 TEST_EA_FILENAME = "Vaccination_Extended_Attributes"
 
 
@@ -103,7 +103,16 @@ def handle_record(record) -> dict:
         # here: if it's an EA file, move it, and upsert it to PROCESSING; use the bucket name as the queue name
         if TEST_EA_FILENAME in file_key:
             queue_name = "TEST_COVID"
-            dest_bucket_name = TEST_EA_BUCKET
+            dest_bucket_name = EA_BUCKET_NAME
+
+            upsert_audit_table(
+                message_id,
+                file_key,
+                created_at_formatted_string,
+                expiry_timestamp,
+                queue_name,
+                FileStatus.PROCESSING,
+            )
 
             s3_client = get_s3_client()
             s3_client.copy_object(
@@ -114,14 +123,6 @@ def handle_record(record) -> dict:
                 ExpectedSourceBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT,
             )
 
-            upsert_audit_table(
-                message_id,
-                file_key,
-                created_at_formatted_string,
-                expiry_timestamp,
-                dest_bucket_name,
-                FileStatus.PROCESSING,
-            )
             logger.info("Lambda invocation successful for file '%s'", file_key)
 
             # TODO: check the file is in the dest bucket, upsert again accordingly.
@@ -144,7 +145,7 @@ def handle_record(record) -> dict:
                     file_key,
                     created_at_formatted_string,
                     expiry_timestamp,
-                    dest_bucket_name,
+                    queue_name,
                     file_status,
                 )
                 s3_client.delete_object(
@@ -156,6 +157,14 @@ def handle_record(record) -> dict:
                 status_code = 400
                 message = (f"Failed to send to {dest_bucket_name} for further processing",)
                 file_status = FileStatus.FAILED
+                upsert_audit_table(
+                    message_id,
+                    file_key,
+                    created_at_formatted_string,
+                    expiry_timestamp,
+                    queue_name,
+                    file_status,
+                )
                 move_file(bucket_name, file_key, f"archive/{file_key}")
 
             # Return details for logs
