@@ -15,7 +15,9 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from file_validation import (
         is_file_in_directory_root,
         is_valid_datetime,
+        split_file_key,
         validate_batch_file_key,
+        validate_extended_attributes_file_key,
     )
     from models.errors import InvalidFileKeyError
 
@@ -63,7 +65,7 @@ class TestFileKeyValidation(TestCase):
             with self.subTest():
                 self.assertEqual(is_valid_datetime(date_time_string), expected_result)
 
-    def test_validate_file_key(self, mock_get_redis_client):
+    def test_validate_batch_file_key(self, mock_get_redis_client):
         """Tests that file_key_validation returns True if all elements pass validation, and False otherwise"""
         # Test case tuples are structured as (file_key, expected_result)
         test_cases_for_success_scenarios = [
@@ -93,6 +95,46 @@ class TestFileKeyValidation(TestCase):
                 self.assertEqual(validate_batch_file_key(file_key), expected_result)
                 mock_redis.hkeys.assert_called_with("vacc_to_diseases")
                 mock_redis.hget.assert_called_with("ods_code_to_supplier", ods_code)
+
+    def test_split_file_key(self, _):
+        """Tests that split_file_key splits the file key into parts correctly"""
+        test_cases = [
+            (
+                "FLU_Vaccinations_V5_YGM41_20000101T00000001.csv",
+                (["FLU", "VACCINATIONS", "V5", "YGM41", "20000101T00000001"], "CSV"),
+            ),
+            (
+                "Vaccination_Extended_Attributes_V1_5_X8E5B_20000101T00000001.csv",
+                (["VACCINATION", "EXTENDED", "ATTRIBUTES", "V1", "5", "X8E5B", "20000101T00000001"], "CSV"),
+            ),
+        ]
+
+        for file_key, expected in test_cases:
+            with self.subTest(f"SubTest for file key: {file_key}"):
+                self.assertEqual(split_file_key(file_key), expected)
+
+    def test_validate_extended_attributes_file_key(self, _):
+        """Tests that validate_extended_attributes_file_key returns organization code and COVID vaccine type if all
+        elements pass validation, and raises an exception otherwise"""
+        test_cases_for_success_scenarios = [
+            # Valid extended attributes file key
+            (
+                "Vaccination_Extended_Attributes_v1_5_X8E5B_20000101T00000001.csv",
+                "X8E5B_COVID",
+            ),
+            # Valid extended attributes file key with different organization code
+            (
+                "Vaccination_Extended_Attributes_v1_5_YGM41_20221231T23595999.csv",
+                "YGM41_COVID",
+            ),
+        ]
+
+        for file_key, expected_result in test_cases_for_success_scenarios:
+            with self.subTest(f"SubTest for file key: {file_key}"):
+                self.assertEqual(
+                    validate_extended_attributes_file_key(file_key),
+                    expected_result,
+                )
 
     def test_validate_file_key_false(self, mock_get_redis_client):
         """Tests that file_key_validation returns False if elements do not pass validation"""
