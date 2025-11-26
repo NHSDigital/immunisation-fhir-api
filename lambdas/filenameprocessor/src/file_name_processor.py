@@ -142,10 +142,17 @@ def handle_record(record) -> dict:
 
             # NB: we don't have the vaccine type & supplier - we have to rethink the queue_name field.
             # Akin will talk to Paul
+            
+            # ** NB! the current upsert_audit_table() does not allow duplicate message_id.
+            # Surely we want to overwrite the PROCESSING message. (as a state machine)
+            # To do: fix that method, and its unit tests.
+            # For now, as a PoC, we'll generate a new message_id (and a new entry).
+            message_id = str(uuid4())
 
             if is_file_in_bucket(dest_bucket_name, file_key):
                 status_code = 200
                 message = (f"Successfully sent to {dest_bucket_name} for further processing",)
+                logger.info(message)
                 file_status = FileStatus.PROCESSED
                 upsert_audit_table(
                     message_id,
@@ -155,6 +162,7 @@ def handle_record(record) -> dict:
                     queue_name,
                     file_status,
                 )
+                logger.info("Deleting object from {bucket_name}")
                 s3_client.delete_object(
                     Bucket=bucket_name,
                     Key=file_key,
@@ -163,6 +171,7 @@ def handle_record(record) -> dict:
             else:
                 status_code = 400
                 message = (f"Failed to send to {dest_bucket_name} for further processing",)
+                logger.info(message)
                 file_status = FileStatus.FAILED
                 upsert_audit_table(
                     message_id,

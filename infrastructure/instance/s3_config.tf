@@ -262,9 +262,11 @@ resource "aws_s3_bucket_policy" "batch_data_ea_bucket_policy" {
         Action : var.environment == "prod" ? [
           "s3:ListBucket",
           "s3:GetObject",
+          "s3:PutObject",
           ] : [
           "s3:ListBucket",
           "s3:GetObject",
+          "s3:PutObject",
           "s3:DeleteObject"
         ],
         Resource : [
