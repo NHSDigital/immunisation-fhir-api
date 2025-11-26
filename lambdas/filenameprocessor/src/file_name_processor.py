@@ -8,6 +8,7 @@ NOTE: The expected file format for incoming files from the data sources bucket i
 
 import argparse
 import os
+import traceback
 from uuid import uuid4
 
 from botocore.exceptions import ClientError
@@ -126,8 +127,8 @@ def handle_record(record) -> dict:
                     ExpectedBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT,
                     ExpectedSourceBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT,
                 )
-            except Exception as e:
-                e.printStackTrace()
+            except Exception:
+                logger.info(traceback.format_exc())
 
             logger.info("Lambda invocation successful for file '%s'", file_key)
 
