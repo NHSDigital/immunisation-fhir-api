@@ -15,7 +15,7 @@ def upsert_audit_table(
     queue_name: str,
     file_status: str,
     error_details: Optional[str] = None,
-    condition_expression: str = ""
+    condition_expression: str = "",
 ) -> None:
     """
     Updates the audit table with the file details

@@ -29,6 +29,7 @@ def copy_file_outside_bucket(source_bucket: str, source_key: str, destination_bu
         ExpectedSourceBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT,
     )
 
+
 def delete_file(source_bucket: str, source_key: str) -> None:
     s3_client = get_s3_client()
     s3_client.delete_object(
@@ -37,7 +38,7 @@ def delete_file(source_bucket: str, source_key: str) -> None:
         ExpectedBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT,
     )
 
+
 def is_file_in_bucket(bucket_name: str, file_key: str) -> None:
     s3_client = get_s3_client()
     s3_client.head_object(Bucket=bucket_name, Key=file_key)
-

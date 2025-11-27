@@ -7,8 +7,9 @@ NOTE: The expected file format for incoming files from the data sources bucket i
 """
 
 import argparse
-from botocore.exceptions import ClientError
 from uuid import uuid4
+
+from botocore.exceptions import ClientError
 
 from audit_table import upsert_audit_table
 from common.aws_s3_utils import (
@@ -249,7 +250,7 @@ def handle_extended_attributes_file(
     Processes a single record for extended attributes file.
     Returns a dictionary containing information to be included in the logs.
     """
-    
+
     # here: the sequence of events should be
     # 1. upsert 'processing'
     # 2. move the file to the dest bucket
@@ -314,8 +315,8 @@ def handle_extended_attributes_file(
             file_key,
             created_at_formatted_string,
             expiry_timestamp,
-            extended_attribute_identifier,
             queue_name,
+            file_status,
             error_details=str(error),
         )
 
