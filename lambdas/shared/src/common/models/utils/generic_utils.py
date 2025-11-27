@@ -1,21 +1,10 @@
 """Generic utilities"""
 
 import base64
-import copy
 import datetime
 import urllib.parse
-from typing import Any, Literal, Optional
+from typing import Literal, Optional
 
-from fhir.resources.R4B.bundle import (
-    Bundle as FhirBundle,
-)
-from fhir.resources.R4B.bundle import (
-    BundleEntry,
-    BundleEntrySearch,
-    BundleLink,
-)
-from fhir.resources.R4B.identifier import Identifier
-from fhir.resources.R4B.immunization import Immunization
 from stdnum.verhoeff import validate
 
 from common.models.constants import Constants
@@ -153,56 +142,6 @@ def create_diagnostics_error(value):
         diagnostics = f"Validation errors: identifier[0].{value} doesn't match with the stored content"
     exp_error = {"diagnostics": diagnostics}
     return exp_error
-
-
-def make_empty_search_bundle(searched_url: str) -> FhirBundle:
-    return FhirBundle(entry=[], link=[BundleLink(relation="self", url=searched_url)], type="searchset", total=0)
-
-
-# A lot of stuff in here is not very generic. Consider moving to relevant lambdas
-def make_search_bundle(
-    resource: Optional[dict],
-    version_id: Optional[int],
-    elements: Optional[set[str]],
-    identifier: Identifier,
-    base_url: str,
-) -> FhirBundle:
-    searched_url = f"{base_url}?identifier={identifier.system}|{identifier.value}" + (
-        f"&_elements={','.join(sorted(elements))}" if elements else ""
-    )
-
-    if not resource:
-        return make_empty_search_bundle(searched_url)
-
-    meta = {"versionId": version_id}
-
-    # Full Immunization payload to be returned if only the identifier parameter was provided and truncated when
-    # _elements is used
-    if elements is not None:
-        resource_for_bundle: dict[str, Any] = {"resourceType": "Immunization"}
-        if "id" in elements:
-            resource_for_bundle["id"] = resource["id"]
-        if "meta" in elements:
-            resource_for_bundle["meta"] = meta
-
-    else:
-        resource_for_bundle = copy.deepcopy(resource)
-        resource_for_bundle["meta"] = meta
-
-    entry = BundleEntry.construct(
-        fullUrl=f"{base_url}/{resource['id']}",
-        resource=(
-            Immunization.construct(**resource_for_bundle) if elements else Immunization.parse_obj(resource_for_bundle)
-        ),
-        search=BundleEntrySearch.construct(mode="match") if not elements else None,
-    )
-
-    return FhirBundle(
-        type="searchset",
-        link=[BundleLink(relation="self", url=searched_url)],
-        entry=[entry],
-        total=1,
-    )
 
 
 def check_keys_in_sources(event, not_required_keys):
