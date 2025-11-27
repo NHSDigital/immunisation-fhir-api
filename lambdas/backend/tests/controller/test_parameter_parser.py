@@ -178,8 +178,10 @@ class TestParameterParser(unittest.TestCase):
                     self.date_to_key: ["invalid-date"],  # invalid format
                 }
             )
-
-        expected = f"Search parameter {self.date_from_key} may have one value at most."
+        expected = (
+            f"Search parameter {self.date_from_key} may have one value at most.; "
+            f"Search parameter {self.date_to_key} must be in format: YYYY-MM-DD"
+        )
         self.assertEqual(str(e.exception), expected)
 
     def test_process_search_params_invalid_nhs_number_is_rejected(self):
