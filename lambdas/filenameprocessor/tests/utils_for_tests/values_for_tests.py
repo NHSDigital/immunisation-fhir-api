@@ -37,7 +37,6 @@ class FileDetails:
     ):
         self.vaccine_type = vaccine_type.upper() if vaccine_type else None
         self.ods_code = ods_code.upper() if ods_code else "X8E5B"
-        self.organization_code = organization_code
         self.supplier = supplier.upper() if supplier else None
         self.queue_name = f"{self.supplier}_{self.vaccine_type}"
 
@@ -48,7 +47,7 @@ class FileDetails:
 
         file_date_and_time_string = f"20000101T0000000{file_number}"
         extended_attributes_prefix = "Vaccination_Extended_Attributes"
-        if self.vaccine_type.startswith(extended_attributes_prefix):
+        if vaccine_type.startswith(extended_attributes_prefix):
             file_key = f"{extended_attributes_prefix}_v1_5_{organization_code}_{file_date_and_time_string}.csv"
         else:
             file_key = f"{vaccine_type}_Vaccinations_v5_{ods_code}_{file_date_and_time_string}.csv"
@@ -96,6 +95,7 @@ class MockFileDetails:
     extended_attributes_file = FileDetails(
         vaccine_type="Vaccination_Extended_Attributes", file_number=1, organization_code="RJ123"
     )
+    # extended_attributes_file = "Vaccination_Extended_Attributes_v1_5_RJ123_20000101T00000001.csv"
 
 
 MOCK_FILE_HEADERS = (
@@ -121,4 +121,9 @@ MOCK_FILE_DATA = (
     '"J82067"|"https://fhir.nhs.uk/Id/ods-organization-code"'
 )
 
+MOCK_EXTENDED_ATTRIBUTES_FILE_DATA = '"VACCINATION_UNIQUE_ID"|"VACCINATION_UNIQUE_ID_URI"|"ACTION_FLAG"|"ATTRIBUTE_ID"|"ATTRIBUTE_DISPLAYED_TEXT"|"ATTRIBUTE_VALUE"|"RECORDED_DATE"'
+
+MOCK_EXTENDED_ATTRIBUTES_FILE_DATA = '"e045626e-4dc5-4df3-bc35-da25263f901e"|"https://supplierABC/identifiers/vacc"|"new"|"003"|"Are you a health care worker?"|"NOT_SPECIFIED"|"20210801"'
+
 MOCK_BATCH_FILE_CONTENT = MOCK_FILE_HEADERS + MOCK_FILE_DATA
+MOCK_EXTENDED_ATTRIBUTES_FILE_CONTENT = MOCK_FILE_HEADERS + MOCK_EXTENDED_ATTRIBUTES_FILE_DATA

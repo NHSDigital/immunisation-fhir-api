@@ -55,8 +55,6 @@ def handle_record(record) -> dict:
             "error": str(error),
         }
 
-    vaccine_type = "unknown"
-    supplier = "unknown"
     expiry_timestamp = "unknown"
 
     if bucket_name != SOURCE_BUCKET_NAME:
@@ -74,95 +72,26 @@ def handle_record(record) -> dict:
     message_id = "Message id was not created"
     created_at_formatted_string = "created_at_time not identified"
 
-    try:
-        message_id = str(uuid4())
-        s3_response = get_s3_client().get_object(Bucket=bucket_name, Key=file_key)
-        created_at_formatted_string, expiry_timestamp = get_creation_and_expiry_times(s3_response)
+    message_id = str(uuid4())
+    s3_response = get_s3_client().get_object(Bucket=bucket_name, Key=file_key)
+    created_at_formatted_string, expiry_timestamp = get_creation_and_expiry_times(s3_response)
 
-        if file_key.startswith(EXTENDED_ATTRIBUTES_PREFIXES):
-            queue_name = validate_extended_attributes_file_key(file_key)
-            move_file_outside_bucket(bucket_name, file_key, DPS_DESTINATION_BUCKET_NAME, f"archive/{file_key}")
-
-            upsert_audit_table(
-                message_id,
-                file_key,
-                created_at_formatted_string,
-                expiry_timestamp,
-                queue_name,
-                FileStatus.PROCESSING,
-            )
-        else:
-            vaccine_type, supplier = validate_batch_file_key(file_key)
-            permissions = validate_vaccine_type_permissions(vaccine_type=vaccine_type, supplier=supplier)
-            queue_name = f"{supplier}_{vaccine_type}"
-            upsert_audit_table(
-                message_id,
-                file_key,
-                created_at_formatted_string,
-                expiry_timestamp,
-                queue_name,
-                FileStatus.QUEUED,
-            )
-            make_and_send_sqs_message(
-                file_key,
-                message_id,
-                permissions,
-                vaccine_type,
-                supplier,
-                created_at_formatted_string,
-            )
-
-            logger.info("Lambda invocation successful for file '%s'", file_key)
-
-            # Return details for logs
-            return {
-                "statusCode": 200,
-                "message": "Successfully sent to SQS for further processing",
-                "file_key": file_key,
-                "message_id": message_id,
-                "vaccine_type": vaccine_type,
-                "supplier": supplier,
-            }
-
-    except (  # pylint: disable=broad-exception-caught
-        VaccineTypePermissionsError,
-        InvalidFileKeyError,
-        UnhandledAuditTableError,
-        UnhandledSqsError,
-        Exception,
-    ) as error:
-        logger.error("Error processing file '%s': %s", file_key, str(error))
-
-        queue_name = f"{supplier}_{vaccine_type}"
-        file_status = get_file_status_for_error(error)
-
-        upsert_audit_table(
-            message_id,
+    if file_key.startswith(EXTENDED_ATTRIBUTES_PREFIXES):
+        return handle_extended_attributes_file(
             file_key,
+            bucket_name,
+            message_id,
             created_at_formatted_string,
             expiry_timestamp,
-            queue_name,
-            file_status,
-            error_details=str(error),
         )
-
-        # Create ack file
-        message_delivered = False
-        make_and_upload_the_ack_file(message_id, file_key, message_delivered, created_at_formatted_string)
-
-        # Move file to archive
-        move_file(bucket_name, file_key, f"archive/{file_key}")
-
-        # Return details for logs
-        return {
-            "statusCode": ERROR_TYPE_TO_STATUS_CODE_MAP.get(type(error), 500),
-            "message": "Infrastructure Level Response Value - Processing Error",
-            "file_key": file_key,
-            "message_id": message_id,
-            "error": str(error),
-            "vaccine_type": vaccine_type,
-            "supplier": supplier,
-        }
+    else:
+        return handle_batch_file(
+            file_key,
+            bucket_name,
+            message_id,
+            created_at_formatted_string,
+            expiry_timestamp,
+        )
 
 
 def get_file_status_for_error(error: Exception) -> str:
@@ -178,7 +107,7 @@ def handle_unexpected_bucket_name(bucket_name: str, file_key: str) -> dict:
     config and overarching design"""
     try:
         if file_key.startswith(EXTENDED_ATTRIBUTES_PREFIXES):
-            validate_extended_attributes_file_key(file_key)
+            extended_attribute_identifier = validate_extended_attributes_file_key(file_key)
             logger.error(
                 "Unable to process file %s due to unexpected bucket name %s",
                 file_key,
@@ -189,8 +118,7 @@ def handle_unexpected_bucket_name(bucket_name: str, file_key: str) -> dict:
                 "statusCode": 500,
                 "message": message,
                 "file_key": file_key,
-                "vaccine_type": "extended_attributes",
-                "supplier": "unknown",
+                "vaccine_supplier_info": extended_attribute_identifier,
             }
         else:
             vaccine_type, supplier = validate_batch_file_key(file_key)
@@ -223,6 +151,145 @@ def handle_unexpected_bucket_name(bucket_name: str, file_key: str) -> dict:
             "file_key": file_key,
             "vaccine_type": "unknown",
             "supplier": "unknown",
+            "error": str(error),
+        }
+
+
+def handle_batch_file(file_key, bucket_name, message_id, created_at_formatted_string, expiry_timestamp) -> dict:
+    """
+    Processes a single record for batch file.
+    Returns a dictionary containing information to be included in the logs.
+    """
+    vaccine_type = "unknown"
+    supplier = "unknown"
+    try:
+        vaccine_type, supplier = validate_batch_file_key(file_key)
+        permissions = validate_vaccine_type_permissions(vaccine_type=vaccine_type, supplier=supplier)
+        queue_name = f"{supplier}_{vaccine_type}"
+
+        upsert_audit_table(
+            message_id,
+            file_key,
+            created_at_formatted_string,
+            expiry_timestamp,
+            queue_name,
+            FileStatus.QUEUED,
+        )
+        make_and_send_sqs_message(
+            file_key,
+            message_id,
+            permissions,
+            vaccine_type,
+            supplier,
+            created_at_formatted_string,
+        )
+        logger.info("Lambda invocation successful for file '%s'", file_key)
+
+        return {
+            "statusCode": 200,
+            "message": "Batch file successfully processed",
+            "file_key": file_key,
+            "message_id": message_id,
+            "vaccine_type": vaccine_type,
+            "supplier": supplier,
+            "queue_name": queue_name,
+        }
+    except (  # pylint: disable=broad-exception-caught
+        VaccineTypePermissionsError,
+        InvalidFileKeyError,
+        UnhandledAuditTableError,
+        UnhandledSqsError,
+        Exception,
+    ) as error:
+        logger.error("Error processing file '%s': %s", file_key, str(error))
+
+        file_status = get_file_status_for_error(error)
+        queue_name = f"{supplier}_{vaccine_type}"
+
+        upsert_audit_table(
+            message_id,
+            file_key,
+            created_at_formatted_string,
+            expiry_timestamp,
+            queue_name,
+            file_status,
+            error_details=str(error),
+        )
+
+        # Create ack file
+        message_delivered = False
+        make_and_upload_the_ack_file(message_id, file_key, message_delivered, created_at_formatted_string)
+
+        # Move file to archive
+        move_file(bucket_name, file_key, f"archive/{file_key}")
+
+        # Return details for logs
+        return {
+            "statusCode": ERROR_TYPE_TO_STATUS_CODE_MAP.get(type(error), 500),
+            "message": "Infrastructure Level Response Value - Processing Error",
+            "file_key": file_key,
+            "message_id": message_id,
+            "error": str(error),
+            "vaccine_type": vaccine_type,
+            "supplier": supplier,
+        }
+
+
+def handle_extended_attributes_file(
+    file_key, bucket_name, message_id, created_at_formatted_string, expiry_timestamp
+) -> dict:
+    """
+    Processes a single record for extended attributes file.
+    Returns a dictionary containing information to be included in the logs.
+    """
+    try:
+        extended_attribute_identifier = validate_extended_attributes_file_key(file_key)
+        move_file_outside_bucket(bucket_name, file_key, DPS_DESTINATION_BUCKET_NAME, f"archive/{file_key}")
+        queue_name = extended_attribute_identifier
+
+        upsert_audit_table(
+            message_id,
+            file_key,
+            created_at_formatted_string,
+            expiry_timestamp,
+            queue_name,
+            FileStatus.PROCESSING,
+        )
+        return {
+            "statusCode": 200,
+            "message": "Extended Attributes file successfully processed",
+            "file_key": file_key,
+            "message_id": message_id,
+            "queue_name": queue_name,
+        }
+    except (  # pylint: disable=broad-exception-caught
+        VaccineTypePermissionsError,
+        InvalidFileKeyError,
+        UnhandledAuditTableError,
+        UnhandledSqsError,
+        Exception,
+    ) as error:
+        logger.error("Error processing file '%s': %s", file_key, str(error))
+
+        file_status = get_file_status_for_error(error)
+        extended_attribute_identifier = validate_extended_attributes_file_key(file_key)
+        queue_name = extended_attribute_identifier
+
+        upsert_audit_table(
+            message_id,
+            file_key,
+            created_at_formatted_string,
+            expiry_timestamp,
+            extended_attribute_identifier,
+            file_status,
+            error_details=str(error),
+        )
+
+        return {
+            "statusCode": 500,
+            "message": f"Failed to process extended attributes file {file_key} from bucket {bucket_name}",
+            "file_key": file_key,
+            "message_id": message_id,
             "error": str(error),
         }
 
