@@ -24,11 +24,8 @@ suppliers = {
     },
     "MAVIS": {
         "V0V8L": {
-            "3IN1": "CRUDS",
             "FLU": "CRUDS",
-            "HPV": "CRUDS",
-            "MENACWY": "CRUDS",
-            "MMR": "CRUDS",
+            "HPV": "CUD",
         }
     },
     "SONAR": {"8HK48": {"FLU": "CD"}},
