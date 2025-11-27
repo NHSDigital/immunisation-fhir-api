@@ -269,14 +269,13 @@ class TestLambdaHandlerDataSource(TestCase):
                 return_value=test_cases[0].ods_code + "_COVID",
             ),
             patch(
-                "file_name_processor.move_file_outside_bucket",
+                "file_name_processor.copy_file_outside_bucket",
                 side_effect=lambda src_bucket, key, dst_bucket, dst_key: (
                     s3_client.put_object(
                         Bucket=BucketNames.DESTINATION,
                         Key=dst_key,
                         Body=s3_client.get_object(Bucket=src_bucket, Key=key)["Body"].read(),
                     ),
-                    s3_client.delete_object(Bucket=src_bucket, Key=key),
                 ),
             ),
         ):

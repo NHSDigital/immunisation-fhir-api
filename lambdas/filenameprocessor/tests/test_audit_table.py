@@ -73,6 +73,7 @@ class TestAuditTable(TestCase):
             queue_name=ravs_rsv_test_file.queue_name,
             file_status=FileStatus.PROCESSED,
             expiry_timestamp=ravs_rsv_test_file.expires_at,
+            condition_expression="attribute_not_exists(message_id)",
         )
 
         assert_audit_table_entry(ravs_rsv_test_file, FileStatus.PROCESSED)
@@ -85,4 +86,5 @@ class TestAuditTable(TestCase):
                 queue_name=ravs_rsv_test_file.queue_name,
                 file_status=FileStatus.PROCESSED,
                 expiry_timestamp=ravs_rsv_test_file.expires_at,
+                condition_expression="attribute_not_exists(message_id)",
             )

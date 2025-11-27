@@ -75,7 +75,7 @@ class TestS3UtilsShared(unittest.TestCase):
         self.mock_logger_info.assert_called_with("File moved from %s to %s", file_key, dest_key)
 
     def test_move_file_outside_bucket_copies_then_deletes(self):
-        """File should be copied to destination bucket under destination_key and removed from source bucket."""
+        """File should be copied to destination bucket under destination_key and deleted from source bucket"""
         source_key = "RSV_Vaccinations_v5_X8E5B_20000101T00000001.csv"
         destination_key = f"archive/{source_key}"
 
@@ -88,8 +88,8 @@ class TestS3UtilsShared(unittest.TestCase):
         with self.assertRaises(self.s3.exceptions.NoSuchKey):
             self.s3.get_object(Bucket=self.destination_bucket, Key=destination_key)
 
-        # Execute move across buckets
-        aws_s3_utils.move_file_outside_bucket(
+        # Execute copy across buckets
+        aws_s3_utils.copy_file_outside_bucket(
             source_bucket=self.source_bucket,
             source_key=source_key,
             destination_bucket=self.destination_bucket,
@@ -99,6 +99,16 @@ class TestS3UtilsShared(unittest.TestCase):
         # Assert destination has the object
         dest_obj = self.s3.get_object(Bucket=self.destination_bucket, Key=destination_key)
         self.assertEqual(dest_obj["Body"].read(), body_content)
+
+        # Assert source object was not deleted
+        src_obj = self.s3.get_object(Bucket=self.source_bucket, Key=source_key)
+        self.assertEqual(src_obj["Body"].read(), body_content)
+
+        # Execute delete file
+        aws_s3_utils.delete_file(
+            source_bucket=self.source_bucket,
+            source_key=source_key,
+        )
 
         # Assert source object was deleted
         with self.assertRaises(self.s3.exceptions.NoSuchKey):

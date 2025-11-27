@@ -7,10 +7,16 @@ NOTE: The expected file format for incoming files from the data sources bucket i
 """
 
 import argparse
+from botocore.exceptions import ClientError
 from uuid import uuid4
 
 from audit_table import upsert_audit_table
-from common.aws_s3_utils import move_file, move_file_outside_bucket
+from common.aws_s3_utils import (
+    copy_file_outside_bucket,
+    delete_file,
+    is_file_in_bucket,
+    move_file,
+)
 from common.clients import STREAM_NAME, get_s3_client, logger
 from common.log_decorator import logging_decorator
 from common.models.errors import UnhandledAuditTableError
@@ -174,6 +180,7 @@ def handle_batch_file(file_key, bucket_name, message_id, created_at_formatted_st
             expiry_timestamp,
             queue_name,
             FileStatus.QUEUED,
+            condition_expression="attribute_not_exists(message_id)",  # Prevents accidental overwrites
         )
         make_and_send_sqs_message(
             file_key,
@@ -242,9 +249,17 @@ def handle_extended_attributes_file(
     Processes a single record for extended attributes file.
     Returns a dictionary containing information to be included in the logs.
     """
+    
+    # here: the sequence of events should be
+    # 1. upsert 'processing'
+    # 2. move the file to the dest bucket
+    # 3. check the file is present in the dest bucket
+    # 4. if it is, delete it from the src bucket, upsert 'processed'
+    # 5. if it isn't, move it to the archive/ folder, upsert 'failed'
+    # NB for this to work we have to retool upsert so it accepts overwrites, i.e. ignore the ConditionExpression
+
     try:
         extended_attribute_identifier = validate_extended_attributes_file_key(file_key)
-        move_file_outside_bucket(bucket_name, file_key, DPS_DESTINATION_BUCKET_NAME, f"archive/{file_key}")
         queue_name = extended_attribute_identifier
 
         upsert_audit_table(
@@ -255,6 +270,20 @@ def handle_extended_attributes_file(
             queue_name,
             FileStatus.PROCESSING,
         )
+
+        copy_file_outside_bucket(bucket_name, file_key, DPS_DESTINATION_BUCKET_NAME, f"archive/{file_key}")
+        is_file_in_bucket(DPS_DESTINATION_BUCKET_NAME, file_key)
+        delete_file(DPS_DESTINATION_BUCKET_NAME, file_key)
+
+        upsert_audit_table(
+            message_id,
+            file_key,
+            created_at_formatted_string,
+            expiry_timestamp,
+            queue_name,
+            FileStatus.PROCESSED,
+        )
+
         return {
             "statusCode": 200,
             "message": "Extended Attributes file successfully processed",
@@ -262,7 +291,9 @@ def handle_extended_attributes_file(
             "message_id": message_id,
             "queue_name": queue_name,
         }
+
     except (  # pylint: disable=broad-exception-caught
+        ClientError,
         VaccineTypePermissionsError,
         InvalidFileKeyError,
         UnhandledAuditTableError,
@@ -275,13 +306,16 @@ def handle_extended_attributes_file(
         extended_attribute_identifier = validate_extended_attributes_file_key(file_key)
         queue_name = extended_attribute_identifier
 
+        # Move file to archive
+        move_file(bucket_name, file_key, f"archive/{file_key}")
+
         upsert_audit_table(
             message_id,
             file_key,
             created_at_formatted_string,
             expiry_timestamp,
             extended_attribute_identifier,
-            file_status,
+            queue_name,
             error_details=str(error),
         )
 

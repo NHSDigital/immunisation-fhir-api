@@ -15,6 +15,7 @@ def upsert_audit_table(
     queue_name: str,
     file_status: str,
     error_details: Optional[str] = None,
+    condition_expression: str = ""
 ) -> None:
     """
     Updates the audit table with the file details
@@ -36,7 +37,7 @@ def upsert_audit_table(
         dynamodb_client.put_item(
             TableName=AUDIT_TABLE_NAME,
             Item=audit_item,
-            ConditionExpression="attribute_not_exists(message_id)",  # Prevents accidental overwrites
+            ConditionExpression=condition_expression,
         )
         logger.info(
             "%s file, with message id %s, successfully added to audit table",
