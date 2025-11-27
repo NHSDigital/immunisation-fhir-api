@@ -304,8 +304,10 @@ def handle_extended_attributes_file(
         logger.error("Error processing file '%s': %s", file_key, str(error))
 
         file_status = get_file_status_for_error(error)
-        extended_attribute_identifier = validate_extended_attributes_file_key(file_key)
-        queue_name = extended_attribute_identifier
+
+        # NB if we got InvalidFileKeyError we won't have a valid queue name
+        if not queue_name:
+            queue_name = "unknown"
 
         # Move file to archive
         move_file(bucket_name, file_key, f"archive/{file_key}")
