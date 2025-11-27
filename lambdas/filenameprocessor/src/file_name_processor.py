@@ -272,7 +272,7 @@ def handle_extended_attributes_file(
             FileStatus.PROCESSING,
         )
 
-        copy_file_outside_bucket(bucket_name, file_key, DPS_DESTINATION_BUCKET_NAME, f"archive/{file_key}")
+        copy_file_outside_bucket(bucket_name, file_key, DPS_DESTINATION_BUCKET_NAME, file_key)
         is_file_in_bucket(DPS_DESTINATION_BUCKET_NAME, file_key)
         delete_file(DPS_DESTINATION_BUCKET_NAME, file_key)
 
