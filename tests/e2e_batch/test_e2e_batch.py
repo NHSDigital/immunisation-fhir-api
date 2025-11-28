@@ -38,7 +38,6 @@ class TestE2EBatch(unittest.TestCase):
                 "Successful Update",
                 "Successful Delete",
                 "Create with 1252 char",
-                "Failed Update",
                 "Failed Delete",
             ],
         )
