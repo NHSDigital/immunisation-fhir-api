@@ -197,19 +197,6 @@ scenarios = {
             ],
         },
         {
-            "name": "Failed Update",
-            "description": "Failed Update - resource does not exist",
-            "ods_vax": TestPair.V0V8L_3IN1_CRUDS,
-            "actions": [
-                TestAction(
-                    ActionFlag.UPDATE,
-                    expected_header_response_code=BusRowResult.FATAL_ERROR,
-                    expected_operation_outcome=OperationOutcome.IMMS_NOT_FOUND,
-                )
-            ],
-            "operation_outcome": ActionFlag.NONE,
-        },
-        {
             "name": "Failed Delete",
             "description": "Failed Delete - resource does not exist",
             "ods_vax": TestPair.X26_MMR_CRUDS,

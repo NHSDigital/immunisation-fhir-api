@@ -28,6 +28,7 @@ from utils_for_tests.values_for_tests import (
     MOCK_BATCH_FILE_CONTENT,
     MOCK_CREATED_AT_FORMATTED_STRING,
     MOCK_EXPIRES_AT,
+    MOCK_EXTENDED_ATTRIBUTES_FILE_CONTENT,
     MockFileDetails,
 )
 
@@ -238,6 +239,67 @@ class TestLambdaHandlerDataSource(TestCase):
         self.assert_not_in_audit_table(file_details)
         self.assert_no_sqs_message()
         self.assert_no_ack_file(file_details)
+
+    def test_lambda_handler_extended_attributes_success(self):
+        """
+        Tests that for an extended attributes file (prefix starts with 'Vaccination_Extended_Attributes'):
+        * The file is added to the audit table with a status of 'Processing'
+        * The queue_name stored is the extended attribute identifier
+        * The file is moved to the destination bucket under archive/
+        * No SQS message is sent
+        * No ack file is created
+        """
+
+        # Build an extended attributes file.
+        # FileDetails supports this when vaccine_type starts with 'Vaccination_Extended_Attributes'.
+        test_cases = [MockFileDetails.extended_attributes_file]
+
+        # Put file in source bucket
+        s3_client.put_object(
+            Bucket=BucketNames.SOURCE,
+            Key=test_cases[0].file_key,
+            Body=MOCK_EXTENDED_ATTRIBUTES_FILE_CONTENT,
+        )
+
+        # Patch uuid4 (message id), the identifier extraction, and prevent external copy issues by simulating move
+        with (
+            patch("file_name_processor.uuid4", return_value=test_cases[0].message_id),
+            patch(
+                "file_name_processor.validate_extended_attributes_file_key",
+                return_value=test_cases[0].ods_code + "_COVID",
+            ),
+            patch(
+                "file_name_processor.move_file_outside_bucket",
+                side_effect=lambda src_bucket, key, dst_bucket, dst_key: (
+                    s3_client.put_object(
+                        Bucket=BucketNames.DESTINATION,
+                        Key=dst_key,
+                        Body=s3_client.get_object(Bucket=src_bucket, Key=key)["Body"].read(),
+                    ),
+                    s3_client.delete_object(Bucket=src_bucket, Key=key),
+                ),
+            ),
+        ):
+            lambda_handler(self.make_event([self.make_record(test_cases[0].file_key)]), None)
+
+        # Assert audit table entry captured with Processing and queue_name set to the identifier
+        table_items = self.get_audit_table_items()
+        self.assertEqual(len(table_items), 1)
+        item = table_items[0]
+        self.assertEqual(item[AuditTableKeys.MESSAGE_ID]["S"], test_cases[0].message_id)
+        self.assertEqual(item[AuditTableKeys.FILENAME]["S"], test_cases[0].file_key)
+        self.assertEqual(item[AuditTableKeys.QUEUE_NAME]["S"], test_cases[0].ods_code + "_COVID")
+        self.assertEqual(item[AuditTableKeys.TIMESTAMP]["S"], test_cases[0].created_at_formatted_string)
+        self.assertEqual(item[AuditTableKeys.EXPIRES_AT]["N"], str(test_cases[0].expires_at))
+        # File should be moved to destination under archive/
+        dest_key = f"archive/{test_cases[0].file_key}"
+        print(f" destination file is at {s3_client.list_objects(Bucket=BucketNames.DESTINATION)}")
+        retrieved = s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=dest_key)
+        self.assertIsNotNone(retrieved)
+
+        # No SQS and no ack file
+        self.assert_no_sqs_message()
+        self.assert_no_ack_file(test_cases[0])
 
     @patch("elasticache.get_redis_client")
     def test_lambda_invalid_file_key_no_other_files_in_queue(self, mock_get_redis_client):
