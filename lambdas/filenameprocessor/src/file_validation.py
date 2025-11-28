@@ -37,7 +37,20 @@ def is_valid_datetime(timestamp: str) -> bool:
     return True
 
 
-def validate_file_key(file_key: str) -> tuple[str, str]:
+def validate_extended_attributes_file_key(file_key: str) -> str:
+    """
+    Checks that all elements of the file key are valid, raises an exception otherwise.
+    Returns a string containing the organization code and COVID vaccine type needed in the audit table.
+    """
+    if not match(r"^[^_.]*_[^_.]*_[^_.]*_[^_.]*_[^_.]*_[^_.]*_[^_.]*", file_key):
+        raise InvalidFileKeyError("Initial file validation failed: invalid extended attributes file key format")
+
+    file_key_parts_without_extension, _ = split_file_key(file_key)
+    organization_code = file_key_parts_without_extension[5]
+    return f"{organization_code}_COVID"
+
+
+def validate_batch_file_key(file_key: str) -> tuple[str, str]:
     """
     Checks that all elements of the file key are valid, raises an exception otherwise.
     Returns a tuple containing the vaccine_type and supplier (both converted to upper case).
@@ -46,20 +59,14 @@ def validate_file_key(file_key: str) -> tuple[str, str]:
     if not match(r"^[^_.]*_[^_.]*_[^_.]*_[^_.]*_[^_.]*", file_key):
         raise InvalidFileKeyError("Initial file validation failed: invalid file key format")
 
-    file_key = file_key.upper()
-    file_name_and_extension = file_key.rsplit(".", 1)
-
-    if len(file_name_and_extension) != 2:
-        raise InvalidFileKeyError("Initial file validation failed: missing file extension")
-
-    file_key_parts_without_extension = file_name_and_extension[0].split("_")
+    file_key_parts_without_extension, file_name_and_extension = split_file_key(file_key)
 
     vaccine_type = file_key_parts_without_extension[0]
     vaccination = file_key_parts_without_extension[1]
     version = file_key_parts_without_extension[2]
     ods_code = file_key_parts_without_extension[3]
     timestamp = file_key_parts_without_extension[4]
-    extension = file_name_and_extension[1]
+    extension = file_name_and_extension
     supplier = get_supplier_system_from_cache(ods_code)
 
     valid_vaccine_types = get_valid_vaccine_types_from_cache()
@@ -76,3 +83,13 @@ def validate_file_key(file_key: str) -> tuple[str, str]:
         raise InvalidFileKeyError("Initial file validation failed: invalid file key")
 
     return vaccine_type, supplier
+
+
+def split_file_key(file_key: str) -> tuple[list[str], str]:
+    file_key = file_key.upper()
+    file_name_and_extension = file_key.rsplit(".", 1)
+
+    if len(file_name_and_extension) != 2:
+        raise InvalidFileKeyError("Initial file validation failed: missing file extension")
+
+    return file_name_and_extension[0].split("_"), file_name_and_extension[1]
