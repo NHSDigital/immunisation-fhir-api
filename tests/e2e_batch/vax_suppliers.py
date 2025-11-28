@@ -83,6 +83,7 @@ class TestPair:
     """
     "ods_vax": TestPair.E8HA94_COVID_CUD,
     "ods_vax": TestPair.DPSFULL_COVID_CRUDS,
+    "ods_vax": TestPair.V0V8L_FLU_CRUDS,
     "ods_vax": TestPair.X26_MMR_CRUDS,
     "ods_vax": TestPair.YGA_MENACWY_CRUDS,
     """
