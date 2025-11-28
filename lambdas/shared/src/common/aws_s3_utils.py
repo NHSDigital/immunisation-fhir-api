@@ -5,7 +5,7 @@ import os
 from common.clients import get_s3_client, logger
 
 EXPECTED_BUCKET_OWNER_ACCOUNT = os.getenv("ACCOUNT_ID")
-DESTINATION_BUCKET_NAME = os.getenv("DESTINATION_BUCKET_NAME")
+DSP_DESTINATION_BUCKET_NAME = os.getenv("ACK_BUCKET_NAME")
 
 
 def move_file(bucket_name: str, source_file_key: str, destination_file_key: str) -> None:
