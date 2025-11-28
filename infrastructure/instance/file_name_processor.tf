@@ -277,6 +277,7 @@ resource "aws_lambda_function" "file_processor_lambda" {
 
   environment {
     variables = {
+      ACCOUNT_ID           = var.immunisation_account_id
       SOURCE_BUCKET_NAME   = aws_s3_bucket.batch_data_source_bucket.bucket
       ACK_BUCKET_NAME      = aws_s3_bucket.batch_data_destination_bucket.bucket
       QUEUE_URL            = aws_sqs_queue.batch_file_created.url
