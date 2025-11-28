@@ -294,7 +294,6 @@ class TestLambdaHandlerDataSource(TestCase):
         table_items = self.get_audit_table_items()
         self.assertEqual(len(table_items), 1)
         item = table_items[0]
-        print(json.dumps(item))
         self.assertEqual(item[AuditTableKeys.MESSAGE_ID]["S"], test_cases[0].message_id)
         self.assertEqual(item[AuditTableKeys.FILENAME]["S"], test_cases[0].file_key)
         self.assertEqual(item[AuditTableKeys.QUEUE_NAME]["S"], test_cases[0].ods_code + "_COVID")
@@ -354,7 +353,6 @@ class TestLambdaHandlerDataSource(TestCase):
         table_items = self.get_audit_table_items()
         self.assertEqual(len(table_items), 1)
         item = table_items[0]
-        print(json.dumps(item))
         self.assertEqual(item[AuditTableKeys.MESSAGE_ID]["S"], test_cases[0].message_id)
         self.assertEqual(item[AuditTableKeys.FILENAME]["S"], test_cases[0].file_key)
         self.assertEqual(item[AuditTableKeys.QUEUE_NAME]["S"], test_cases[0].ods_code + "_COVID")
