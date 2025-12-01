@@ -36,10 +36,10 @@ from utils_for_tests.values_for_tests import (
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from common.clients import REGION_NAME
     from constants import (
-        AUDIT_TABLE_NAME, 
-        EXTENDED_ATTRIBUTES_VACC_TYPE, 
-        AuditTableKeys, 
-        FileStatus
+        AUDIT_TABLE_NAME,
+        EXTENDED_ATTRIBUTES_VACC_TYPE,
+        AuditTableKeys,
+        FileStatus,
     )
     from file_name_processor import handle_record, lambda_handler
 
@@ -266,12 +266,14 @@ class TestLambdaHandlerDataSource(TestCase):
             Body=MOCK_EXTENDED_ATTRIBUTES_FILE_CONTENT,
         )
 
+        # TODO: rewrite the bucket patches to use moto
+
         # Patch uuid4 (message id), the identifier extraction, and prevent external copy issues by simulating move
         with (
             patch("file_name_processor.uuid4", return_value=test_cases[0].message_id),
             patch(
                 "file_name_processor.copy_file_to_external_bucket",
-                side_effect=lambda src_bucket, key, dst_bucket, dst_key: (
+                side_effect=lambda src_bucket, key, dst_bucket, dst_key, exp_owner, exp_src_owner: (
                     s3_client.put_object(
                         Bucket=BucketNames.DESTINATION,
                         Key=dst_key,
@@ -281,7 +283,7 @@ class TestLambdaHandlerDataSource(TestCase):
             ),
             patch(
                 "file_name_processor.delete_file",
-                side_effect=lambda src_bucket, key: (
+                side_effect=lambda src_bucket, key, exp_owner: (
                     s3_client.delete_object(
                         Bucket=BucketNames.SOURCE,
                         Key=key,
@@ -335,12 +337,15 @@ class TestLambdaHandlerDataSource(TestCase):
             Body=MOCK_EXTENDED_ATTRIBUTES_FILE_CONTENT,
         )
 
+        # TODO: rewrite the bucket patches to use moto
+
         # Patch uuid4 (message id), the identifier extraction, and don't move the file
         with (
             patch("file_name_processor.uuid4", return_value=test_cases[0].message_id),
             patch(
                 "file_name_processor.copy_file_to_external_bucket",
-                side_effect=lambda src_bucket, key, dst_bucket, dst_key: (  # effectively do nothing
+                side_effect=lambda src_bucket, key, dst_bucket, dst_key, exp_owner, exp_src_owner: (
+                    # effectively do nothing
                     None,
                 ),
             ),

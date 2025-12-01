@@ -1,10 +1,7 @@
 """Non-imms Utility Functions"""
 
-import os
 
 from common.clients import get_s3_client, logger
-
-EXPECTED_BUCKET_OWNER_ACCOUNT = os.getenv("ACCOUNT_ID")
 
 
 def move_file(bucket_name: str, source_file_key: str, destination_file_key: str) -> None:
@@ -20,24 +17,33 @@ def move_file(bucket_name: str, source_file_key: str, destination_file_key: str)
 
 
 def copy_file_to_external_bucket(
-    source_bucket: str, source_key: str, destination_bucket: str, destination_key: str
+    source_bucket: str,
+    source_key: str,
+    destination_bucket: str,
+    destination_key: str,
+    expected_bucket_owner: str,
+    expected_source_bucket_owner: str,
 ) -> None:
     s3_client = get_s3_client()
     s3_client.copy_object(
         CopySource={"Bucket": source_bucket, "Key": source_key},
         Bucket=destination_bucket,
         Key=destination_key,
-        ExpectedBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT,
-        ExpectedSourceBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT,
+        ExpectedBucketOwner=expected_bucket_owner,
+        ExpectedSourceBucketOwner=expected_source_bucket_owner,
     )
 
 
-def delete_file(source_bucket: str, source_key: str) -> None:
+def delete_file(
+    source_bucket: str,
+    source_key: str,
+    expected_bucket_owner: str,
+) -> None:
     s3_client = get_s3_client()
     s3_client.delete_object(
         Bucket=source_bucket,
         Key=source_key,
-        ExpectedBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT,
+        ExpectedBucketOwner=expected_bucket_owner,
     )
 
 

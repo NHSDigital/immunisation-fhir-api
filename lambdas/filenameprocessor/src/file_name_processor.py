@@ -24,6 +24,7 @@ from common.models.errors import UnhandledAuditTableError
 from constants import (
     DPS_DESTINATION_BUCKET_NAME,
     ERROR_TYPE_TO_STATUS_CODE_MAP,
+    EXPECTED_BUCKET_OWNER_ACCOUNT,
     EXTENDED_ATTRIBUTES_FILE_PREFIX,
     EXTENDED_ATTRIBUTES_VACC_TYPE,
     SOURCE_BUCKET_NAME,
@@ -277,9 +278,16 @@ def handle_extended_attributes_file(
         )
 
         dest_file_key = f"dps_destination/{file_key}"
-        copy_file_to_external_bucket(bucket_name, file_key, DPS_DESTINATION_BUCKET_NAME, dest_file_key)
+        copy_file_to_external_bucket(
+            bucket_name,
+            file_key,
+            DPS_DESTINATION_BUCKET_NAME,
+            dest_file_key,
+            EXPECTED_BUCKET_OWNER_ACCOUNT,
+            EXPECTED_BUCKET_OWNER_ACCOUNT,
+        )
         is_file_in_bucket(DPS_DESTINATION_BUCKET_NAME, dest_file_key)
-        delete_file(bucket_name, dest_file_key)
+        delete_file(bucket_name, dest_file_key, EXPECTED_BUCKET_OWNER_ACCOUNT)
 
         upsert_audit_table(
             message_id,

@@ -95,6 +95,8 @@ class TestS3UtilsShared(unittest.TestCase):
             source_key=source_key,
             destination_bucket=self.destination_bucket,
             destination_key=destination_key,
+            expected_bucket_owner=aws_s3_utils.EXPECTED_BUCKET_OWNER_ACCOUNT,
+            expected_source_bucket_owner=aws_s3_utils.EXPECTED_BUCKET_OWNER_ACCOUNT,
         )
 
         # Assert destination has the object
@@ -109,6 +111,7 @@ class TestS3UtilsShared(unittest.TestCase):
         aws_s3_utils.delete_file(
             source_bucket=self.source_bucket,
             source_key=source_key,
+            expected_bucket_owner=aws_s3_utils.EXPECTED_BUCKET_OWNER_ACCOUNT,
         )
 
         # Assert source object was deleted
