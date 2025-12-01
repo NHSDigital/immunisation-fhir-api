@@ -265,10 +265,6 @@ class TestLambdaHandlerDataSource(TestCase):
         with (
             patch("file_name_processor.uuid4", return_value=test_cases[0].message_id),
             patch(
-                "file_name_processor.validate_extended_attributes_file_key",
-                return_value=test_cases[0].ods_code + "_COVID",
-            ),
-            patch(
                 "file_name_processor.copy_file_outside_bucket",
                 side_effect=lambda src_bucket, key, dst_bucket, dst_key: (
                     s3_client.put_object(
@@ -335,10 +331,6 @@ class TestLambdaHandlerDataSource(TestCase):
         # Patch uuid4 (message id), the identifier extraction, and don't move the file
         with (
             patch("file_name_processor.uuid4", return_value=test_cases[0].message_id),
-            patch(
-                "file_name_processor.validate_extended_attributes_file_key",
-                return_value=test_cases[0].ods_code + "_COVID",
-            ),
             patch(
                 "file_name_processor.copy_file_outside_bucket",
                 side_effect=lambda src_bucket, key, dst_bucket, dst_key: (  # effectively do nothing
