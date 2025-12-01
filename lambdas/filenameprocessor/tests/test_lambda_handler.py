@@ -265,7 +265,7 @@ class TestLambdaHandlerDataSource(TestCase):
         with (
             patch("file_name_processor.uuid4", return_value=test_cases[0].message_id),
             patch(
-                "file_name_processor.copy_file_outside_bucket",
+                "file_name_processor.copy_file_to_external_bucket",
                 side_effect=lambda src_bucket, key, dst_bucket, dst_key: (
                     s3_client.put_object(
                         Bucket=BucketNames.DESTINATION,
@@ -332,7 +332,7 @@ class TestLambdaHandlerDataSource(TestCase):
         with (
             patch("file_name_processor.uuid4", return_value=test_cases[0].message_id),
             patch(
-                "file_name_processor.copy_file_outside_bucket",
+                "file_name_processor.copy_file_to_external_bucket",
                 side_effect=lambda src_bucket, key, dst_bucket, dst_key: (  # effectively do nothing
                     None,
                 ),

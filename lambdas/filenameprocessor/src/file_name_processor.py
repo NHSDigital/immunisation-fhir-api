@@ -13,7 +13,7 @@ from botocore.exceptions import ClientError
 
 from audit_table import upsert_audit_table
 from common.aws_s3_utils import (
-    copy_file_outside_bucket,
+    copy_file_to_external_bucket,
     delete_file,
     is_file_in_bucket,
     move_file,
@@ -23,8 +23,9 @@ from common.log_decorator import logging_decorator
 from common.models.errors import UnhandledAuditTableError
 from constants import (
     DPS_DESTINATION_BUCKET_NAME,
+    DPS_DESTINATION_PREFIX,
     ERROR_TYPE_TO_STATUS_CODE_MAP,
-    EXTENDED_ATTRIBUTES_PREFIXES,
+    EXTENDED_ATTRIBUTES_FILE_PREFIX,
     SOURCE_BUCKET_NAME,
     FileNotProcessedReason,
     FileStatus,
@@ -83,7 +84,7 @@ def handle_record(record) -> dict:
     s3_response = get_s3_client().get_object(Bucket=bucket_name, Key=file_key)
     created_at_formatted_string, expiry_timestamp = get_creation_and_expiry_times(s3_response)
 
-    if file_key.startswith(EXTENDED_ATTRIBUTES_PREFIXES):
+    if file_key.startswith(EXTENDED_ATTRIBUTES_FILE_PREFIX):
         return handle_extended_attributes_file(
             file_key,
             bucket_name,
@@ -113,7 +114,7 @@ def handle_unexpected_bucket_name(bucket_name: str, file_key: str) -> dict:
     """Handles scenario where Lambda was not invoked by the data-sources bucket. Should not occur due to terraform
     config and overarching design"""
     try:
-        if file_key.startswith(EXTENDED_ATTRIBUTES_PREFIXES):
+        if file_key.startswith(EXTENDED_ATTRIBUTES_FILE_PREFIX):
             extended_attribute_identifier = validate_extended_attributes_file_key(file_key)
             logger.error(
                 "Unable to process file %s due to unexpected bucket name %s",
@@ -162,7 +163,9 @@ def handle_unexpected_bucket_name(bucket_name: str, file_key: str) -> dict:
         }
 
 
-def handle_batch_file(file_key, bucket_name, message_id, created_at_formatted_string, expiry_timestamp) -> dict:
+def handle_batch_file(
+    file_key: str, bucket_name: str, message_id: str, created_at_formatted_string: str, expiry_timestamp: str
+) -> dict:
     """
     Processes a single record for batch file.
     Returns a dictionary containing information to be included in the logs.
@@ -244,7 +247,7 @@ def handle_batch_file(file_key, bucket_name, message_id, created_at_formatted_st
 
 
 def handle_extended_attributes_file(
-    file_key, bucket_name, message_id, created_at_formatted_string, expiry_timestamp
+    file_key: str, bucket_name: str, message_id: str, created_at_formatted_string: str, expiry_timestamp: str
 ) -> dict:
     """
     Processes a single record for extended attributes file.
@@ -261,19 +264,18 @@ def handle_extended_attributes_file(
 
     try:
         extended_attribute_identifier = validate_extended_attributes_file_key(file_key)
-        queue_name = extended_attribute_identifier
 
         upsert_audit_table(
             message_id,
             file_key,
             created_at_formatted_string,
             expiry_timestamp,
-            queue_name,
+            extended_attribute_identifier,
             FileStatus.PROCESSING,
         )
 
         dest_file_key = f"dps_destination/{file_key}"
-        copy_file_outside_bucket(bucket_name, file_key, DPS_DESTINATION_BUCKET_NAME, dest_file_key)
+        copy_file_to_external_bucket(bucket_name, file_key, DPS_DESTINATION_BUCKET_NAME, dest_file_key)
         is_file_in_bucket(DPS_DESTINATION_BUCKET_NAME, dest_file_key)
         delete_file(bucket_name, dest_file_key)
 
@@ -282,7 +284,7 @@ def handle_extended_attributes_file(
             file_key,
             created_at_formatted_string,
             expiry_timestamp,
-            queue_name,
+            extended_attribute_identifier,
             FileStatus.PROCESSED,
         )
 
@@ -291,7 +293,7 @@ def handle_extended_attributes_file(
             "message": "Extended Attributes file successfully processed",
             "file_key": file_key,
             "message_id": message_id,
-            "queue_name": queue_name,
+            "queue_name": extended_attribute_identifier,
         }
 
     except (  # pylint: disable=broad-exception-caught
@@ -307,8 +309,8 @@ def handle_extended_attributes_file(
         file_status = get_file_status_for_error(error)
 
         # NB if we got InvalidFileKeyError we won't have a valid queue name
-        if not queue_name:
-            queue_name = "unknown"
+        if not extended_attribute_identifier:
+            extended_attribute_identifier = "unknown"
 
         # Move file to archive
         move_file(bucket_name, file_key, f"archive/{file_key}")
@@ -318,7 +320,7 @@ def handle_extended_attributes_file(
             file_key,
             created_at_formatted_string,
             expiry_timestamp,
-            queue_name,
+            extended_attribute_identifier,
             file_status,
             error_details=str(error),
         )

@@ -95,7 +95,6 @@ class MockFileDetails:
     extended_attributes_file = FileDetails(
         vaccine_type="Vaccination_Extended_Attributes", file_number=1, organization_code="X8E5B"
     )
-    # extended_attributes_file = "Vaccination_Extended_Attributes_v1_5_RJ123_20000101T00000001.csv"
 
 
 MOCK_FILE_HEADERS = (
