@@ -199,7 +199,7 @@ scenarios = {
         {
             "name": "Failed Update",
             "description": "Failed Update - resource does not exist",
-            "ods_vax": TestPair.V0V8L_3IN1_CRUDS,
+            "ods_vax": TestPair.V0V8L_HPV_CUD,
             "actions": [
                 TestAction(
                     ActionFlag.UPDATE,
