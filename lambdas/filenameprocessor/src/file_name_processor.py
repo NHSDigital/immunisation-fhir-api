@@ -263,7 +263,7 @@ def handle_extended_attributes_file(
     # 4. if it is, delete it from the src bucket, upsert 'processed'
     # 5. if it isn't, move it to the archive/ folder, upsert 'failed'
     # NB for this to work we have to retool upsert so it accepts overwrites, i.e. ignore the ConditionExpression
-
+    extended_attribute_identifier = None
     try:
         organization_code = validate_extended_attributes_file_key(file_key)
         extended_attribute_identifier = f"{organization_code}_{EXTENDED_ATTRIBUTES_VACC_TYPE}"

@@ -268,7 +268,7 @@ class TestLambdaHandlerDataSource(TestCase):
 
         # TODO: rewrite the bucket patches to use moto
 
-        # Patch uuid4 (message id), the identifier extraction, and prevent external copy issues by simulating move
+        # Patch uuid4 (message id), and prevent external copy issues by simulating move
         with (
             patch("file_name_processor.uuid4", return_value=test_cases[0].message_id),
             patch(
@@ -339,7 +339,7 @@ class TestLambdaHandlerDataSource(TestCase):
 
         # TODO: rewrite the bucket patches to use moto
 
-        # Patch uuid4 (message id), the identifier extraction, and don't move the file
+        # Patch uuid4 (message id), and don't move the file
         with (
             patch("file_name_processor.uuid4", return_value=test_cases[0].message_id),
             patch(
@@ -371,6 +371,68 @@ class TestLambdaHandlerDataSource(TestCase):
         self.assertEqual(item[AuditTableKeys.EXPIRES_AT]["N"], str(test_cases[0].expires_at))
         # File should be moved to source under archive/
         dest_key = f"archive/{test_cases[0].file_key}"
+        print(f" destination file is at {s3_client.list_objects(Bucket=BucketNames.SOURCE)}")
+        retrieved = s3_client.get_object(Bucket=BucketNames.SOURCE, Key=dest_key)
+        self.assertIsNotNone(retrieved)
+
+        # No SQS and no ack file
+        self.assert_no_sqs_message()
+        self.assert_no_ack_file(test_cases[0])
+
+    def test_lambda_handler_extended_attributes_invalid_key(self):
+        """
+        Tests that for an extended attributes file (prefix starts with 'Vaccination_Extended_Attributes'):
+        Where the filename is otherwise invalid:
+        * The file is added to the audit table with a status of 'Failed'
+        * The queue_name stored is 'unknown'
+        * The file is moved to the archive/ folder in the source bucket
+        * No SQS message is sent
+        * No ack file is created
+        """
+
+        # Build an extended attributes file.
+        # FileDetails supports this when vaccine_type starts with 'Vaccination_Extended_Attributes'.
+        test_cases = [MockFileDetails.extended_attributes_file]
+        invalid_file_key = "Vaccination_Extended_Attributes_invalid_20000101T00000001.csv"
+        # Put file in source bucket
+        s3_client.put_object(
+            Bucket=BucketNames.SOURCE,
+            Key=invalid_file_key,
+            Body=MOCK_EXTENDED_ATTRIBUTES_FILE_CONTENT,
+        )
+
+        # TODO: rewrite the bucket patches to use moto
+
+        # Patch uuid4 (message id), and don't move the file
+        with (
+            patch("file_name_processor.uuid4", return_value=test_cases[0].message_id),
+            patch(
+                "file_name_processor.copy_file_to_external_bucket",
+                side_effect=lambda src_bucket, key, dst_bucket, dst_key, exp_owner, exp_src_owner: (
+                    # effectively do nothing
+                    None,
+                ),
+            ),
+        ):
+            lambda_handler(self.make_event([self.make_record(invalid_file_key)]), None)
+
+        # Assert audit table entry captured with Failed and queue_name set to the identifier.
+        # Assert that the ClientError message is an InvalidFileKeyError.
+        table_items = self.get_audit_table_items()
+        self.assertEqual(len(table_items), 1)
+        item = table_items[0]
+        self.assertEqual(item[AuditTableKeys.MESSAGE_ID]["S"], test_cases[0].message_id)
+        self.assertEqual(item[AuditTableKeys.FILENAME]["S"], invalid_file_key)
+        self.assertEqual(item[AuditTableKeys.QUEUE_NAME]["S"], "unknown")
+        self.assertEqual(item[AuditTableKeys.TIMESTAMP]["S"], test_cases[0].created_at_formatted_string)
+        self.assertEqual(item[AuditTableKeys.STATUS]["S"], "Failed")
+        self.assertEqual(
+            item[AuditTableKeys.ERROR_DETAILS]["S"],
+            "Initial file validation failed: invalid extended attributes file key format",
+        )
+        self.assertEqual(item[AuditTableKeys.EXPIRES_AT]["N"], str(test_cases[0].expires_at))
+        # File should be moved to source under archive/
+        dest_key = f"archive/{invalid_file_key}"
         print(f" destination file is at {s3_client.list_objects(Bucket=BucketNames.SOURCE)}")
         retrieved = s3_client.get_object(Bucket=BucketNames.SOURCE, Key=dest_key)
         self.assertIsNotNone(retrieved)
