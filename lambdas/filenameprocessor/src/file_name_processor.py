@@ -18,7 +18,7 @@ from constants import (
     DPS_DESTINATION_BUCKET_NAME,
     DPS_DESTINATION_PREFIX,
     ERROR_TYPE_TO_STATUS_CODE_MAP,
-    EXTENDED_ATTRIBUTES_FILE_PREFIXES,
+    EXTENDED_ATTRIBUTES_FILE_PREFIX,
     SOURCE_BUCKET_NAME,
     FileNotProcessedReason,
     FileStatus,
@@ -77,7 +77,7 @@ def handle_record(record) -> dict:
     s3_response = get_s3_client().get_object(Bucket=bucket_name, Key=file_key)
     created_at_formatted_string, expiry_timestamp = get_creation_and_expiry_times(s3_response)
 
-    if file_key.startswith(EXTENDED_ATTRIBUTES_FILE_PREFIXES):
+    if file_key.startswith(EXTENDED_ATTRIBUTES_FILE_PREFIX):
         return handle_extended_attributes_file(
             file_key,
             bucket_name,
@@ -107,7 +107,7 @@ def handle_unexpected_bucket_name(bucket_name: str, file_key: str) -> dict:
     """Handles scenario where Lambda was not invoked by the data-sources bucket. Should not occur due to terraform
     config and overarching design"""
     try:
-        if file_key.startswith(EXTENDED_ATTRIBUTES_FILE_PREFIXES):
+        if file_key.startswith(EXTENDED_ATTRIBUTES_FILE_PREFIX):
             extended_attribute_identifier = validate_extended_attributes_file_key(file_key)
             logger.error(
                 "Unable to process file %s due to unexpected bucket name %s",
