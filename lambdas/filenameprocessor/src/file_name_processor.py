@@ -295,7 +295,6 @@ def handle_extended_attributes_file(
             "message_id": message_id,
             "queue_name": extended_attribute_identifier,
         }
-
     except (  # pylint: disable=broad-exception-caught
         ClientError,
         VaccineTypePermissionsError,

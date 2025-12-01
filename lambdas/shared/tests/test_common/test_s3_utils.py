@@ -76,7 +76,7 @@ class TestS3UtilsShared(unittest.TestCase):
         self.mock_logger_info.assert_called_with("File moved from %s to %s", file_key, dest_key)
 
     def test_move_file_outside_bucket_copies_then_deletes(self):
-        """File should be copied to destination bucket under destination_key and deleted from source bucket"""
+        """File should be copied to destination bucket under destination_key and removed from source bucket."""
         source_key = "RSV_Vaccinations_v5_X8E5B_20000101T00000001.csv"
         destination_key = f"archive/{source_key}"
 
