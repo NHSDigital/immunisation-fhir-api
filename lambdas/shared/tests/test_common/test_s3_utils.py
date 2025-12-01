@@ -89,7 +89,7 @@ class TestS3UtilsShared(unittest.TestCase):
             self.s3.get_object(Bucket=self.destination_bucket, Key=destination_key)
 
         # Execute move across buckets
-        aws_s3_utils.move_file_outside_bucket(
+        aws_s3_utils.move_file_to_external_bucket(
             source_bucket=self.source_bucket,
             source_key=source_key,
             destination_bucket=self.destination_bucket,
