@@ -1,6 +1,5 @@
 """Non-imms Utility Functions"""
 
-
 from common.clients import get_s3_client, logger
 
 

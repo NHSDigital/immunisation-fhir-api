@@ -114,7 +114,7 @@ class TestFileKeyValidation(TestCase):
                 self.assertEqual(split_file_key(file_key), expected)
 
     def test_validate_extended_attributes_file_key(self, _):
-        """Tests that validate_extended_attributes_file_key returns organization codeif all
+        """Tests that validate_extended_attributes_file_key returns organization code if all
         elements pass validation, and raises an exception otherwise"""
         test_cases_for_success_scenarios = [
             # Valid extended attributes file key
