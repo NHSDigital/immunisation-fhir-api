@@ -187,7 +187,7 @@ def handle_batch_file(file_key, bucket_name, message_id, created_at_formatted_st
 
         return {
             "statusCode": 200,
-            "message": "Batch file successfully processed",
+            "message": "Successfully sent to SQS for further processing",
             "file_key": file_key,
             "message_id": message_id,
             "vaccine_type": vaccine_type,
