@@ -23,7 +23,6 @@ from common.log_decorator import logging_decorator
 from common.models.errors import UnhandledAuditTableError
 from constants import (
     DPS_DESTINATION_BUCKET_NAME,
-    DPS_DESTINATION_PREFIX,
     ERROR_TYPE_TO_STATUS_CODE_MAP,
     EXTENDED_ATTRIBUTES_FILE_PREFIX,
     SOURCE_BUCKET_NAME,
