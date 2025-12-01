@@ -25,6 +25,7 @@ from constants import (
     DPS_DESTINATION_BUCKET_NAME,
     ERROR_TYPE_TO_STATUS_CODE_MAP,
     EXTENDED_ATTRIBUTES_FILE_PREFIX,
+    EXTENDED_ATTRIBUTES_VACC_TYPE,
     SOURCE_BUCKET_NAME,
     FileNotProcessedReason,
     FileStatus,
@@ -114,7 +115,8 @@ def handle_unexpected_bucket_name(bucket_name: str, file_key: str) -> dict:
     config and overarching design"""
     try:
         if file_key.startswith(EXTENDED_ATTRIBUTES_FILE_PREFIX):
-            extended_attribute_identifier = validate_extended_attributes_file_key(file_key)
+            organization_code = validate_extended_attributes_file_key(file_key)
+            extended_attribute_identifier = f"{organization_code}_{EXTENDED_ATTRIBUTES_VACC_TYPE}"
             logger.error(
                 "Unable to process file %s due to unexpected bucket name %s",
                 file_key,
@@ -262,7 +264,8 @@ def handle_extended_attributes_file(
     # NB for this to work we have to retool upsert so it accepts overwrites, i.e. ignore the ConditionExpression
 
     try:
-        extended_attribute_identifier = validate_extended_attributes_file_key(file_key)
+        organization_code = validate_extended_attributes_file_key(file_key)
+        extended_attribute_identifier = f"{organization_code}_{EXTENDED_ATTRIBUTES_VACC_TYPE}"
 
         upsert_audit_table(
             message_id,

@@ -114,18 +114,18 @@ class TestFileKeyValidation(TestCase):
                 self.assertEqual(split_file_key(file_key), expected)
 
     def test_validate_extended_attributes_file_key(self, _):
-        """Tests that validate_extended_attributes_file_key returns organization code and COVID vaccine type if all
+        """Tests that validate_extended_attributes_file_key returns organization codeif all
         elements pass validation, and raises an exception otherwise"""
         test_cases_for_success_scenarios = [
             # Valid extended attributes file key
             (
                 "Vaccination_Extended_Attributes_v1_5_X8E5B_20000101T00000001.csv",
-                "X8E5B_COVID",
+                "X8E5B",
             ),
             # Valid extended attributes file key with different organization code
             (
                 "Vaccination_Extended_Attributes_v1_5_YGM41_20221231T23595999.csv",
-                "YGM41_COVID",
+                "YGM41",
             ),
         ]
 

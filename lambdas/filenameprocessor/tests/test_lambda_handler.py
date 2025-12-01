@@ -35,7 +35,12 @@ from utils_for_tests.values_for_tests import (
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from common.clients import REGION_NAME
-    from constants import AUDIT_TABLE_NAME, AuditTableKeys, FileStatus
+    from constants import (
+        AUDIT_TABLE_NAME, 
+        EXTENDED_ATTRIBUTES_VACC_TYPE, 
+        AuditTableKeys, 
+        FileStatus
+    )
     from file_name_processor import handle_record, lambda_handler
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
@@ -292,7 +297,9 @@ class TestLambdaHandlerDataSource(TestCase):
         item = table_items[0]
         self.assertEqual(item[AuditTableKeys.MESSAGE_ID]["S"], test_cases[0].message_id)
         self.assertEqual(item[AuditTableKeys.FILENAME]["S"], test_cases[0].file_key)
-        self.assertEqual(item[AuditTableKeys.QUEUE_NAME]["S"], test_cases[0].ods_code + "_COVID")
+        self.assertEqual(
+            item[AuditTableKeys.QUEUE_NAME]["S"], test_cases[0].ods_code + "_" + EXTENDED_ATTRIBUTES_VACC_TYPE
+        )
         self.assertEqual(item[AuditTableKeys.STATUS]["S"], "Processed")
         self.assertEqual(item[AuditTableKeys.TIMESTAMP]["S"], test_cases[0].created_at_formatted_string)
         self.assertEqual(item[AuditTableKeys.EXPIRES_AT]["N"], str(test_cases[0].expires_at))
@@ -347,7 +354,9 @@ class TestLambdaHandlerDataSource(TestCase):
         item = table_items[0]
         self.assertEqual(item[AuditTableKeys.MESSAGE_ID]["S"], test_cases[0].message_id)
         self.assertEqual(item[AuditTableKeys.FILENAME]["S"], test_cases[0].file_key)
-        self.assertEqual(item[AuditTableKeys.QUEUE_NAME]["S"], test_cases[0].ods_code + "_COVID")
+        self.assertEqual(
+            item[AuditTableKeys.QUEUE_NAME]["S"], test_cases[0].ods_code + "_" + EXTENDED_ATTRIBUTES_VACC_TYPE
+        )
         self.assertEqual(item[AuditTableKeys.TIMESTAMP]["S"], test_cases[0].created_at_formatted_string)
         self.assertEqual(item[AuditTableKeys.STATUS]["S"], "Failed")
         self.assertEqual(
