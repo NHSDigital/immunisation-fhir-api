@@ -3,7 +3,7 @@
 from datetime import datetime
 from re import match
 
-from constants import VALID_VERSIONS
+from constants import EXTENDED_ATTRIBUTES_FILE_PREFIX, VALID_EA_VERSIONS, VALID_VERSIONS
 from elasticache import (
     get_supplier_system_from_cache,
     get_valid_vaccine_types_from_cache,
@@ -45,8 +45,22 @@ def validate_extended_attributes_file_key(file_key: str) -> str:
     if not match(r"^[^_.]*_[^_.]*_[^_.]*_[^_.]*_[^_.]*_[^_.]*_[^_.]*", file_key):
         raise InvalidFileKeyError("Initial file validation failed: invalid extended attributes file key format")
 
-    file_key_parts_without_extension, _ = split_file_key(file_key)
+    file_key_parts_without_extension, extension = split_file_key(file_key)
+    file_type = "_".join(file_key_parts_without_extension[:3])
+    version = "_".join(file_key_parts_without_extension[3:5])
     organization_code = file_key_parts_without_extension[5]
+    timestamp = file_key_parts_without_extension[6]
+    supplier = get_supplier_system_from_cache(organization_code)
+
+    if not (
+        file_type == EXTENDED_ATTRIBUTES_FILE_PREFIX
+        and version == VALID_EA_VERSIONS
+        and supplier  # Note that if supplier could be identified, this also implies that ODS code is valid
+        and is_valid_datetime(timestamp)
+        and ((extension == "CSV") or (extension == "DAT"))  # The DAT extension has been added for MESH file processing
+    ):
+        raise InvalidFileKeyError("Initial file validation failed: invalid file key")
+
     return f"{organization_code}_COVID"
 
 

@@ -113,6 +113,8 @@ class TestFileKeyValidation(TestCase):
             with self.subTest(f"SubTest for file key: {file_key}"):
                 self.assertEqual(split_file_key(file_key), expected)
 
+    @patch("file_name_processor.get_supplier_system_from_cache", return_value="RAVS")  # supplier now VALID
+    @patch("file_validation.get")
     def test_validate_extended_attributes_file_key(self, _):
         """Tests that validate_extended_attributes_file_key returns organization code and COVID vaccine type if all
         elements pass validation, and raises an exception otherwise"""
