@@ -84,7 +84,7 @@ class TestPair:
     "ods_vax": TestPair.E8HA94_COVID_CUD,
     "ods_vax": TestPair.DPSFULL_COVID_CRUDS,
     "ods_vax": TestPair.V0V8L_FLU_CRUDS,
-    "ods_vax": TestPair.V0V8L_3IN1_CRUDS,
+    "ods_vax": TestPair.V0V8L_HPV_CUD,
     "ods_vax": TestPair.X26_MMR_CRUDS,
     "ods_vax": TestPair.YGA_MENACWY_CRUDS,
     """
@@ -119,10 +119,9 @@ class TestPair:
     # DPSREDUCED_MENACWY_CRUDS = OdsVax("DPSREDUCED", "MENACWY")
     # DPSREDUCED_MMR_CRUDS = OdsVax("DPSREDUCED", "MMR")
     # DPSREDUCED_RSV_CRUDS = OdsVax("DPSREDUCED", "RSV")
-    # V0V8L_3IN1_CRUDS = OdsVax("V0V8L", "3IN1")
+    V0V8L_HPV_CUD = OdsVax("V0V8L", "HPV")
     V0V8L_FLU_CRUDS = OdsVax("V0V8L", "FLU")
     # V0V8L_HPV_CRUDS = OdsVax("V0V8L", "HPV")
-    V0V8L_HPV_CUD = OdsVax("V0V8L", "HPV")
     # V0V8L_MENACWY_CRUDS = OdsVax("V0V8L", "MENACWY")
     # V0V8L_MMR_CRUDS = OdsVax("V0V8L", "MMR")
     # YGA_3IN1_CRUDS = OdsVax("YGA", "3IN1")

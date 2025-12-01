@@ -195,7 +195,7 @@ def handle_batch_file(file_key, bucket_name, message_id, created_at_formatted_st
 
         return {
             "statusCode": 200,
-            "message": "Batch file successfully processed",
+            "message": "Successfully sent to SQS for further processing",
             "file_key": file_key,
             "message_id": message_id,
             "vaccine_type": vaccine_type,
@@ -272,7 +272,7 @@ def handle_extended_attributes_file(
             FileStatus.PROCESSING,
         )
 
-        dest_file_key = f"archive/{file_key}"
+        dest_file_key = f"dps_destination/{file_key}"
         copy_file_outside_bucket(bucket_name, file_key, DPS_DESTINATION_BUCKET_NAME, dest_file_key)
         is_file_in_bucket(DPS_DESTINATION_BUCKET_NAME, dest_file_key)
         delete_file(DPS_DESTINATION_BUCKET_NAME, dest_file_key)
