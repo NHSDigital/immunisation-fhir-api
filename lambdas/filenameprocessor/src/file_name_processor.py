@@ -10,14 +10,15 @@ import argparse
 from uuid import uuid4
 
 from audit_table import upsert_audit_table
-from common.aws_s3_utils import move_file, move_file_outside_bucket
+from common.aws_s3_utils import move_file, move_file_to_external_bucket
 from common.clients import STREAM_NAME, get_s3_client, logger
 from common.log_decorator import logging_decorator
 from common.models.errors import UnhandledAuditTableError
 from constants import (
     DPS_DESTINATION_BUCKET_NAME,
+    DPS_DESTINATION_PREFIX,
     ERROR_TYPE_TO_STATUS_CODE_MAP,
-    EXTENDED_ATTRIBUTES_PREFIXES,
+    EXTENDED_ATTRIBUTES_FILE_PREFIXES,
     SOURCE_BUCKET_NAME,
     FileNotProcessedReason,
     FileStatus,
@@ -76,7 +77,7 @@ def handle_record(record) -> dict:
     s3_response = get_s3_client().get_object(Bucket=bucket_name, Key=file_key)
     created_at_formatted_string, expiry_timestamp = get_creation_and_expiry_times(s3_response)
 
-    if file_key.startswith(EXTENDED_ATTRIBUTES_PREFIXES):
+    if file_key.startswith(EXTENDED_ATTRIBUTES_FILE_PREFIXES):
         return handle_extended_attributes_file(
             file_key,
             bucket_name,
@@ -106,7 +107,7 @@ def handle_unexpected_bucket_name(bucket_name: str, file_key: str) -> dict:
     """Handles scenario where Lambda was not invoked by the data-sources bucket. Should not occur due to terraform
     config and overarching design"""
     try:
-        if file_key.startswith(EXTENDED_ATTRIBUTES_PREFIXES):
+        if file_key.startswith(EXTENDED_ATTRIBUTES_FILE_PREFIXES):
             extended_attribute_identifier = validate_extended_attributes_file_key(file_key)
             logger.error(
                 "Unable to process file %s due to unexpected bucket name %s",
@@ -155,7 +156,9 @@ def handle_unexpected_bucket_name(bucket_name: str, file_key: str) -> dict:
         }
 
 
-def handle_batch_file(file_key, bucket_name, message_id, created_at_formatted_string, expiry_timestamp) -> dict:
+def handle_batch_file(
+    file_key: str, bucket_name: str, message_id: str, created_at_formatted_string: str, expiry_timestamp: str
+) -> dict:
     """
     Processes a single record for batch file.
     Returns a dictionary containing information to be included in the logs.
@@ -236,7 +239,7 @@ def handle_batch_file(file_key, bucket_name, message_id, created_at_formatted_st
 
 
 def handle_extended_attributes_file(
-    file_key, bucket_name, message_id, created_at_formatted_string, expiry_timestamp
+    file_key: str, bucket_name: str, message_id: str, created_at_formatted_string: str, expiry_timestamp: str
 ) -> dict:
     """
     Processes a single record for extended attributes file.
@@ -244,15 +247,16 @@ def handle_extended_attributes_file(
     """
     try:
         extended_attribute_identifier = validate_extended_attributes_file_key(file_key)
-        move_file_outside_bucket(bucket_name, file_key, DPS_DESTINATION_BUCKET_NAME, f"dps_destination/{file_key}")
-        queue_name = extended_attribute_identifier
+        move_file_to_external_bucket(
+            bucket_name, file_key, DPS_DESTINATION_BUCKET_NAME, f"{DPS_DESTINATION_PREFIX}{file_key}"
+        )
 
         upsert_audit_table(
             message_id,
             file_key,
             created_at_formatted_string,
             expiry_timestamp,
-            queue_name,
+            extended_attribute_identifier,
             FileStatus.PROCESSING,
         )
         return {
@@ -260,7 +264,7 @@ def handle_extended_attributes_file(
             "message": "Extended Attributes file successfully processed",
             "file_key": file_key,
             "message_id": message_id,
-            "queue_name": queue_name,
+            "queue_name": extended_attribute_identifier,
         }
     except (  # pylint: disable=broad-exception-caught
         VaccineTypePermissionsError,
@@ -273,7 +277,6 @@ def handle_extended_attributes_file(
 
         file_status = get_file_status_for_error(error)
         extended_attribute_identifier = validate_extended_attributes_file_key(file_key)
-        queue_name = extended_attribute_identifier
 
         upsert_audit_table(
             message_id,

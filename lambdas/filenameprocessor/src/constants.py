@@ -11,14 +11,18 @@ from models.errors import (
 )
 
 SOURCE_BUCKET_NAME = os.getenv("SOURCE_BUCKET_NAME")
+
+# We have used an internal temporary bucket here and an acutal dps bucket will replace this
 DPS_DESTINATION_BUCKET_NAME = os.getenv("ACK_BUCKET_NAME")
+EXPECTED_BUCKET_OWNER_ACCOUNT = os.getenv("ACCOUNT_ID")
 AUDIT_TABLE_NAME = os.getenv("AUDIT_TABLE_NAME")
 AUDIT_TABLE_TTL_DAYS = os.getenv("AUDIT_TABLE_TTL_DAYS")
 VALID_VERSIONS = ["V5"]
 
 VACCINE_TYPE_TO_DISEASES_HASH_KEY = "vacc_to_diseases"
 ODS_CODE_TO_SUPPLIER_SYSTEM_HASH_KEY = "ods_code_to_supplier"
-EXTENDED_ATTRIBUTES_PREFIXES = "Vaccination_Extended_Attributes"
+EXTENDED_ATTRIBUTES_FILE_PREFIXES = "Vaccination_Extended_Attributes"
+DPS_DESTINATION_PREFIX = "dps_destination/"
 
 ERROR_TYPE_TO_STATUS_CODE_MAP = {
     VaccineTypePermissionsError: 403,
