@@ -244,7 +244,7 @@ def handle_extended_attributes_file(
     """
     try:
         extended_attribute_identifier = validate_extended_attributes_file_key(file_key)
-        move_file_outside_bucket(bucket_name, file_key, DPS_DESTINATION_BUCKET_NAME, f"archive/{file_key}")
+        move_file_outside_bucket(bucket_name, file_key, DPS_DESTINATION_BUCKET_NAME, f"dps_destination/{file_key}")
         queue_name = extended_attribute_identifier
 
         upsert_audit_table(
