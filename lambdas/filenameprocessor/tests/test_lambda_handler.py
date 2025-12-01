@@ -559,6 +559,30 @@ class TestUnexpectedBucket(TestCase):
             self.assertIn(ravs_record.file_key, args)
             self.assertIn("unknown-bucket", args)
 
+    def test_unexpected_bucket_name_with_extended_attributes_file(self):
+        """Tests if extended attributes file is handled when bucket name is incorrect"""
+        valid_file_key = "Vaccination_Extended_Attributes_V1_5_X8E5B_20000101T00000001.csv"
+        record = {
+            "s3": {
+                "bucket": {"name": "unknown-bucket"},
+                "object": {"key": valid_file_key},
+            }
+        }
+
+        with patch("file_name_processor.logger") as mock_logger:
+            result = handle_record(record)
+
+            self.assertEqual(result["statusCode"], 500)
+            self.assertIn("unexpected bucket name", result["message"])
+            self.assertEqual(result["file_key"], valid_file_key)
+            self.assertEqual(result["vaccine_supplier_info"], f"X8E5B_{EXTENDED_ATTRIBUTES_VACC_TYPE}")
+
+            mock_logger.error.assert_called_once()
+            args = mock_logger.error.call_args[0]
+            self.assertIn("Unable to process file", args[0])
+            self.assertIn(valid_file_key, args)
+            self.assertIn("unknown-bucket", args)
+
     def test_unexpected_bucket_name_and_filename_validation_fails(self):
         """Tests if filename validation error is handled when bucket name is incorrect"""
         invalid_file_key = "InvalidVaccineType_Vaccinations_v5_YGM41_20240708T12130100.csv"
