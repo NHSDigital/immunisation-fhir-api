@@ -315,9 +315,6 @@ class TestLambdaHandlerDataSource(TestCase):
         self.assert_no_sqs_message()
         self.assert_no_ack_file(test_cases[0])
 
-    # This test won't work until we rewrite it to mock a ClientError on copy.
-    # This is because we removed the is_file_in_bucket check.
-    '''
     def test_lambda_handler_extended_attributes_failure(self):
         """
         Tests that for an extended attributes file (prefix starts with 'Vaccination_Extended_Attributes'):
@@ -342,21 +339,15 @@ class TestLambdaHandlerDataSource(TestCase):
 
         # TODO: rewrite the bucket patches to use moto
 
-        # Patch uuid4 (message id), and don't move the file
+        # Patch uuid4 (message id), and raise an exception instead of moving the file.
         with (
             patch("file_name_processor.uuid4", return_value=test_cases[0].message_id),
-            patch(
-                "file_name_processor.copy_file_to_external_bucket",
-                side_effect=lambda src_bucket, key, dst_bucket, dst_key, exp_owner, exp_src_owner: (
-                    # effectively do nothing
-                    None,
-                ),
-            ),
+            patch("file_name_processor.copy_file_to_external_bucket", side_effect=Exception("Test ClientError")),
         ):
             lambda_handler(self.make_event([self.make_record(test_cases[0].file_key)]), None)
 
         # Assert audit table entry captured with Failed and queue_name set to the identifier.
-        # Assert that the ClientError message is a 404 Not Found.
+        # Assert that the ClientError message is as expected.
         table_items = self.get_audit_table_items()
         self.assertEqual(len(table_items), 1)
         item = table_items[0]
@@ -369,7 +360,7 @@ class TestLambdaHandlerDataSource(TestCase):
         self.assertEqual(item[AuditTableKeys.STATUS]["S"], "Failed")
         self.assertEqual(
             item[AuditTableKeys.ERROR_DETAILS]["S"],
-            "An error occurred (404) when calling the HeadObject operation: Not Found",
+            "Test ClientError",
         )
         self.assertEqual(item[AuditTableKeys.EXPIRES_AT]["N"], str(test_cases[0].expires_at))
         # File should be moved to source under archive/
@@ -381,7 +372,6 @@ class TestLambdaHandlerDataSource(TestCase):
         # No SQS and no ack file
         self.assert_no_sqs_message()
         self.assert_no_ack_file(test_cases[0])
-    '''
 
     def test_lambda_handler_extended_attributes_invalid_key(self):
         """
