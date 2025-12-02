@@ -88,17 +88,30 @@ class TestS3UtilsShared(unittest.TestCase):
         with self.assertRaises(self.s3.exceptions.NoSuchKey):
             self.s3.get_object(Bucket=self.destination_bucket, Key=destination_key)
 
-        # Execute move across buckets
-        aws_s3_utils.move_file_to_external_bucket(
+        # Execute copy across buckets
+        aws_s3_utils.copy_file_to_external_bucket(
             source_bucket=self.source_bucket,
             source_key=source_key,
             destination_bucket=self.destination_bucket,
             destination_key=destination_key,
+            expected_bucket_owner=aws_s3_utils.EXPECTED_BUCKET_OWNER_ACCOUNT,
+            expected_source_bucket_owner=aws_s3_utils.EXPECTED_BUCKET_OWNER_ACCOUNT,
         )
 
         # Assert destination has the object
         dest_obj = self.s3.get_object(Bucket=self.destination_bucket, Key=destination_key)
         self.assertEqual(dest_obj["Body"].read(), body_content)
+
+        # Assert source object was not deleted
+        src_obj = self.s3.get_object(Bucket=self.source_bucket, Key=source_key)
+        self.assertEqual(src_obj["Body"].read(), body_content)
+
+        # Execute delete file
+        aws_s3_utils.delete_file(
+            source_bucket=self.source_bucket,
+            source_key=source_key,
+            expected_bucket_owner=aws_s3_utils.EXPECTED_BUCKET_OWNER_ACCOUNT,
+        )
 
         # Assert source object was deleted
         with self.assertRaises(self.s3.exceptions.NoSuchKey):
