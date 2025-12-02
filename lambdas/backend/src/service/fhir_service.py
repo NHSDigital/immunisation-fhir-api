@@ -1,8 +1,10 @@
+import copy
 import datetime
 import logging
 import os
+import urllib.parse
 import uuid
-from typing import Optional, Union, cast
+from typing import Any, Optional, cast
 from uuid import uuid4
 
 from fhir.resources.R4B.bundle import (
@@ -16,27 +18,33 @@ from fhir.resources.R4B.bundle import (
 from fhir.resources.R4B.fhirtypes import Id
 from fhir.resources.R4B.identifier import Identifier
 from fhir.resources.R4B.immunization import Immunization
+from fhir.resources.R4B.operationoutcome import OperationOutcome
 
-import parameter_parser
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
+from common.models.constants import Constants
 from common.models.errors import (
+    Code,
     CustomValidationError,
     IdentifierDuplicationError,
     MandatoryError,
     ResourceNotFoundError,
+    Severity,
+    create_operation_outcome,
 )
 from common.models.fhir_immunization import ImmunizationValidator
 from common.models.utils.generic_utils import (
-    form_json,
     get_contained_patient,
     get_occurrence_datetime,
 )
 from common.models.utils.validation_utils import (
     get_vaccine_type,
+    validate_has_status,
     validate_identifiers_match,
     validate_resource_versions_match,
 )
+from controller.constants import IMMUNIZATION_TARGET_LEGACY_KEY_NAME, ImmunizationSearchParameterName
+from controller.parameter_parser import PATIENT_IDENTIFIER_SYSTEM
 from filter import Filter
 from models.errors import UnauthorizedVaxError
 from repository.fhir_repository import ImmunizationRepository
@@ -70,6 +78,10 @@ def get_service_url(
 
 
 class FhirService:
+    _DATA_MISSING_DATE_TIME_ERROR_MSG = (
+        "Data quality issue - immunisation with ID %s was found containing no occurrenceDateTime"
+    )
+
     def __init__(
         self,
         imms_repo: ImmunizationRepository,
@@ -81,25 +93,28 @@ class FhirService:
         self.validator = validator
 
     def get_immunization_by_identifier(
-        self, identifier_pk: str, supplier_name: str, identifier: str, element: str
-    ) -> Optional[dict]:
+        self, identifier: Identifier, supplier_name: str, elements: Optional[set[str]]
+    ) -> FhirBundle:
         """
-        Get an Immunization by its ID. Return None if not found. If the patient doesn't have an NHS number,
-        return the Immunization.
+        Get an Immunization by its ID. Returns a FHIR Bundle containing the search results.
         """
         base_url = f"{get_service_url()}/Immunization"
-        imms_resp, vaccination_type = self.immunization_repo.get_immunization_by_identifier(identifier_pk)
+        resource, resource_metadata = self.immunization_repo.get_immunization_by_identifier(identifier)
 
-        if not imms_resp:
-            return form_json(imms_resp, None, None, base_url)
+        if not resource:
+            return self.make_empty_identifier_search_bundle(base_url)
+
+        vaccination_type = get_vaccine_type(resource)
 
         if not self.authoriser.authorise(supplier_name, ApiOperationCode.SEARCH, {vaccination_type}):
             raise UnauthorizedVaxError()
 
         patient_full_url = f"urn:uuid:{str(uuid4())}"
-        filtered_resource = Filter.search(imms_resp["resource"], patient_full_url)
-        imms_resp["resource"] = filtered_resource
-        return form_json(imms_resp, element, identifier, base_url)
+        filtered_resource = Filter.search(resource, patient_full_url)
+
+        return self.make_identifier_search_bundle(
+            filtered_resource, resource_metadata.resource_version, elements, identifier, base_url
+        )
 
     def get_immunization_and_version_by_id(self, imms_id: str, supplier_system: str) -> tuple[Immunization, str]:
         """
@@ -195,8 +210,106 @@ class FhirService:
 
         self.immunization_repo.delete_immunization(imms_id, supplier_system)
 
-    @staticmethod
-    def is_valid_date_from(immunization: dict, date_from: Union[datetime.date, None]):
+    def search_immunizations(
+        self,
+        nhs_number: str,
+        vaccine_types: set[str],
+        supplier_system: str,
+        date_from: Optional[datetime.date],
+        date_to: Optional[datetime.date],
+        include: Optional[str],
+    ) -> FhirBundle:
+        """
+        Finds all instances of Immunization(s) for a specified patient for the given specified vaccine type(s).
+        Bundles the resources with the relevant patient resource and returns the bundle along with a boolean to state
+        whether the supplier requested vaccine types they were not authorised for.
+        """
+        permitted_vacc_types = self.authoriser.filter_permitted_vacc_types(
+            supplier_system, ApiOperationCode.SEARCH, vaccine_types
+        )
+
+        # Only raise error if supplier's request had no permitted vaccinations
+        if not permitted_vacc_types:
+            raise UnauthorizedVaxError()
+
+        # Have to retrieve first and then inspect resource to filter by date
+        all_resources = self.immunization_repo.find_immunizations(nhs_number, permitted_vacc_types)
+        filtered_resources = self._filter_search_results_by_date_and_status(
+            immunizations=all_resources, date_from=date_from, date_to=date_to, status=Constants.COMPLETED_STATUS
+        )
+
+        # Create the patient URN for the fullUrl field.
+        # NOTE: This UUID is assigned when a SEARCH request is received and used only for referencing the patient
+        # resource from immunisation resources within the bundle. The fullUrl value we are using is a urn (hence the
+        # FHIR key name of "fullUrl" is somewhat misleading) which cannot be used to locate any externally stored
+        # patient resource. This is as agreed with VDS team for backwards compatibility with Immunisation History API.
+        patient_full_url = f"urn:uuid:{str(uuid4())}"
+
+        # Adjust immunization resources for the SEARCH response
+        processed_resources = [Filter.search(imms, patient_full_url) for imms in copy.deepcopy(filtered_resources)]
+        entries = [
+            BundleEntry(
+                resource=Immunization.parse_obj(imms),
+                search=BundleEntrySearch(mode="match"),
+                fullUrl=f"{get_service_url()}/Immunization/{imms['id']}",
+            )
+            for imms in processed_resources
+        ]
+
+        # Add patient resource if there is at least one immunization resource
+        if len(processed_resources) > 0:
+            imms_patient_record = get_contained_patient(filtered_resources[-1])
+            entries.append(
+                BundleEntry(
+                    resource=self.process_patient_for_bundle(imms_patient_record),
+                    search=BundleEntrySearch(mode="include"),
+                    fullUrl=patient_full_url,
+                )
+            )
+
+        if len(vaccine_types) != len(permitted_vacc_types):
+            # Include Operation Outcome error in response but still return the vaccs the client was authorised for
+            entries.append(
+                BundleEntry(
+                    resource=OperationOutcome.construct(
+                        **create_operation_outcome(
+                            resource_id=str(uuid.uuid4()),
+                            severity=Severity.warning,
+                            code=Code.unauthorized,
+                            diagnostics="Your search contains details that you are not authorised to request",
+                        )
+                    )
+                )
+            )
+
+        return FhirBundle(
+            type="searchset",
+            entry=entries,
+            link=[
+                BundleLink(
+                    relation="self",
+                    url=self.create_url_for_bundle_link(permitted_vacc_types, nhs_number, date_from, date_to, include),
+                )
+            ],
+            total=len(processed_resources),
+        )
+
+    def _filter_search_results_by_date_and_status(
+        self,
+        immunizations: list[dict],
+        date_from: Optional[datetime.date],
+        date_to: Optional[datetime.date],
+        status: Optional[str],
+    ) -> list[dict]:
+        return [
+            immunization
+            for immunization in immunizations
+            if self.is_valid_date_from(immunization, date_from)
+            and self.is_valid_date_to(immunization, date_to)
+            and validate_has_status(immunization, status)
+        ]
+
+    def is_valid_date_from(self, immunization: dict, date_from: Optional[datetime.date]):
         """
         Returns False if immunization occurrence is earlier than the date_from, or True otherwise
         (also returns True if date_from is None)
@@ -205,13 +318,12 @@ class FhirService:
             return True
 
         if (occurrence_datetime := get_occurrence_datetime(immunization)) is None:
-            # TODO: Log error if no date.
+            logger.error(self._DATA_MISSING_DATE_TIME_ERROR_MSG, immunization.get("id"))
             return True
 
         return occurrence_datetime.date() >= date_from
 
-    @staticmethod
-    def is_valid_date_to(immunization: dict, date_to: Union[datetime.date, None]):
+    def is_valid_date_to(self, immunization: dict, date_to: Optional[datetime.date]):
         """
         Returns False if immunization occurrence is later than the date_to, or True otherwise
         (also returns True if date_to is None)
@@ -220,10 +332,59 @@ class FhirService:
             return True
 
         if (occurrence_datetime := get_occurrence_datetime(immunization)) is None:
-            # TODO: Log error if no date.
+            logger.error(self._DATA_MISSING_DATE_TIME_ERROR_MSG, immunization.get("id"))
             return True
 
         return occurrence_datetime.date() <= date_to
+
+    @staticmethod
+    def make_identifier_search_bundle(
+        resource: Optional[dict],
+        version_id: Optional[int],
+        elements: Optional[set[str]],
+        identifier: Identifier,
+        base_url: str,
+    ) -> FhirBundle:
+        searched_url = f"{base_url}?identifier={identifier.system}|{identifier.value}" + (
+            f"&_elements={','.join(sorted(elements))}" if elements else ""
+        )
+
+        meta = {"versionId": version_id}
+
+        # Full Immunization payload to be returned if only the identifier parameter was provided and truncated when
+        # _elements is used
+        if elements is not None:
+            resource_for_bundle: dict[str, Any] = {"resourceType": "Immunization"}
+            if "id" in elements:
+                resource_for_bundle["id"] = resource["id"]
+            if "meta" in elements:
+                resource_for_bundle["meta"] = meta
+
+        else:
+            resource_for_bundle = copy.deepcopy(resource)
+            resource_for_bundle["meta"] = meta
+
+        entry = BundleEntry.construct(
+            fullUrl=f"{base_url}/{resource['id']}",
+            resource=(
+                Immunization.construct(**resource_for_bundle)
+                if elements
+                else Immunization.parse_obj(resource_for_bundle)
+            ),
+            search=BundleEntrySearch.construct(mode="match") if not elements else None,
+        )
+
+        return FhirBundle(
+            type="searchset",
+            link=[BundleLink(relation="self", url=searched_url)],
+            entry=[entry],
+            total=1,
+        )
+
+    @staticmethod
+    def make_empty_identifier_search_bundle(base_url: str) -> FhirBundle:
+        no_results_url = f"{base_url}?identifier=None"
+        return FhirBundle(entry=[], link=[BundleLink(relation="self", url=no_results_url)], type="searchset", total=0)
 
     @staticmethod
     def process_patient_for_bundle(patient: dict):
@@ -249,90 +410,27 @@ class FhirService:
         return new_patient
 
     @staticmethod
-    def create_url_for_bundle_link(params, vaccine_types):
-        """
-        Updates the immunization.target parameter to include the given vaccine types and returns the url for the search
-        bundle.
-        """
-        base_url = f"{get_service_url()}/Immunization"
+    def create_url_for_bundle_link(
+        immunization_targets: set[str],
+        patient_nhs_number: str,
+        date_from: Optional[datetime.date],
+        date_to: Optional[datetime.date],
+        include: Optional[str],
+    ) -> str:
+        """Creates url for the searchset Bundle Link."""
+        params = {
+            # Temporarily maintaining this for backwards compatibility with imms history, but we should remove it
+            IMMUNIZATION_TARGET_LEGACY_KEY_NAME: ",".join(immunization_targets),
+            ImmunizationSearchParameterName.IMMUNIZATION_TARGET: ",".join(immunization_targets),
+            ImmunizationSearchParameterName.PATIENT_IDENTIFIER: f"{PATIENT_IDENTIFIER_SYSTEM}|{patient_nhs_number}",
+        }
 
-        # Update the immunization.target parameter
-        new_immunization_target_param = f"immunization.target={','.join(vaccine_types)}"
-        parameters = "&".join(
-            [(new_immunization_target_param if x.startswith("-immunization.target=") else x) for x in params.split("&")]
-        )
+        if date_from:
+            params[ImmunizationSearchParameterName.DATE_FROM] = date_from.isoformat()
+        if date_to:
+            params[ImmunizationSearchParameterName.DATE_TO] = date_to.isoformat()
+        if include:
+            params[ImmunizationSearchParameterName.INCLUDE] = include
 
-        return f"{base_url}?{parameters}"
-
-    def search_immunizations(
-        self,
-        nhs_number: str,
-        vaccine_types: list[str],
-        params: str,
-        supplier_system: str,
-        date_from: datetime.date = parameter_parser.date_from_default,
-        date_to: datetime.date = parameter_parser.date_to_default,
-    ) -> tuple[FhirBundle, bool]:
-        """
-        Finds all instances of Immunization(s) for a specified patient which are for the specified vaccine type(s).
-        Bundles the resources with the relevant patient resource and returns the bundle along with a boolean to state
-        whether the supplier requested vaccine types they were not authorised for.
-        """
-        permitted_vacc_types = self.authoriser.filter_permitted_vacc_types(
-            supplier_system, ApiOperationCode.SEARCH, set(vaccine_types)
-        )
-
-        # Only raise error if supplier's request had no permitted vaccinations
-        if not permitted_vacc_types:
-            raise UnauthorizedVaxError()
-
-        # Obtain all resources which are for the requested nhs number and vaccine type(s) and within the date range
-        resources = [
-            r
-            for r in self.immunization_repo.find_immunizations(nhs_number, permitted_vacc_types)
-            if self.is_valid_date_from(r, date_from) and self.is_valid_date_to(r, date_to)
-        ]
-
-        # Create the patient URN for the fullUrl field.
-        # NOTE: This UUID is assigned when a SEARCH request is received and used only for referencing the patient
-        # resource from immunisation resources within the bundle. The fullUrl value we are using is a urn (hence the
-        # FHIR key name of "fullUrl" is somewhat misleading) which cannot be used to locate any externally stored
-        # patient resource. This is as agreed with VDS team for backwards compatibility with Immunisation History API.
-        patient_full_url = f"urn:uuid:{str(uuid4())}"
-
-        imms_patient_record = get_contained_patient(resources[-1]) if resources else None
-
-        # Filter and amend the immunization resources for the SEARCH response
-        resources_filtered_for_search = [Filter.search(imms, patient_full_url) for imms in resources]
-
-        # Add bundle entries for each of the immunization resources
-        entries = [
-            BundleEntry(
-                resource=Immunization.parse_obj(imms),
-                search=BundleEntrySearch(mode="match"),
-                fullUrl=f"{get_service_url()}/Immunization/{imms['id']}",
-            )
-            for imms in resources_filtered_for_search
-        ]
-
-        # Add patient resource if there is at least one immunization resource
-        if len(resources) > 0:
-            entries.append(
-                BundleEntry(
-                    resource=self.process_patient_for_bundle(imms_patient_record),
-                    search=BundleEntrySearch(mode="include"),
-                    fullUrl=patient_full_url,
-                )
-            )
-
-        # Create the bundle
-        fhir_bundle = FhirBundle(resourceType="Bundle", type="searchset", entry=entries)
-        fhir_bundle.link = [
-            BundleLink(
-                relation="self",
-                url=self.create_url_for_bundle_link(params, permitted_vacc_types),
-            )
-        ]
-        supplier_requested_unauthorised_vaccs = len(vaccine_types) != len(permitted_vacc_types)
-
-        return fhir_bundle, supplier_requested_unauthorised_vaccs
+        query = urllib.parse.urlencode(params)
+        return f"{get_service_url()}/Immunization?{query}"

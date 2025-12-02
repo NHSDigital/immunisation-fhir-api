@@ -81,6 +81,18 @@ class TestCreateImmunization(ImmunizationBaseTest):
         response = self.default_imms_api.create_immunization(imms, expected_status_code=400)
         self.assertEqual(response.status_code, 400)
 
+    def test_valid_nhs_number_no_pds(self):
+        """it should accept the request if nhs-number is valid but was previously known to have been
+        notified as non-existent by PDS"""
+        valid_nhs_number = "9462206376"
+        imms = generate_imms_resource(nhs_number=valid_nhs_number)
+
+        response = self.default_imms_api.create_immunization(imms)
+
+        self.assertEqual(response.status_code, 201, response.text)
+        self.assertEqual(response.text, "")
+        self.assertTrue("Location" in response.headers)
+
     def test_validation(self):
         """it should validate Immunization"""
         # NOTE: This e2e test is here to prove validation logic is wired to the backend.

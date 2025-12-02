@@ -10,17 +10,20 @@ import argparse
 from uuid import uuid4
 
 from audit_table import upsert_audit_table
-from common.aws_s3_utils import move_file
+from common.aws_s3_utils import move_file, move_file_to_external_bucket
 from common.clients import STREAM_NAME, get_s3_client, logger
 from common.log_decorator import logging_decorator
 from common.models.errors import UnhandledAuditTableError
 from constants import (
+    DPS_DESTINATION_BUCKET_NAME,
+    DPS_DESTINATION_PREFIX,
     ERROR_TYPE_TO_STATUS_CODE_MAP,
+    EXTENDED_ATTRIBUTES_FILE_PREFIX,
     SOURCE_BUCKET_NAME,
     FileNotProcessedReason,
     FileStatus,
 )
-from file_validation import is_file_in_directory_root, validate_file_key
+from file_validation import is_file_in_directory_root, validate_batch_file_key, validate_extended_attributes_file_key
 from make_and_upload_ack_file import make_and_upload_the_ack_file
 from models.errors import (
     InvalidFileKeyError,
@@ -53,8 +56,6 @@ def handle_record(record) -> dict:
             "error": str(error),
         }
 
-    vaccine_type = "unknown"
-    supplier = "unknown"
     expiry_timestamp = "unknown"
 
     if bucket_name != SOURCE_BUCKET_NAME:
@@ -72,15 +73,103 @@ def handle_record(record) -> dict:
     message_id = "Message id was not created"
     created_at_formatted_string = "created_at_time not identified"
 
+    message_id = str(uuid4())
+    s3_response = get_s3_client().get_object(Bucket=bucket_name, Key=file_key)
+    created_at_formatted_string, expiry_timestamp = get_creation_and_expiry_times(s3_response)
+
+    if file_key.startswith(EXTENDED_ATTRIBUTES_FILE_PREFIX):
+        return handle_extended_attributes_file(
+            file_key,
+            bucket_name,
+            message_id,
+            created_at_formatted_string,
+            expiry_timestamp,
+        )
+    else:
+        return handle_batch_file(
+            file_key,
+            bucket_name,
+            message_id,
+            created_at_formatted_string,
+            expiry_timestamp,
+        )
+
+
+def get_file_status_for_error(error: Exception) -> str:
+    """Creates a file status based on the type of error that was thrown"""
+    if isinstance(error, VaccineTypePermissionsError):
+        return f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.UNAUTHORISED}"
+
+    return FileStatus.FAILED
+
+
+def handle_unexpected_bucket_name(bucket_name: str, file_key: str) -> dict:
+    """Handles scenario where Lambda was not invoked by the data-sources bucket. Should not occur due to terraform
+    config and overarching design"""
     try:
-        message_id = str(uuid4())
-        s3_response = get_s3_client().get_object(Bucket=bucket_name, Key=file_key)
-        created_at_formatted_string, expiry_timestamp = get_creation_and_expiry_times(s3_response)
+        if file_key.startswith(EXTENDED_ATTRIBUTES_FILE_PREFIX):
+            extended_attribute_identifier = validate_extended_attributes_file_key(file_key)
+            logger.error(
+                "Unable to process file %s due to unexpected bucket name %s",
+                file_key,
+                bucket_name,
+            )
+            message = f"Failed to process file due to unexpected bucket name {bucket_name}"
+            return {
+                "statusCode": 500,
+                "message": message,
+                "file_key": file_key,
+                "vaccine_supplier_info": extended_attribute_identifier,
+            }
+        else:
+            vaccine_type, supplier = validate_batch_file_key(file_key)
+            logger.error(
+                "Unable to process file %s due to unexpected bucket name %s",
+                file_key,
+                bucket_name,
+            )
+            message = f"Failed to process file due to unexpected bucket name {bucket_name}"
 
-        vaccine_type, supplier = validate_file_key(file_key)
+            return {
+                "statusCode": 500,
+                "message": message,
+                "file_key": file_key,
+                "vaccine_type": vaccine_type,
+                "supplier": supplier,
+            }
+
+    except Exception as error:
+        logger.error(
+            "Unable to process file due to unexpected bucket name %s and file key %s",
+            bucket_name,
+            file_key,
+        )
+        message = f"Failed to process file due to unexpected bucket name {bucket_name} and file key {file_key}"
+
+        return {
+            "statusCode": 500,
+            "message": message,
+            "file_key": file_key,
+            "vaccine_type": "unknown",
+            "supplier": "unknown",
+            "error": str(error),
+        }
+
+
+def handle_batch_file(
+    file_key: str, bucket_name: str, message_id: str, created_at_formatted_string: str, expiry_timestamp: str
+) -> dict:
+    """
+    Processes a single record for batch file.
+    Returns a dictionary containing information to be included in the logs.
+    """
+    vaccine_type = "unknown"
+    supplier = "unknown"
+    try:
+        vaccine_type, supplier = validate_batch_file_key(file_key)
         permissions = validate_vaccine_type_permissions(vaccine_type=vaccine_type, supplier=supplier)
-
         queue_name = f"{supplier}_{vaccine_type}"
+
         upsert_audit_table(
             message_id,
             file_key,
@@ -97,10 +186,8 @@ def handle_record(record) -> dict:
             supplier,
             created_at_formatted_string,
         )
-
         logger.info("Lambda invocation successful for file '%s'", file_key)
 
-        # Return details for logs
         return {
             "statusCode": 200,
             "message": "Successfully sent to SQS for further processing",
@@ -108,8 +195,8 @@ def handle_record(record) -> dict:
             "message_id": message_id,
             "vaccine_type": vaccine_type,
             "supplier": supplier,
+            "queue_name": queue_name,
         }
-
     except (  # pylint: disable=broad-exception-caught
         VaccineTypePermissionsError,
         InvalidFileKeyError,
@@ -119,8 +206,8 @@ def handle_record(record) -> dict:
     ) as error:
         logger.error("Error processing file '%s': %s", file_key, str(error))
 
-        queue_name = f"{supplier}_{vaccine_type}"
         file_status = get_file_status_for_error(error)
+        queue_name = f"{supplier}_{vaccine_type}"
 
         upsert_audit_table(
             message_id,
@@ -151,48 +238,61 @@ def handle_record(record) -> dict:
         }
 
 
-def get_file_status_for_error(error: Exception) -> str:
-    """Creates a file status based on the type of error that was thrown"""
-    if isinstance(error, VaccineTypePermissionsError):
-        return f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.UNAUTHORISED}"
-
-    return FileStatus.FAILED
-
-
-def handle_unexpected_bucket_name(bucket_name: str, file_key: str) -> dict:
-    """Handles scenario where Lambda was not invoked by the data-sources bucket. Should not occur due to terraform
-    config and overarching design"""
+def handle_extended_attributes_file(
+    file_key: str, bucket_name: str, message_id: str, created_at_formatted_string: str, expiry_timestamp: str
+) -> dict:
+    """
+    Processes a single record for extended attributes file.
+    Returns a dictionary containing information to be included in the logs.
+    """
     try:
-        vaccine_type, supplier = validate_file_key(file_key)
-        logger.error(
-            "Unable to process file %s due to unexpected bucket name %s",
-            file_key,
-            bucket_name,
+        extended_attribute_identifier = validate_extended_attributes_file_key(file_key)
+        move_file_to_external_bucket(
+            bucket_name, file_key, DPS_DESTINATION_BUCKET_NAME, f"{DPS_DESTINATION_PREFIX}{file_key}"
         )
-        message = f"Failed to process file due to unexpected bucket name {bucket_name}"
 
+        upsert_audit_table(
+            message_id,
+            file_key,
+            created_at_formatted_string,
+            expiry_timestamp,
+            extended_attribute_identifier,
+            FileStatus.PROCESSING,
+        )
         return {
-            "statusCode": 500,
-            "message": message,
+            "statusCode": 200,
+            "message": "Extended Attributes file successfully processed",
             "file_key": file_key,
-            "vaccine_type": vaccine_type,
-            "supplier": supplier,
+            "message_id": message_id,
+            "queue_name": extended_attribute_identifier,
         }
+    except (  # pylint: disable=broad-exception-caught
+        VaccineTypePermissionsError,
+        InvalidFileKeyError,
+        UnhandledAuditTableError,
+        UnhandledSqsError,
+        Exception,
+    ) as error:
+        logger.error("Error processing file '%s': %s", file_key, str(error))
 
-    except Exception as error:
-        logger.error(
-            "Unable to process file due to unexpected bucket name %s and file key %s",
-            bucket_name,
+        file_status = get_file_status_for_error(error)
+        extended_attribute_identifier = validate_extended_attributes_file_key(file_key)
+
+        upsert_audit_table(
+            message_id,
             file_key,
+            created_at_formatted_string,
+            expiry_timestamp,
+            extended_attribute_identifier,
+            file_status,
+            error_details=str(error),
         )
-        message = f"Failed to process file due to unexpected bucket name {bucket_name} and file key {file_key}"
 
         return {
             "statusCode": 500,
-            "message": message,
+            "message": f"Failed to process extended attributes file {file_key} from bucket {bucket_name}",
             "file_key": file_key,
-            "vaccine_type": "unknown",
-            "supplier": "unknown",
+            "message_id": message_id,
             "error": str(error),
         }
 

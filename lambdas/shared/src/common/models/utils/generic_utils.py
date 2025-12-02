@@ -2,19 +2,9 @@
 
 import base64
 import datetime
-import json
 import urllib.parse
-from typing import Any, Dict, Literal, Optional
+from typing import Literal, Optional
 
-from fhir.resources.R4B.bundle import (
-    Bundle as FhirBundle,
-)
-from fhir.resources.R4B.bundle import (
-    BundleEntry,
-    BundleEntrySearch,
-    BundleLink,
-)
-from fhir.resources.R4B.immunization import Immunization
 from stdnum.verhoeff import validate
 
 from common.models.constants import Constants
@@ -152,58 +142,6 @@ def create_diagnostics_error(value):
         diagnostics = f"Validation errors: identifier[0].{value} doesn't match with the stored content"
     exp_error = {"diagnostics": diagnostics}
     return exp_error
-
-
-def make_empty_bundle(self_url: str) -> Dict[str, Any]:
-    return {
-        "resourceType": "Bundle",
-        "type": "searchset",
-        "link": [{"relation": "self", "url": self_url}],
-        "entry": [],
-        "total": 0,
-    }
-
-
-def form_json(response, _elements, identifier, baseurl):
-    self_url = f"{baseurl}?identifier={identifier}" + (f"&_elements={_elements}" if _elements else "")
-
-    if not response:
-        return make_empty_bundle(self_url)
-
-    meta = {"versionId": response["version"]} if "version" in response else {}
-
-    # Full Immunization payload to be returned if only the identifier parameter was provided and truncated
-    # when _elements is used
-    if _elements:
-        elements = {e.strip().lower() for e in _elements.split(",") if e.strip()}
-        resource = {"resourceType": "Immunization"}
-        if "id" in elements:
-            resource["id"] = response["id"]
-        if "meta" in elements and meta:
-            resource["meta"] = meta
-
-    else:
-        resource = response["resource"]
-        resource["meta"] = meta
-
-    entry = BundleEntry(
-        fullUrl=f"{baseurl}/{response['id']}",
-        resource=(Immunization.construct(**resource) if _elements else Immunization.parse_obj(resource)),
-        search=BundleEntrySearch.construct(mode="match") if not _elements else None,
-    )
-
-    fhir_bundle = FhirBundle(
-        resourceType="Bundle",
-        type="searchset",
-        link=[BundleLink(relation="self", url=self_url)],
-        entry=[entry],
-        total=1,
-    )
-
-    # Reassigned total to ensure it appears last in the response to match expected output
-    data = json.loads(fhir_bundle.json(by_alias=True))
-    data["total"] = data.pop("total")
-    return data
 
 
 def check_keys_in_sources(event, not_required_keys):
