@@ -159,7 +159,7 @@ def handle_unexpected_bucket_name(bucket_name: str, file_key: str) -> dict:
 
 
 def handle_batch_file(
-    file_key: str, bucket_name: str, message_id: str, created_at_formatted_string: str, expiry_timestamp: str
+    file_key: str, bucket_name: str, message_id: str, created_at_formatted_string: str, expiry_timestamp: int
 ) -> dict:
     """
     Processes a single record for batch file.
@@ -242,7 +242,7 @@ def handle_batch_file(
 
 
 def handle_extended_attributes_file(
-    file_key: str, bucket_name: str, message_id: str, created_at_formatted_string: str, expiry_timestamp: str
+    file_key: str, bucket_name: str, message_id: str, created_at_formatted_string: str, expiry_timestamp: int
 ) -> dict:
     """
     Processes a single record for extended attributes file.
