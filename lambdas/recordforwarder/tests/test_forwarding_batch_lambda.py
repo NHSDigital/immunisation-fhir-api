@@ -164,8 +164,15 @@ class TestForwardLambdaHandler(TestCase):
         sqs_messages = [json.loads(call[1]["MessageBody"]) for call in mock_send_message.call_args_list]
 
         sqs_messages = sqs_messages[0] if len(sqs_messages) == 1 and isinstance(sqs_messages[0], list) else sqs_messages
+        idx = 0
 
-        for idx, test_case in enumerate(test_cases):
+        for test_case in test_cases:
+            # Only send failed events to SQS for the ack file
+            is_failure = test_case.get("is_failure", False)
+
+            if not is_failure:
+                continue
+
             expected_keys = test_case["expected_keys"]
             expected_values = test_case["expected_values"]
 
@@ -174,6 +181,7 @@ class TestForwardLambdaHandler(TestCase):
                     assert key in sqs_messages[idx]
 
                 message = sqs_messages[idx]
+                idx = idx + 1
                 for key, value in expected_values.items():
                     if isinstance(value, dict):
                         for sub_key, sub_value in value.items():
@@ -460,7 +468,8 @@ class TestForwardLambdaHandler(TestCase):
     @patch("forwarding_batch_lambda.sqs_client.send_message")
     def test_forward_lambda_handler_groups_and_sends_events_by_filename(self, mock_send_message):
         """VED-734 - each batch handled by the Lambda may have events relating to different parent CSV files. This
-        test ensures events are grouped accordingly and sent with the correct SQS"""
+        test ensures events are grouped accordingly and sent with the correct SQS. The messages contain errors as we
+        only forward errors to the ack file."""
         mock_records = [
             {
                 "input": self.generate_input(
@@ -469,6 +478,7 @@ class TestForwardLambdaHandler(TestCase):
                     operation_requested="CREATE",
                     file_key="supplier_1_rsv_test_file",
                     supplier="supplier_1",
+                    diagnostics=create_diagnostics_dictionary(RecordProcessorError("Some permission error")),
                 )
             },
             {
@@ -478,6 +488,7 @@ class TestForwardLambdaHandler(TestCase):
                     operation_requested="CREATE",
                     file_key="supplier_2_rsv_test_file",
                     supplier="supplier_2",
+                    diagnostics=create_diagnostics_dictionary(RecordProcessorError("A different permission error")),
                 )
             },
         ]
@@ -507,10 +518,10 @@ class TestForwardLambdaHandler(TestCase):
             json.loads(first_call_kwargs["MessageBody"])[0],
             {
                 "created_at_formatted_string": "2025-01-24T12:00:00Z",
+                "diagnostics": "Some permission error",
                 "file_key": "supplier_1_rsv_test_file",
                 "operation_start_time": ANY,
                 "operation_end_time": ANY,
-                "imms_id": ANY,
                 "local_id": "local-1",
                 "operation_requested": "CREATE",
                 "row_id": "row-1",
@@ -522,15 +533,91 @@ class TestForwardLambdaHandler(TestCase):
             json.loads(second_call_kwargs["MessageBody"])[0],
             {
                 "created_at_formatted_string": "2025-01-24T12:00:00Z",
+                "diagnostics": "A different permission error",
                 "file_key": "supplier_2_rsv_test_file",
                 "operation_start_time": ANY,
                 "operation_end_time": ANY,
-                "imms_id": ANY,
                 "local_id": "local-2",
                 "operation_requested": "CREATE",
                 "row_id": "row-2",
                 "supplier": "supplier_2",
                 "vaccine_type": "RSV",
+            },
+        )
+
+    @patch("forwarding_batch_lambda.sqs_client.send_message")
+    def test_forward_lambda_handler_sends_eof_message(self, mock_send_message):
+        """VED-926 - the forward lambda handler should identify and send an EOF message to SQS."""
+        mock_records = [
+            {
+                "input": self.generate_input(
+                    row_id=1,
+                    identifier_value="supplier_1_system/54321",
+                    operation_requested="CREATE",
+                    file_key="supplier_1_rsv_test_file",
+                    supplier="supplier_1",
+                    diagnostics=create_diagnostics_dictionary(RecordProcessorError("Some permission error")),
+                )
+            },
+            {
+                "input": self.generate_input(
+                    row_id=2,
+                    identifier_value="supplier_1_system/12345",
+                    operation_requested="CREATE",
+                    file_key="supplier_1_rsv_test_file",
+                    supplier="supplier_1",
+                )
+            },
+            {
+                "input": {
+                    "created_at_formatted_string": "2025-01-24T12:00:00Z",
+                    "file_key": "supplier_1_rsv_test_file",
+                    "message": "EOF",
+                    "row_id": "test-id-1234^2",
+                    "supplier": "supplier_1",
+                    "vax_type": "RSV",
+                }
+            },
+        ]
+        mock_kinesis_event = self.generate_event(mock_records)
+
+        self.mock_redis.hget.return_value = "RSV"
+        self.mock_redis_getter.return_value = self.mock_redis
+
+        forward_lambda_handler(mock_kinesis_event, {})
+
+        _, sqs_call_kwargs = mock_send_message.call_args_list[0]
+
+        self.assertEqual(sqs_call_kwargs["MessageGroupId"], "supplier_1_rsv_test_file_2025-01-24T12:00:00Z")
+        self.assertEqual(sqs_call_kwargs["QueueUrl"], "test-queue-url")
+
+        # Messages only consist of failure and EoF. The success is not forwarded to the ack backend
+        sqs_messages = json.loads(sqs_call_kwargs["MessageBody"])
+        self.assertEqual(len(sqs_messages), 2)
+        self.assertDictEqual(
+            sqs_messages[0],
+            {
+                "created_at_formatted_string": "2025-01-24T12:00:00Z",
+                "diagnostics": "Some permission error",
+                "file_key": "supplier_1_rsv_test_file",
+                "operation_start_time": ANY,
+                "operation_end_time": ANY,
+                "local_id": "local-1",
+                "operation_requested": "CREATE",
+                "row_id": "row-1",
+                "supplier": "supplier_1",
+                "vaccine_type": "RSV",
+            },
+        )
+        self.assertDictEqual(
+            sqs_messages[1],
+            {
+                "created_at_formatted_string": "2025-01-24T12:00:00Z",
+                "file_key": "supplier_1_rsv_test_file",
+                "message": "EOF",
+                "row_id": "test-id-1234^2",
+                "supplier": "supplier_1",
+                "vax_type": "RSV",
             },
         )
 

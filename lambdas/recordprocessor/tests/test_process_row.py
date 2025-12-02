@@ -162,8 +162,6 @@ class TestProcessRow(unittest.TestCase):
             },
         }
 
-        self.maxDiff = None
-
         # call 'process_row' with required details
         imms_fhir_resource = process_row(TargetDiseaseElements.RSV, Allowed_Operations, ROW_DETAILS)
         # validate if the response with expected result

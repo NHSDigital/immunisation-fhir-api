@@ -139,6 +139,15 @@ class MessageDetails:
             "diagnostics": DiagnosticsDictionaries.NO_PERMISSIONS,
         }
 
+        self.eof_message = {
+            "created_at_formatted_string": self.created_at_formatted_string,
+            "file_key": self.file_key,
+            "message": "EOF",
+            "row_id": self.row_id,
+            "supplier": self.supplier,
+            "vax_type": self.vaccine_type,
+        }
+
 
 class MockMessageDetails:
     """Class containing mock message details for use in tests"""
