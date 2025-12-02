@@ -335,6 +335,7 @@ class TestForwardLambdaHandler(TestCase):
                         IdentifierDuplicationError("https://www.ravs.england.nhs.uk/#RSV_002")
                     ),
                 },
+                "is_failure": True,
             },
             {
                 "name": "Row 3: Update success",
@@ -363,6 +364,7 @@ class TestForwardLambdaHandler(TestCase):
                         )
                     ),
                 },
+                "is_failure": True,
             },
             {
                 "name": "Row 5: Delete Success",
@@ -386,6 +388,7 @@ class TestForwardLambdaHandler(TestCase):
                         )
                     ),
                 },
+                "is_failure": True,
             },
             {
                 "name": "Row 7: Diagnostics Already Present",
@@ -400,6 +403,7 @@ class TestForwardLambdaHandler(TestCase):
                     "row_id": "row-7",
                     "diagnostics": create_diagnostics_dictionary(MessageNotSuccessfulError("Unable to reach API")),
                 },
+                "is_failure": True,
             },
             {
                 "name": "Row 8: Delete Failure",
@@ -414,6 +418,7 @@ class TestForwardLambdaHandler(TestCase):
                         )
                     ),
                 },
+                "is_failure": True,
             },
             {
                 "name": "Row 9: FHIR_JSON does not exist",
@@ -425,6 +430,7 @@ class TestForwardLambdaHandler(TestCase):
                         MessageNotSuccessfulError("Server error - FHIR JSON not correctly sent to forwarder")
                     ),
                 },
+                "is_failure": True,
             },
             {
                 "name": "Row 10: Validation error exists from record processor",
@@ -442,6 +448,7 @@ class TestForwardLambdaHandler(TestCase):
                         CustomValidationError("An error from the record processor")
                     ),
                 },
+                "is_failure": True,
             },
         ]
 
@@ -700,6 +707,7 @@ class TestForwardLambdaHandler(TestCase):
                     ),
                 },
                 "expected_dynamo_item": None,
+                "is_failure": True,
             },
             {
                 "name": "Row 4a: Reinstated record using Update operation",
