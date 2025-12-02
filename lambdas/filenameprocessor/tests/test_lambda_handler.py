@@ -382,7 +382,7 @@ class TestLambdaHandlerDataSource(TestCase):
         self.assert_no_sqs_message()
         self.assert_no_ack_file(test_cases[0])
     '''
-    
+
     def test_lambda_handler_extended_attributes_invalid_key(self):
         """
         Tests that for an extended attributes file (prefix starts with 'Vaccination_Extended_Attributes'):
@@ -665,7 +665,7 @@ class TestUnexpectedBucket(TestCase):
             self.assertEqual(result["statusCode"], 500)
             self.assertEqual(
                 f"Failed to process file due to unexpected bucket name unknown-bucket and file key {invalid_file_key}",
-                result["message"]
+                result["message"],
             )
             self.assertEqual(result["file_key"], invalid_file_key)
             self.assertEqual(result["vaccine_type"], "unknown")

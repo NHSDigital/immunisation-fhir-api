@@ -9,8 +9,6 @@ NOTE: The expected file format for incoming files from the data sources bucket i
 import argparse
 from uuid import uuid4
 
-from botocore.exceptions import ClientError
-
 from audit_table import upsert_audit_table
 from common.aws_s3_utils import (
     copy_file_to_external_bucket,
