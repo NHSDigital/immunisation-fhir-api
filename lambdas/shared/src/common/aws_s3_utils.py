@@ -44,8 +44,3 @@ def delete_file(
         Key=source_key,
         ExpectedBucketOwner=expected_bucket_owner,
     )
-
-
-def is_file_in_bucket(bucket_name: str, file_key: str) -> None:
-    s3_client = get_s3_client()
-    s3_client.head_object(Bucket=bucket_name, Key=file_key)

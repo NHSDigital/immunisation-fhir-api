@@ -4,7 +4,6 @@ import unittest
 from unittest.mock import patch
 
 import boto3
-from botocore.exceptions import ClientError
 from moto import mock_aws
 
 from common import aws_s3_utils
@@ -117,45 +116,3 @@ class TestS3UtilsShared(unittest.TestCase):
         # Assert source object was deleted
         with self.assertRaises(self.s3.exceptions.NoSuchKey):
             self.s3.get_object(Bucket=self.source_bucket, Key=source_key)
-
-    def test_is_file_in_bucket(self):
-        """File should be present in destination bucket"""
-        file_key = "src/move_file_test.csv"
-
-        # Put an object in the source bucket
-        body_content = b"dummy file content"
-        self.s3.put_object(Bucket=self.source_bucket, Key=file_key, Body=body_content)
-
-        # Should raise no exception
-        aws_s3_utils.is_file_in_bucket(
-            bucket_name=self.source_bucket,
-            file_key=file_key,
-        )
-
-    def test_is_file_not_in_bucket(self):
-        """File should not be present in source bucket"""
-        file_key = "src/move_file_test.csv"
-
-        # Don't put the object in the source bucket
-
-        # Should raise an exception
-        with self.assertRaises(ClientError):
-            aws_s3_utils.is_file_in_bucket(
-                bucket_name=self.source_bucket,
-                file_key=file_key,
-            )
-
-    def test_is_file_in_wrong_bucket(self):
-        """File should not be present in destination bucket"""
-        file_key = "src/move_file_test.csv"
-
-        # Put an object in the source bucket
-        body_content = b"dummy file content"
-        self.s3.put_object(Bucket=self.source_bucket, Key=file_key, Body=body_content)
-
-        # Should raise an exception
-        with self.assertRaises(ClientError):
-            aws_s3_utils.is_file_in_bucket(
-                bucket_name=self.destination_bucket,
-                file_key=file_key,
-            )
