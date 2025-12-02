@@ -10,15 +10,20 @@ import argparse
 from uuid import uuid4
 
 from audit_table import upsert_audit_table
-from common.aws_s3_utils import move_file, move_file_to_external_bucket
+from common.aws_s3_utils import (
+    copy_file_to_external_bucket,
+    delete_file,
+    move_file,
+)
 from common.clients import STREAM_NAME, get_s3_client, logger
 from common.log_decorator import logging_decorator
 from common.models.errors import UnhandledAuditTableError
 from constants import (
     DPS_DESTINATION_BUCKET_NAME,
-    DPS_DESTINATION_PREFIX,
     ERROR_TYPE_TO_STATUS_CODE_MAP,
+    EXPECTED_BUCKET_OWNER_ACCOUNT,
     EXTENDED_ATTRIBUTES_FILE_PREFIX,
+    EXTENDED_ATTRIBUTES_VACC_TYPE,
     SOURCE_BUCKET_NAME,
     FileNotProcessedReason,
     FileStatus,
@@ -56,8 +61,6 @@ def handle_record(record) -> dict:
             "error": str(error),
         }
 
-    expiry_timestamp = "unknown"
-
     if bucket_name != SOURCE_BUCKET_NAME:
         return handle_unexpected_bucket_name(bucket_name, file_key)
 
@@ -68,10 +71,6 @@ def handle_record(record) -> dict:
     if not is_file_in_directory_root(file_key):
         message = "Processing not required. Event was for a file moved to /archive or /processing"
         return {"statusCode": 200, "message": message, "file_key": file_key}
-
-    # Set default values for file-specific variables
-    message_id = "Message id was not created"
-    created_at_formatted_string = "created_at_time not identified"
 
     message_id = str(uuid4())
     s3_response = get_s3_client().get_object(Bucket=bucket_name, Key=file_key)
@@ -108,7 +107,8 @@ def handle_unexpected_bucket_name(bucket_name: str, file_key: str) -> dict:
     config and overarching design"""
     try:
         if file_key.startswith(EXTENDED_ATTRIBUTES_FILE_PREFIX):
-            extended_attribute_identifier = validate_extended_attributes_file_key(file_key)
+            organization_code = validate_extended_attributes_file_key(file_key)
+            extended_attribute_identifier = f"{organization_code}_{EXTENDED_ATTRIBUTES_VACC_TYPE}"
             logger.error(
                 "Unable to process file %s due to unexpected bucket name %s",
                 file_key,
@@ -157,7 +157,7 @@ def handle_unexpected_bucket_name(bucket_name: str, file_key: str) -> dict:
 
 
 def handle_batch_file(
-    file_key: str, bucket_name: str, message_id: str, created_at_formatted_string: str, expiry_timestamp: str
+    file_key: str, bucket_name: str, message_id: str, created_at_formatted_string: str, expiry_timestamp: int
 ) -> dict:
     """
     Processes a single record for batch file.
@@ -177,6 +177,7 @@ def handle_batch_file(
             expiry_timestamp,
             queue_name,
             FileStatus.QUEUED,
+            condition_expression="attribute_not_exists(message_id)",  # Prevents accidental overwrites
         )
         make_and_send_sqs_message(
             file_key,
@@ -239,17 +240,17 @@ def handle_batch_file(
 
 
 def handle_extended_attributes_file(
-    file_key: str, bucket_name: str, message_id: str, created_at_formatted_string: str, expiry_timestamp: str
+    file_key: str, bucket_name: str, message_id: str, created_at_formatted_string: str, expiry_timestamp: int
 ) -> dict:
     """
     Processes a single record for extended attributes file.
     Returns a dictionary containing information to be included in the logs.
     """
+
+    extended_attribute_identifier = None
     try:
-        extended_attribute_identifier = validate_extended_attributes_file_key(file_key)
-        move_file_to_external_bucket(
-            bucket_name, file_key, DPS_DESTINATION_BUCKET_NAME, f"{DPS_DESTINATION_PREFIX}{file_key}"
-        )
+        organization_code = validate_extended_attributes_file_key(file_key)
+        extended_attribute_identifier = f"{organization_code}_{EXTENDED_ATTRIBUTES_VACC_TYPE}"
 
         upsert_audit_table(
             message_id,
@@ -259,6 +260,28 @@ def handle_extended_attributes_file(
             extended_attribute_identifier,
             FileStatus.PROCESSING,
         )
+
+        # TODO: agree the prefix with DPS
+        dest_file_key = f"dps_destination/{file_key}"
+        copy_file_to_external_bucket(
+            bucket_name,
+            file_key,
+            DPS_DESTINATION_BUCKET_NAME,
+            dest_file_key,
+            EXPECTED_BUCKET_OWNER_ACCOUNT,
+            EXPECTED_BUCKET_OWNER_ACCOUNT,
+        )
+        delete_file(bucket_name, dest_file_key, EXPECTED_BUCKET_OWNER_ACCOUNT)
+
+        upsert_audit_table(
+            message_id,
+            file_key,
+            created_at_formatted_string,
+            expiry_timestamp,
+            extended_attribute_identifier,
+            FileStatus.PROCESSED,
+        )
+
         return {
             "statusCode": 200,
             "message": "Extended Attributes file successfully processed",
@@ -276,7 +299,13 @@ def handle_extended_attributes_file(
         logger.error("Error processing file '%s': %s", file_key, str(error))
 
         file_status = get_file_status_for_error(error)
-        extended_attribute_identifier = validate_extended_attributes_file_key(file_key)
+
+        # NB if we got InvalidFileKeyError we won't have a valid queue name
+        if not extended_attribute_identifier:
+            extended_attribute_identifier = "unknown"
+
+        # Move file to archive
+        move_file(bucket_name, file_key, f"archive/{file_key}")
 
         upsert_audit_table(
             message_id,
