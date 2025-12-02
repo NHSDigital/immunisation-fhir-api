@@ -5,6 +5,11 @@ from constants import Diagnostics
 from convert_to_fhir_imms_resource import convert_to_fhir_imms_resource
 from utils_for_recordprocessor import create_diagnostics_dictionary
 
+TPP_V2_SUPPLIER_IDENTIFIER_SYSTEM = "YGA"
+TPP_V5_SUPPLIER_IDENTIFIER_SYSTEM = "https://tpp-uk.com/Id/ve/vacc"
+EMIS_V2_SUPPLIER_IDENTIFIER_SYSTEM = "YGJ"
+EMIS_V5_SUPPLIER_IDENTIFIER_SYSTEM = "https://emishealth.com/identifiers/vacc"
+
 
 def process_row(target_disease: list, allowed_operations: set, row: dict) -> dict:
     """
@@ -14,6 +19,18 @@ def process_row(target_disease: list, allowed_operations: set, row: dict) -> dic
     """
     action_flag = (row.get("ACTION_FLAG") or "").upper()
     unique_id_uri = row.get("UNIQUE_ID_URI")
+
+    # This code the above constants can be safely removed once DPS carries out it's data migration to update legacy
+    # identifiers as it should become redundant. However, it may be worth keeping in case legacy format identifiers are
+    # received for some reason. Please see issue VED-904 for more information.
+    if unique_id_uri == TPP_V2_SUPPLIER_IDENTIFIER_SYSTEM:
+        unique_id_uri = TPP_V5_SUPPLIER_IDENTIFIER_SYSTEM
+        row["UNIQUE_ID_URI"] = TPP_V5_SUPPLIER_IDENTIFIER_SYSTEM
+
+    if unique_id_uri == EMIS_V2_SUPPLIER_IDENTIFIER_SYSTEM:
+        unique_id_uri = EMIS_V5_SUPPLIER_IDENTIFIER_SYSTEM
+        row["UNIQUE_ID_URI"] = EMIS_V5_SUPPLIER_IDENTIFIER_SYSTEM
+
     unique_id = row.get("UNIQUE_ID")
     local_id = f"{unique_id}^{unique_id_uri}"
 
