@@ -160,8 +160,6 @@ class TestProcessRow(unittest.TestCase):
         Test that process_row gives the expected output.
         These tests check that the row is valid and matches the expected output.
         """
-        self.maxDiff = None
-
         # call 'process_row' with required details
         imms_fhir_resource = process_row(TargetDiseaseElements.RSV, Allowed_Operations, ROW_DETAILS)
         # validate if the response with expected result
@@ -243,41 +241,37 @@ class TestProcessRow(unittest.TestCase):
         )
         self.assertEqual(response["diagnostics"]["statusCode"], 400)
 
-    def test_process_row_successfully_uplifts_legacy_TPP_uri(self):
+    def test_process_row_successfully_uplifts_legacy_tpp_uri(self):
         """
         Test that process_row gives the expected output.
         These tests check that the row is valid and matches the expected output.
         """
-        legacy_TPP_row = deepcopy(ROW_DETAILS)
-        legacy_TPP_row["UNIQUE_ID_URI"] = "YGA"
+        legacy_tpp_row = deepcopy(ROW_DETAILS)
+        legacy_tpp_row["UNIQUE_ID_URI"] = "YGA"
 
-        expected_successful_result_TPP = deepcopy(expected_successful_result)
-        expected_successful_result_TPP["identifier"][0]["system"] = "https://tpp-uk.com/Id/ve/vacc"
-
-        self.maxDiff = None
+        expected_successful_result_tpp = deepcopy(expected_successful_result)
+        expected_successful_result_tpp["identifier"][0]["system"] = "https://tpp-uk.com/Id/ve/vacc"
 
         # call 'process_row' with required details
-        imms_fhir_resource = process_row(TargetDiseaseElements.RSV, Allowed_Operations, legacy_TPP_row)
+        imms_fhir_resource = process_row(TargetDiseaseElements.RSV, Allowed_Operations, legacy_tpp_row)
         # validate if the response with expected result
-        self.assertDictEqual(imms_fhir_resource["fhir_json"], expected_successful_result_TPP)
+        self.assertDictEqual(imms_fhir_resource["fhir_json"], expected_successful_result_tpp)
 
-    def test_process_row_successfully_uplifts_legacy_EMIS_uri(self):
+    def test_process_row_successfully_uplifts_legacy_emis_uri(self):
         """
         Test that process_row gives the expected output.
         These tests check that the row is valid and matches the expected output.
         """
-        legacy_EMIS_row = deepcopy(ROW_DETAILS)
-        legacy_EMIS_row["UNIQUE_ID_URI"] = "YGJ"
+        legacy_emis_row = deepcopy(ROW_DETAILS)
+        legacy_emis_row["UNIQUE_ID_URI"] = "YGJ"
 
-        expected_successful_result_EMIS = deepcopy(expected_successful_result)
-        expected_successful_result_EMIS["identifier"][0]["system"] = "https://emishealth.com/identifiers/vacc"
-
-        self.maxDiff = None
+        expected_successful_result_emis = deepcopy(expected_successful_result)
+        expected_successful_result_emis["identifier"][0]["system"] = "https://emishealth.com/identifiers/vacc"
 
         # call 'process_row' with required details
-        imms_fhir_resource = process_row(TargetDiseaseElements.RSV, Allowed_Operations, legacy_EMIS_row)
+        imms_fhir_resource = process_row(TargetDiseaseElements.RSV, Allowed_Operations, legacy_emis_row)
         # validate if the response with expected result
-        self.assertDictEqual(imms_fhir_resource["fhir_json"], expected_successful_result_EMIS)
+        self.assertDictEqual(imms_fhir_resource["fhir_json"], expected_successful_result_emis)
 
 
 if __name__ == "__main__":
