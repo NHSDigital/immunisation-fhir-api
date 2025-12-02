@@ -15,7 +15,6 @@ from audit_table import upsert_audit_table
 from common.aws_s3_utils import (
     copy_file_to_external_bucket,
     delete_file,
-    is_file_in_bucket,
     move_file,
 )
 from common.clients import STREAM_NAME, get_s3_client, logger
@@ -64,8 +63,6 @@ def handle_record(record) -> dict:
             "error": str(error),
         }
 
-    expiry_timestamp = "unknown"
-
     if bucket_name != SOURCE_BUCKET_NAME:
         return handle_unexpected_bucket_name(bucket_name, file_key)
 
@@ -76,10 +73,6 @@ def handle_record(record) -> dict:
     if not is_file_in_directory_root(file_key):
         message = "Processing not required. Event was for a file moved to /archive or /processing"
         return {"statusCode": 200, "message": message, "file_key": file_key}
-
-    # Set default values for file-specific variables
-    message_id = "Message id was not created"
-    created_at_formatted_string = "created_at_time not identified"
 
     message_id = str(uuid4())
     s3_response = get_s3_client().get_object(Bucket=bucket_name, Key=file_key)
@@ -256,13 +249,6 @@ def handle_extended_attributes_file(
     Returns a dictionary containing information to be included in the logs.
     """
 
-    # here: the sequence of events should be
-    # 1. upsert 'processing'
-    # 2. move the file to the dest bucket
-    # 3. check the file is present in the dest bucket
-    # 4. if it is, delete it from the src bucket, upsert 'processed'
-    # 5. if it isn't, move it to the archive/ folder, upsert 'failed'
-    # NB for this to work we have to retool upsert so it accepts overwrites, i.e. ignore the ConditionExpression
     extended_attribute_identifier = None
     try:
         organization_code = validate_extended_attributes_file_key(file_key)
@@ -277,6 +263,7 @@ def handle_extended_attributes_file(
             FileStatus.PROCESSING,
         )
 
+        # TODO: agree the prefix with DPS
         dest_file_key = f"dps_destination/{file_key}"
         copy_file_to_external_bucket(
             bucket_name,
@@ -286,7 +273,6 @@ def handle_extended_attributes_file(
             EXPECTED_BUCKET_OWNER_ACCOUNT,
             EXPECTED_BUCKET_OWNER_ACCOUNT,
         )
-        is_file_in_bucket(DPS_DESTINATION_BUCKET_NAME, dest_file_key)
         delete_file(bucket_name, dest_file_key, EXPECTED_BUCKET_OWNER_ACCOUNT)
 
         upsert_audit_table(
@@ -306,7 +292,6 @@ def handle_extended_attributes_file(
             "queue_name": extended_attribute_identifier,
         }
     except (  # pylint: disable=broad-exception-caught
-        ClientError,
         VaccineTypePermissionsError,
         InvalidFileKeyError,
         UnhandledAuditTableError,
