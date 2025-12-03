@@ -307,7 +307,7 @@ def handle_extended_attributes_file(
             extended_attribute_identifier = "unknown"
 
         # Move file to archive
-        move_file(bucket_name, file_key, f"archive/{file_key}")
+        move_file(bucket_name, file_key, f"{EA_ARCHIVE_PREFIX}/{file_key}")
 
         upsert_audit_table(
             message_id,

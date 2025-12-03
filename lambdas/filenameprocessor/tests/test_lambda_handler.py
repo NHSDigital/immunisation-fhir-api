@@ -381,7 +381,7 @@ class TestLambdaHandlerDataSource(TestCase):
         )
         self.assertEqual(item[AuditTableKeys.EXPIRES_AT]["N"], str(test_cases[0].expires_at))
         # File should be moved to source under archive/
-        dest_key = f"archive/{test_cases[0].file_key}"
+        dest_key = f"extended-attributes-archive/{test_cases[0].file_key}"
         print(f" destination file is at {s3_client.list_objects(Bucket=BucketNames.SOURCE)}")
         retrieved = s3_client.get_object(Bucket=BucketNames.SOURCE, Key=dest_key)
         self.assertIsNotNone(retrieved)
@@ -420,7 +420,7 @@ class TestLambdaHandlerDataSource(TestCase):
         self.assertEqual(item[AuditTableKeys.QUEUE_NAME]["S"], "unknown")
         self.assertEqual(item[AuditTableKeys.STATUS]["S"], "Failed")
         # Archive move
-        s3_client.get_object(Bucket=BucketNames.SOURCE, Key=f"archive/{test_case.file_key}")
+        s3_client.get_object(Bucket=BucketNames.SOURCE, Key=f"extended-attributes-archive/{test_case.file_key}")
 
     @patch("elasticache.get_redis_client")
     def test_lambda_handler_extended_attributes_invalid_timestamp(self, mock_get_redis_client):
@@ -443,7 +443,7 @@ class TestLambdaHandlerDataSource(TestCase):
         # Failed audit and archive
         item1 = self.get_audit_table_items()[0]
         self.assertEqual(item1[AuditTableKeys.STATUS]["S"], "Failed")
-        s3_client.get_object(Bucket=BucketNames.SOURCE, Key=f"archive/{invalid_timestamp_key}")
+        s3_client.get_object(Bucket=BucketNames.SOURCE, Key=f"extended-attributes-archive/{invalid_timestamp_key}")
 
         # Case 2: non-parseable timestamp
         invalid_timestamp_key2 = "Vaccination_Extended_Attributes_v1_5_X8E5B_20XX0101T00000001.csv"
@@ -455,7 +455,7 @@ class TestLambdaHandlerDataSource(TestCase):
         # Failed audit and archive
         item2 = self.get_audit_table_items()[-1]
         self.assertEqual(item2[AuditTableKeys.STATUS]["S"], "Failed")
-        s3_client.get_object(Bucket=BucketNames.SOURCE, Key=f"archive/{invalid_timestamp_key2}")
+        s3_client.get_object(Bucket=BucketNames.SOURCE, Key=f"extended-attributes-archive/{invalid_timestamp_key2}")
 
     @patch("elasticache.get_redis_client")
     def test_lambda_handler_extended_attributes_extension_checks(self, mock_get_redis_client):
@@ -536,7 +536,7 @@ class TestLambdaHandlerDataSource(TestCase):
             lambda_handler(self.make_event([self.make_record(bad_ext_key)]), None)
         item = self.get_audit_table_items()[-1]
         self.assertEqual(item[AuditTableKeys.STATUS]["S"], "Failed")
-        s3_client.get_object(Bucket=BucketNames.SOURCE, Key=f"archive/{bad_ext_key}")
+        s3_client.get_object(Bucket=BucketNames.SOURCE, Key=f"extended-attributes-archive/{bad_ext_key}")
         """
         Tests that for an extended attributes file (prefix starts with 'Vaccination_Extended_Attributes'):
         Where the filename is otherwise invalid:
@@ -589,7 +589,7 @@ class TestLambdaHandlerDataSource(TestCase):
         )
         self.assertEqual(item[AuditTableKeys.EXPIRES_AT]["N"], str(test_cases[0].expires_at))
         # File should be moved to source under archive/
-        dest_key = f"archive/{invalid_file_key}"
+        dest_key = f"extended-attributes-archive/{invalid_file_key}"
         print(f" destination file is at {s3_client.list_objects(Bucket=BucketNames.SOURCE)}")
         retrieved = s3_client.get_object(Bucket=BucketNames.SOURCE, Key=dest_key)
         self.assertIsNotNone(retrieved)
