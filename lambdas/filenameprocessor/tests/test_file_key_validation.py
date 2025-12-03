@@ -120,12 +120,12 @@ class TestFileKeyValidation(TestCase):
             # Valid extended attributes file key
             (
                 "Vaccination_Extended_Attributes_v1_5_X8E5B_20000101T00000001.csv",
-                "X8E5B_COVID",
+                "X8E5B",
             ),
             # Valid extended attributes file key with different organization code
             (
                 "Vaccination_Extended_Attributes_v1_5_YGM41_20221231T23595999.csv",
-                "YGM41_COVID",
+                "YGM41",
             ),
         ]
 

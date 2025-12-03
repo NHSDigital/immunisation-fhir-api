@@ -40,7 +40,7 @@ def is_valid_datetime(timestamp: str) -> bool:
 def validate_extended_attributes_file_key(file_key: str) -> str:
     """
     Checks that all elements of the file key are valid, raises an exception otherwise.
-    Returns a string containing the organization code and COVID vaccine type needed in the audit table.
+    Returns a string containing the organization code.
     """
     if not match(r"^[^_.]*_[^_.]*_[^_.]*_[^_.]*_[^_.]*_[^_.]*_[^_.]*", file_key):
         raise InvalidFileKeyError("Initial file validation failed: invalid extended attributes file key format")
