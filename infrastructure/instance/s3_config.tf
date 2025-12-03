@@ -90,11 +90,11 @@ resource "aws_s3_bucket_lifecycle_configuration" "datasources_lifecycle" {
   }
 
   rule {
-    id     = "DeleteFinalFilesAfter7Days"
+    id     = "DeleteExtendedAttributesFilesAfter7Days"
     status = "Enabled"
 
     filter {
-      prefix = "ea-archive/"
+      prefix = "extended-attributes-archive/"
     }
     expiration {
       days = 7
