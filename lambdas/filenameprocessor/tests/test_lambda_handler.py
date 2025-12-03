@@ -245,9 +245,6 @@ class TestLambdaHandlerDataSource(TestCase):
         Tests that for an extended attributes file (prefix starts with 'Vaccination_Extended_Attributes'):
         * The file is added to the audit table with a status of 'Processing'
         * The queue_name stored is the extended attribute identifier
-        * The file is moved to the destination bucket under archive/
-        * No SQS message is sent
-        * No ack file is created
         """
 
         # Build an extended attributes file.

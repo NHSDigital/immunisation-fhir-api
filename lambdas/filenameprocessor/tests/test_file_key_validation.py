@@ -113,9 +113,7 @@ class TestFileKeyValidation(TestCase):
             with self.subTest(f"SubTest for file key: {file_key}"):
                 self.assertEqual(split_file_key(file_key), expected)
 
-    @patch("file_name_processor.get_supplier_system_from_cache", return_value="RAVS")  # supplier now VALID
-    @patch("file_validation.get")
-    def test_validate_extended_attributes_file_key(self, _):
+    def test_validate_extended_attributes_file_key(self, mock_get_redis_client):
         """Tests that validate_extended_attributes_file_key returns organization code and COVID vaccine type if all
         elements pass validation, and raises an exception otherwise"""
         test_cases_for_success_scenarios = [
@@ -133,6 +131,10 @@ class TestFileKeyValidation(TestCase):
 
         for file_key, expected_result in test_cases_for_success_scenarios:
             with self.subTest(f"SubTest for file key: {file_key}"):
+                mock_redis = Mock()
+                mock_redis.hget.side_effect = create_mock_hget(MOCK_ODS_CODE_TO_SUPPLIER, {})
+                mock_redis.hkeys.return_value = ["COVID"]
+                mock_get_redis_client.return_value = mock_redis
                 self.assertEqual(
                     validate_extended_attributes_file_key(file_key),
                     expected_result,

@@ -51,9 +51,12 @@ def validate_extended_attributes_file_key(file_key: str) -> str:
     organization_code = file_key_parts_without_extension[5]
     timestamp = file_key_parts_without_extension[6]
     supplier = get_supplier_system_from_cache(organization_code)
+    valid_vaccine_types = get_valid_vaccine_types_from_cache()
+    vaccine_type = "COVID"
 
     if not (
-        file_type == EXTENDED_ATTRIBUTES_FILE_PREFIX
+        vaccine_type in valid_vaccine_types
+        and file_type == EXTENDED_ATTRIBUTES_FILE_PREFIX.upper()
         and version == VALID_EA_VERSIONS
         and supplier  # Note that if supplier could be identified, this also implies that ODS code is valid
         and is_valid_datetime(timestamp)

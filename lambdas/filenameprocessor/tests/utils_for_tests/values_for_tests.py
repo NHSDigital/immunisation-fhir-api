@@ -93,7 +93,7 @@ class MockFileDetails:
     emis_rsv = FileDetails("EMIS", "RSV", "YGM41")
     ravs_flu = FileDetails("RAVS", "FLU", "X8E5B")
     extended_attributes_file = FileDetails(
-        vaccine_type="Vaccination_Extended_Attributes", file_number=1, organization_code="RJ123"
+        vaccine_type="Vaccination_Extended_Attributes", file_number=1, organization_code="YGM41"
     )
 
 
