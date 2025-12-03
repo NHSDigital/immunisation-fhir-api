@@ -108,9 +108,13 @@ def forward_lambda_handler(event, _):
             identifier_system = fhir_json["identifier"][0]["system"]
             identifier_value = fhir_json["identifier"][0]["value"]
             identifier = f"{identifier_system}#{identifier_value}"
+
             if identifier in array_of_identifiers:
                 identifier_already_present = True
-                delay_milliseconds = 30  # Delay time in milliseconds
+                delay_milliseconds = 30
+                # A basic workaround by the existing team to ensure that subsequent operations e.g. an update after an
+                # initial create for the same item complete successfully. Consider using strongly consistent reads
+                # instead: VED-958
                 time.sleep(delay_milliseconds / 1000)
             else:
                 array_of_identifiers.append(identifier)
