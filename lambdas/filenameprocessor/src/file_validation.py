@@ -64,7 +64,7 @@ def validate_extended_attributes_file_key(file_key: str) -> str:
     ):
         raise InvalidFileKeyError("Initial file validation failed: invalid file key")
 
-    return f"{organization_code}_COVID"
+    return organization_code
 
 
 def validate_batch_file_key(file_key: str) -> tuple[str, str]:

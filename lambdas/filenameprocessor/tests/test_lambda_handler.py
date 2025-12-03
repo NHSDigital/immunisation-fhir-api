@@ -245,7 +245,8 @@ class TestLambdaHandlerDataSource(TestCase):
         self.assert_no_sqs_message()
         self.assert_no_ack_file(file_details)
 
-    def test_lambda_handler_extended_attributes_success(self):
+    @patch("elasticache.get_redis_client")
+    def test_lambda_handler_extended_attributes_success(self, mock_get_redis_client):
         """
         Tests that for an extended attributes file (prefix starts with 'Vaccination_Extended_Attributes'):
         * The file is added to the audit table with a status of 'Processed'
@@ -263,7 +264,11 @@ class TestLambdaHandlerDataSource(TestCase):
             Body=MOCK_EXTENDED_ATTRIBUTES_FILE_CONTENT,
         )
 
-        # TODO: rewrite the bucket patches to use moto
+        # Mock Redis so EA validation passes: supplier present and COVID valid
+        mock_redis = fakeredis.FakeStrictRedis()
+        mock_redis.hget = Mock(side_effect=create_mock_hget({"X8E5B": "RAVS"}, {}))
+        mock_redis.hkeys = Mock(return_value=["COVID", *all_vaccine_types_in_this_test_file])
+        mock_get_redis_client.return_value = mock_redis
 
         # Patch uuid4 (message id), and prevent external copy issues by simulating move
         with (
@@ -312,7 +317,8 @@ class TestLambdaHandlerDataSource(TestCase):
         self.assert_no_sqs_message()
         self.assert_no_ack_file(test_cases[0])
 
-    def test_lambda_handler_extended_attributes_failure(self):
+    @patch("elasticache.get_redis_client")
+    def test_lambda_handler_extended_attributes_failure(self, mock_get_redis_client):
         """
         Tests that for an extended attributes file (prefix starts with 'Vaccination_Extended_Attributes'):
         Where the file has not been copied to the destination bucket
@@ -334,7 +340,11 @@ class TestLambdaHandlerDataSource(TestCase):
             Body=MOCK_EXTENDED_ATTRIBUTES_FILE_CONTENT,
         )
 
-        # TODO: rewrite the bucket patches to use moto
+        # Mock Redis so EA validation passes: supplier present and COVID valid
+        mock_redis = fakeredis.FakeStrictRedis()
+        mock_redis.hget = Mock(side_effect=create_mock_hget({"X8E5B": "RAVS"}, {}))
+        mock_redis.hkeys = Mock(return_value=["COVID", *all_vaccine_types_in_this_test_file])
+        mock_get_redis_client.return_value = mock_redis
 
         # Patch uuid4 (message id), and raise an exception instead of moving the file.
         with (
@@ -612,7 +622,8 @@ class TestUnexpectedBucket(TestCase):
             self.assertIn(ravs_record.file_key, args)
             self.assertIn("unknown-bucket", args)
 
-    def test_unexpected_bucket_name_with_extended_attributes_file(self):
+    @patch("elasticache.get_redis_client")
+    def test_unexpected_bucket_name_with_extended_attributes_file(self, mock_get_redis_client):
         """Tests if extended attributes file is handled when bucket name is incorrect"""
         valid_file_key = "Vaccination_Extended_Attributes_V1_5_X8E5B_20000101T00000001.csv"
         record = {
@@ -621,6 +632,12 @@ class TestUnexpectedBucket(TestCase):
                 "object": {"key": valid_file_key},
             }
         }
+
+        # Mock Redis so EA filename validation can succeed (supplier present and COVID is a valid vaccine type)
+        mock_redis = Mock()
+        mock_redis.hget.side_effect = create_mock_hget({"X8E5B": "RAVS"}, {})
+        mock_redis.hkeys.return_value = ["COVID", *all_vaccine_types_in_this_test_file]
+        mock_get_redis_client.return_value = mock_redis
 
         with patch("file_name_processor.logger") as mock_logger:
             result = handle_record(record)

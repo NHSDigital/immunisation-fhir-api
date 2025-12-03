@@ -84,7 +84,18 @@ resource "aws_s3_bucket_lifecycle_configuration" "datasources_lifecycle" {
     filter {
       prefix = "archive/"
     }
+    expiration {
+      days = 7
+    }
+  }
 
+  rule {
+    id     = "DeleteFinalFilesAfter7Days"
+    status = "Enabled"
+
+    filter {
+      prefix = "ea-archive/"
+    }
     expiration {
       days = 7
     }
