@@ -24,36 +24,6 @@ resource "aws_dynamodb_table" "audit-table" {
     type = "S"
   }
 
-  attribute {
-    name = "error_details"
-    type = "S"
-  }
-
-  attribute {
-    name = "created_at"
-    type = "S"
-  }
-
-  attribute {
-    name = "completed_at"
-    type = "S"
-  }
-
-  attribute {
-    name = "record_count"
-    type = "N"
-  }
-
-  attribute {
-    name = "records_succeeded"
-    type = "N"
-  }
-
-  attribute {
-    name = "records_failed"
-    type = "N"
-  }
-
   ttl {
     attribute_name = "expires_at"
     enabled        = true
