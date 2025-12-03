@@ -21,7 +21,7 @@ def add_audit_entry_to_table(dynamodb_client, batch_event_message_id: str, recor
     dynamodb_client.put_item(TableName=AUDIT_TABLE_NAME, Item=audit_table_entry)
 
 
-def generate_event(test_messages: list[dict]) -> dict:
+def generate_event(test_messages: list[dict], include_eof_message: bool = False) -> dict:
     """
     Returns an event where each message in the incoming message body list is based on a standard mock message,
     updated with the details from the corresponsing message in the given test_messages list.
@@ -34,6 +34,10 @@ def generate_event(test_messages: list[dict]) -> dict:
         )
         for message in test_messages
     ]
+
+    if include_eof_message:
+        incoming_message_body.append(MOCK_MESSAGE_DETAILS.eof_message)
+
     return {"Records": [{"body": json.dumps(incoming_message_body)}]}
 
 

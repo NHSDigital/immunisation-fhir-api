@@ -3,8 +3,9 @@
 import json
 import os
 import unittest
+from copy import deepcopy
 from io import StringIO
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from boto3 import client as boto3_client
 from moto import mock_aws
@@ -30,7 +31,6 @@ from utils.values_for_ack_backend_tests import (
     DiagnosticsDictionaries,
     ValidValues,
 )
-from utils_for_ack_lambda import _BATCH_EVENT_ID_TO_RECORD_COUNT_MAP
 
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from ack_processor import lambda_handler
@@ -269,45 +269,6 @@ class TestAckProcessor(unittest.TestCase):
         )
         self.assert_audit_entry_status_equals(mock_batch_message_id, "Preprocessed")
 
-    @patch("utils_for_ack_lambda.get_record_count_by_message_id", return_value=500)
-    def test_lambda_handler_uses_message_id_to_record_count_cache_to_reduce_ddb_calls(self, mock_get_record_count: Mock):
-        """The DynamoDB Audit table is used to store the total record count for each source file. To reduce calls each
-        time - this test checks that we cache the value as this lambda is called many times for large files"""
-        mock_batch_message_id = "622cdeea-461e-4a83-acb5-7871d47ddbcd"
-
-        # Original source file had 500 records
-        add_audit_entry_to_table(self.dynamodb_client, mock_batch_message_id, record_count=500)
-
-        message_one = [
-            {**BASE_SUCCESS_MESSAGE, "row_id": f"{mock_batch_message_id}^1", "imms_id": "imms_1", "local_id": "local^1"}
-        ]
-        message_two = [
-            {**BASE_SUCCESS_MESSAGE, "row_id": f"{mock_batch_message_id}^2", "imms_id": "imms_2", "local_id": "local^2"}
-        ]
-        test_event_one = {"Records": [{"body": json.dumps(message_one)}]}
-        test_event_two = {"Records": [{"body": json.dumps(message_two)}]}
-
-        response = lambda_handler(event=test_event_one, context={})
-        self.assertEqual(response, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
-        second_invocation_response = lambda_handler(event=test_event_two, context={})
-        self.assertEqual(second_invocation_response, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
-
-        # Assert that the DDB call is only performed once on the first invocation
-        mock_get_record_count.assert_called_once_with(mock_batch_message_id)
-        validate_ack_file_content(
-            self.s3_client,
-            [*message_one, *message_two],
-            existing_file_content=ValidValues.ack_headers,
-        )
-        self.assert_ack_and_source_file_locations_correct(
-            MOCK_MESSAGE_DETAILS.file_key,
-            MOCK_MESSAGE_DETAILS.temp_ack_file_key,
-            MOCK_MESSAGE_DETAILS.archive_ack_file_key,
-            is_complete=False,
-        )
-        self.assertEqual(_BATCH_EVENT_ID_TO_RECORD_COUNT_MAP[mock_batch_message_id], 500)
-        self.assert_audit_entry_status_equals(mock_batch_message_id, "Preprocessed")
-
     def test_lambda_handler_updates_ack_file_and_marks_complete_when_all_records_processed(self):
         """
         Test that the batch file process is marked as complete when all records have been processed.
@@ -339,7 +300,11 @@ class TestAckProcessor(unittest.TestCase):
             }
             for i in range(50, 101)
         ]
-        test_event = {"Records": [{"body": json.dumps(array_of_success_messages)}]}
+
+        # Include the EoF message in the event
+        all_messages_plus_eof = deepcopy(array_of_success_messages)
+        all_messages_plus_eof.append(MOCK_MESSAGE_DETAILS.eof_message)
+        test_event = {"Records": [{"body": json.dumps(all_messages_plus_eof)}]}
 
         response = lambda_handler(event=test_event, context={})
 
