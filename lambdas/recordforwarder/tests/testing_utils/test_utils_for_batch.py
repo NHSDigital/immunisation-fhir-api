@@ -5,6 +5,7 @@ class ForwarderValues:
     MOCK_ENVIRONMENT_DICT = {
         "DYNAMODB_TABLE_NAME": "immunisation-batch-internal-dev-imms-test-table",
         "ENVIRONMENT": "internal-dev-test",
+        "SQS_QUEUE_URL": "test-queue-url",
     }
 
     EXPECTED_KEYS = [
