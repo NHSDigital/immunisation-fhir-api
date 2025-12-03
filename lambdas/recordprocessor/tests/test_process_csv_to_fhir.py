@@ -3,7 +3,7 @@
 import json
 import unittest
 from copy import deepcopy
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, call, patch
 
 import boto3
 from moto import mock_dynamodb, mock_firehose, mock_s3
@@ -94,7 +94,7 @@ class TestProcessCsvToFhir(unittest.TestCase):
         with patch("batch_processor.send_to_kinesis") as mock_send_to_kinesis:
             process_csv_to_fhir(deepcopy(test_file.event_full_permissions_dict))
 
-        self.assertEqual(mock_send_to_kinesis.call_count, 3)
+        self.assertEqual(mock_send_to_kinesis.call_count, 4)
 
         table_items = dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
         self.assertIn(expected_table_entry, table_items)
@@ -118,7 +118,7 @@ class TestProcessCsvToFhir(unittest.TestCase):
         with patch("batch_processor.send_to_kinesis") as mock_send_to_kinesis:
             process_csv_to_fhir(deepcopy(test_file.event_create_permissions_only_dict))
 
-        self.assertEqual(mock_send_to_kinesis.call_count, 3)
+        self.assertEqual(mock_send_to_kinesis.call_count, 4)
 
         table_items = dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
         self.assertIn(expected_table_entry, table_items)
@@ -139,7 +139,9 @@ class TestProcessCsvToFhir(unittest.TestCase):
         with patch("batch_processor.send_to_kinesis") as mock_send_to_kinesis:
             process_csv_to_fhir(deepcopy(test_file.event_create_permissions_only_dict))
 
-        self.assertEqual(mock_send_to_kinesis.call_count, 2)
+        self.assertEqual(mock_send_to_kinesis.call_count, 3)
+        eof_message_call = mock_send_to_kinesis.call_args_list.pop(-1)
+
         for (
             _supplier,
             message_body,
@@ -148,6 +150,21 @@ class TestProcessCsvToFhir(unittest.TestCase):
             self.assertIn("diagnostics", message_body)
             self.assertNotIn("fhir_json", message_body)
 
+        self.assertEqual(
+            call(
+                "EMIS",
+                {
+                    "message": "EOF",
+                    "file_key": test_file.file_key,
+                    "row_id": f"{test_file.message_id}^2",
+                    "supplier": test_file.supplier,
+                    "vax_type": test_file.vaccine_type,
+                    "created_at_formatted_string": test_file.created_at_formatted_string,
+                },
+                "RSV",
+            ),
+            eof_message_call,
+        )
         table_items = dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
         self.assertIn(expected_table_entry, table_items)
 
