@@ -25,7 +25,7 @@ def upsert_audit_table(
         AuditTableKeys.FILENAME: {"S": file_key},
         AuditTableKeys.QUEUE_NAME: {"S": queue_name},
         AuditTableKeys.STATUS: {"S": file_status},
-        AuditTableKeys.TIMESTAMP: {"S": created_at_formatted_str},
+        AuditTableKeys.CREATED_AT: {"S": created_at_formatted_str},
         AuditTableKeys.EXPIRES_AT: {"N": str(expiry_timestamp)},
     }
 
