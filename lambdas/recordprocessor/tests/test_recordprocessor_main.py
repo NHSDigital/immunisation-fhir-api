@@ -115,6 +115,19 @@ class TestRecordProcessor(unittest.TestCase):
         response = s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=file_key)
         return response["Body"].read().decode("utf-8")
 
+    def make_eof_message_assertion(self, file_details: FileDetails, actual_msg: str, total_records: int) -> None:
+        self.assertDictEqual(
+            {
+                "message": "EOF",
+                "file_key": file_details.file_key,
+                "row_id": f"{file_details.message_id}^{total_records}",
+                "supplier": file_details.supplier,
+                "vax_type": file_details.vaccine_type,
+                "created_at_formatted_string": file_details.created_at_formatted_string,
+            },
+            json.loads(actual_msg),
+        )
+
     def make_inf_ack_assertions(self, file_details: FileDetails, passed_validation: bool):
         """Asserts that the InfAck file content is as expected"""
         actual_content = self.get_ack_file_content(file_details.inf_ack_file_key)
@@ -178,6 +191,8 @@ class TestRecordProcessor(unittest.TestCase):
                     self.assertIn(key_to_ignore, kinesis_data)
                     kinesis_data.pop(key_to_ignore)
                 self.assertEqual(kinesis_data, expected_kinesis_data)
+
+        self.make_eof_message_assertion(mock_rsv_emis_file, kinesis_records[-1]["Data"], len(test_cases))
 
     def assert_object_moved_to_archive(self, file_key: str) -> None:
         """Checks that the S3 object was moved to the archive directory"""
@@ -301,12 +316,17 @@ class TestRecordProcessor(unittest.TestCase):
         main(test_file.event_create_permissions_only)
 
         kinesis_records = kinesis_client.get_records(ShardIterator=self.get_shard_iterator(), Limit=10)["Records"]
-        self.assertEqual(len(kinesis_records), 2)
-        for record in kinesis_records:
-            data_bytes = record["Data"]
+
+        # No. of records = 2 plus EoF message = 3
+        self.assertEqual(len(kinesis_records), 3)
+
+        for i in range(len(kinesis_records) - 1):
+            data_bytes = kinesis_records[i]["Data"]
             data_dict = json.loads(data_bytes)
             self.assertIn("diagnostics", data_dict)
             self.assertNotIn("fhir_json", data_dict)
+
+        self.make_eof_message_assertion(mock_rsv_emis_file, kinesis_records[-1]["Data"], 2)
         self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=True)
         assert_audit_table_entry(test_file, FileStatus.PREPROCESSED, row_count=2)
 

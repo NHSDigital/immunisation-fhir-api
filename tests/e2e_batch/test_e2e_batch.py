@@ -28,6 +28,8 @@ from utils import (
 )
 
 
+# For consideration - these tests are suboptimal and difficult to read and extend. Consider integrating the automation
+# test repo into this one in future (it currently lives elsewhere but uses a nice readable framework to drive the tests)
 class TestE2EBatch(unittest.TestCase):
     def setUp(self):
         self.tests: list[TestCase] = create_test_cases(scenarios["dev"])
@@ -97,15 +99,18 @@ def poll_for_responses(tests: list[TestCase], max_timeout=1200) -> bool:
 
 def validate_responses(tests: list[TestCase]):
     start_time = time.time()
-    count = 0
-    expected_count = len(tests) * 2
+    current_ack_file_count = 0
+
+    # We expect an INF Ack (high-level i.e. file accepted or not) and a BUS Ack (containing all failure rows) for each
+    # batch file
+    expected_ack_file_count = len(tests) * 2
     errors = False
     try:
         for test in tests:
             logger.info(f"Validation for Test: {test.name} ")
             # Validate the ACK file
             if test.ack_keys[DestinationType.INF]:
-                count += 1
+                current_ack_file_count += 1
                 inf_ack_content = get_file_content_from_s3(ACK_BUCKET, test.ack_keys[DestinationType.INF])
                 check_ack_file_content(test.name, inf_ack_content, "Success", None, test.operation_outcome)
             else:
@@ -113,11 +118,9 @@ def validate_responses(tests: list[TestCase]):
                 errors = True
 
             if test.ack_keys[DestinationType.BUS]:
-                count += 1
+                current_ack_file_count += 1
                 validate_row_count(
-                    f"{test.name} - bus",
-                    test.file_name,
-                    test.ack_keys[DestinationType.BUS],
+                    f"{test.name} - bus", test.file_name, test.ack_keys[DestinationType.BUS], test.is_failure_scenario
                 )
 
                 test.check_bus_file_content()
@@ -131,10 +134,12 @@ def validate_responses(tests: list[TestCase]):
         logger.error(f"Error during validation: {e}")
         errors = True
     finally:
-        if count == expected_count:
+        if current_ack_file_count == expected_ack_file_count:
             logger.info("All responses subject to validation.")
         else:
-            logger.error(f"{count} of {expected_count} responses subject to validation.")
+            logger.error(f"{current_ack_file_count} of {expected_ack_file_count} responses subject to validation.")
         logger.info(f"Time: {time.time() - start_time:.1f} seconds")
-        assert count == expected_count, f"Only {count} of {expected_count} responses subject to validation."
+        assert current_ack_file_count == expected_ack_file_count, (
+            f"Only {current_ack_file_count} of {expected_ack_file_count} responses subject to validation."
+        )
         assert not errors, "Errors found during validation."

@@ -7,8 +7,10 @@ import time
 from datetime import datetime
 
 import simplejson as json
+from mypy_boto3_dynamodb import DynamoDBServiceResource
 
 from batch.batch_filename_to_events_mapper import BatchFilenameToEventsMapper
+from common.batch.eof_utils import is_eof_message
 from common.clients import sqs_client
 from common.models.errors import (
     CustomValidationError,
@@ -55,8 +57,8 @@ def create_diagnostics_dictionary(error: Exception) -> dict:
 
 
 def forward_request_to_dynamo(
-    message_body: any,
-    table: any,
+    message_body: dict,
+    table: DynamoDBServiceResource,
     is_present: bool,
     batch_controller: ImmunizationBatchController,
 ):
@@ -75,25 +77,30 @@ def forward_lambda_handler(event, _):
     controller = make_batch_controller()
 
     for record in event["Records"]:
+        operation_start_time = str(datetime.now())
+        kinesis_payload = record["kinesis"]["data"]
+        decoded_payload = base64.b64decode(kinesis_payload).decode("utf-8")
+        incoming_message_body = json.loads(decoded_payload, use_decimal=True)
+        file_key = incoming_message_body.get("file_key")
+        local_id = incoming_message_body.get("local_id")
+
+        if is_eof_message(incoming_message_body):
+            logger.info("Received EOF message for file key: %s", file_key)
+            filename_to_events_mapper.add_event(incoming_message_body)
+            continue
+
+        base_outgoing_message_body = {
+            "file_key": incoming_message_body.get("file_key"),
+            "row_id": incoming_message_body.get("row_id"),
+            "created_at_formatted_string": incoming_message_body.get("created_at_formatted_string"),
+            "local_id": incoming_message_body.get("local_id"),
+            "operation_requested": incoming_message_body.get("operation_requested"),
+            "supplier": incoming_message_body.get("supplier"),
+            "vaccine_type": incoming_message_body.get("vax_type"),
+        }
+        logger.info("Received message for file %s with local id: %s", file_key, local_id)
+
         try:
-            operation_start_time = str(datetime.now())
-            kinesis_payload = record["kinesis"]["data"]
-            decoded_payload = base64.b64decode(kinesis_payload).decode("utf-8")
-            incoming_message_body = json.loads(decoded_payload, use_decimal=True)
-
-            file_key = incoming_message_body.get("file_key")
-            created_at_formatted_string = incoming_message_body.get("created_at_formatted_string")
-            base_outgoing_message_body = {
-                "file_key": file_key,
-                "row_id": incoming_message_body.get("row_id"),
-                "created_at_formatted_string": created_at_formatted_string,
-                "local_id": incoming_message_body.get("local_id"),
-                "operation_requested": incoming_message_body.get("operation_requested"),
-                "supplier": incoming_message_body.get("supplier"),
-                "vaccine_type": incoming_message_body.get("vax_type"),
-            }
-            # TODO: Move section above here into own try-except block
-
             if incoming_diagnostics := incoming_message_body.get("diagnostics"):
                 raise RecordProcessorError(incoming_diagnostics)
 
@@ -105,22 +112,19 @@ def forward_lambda_handler(event, _):
             identifier_system = fhir_json["identifier"][0]["system"]
             identifier_value = fhir_json["identifier"][0]["value"]
             identifier = f"{identifier_system}#{identifier_value}"
+
             if identifier in array_of_identifiers:
                 identifier_already_present = True
-                delay_milliseconds = 30  # Delay time in milliseconds
-                time.sleep(delay_milliseconds / 1000)  # TODO: What is the purpose of this delay?
+                delay_milliseconds = 30
+                # A basic workaround by the existing team to ensure that subsequent operations e.g. an update after an
+                # initial create for the same item complete successfully. Consider using strongly consistent reads
+                # instead: VED-958
+                time.sleep(delay_milliseconds / 1000)
             else:
                 array_of_identifiers.append(identifier)
 
-            imms_id = forward_request_to_dynamo(incoming_message_body, table, identifier_already_present, controller)
-            filename_to_events_mapper.add_event(
-                {
-                    **base_outgoing_message_body,
-                    "operation_start_time": operation_start_time,
-                    "operation_end_time": str(datetime.now()),
-                    "imms_id": imms_id,
-                }
-            )
+            imms_pk = forward_request_to_dynamo(incoming_message_body, table, identifier_already_present, controller)
+            logger.info("Successfully processed message. Local id: %s, PK: %s", local_id, imms_pk)
 
         except Exception as error:  # pylint: disable = broad-exception-caught
             filename_to_events_mapper.add_event(
