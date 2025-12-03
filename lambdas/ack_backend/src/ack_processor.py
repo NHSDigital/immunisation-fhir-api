@@ -2,10 +2,10 @@
 
 import json
 
+from common.batch.eof_utils import is_eof_message
 from convert_message_to_ack_row import convert_message_to_ack_row
 from logging_decorators import ack_lambda_handler_logging_decorator
 from update_ack_file import complete_batch_file_process, update_ack_file
-from utils_for_ack_lambda import is_ack_processing_complete
 
 
 @ack_lambda_handler_logging_decorator
@@ -22,9 +22,11 @@ def lambda_handler(event, _):
     file_key = None
     created_at_formatted_string = None
     message_id = None
+    supplier = None
+    vaccine_type = None
 
     ack_data_rows = []
-    total_ack_rows_processed = 0
+    file_processing_complete = False
 
     for i, record in enumerate(event["Records"]):
         try:
@@ -42,18 +44,16 @@ def lambda_handler(event, _):
             created_at_formatted_string = incoming_message_body[0].get("created_at_formatted_string")
 
         for message in incoming_message_body:
+            if is_eof_message(message):
+                file_processing_complete = True
+                break
+
             ack_data_rows.append(convert_message_to_ack_row(message, created_at_formatted_string))
 
     update_ack_file(file_key, created_at_formatted_string, ack_data_rows)
 
-    # Get the row count of the final processed record
-    # Format of the row id is {batch_message_id}^{row_number}
-    total_ack_rows_processed = int(incoming_message_body[-1].get("row_id", "").split("^")[1])
-
-    if is_ack_processing_complete(message_id, total_ack_rows_processed):
-        complete_batch_file_process(
-            message_id, supplier, vaccine_type, created_at_formatted_string, file_key, total_ack_rows_processed
-        )
+    if file_processing_complete:
+        complete_batch_file_process(message_id, supplier, vaccine_type, created_at_formatted_string, file_key)
 
     return {
         "statusCode": 200,

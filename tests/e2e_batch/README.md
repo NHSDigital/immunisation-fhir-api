@@ -8,9 +8,9 @@ This test suite provides automated end-to-end (E2E) testing for the Immunisation
 - Purpose: Simulate real-world batch file submissions, poll for acknowledgements, and validate processing results.
 - Test Scenarios: Defined in the scenarios module and enabled in setUp().
 - Key Features:
--   - Uploads test batch files to S3.
--   - Waits for and validates ACK (acknowledgement) files.
--   - Cleans up SQS queues and test artifacts after each run.
+    - Uploads test batch files to S3.
+    - Waits for and validates ACK (acknowledgement) files.
+    - Cleans up SQS queues and test artifacts after each run.
 
 ## Test Flow
 
@@ -39,7 +39,7 @@ This test suite provides automated end-to-end (E2E) testing for the Immunisation
 
 1. Ensure all dependencies and environment variables are set (see project root README).
 2. Update `.env` file with contents indicated in `PR-NNN.env`, modified for PR
-3. Update `.env` with referrence to the appropriate AWS config profile `AWS_PROFILE={your-aws-profile}`
+3. Update `.env` with reference to the appropriate AWS config profile `AWS_PROFILE={your-aws-profile}`
 4. Update the apigee app to match the required PR-NNN
 5. Run tests from vscode debugger or from makefile using
 

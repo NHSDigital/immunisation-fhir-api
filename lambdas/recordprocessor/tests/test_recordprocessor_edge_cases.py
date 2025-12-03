@@ -79,7 +79,7 @@ class TestProcessorEdgeCases(unittest.TestCase):
 
         n_rows_processed = process_csv_to_fhir(message_body)
         self.assertEqual(n_rows_processed, n_rows)
-        self.assertEqual(self.mock_send_to_kinesis.call_count, n_rows)
+        self.assertEqual(self.mock_send_to_kinesis.call_count, n_rows + 1)
         # check logger.warning called for decode error
         self.mock_logger_warning.assert_called()
         warning_call_args = self.mock_logger_warning.call_args[0][0]
@@ -111,7 +111,7 @@ class TestProcessorEdgeCases(unittest.TestCase):
 
         n_rows_processed = process_csv_to_fhir(message_body)
         self.assertEqual(n_rows_processed, n_rows)
-        self.assertEqual(self.mock_send_to_kinesis.call_count, n_rows)
+        self.assertEqual(self.mock_send_to_kinesis.call_count, n_rows + 1)
         self.mock_logger_warning.assert_not_called()
         self.mock_logger_error.assert_not_called()
 
@@ -138,7 +138,7 @@ class TestProcessorEdgeCases(unittest.TestCase):
 
         n_rows_processed = process_csv_to_fhir(message_body)
         self.assertEqual(n_rows_processed, n_rows)
-        self.assertEqual(self.mock_send_to_kinesis.call_count, n_rows)
+        self.assertEqual(self.mock_send_to_kinesis.call_count, n_rows + 1)
         self.mock_logger_warning.assert_called()
         warning_call_args = self.mock_logger_warning.call_args[0][0]
         self.assertTrue(warning_call_args.startswith("Invalid Encoding detected"))
@@ -164,6 +164,6 @@ class TestProcessorEdgeCases(unittest.TestCase):
 
         n_rows_processed = process_csv_to_fhir(message_body)
         self.assertEqual(n_rows_processed, n_rows)
-        self.assertEqual(self.mock_send_to_kinesis.call_count, n_rows)
+        self.assertEqual(self.mock_send_to_kinesis.call_count, n_rows + 1)
         self.mock_logger_warning.assert_not_called()
         self.mock_logger_error.assert_not_called()

@@ -9,13 +9,13 @@ from unittest.mock import call, patch
 from boto3 import client as boto3_client
 from moto import mock_aws
 
-from tests.utils.generic_setup_and_teardown_for_ack_backend import (
+from utils.generic_setup_and_teardown_for_ack_backend import (
     GenericSetUp,
     GenericTearDown,
 )
-from tests.utils.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames
-from tests.utils.utils_for_ack_backend_tests import generate_event
-from tests.utils.values_for_ack_backend_tests import (
+from utils.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames
+from utils.utils_for_ack_backend_tests import generate_event
+from utils.values_for_ack_backend_tests import (
     EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS,
     DiagnosticsDictionaries,
     InvalidValues,
@@ -120,7 +120,6 @@ class TestLoggingDecorators(unittest.TestCase):
         for operation in ["CREATE", "UPDATE", "DELETE"]:
             with (  # noqa: E999
                 patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
-                patch("ack_processor.is_ack_processing_complete", return_value=False),
                 patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
             ):  # noqa: E999
                 result = lambda_handler(
@@ -224,7 +223,6 @@ class TestLoggingDecorators(unittest.TestCase):
         for test_case in test_cases:
             with (  # noqa: E999
                 patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
-                patch("ack_processor.is_ack_processing_complete", return_value=False),
                 patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
             ):  # noqa: E999
                 result = lambda_handler(
@@ -262,7 +260,6 @@ class TestLoggingDecorators(unittest.TestCase):
 
         with (  # noqa: E999
             patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
-            patch("ack_processor.is_ack_processing_complete", return_value=False),
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
         ):  # noqa: E999
             result = lambda_handler(generate_event(messages), context={})
@@ -313,7 +310,6 @@ class TestLoggingDecorators(unittest.TestCase):
 
         with (  # noqa: E999
             patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
-            patch("ack_processor.is_ack_processing_complete", return_value=False),
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
         ):  # noqa: E999
             result = lambda_handler(generate_event(messages), context={})
@@ -369,7 +365,6 @@ class TestLoggingDecorators(unittest.TestCase):
         )
 
     def test_splunk_update_ack_file_not_logged(self):
-        self.maxDiff = None
         """Tests that update_ack_file is not logged if we have sent acks for less than the whole file"""
         # send 98 messages
         messages = []
@@ -380,7 +375,6 @@ class TestLoggingDecorators(unittest.TestCase):
         with (  # noqa: E999
             patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
-            patch("ack_processor.is_ack_processing_complete", return_value=False),
             patch(
                 "update_ack_file.change_audit_table_status_to_processed"
             ) as mock_change_audit_table_status_to_processed,  # noqa: E999
@@ -421,12 +415,12 @@ class TestLoggingDecorators(unittest.TestCase):
         with (  # noqa: E999
             patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
-            patch("ack_processor.is_ack_processing_complete", return_value=True),
+            patch("update_ack_file.get_record_count_by_message_id", return_value=99),
             patch(
                 "update_ack_file.change_audit_table_status_to_processed"
             ) as mock_change_audit_table_status_to_processed,  # noqa: E999
         ):  # noqa: E999
-            result = lambda_handler(generate_event(messages), context={})
+            result = lambda_handler(generate_event(messages, include_eof_message=True), context={})
 
         self.assertEqual(result, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
 
