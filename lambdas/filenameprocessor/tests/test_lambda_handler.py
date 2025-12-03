@@ -308,7 +308,6 @@ class TestLambdaHandlerDataSource(TestCase):
         self.assertEqual(item[AuditTableKeys.TIMESTAMP]["S"], test_cases[0].created_at_formatted_string)
         self.assertEqual(item[AuditTableKeys.EXPIRES_AT]["N"], str(test_cases[0].expires_at))
         # File should be moved to destination/
-        # The implementation constructs the destination key with a double slash. Reflect that here.
         dest_key = f"dps_destination/{test_cases[0].file_key}"
         print(f" destination file is at {s3_client.list_objects(Bucket=BucketNames.DESTINATION)}")
         retrieved = s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=dest_key)
@@ -341,7 +340,7 @@ class TestLambdaHandlerDataSource(TestCase):
             Body=MOCK_EXTENDED_ATTRIBUTES_FILE_CONTENT,
         )
 
-        # Mock Redis so EA validation passes: supplier present and COVID valid
+        # Mock Redis so Extended Attributes validation passes: supplier present and COVID valid
         mock_redis = fakeredis.FakeStrictRedis()
         mock_redis.hget = Mock(side_effect=create_mock_hget({"X8E5B": "RAVS"}, {}))
         mock_redis.hkeys = Mock(return_value=["COVID", *all_vaccine_types_in_this_test_file])
@@ -414,7 +413,7 @@ class TestLambdaHandlerDataSource(TestCase):
         with patch("file_name_processor.uuid4", return_value=test_case.message_id):
             lambda_handler(self.make_event([self.make_record(test_case.file_key)]), None)
 
-        # Audit should be Failed with unknown queue_name, file moved to archive
+        # Audit status should be Failed with unknown queue_name, file moved to archive
         item = self.get_audit_table_items()[0]
         self.assertEqual(item[AuditTableKeys.MESSAGE_ID]["S"], test_case.message_id)
         self.assertEqual(item[AuditTableKeys.FILENAME]["S"], test_case.file_key)
@@ -439,7 +438,7 @@ class TestLambdaHandlerDataSource(TestCase):
         s3_client.put_object(
             Bucket=BucketNames.SOURCE, Key=invalid_timestamp_key, Body=MOCK_EXTENDED_ATTRIBUTES_FILE_CONTENT
         )
-        with patch("file_name_processor.uuid4", return_value="EA_bad_ts_id"):
+        with patch("file_name_processor.uuid4", return_value="invalid_timestamp_id"):
             lambda_handler(self.make_event([self.make_record(invalid_timestamp_key)]), None)
         # Failed audit and archive
         item1 = self.get_audit_table_items()[0]
@@ -451,7 +450,7 @@ class TestLambdaHandlerDataSource(TestCase):
         s3_client.put_object(
             Bucket=BucketNames.SOURCE, Key=invalid_timestamp_key2, Body=MOCK_EXTENDED_ATTRIBUTES_FILE_CONTENT
         )
-        with patch("file_name_processor.uuid4", return_value="EA_bad_ts_id2"):
+        with patch("file_name_processor.uuid4", return_value="invalid_timestamp_id2"):
             lambda_handler(self.make_event([self.make_record(invalid_timestamp_key2)]), None)
         # Failed audit and archive
         item2 = self.get_audit_table_items()[-1]

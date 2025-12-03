@@ -20,6 +20,7 @@ from common.models.errors import UnhandledAuditTableError
 from constants import (
     DPS_DESTINATION_BUCKET_NAME,
     DPS_DESTINATION_PREFIX,
+    EA_ARCHIVE_PREFIX,
     ERROR_TYPE_TO_STATUS_CODE_MAP,
     EXPECTED_BUCKET_OWNER_ACCOUNT,
     EXTENDED_ATTRIBUTES_FILE_PREFIX,
@@ -272,7 +273,7 @@ def handle_extended_attributes_file(
             EXPECTED_BUCKET_OWNER_ACCOUNT,
         )
 
-        move_file(bucket_name, file_key, f"extended-attributes-archive/{file_key}")
+        move_file(bucket_name, file_key, f"{EA_ARCHIVE_PREFIX}/{file_key}")
 
         upsert_audit_table(
             message_id,
