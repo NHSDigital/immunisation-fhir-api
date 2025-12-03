@@ -49,6 +49,11 @@ EXPECTED_CSV_HEADERS = [
     "LOCATION_CODE_TYPE_URI",
 ]
 
+TPP_V2_SUPPLIER_IDENTIFIER_SYSTEM = "YGA"
+TPP_V5_SUPPLIER_IDENTIFIER_SYSTEM = "https://tpp-uk.com/Id/ve/vacc"
+EMIS_V2_SUPPLIER_IDENTIFIER_SYSTEM = "YGJ"
+EMIS_V5_SUPPLIER_IDENTIFIER_SYSTEM = "https://emishealth.com/identifiers/vacc"
+
 
 class FileStatus:
     """File status constants"""
