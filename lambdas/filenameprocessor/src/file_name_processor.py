@@ -12,7 +12,6 @@ from uuid import uuid4
 from audit_table import upsert_audit_table
 from common.aws_s3_utils import (
     copy_file_to_external_bucket,
-    delete_file,
     move_file,
 )
 from common.clients import STREAM_NAME, get_s3_client, logger
@@ -20,6 +19,7 @@ from common.log_decorator import logging_decorator
 from common.models.errors import UnhandledAuditTableError
 from constants import (
     DPS_DESTINATION_BUCKET_NAME,
+    DPS_DESTINATION_PREFIX,
     ERROR_TYPE_TO_STATUS_CODE_MAP,
     EXPECTED_BUCKET_OWNER_ACCOUNT,
     EXTENDED_ATTRIBUTES_FILE_PREFIX,
@@ -262,7 +262,7 @@ def handle_extended_attributes_file(
         )
 
         # TODO: agree the prefix with DPS
-        dest_file_key = f"dps_destination/{file_key}"
+        dest_file_key = f"{DPS_DESTINATION_PREFIX}/{file_key}"
         copy_file_to_external_bucket(
             bucket_name,
             file_key,
@@ -271,7 +271,8 @@ def handle_extended_attributes_file(
             EXPECTED_BUCKET_OWNER_ACCOUNT,
             EXPECTED_BUCKET_OWNER_ACCOUNT,
         )
-        delete_file(bucket_name, dest_file_key, EXPECTED_BUCKET_OWNER_ACCOUNT)
+
+        move_file(bucket_name, file_key, f"extended-attributes-archive/{file_key}")
 
         upsert_audit_table(
             message_id,

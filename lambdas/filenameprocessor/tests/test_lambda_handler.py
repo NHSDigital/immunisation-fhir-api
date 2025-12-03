@@ -284,11 +284,12 @@ class TestLambdaHandlerDataSource(TestCase):
                 ),
             ),
             patch(
-                "file_name_processor.delete_file",
-                side_effect=lambda src_bucket, key, exp_owner: (
-                    s3_client.delete_object(
-                        Bucket=BucketNames.SOURCE,
-                        Key=key,
+                "file_name_processor.move_file",
+                side_effect=lambda source_bucket, source_key, destination_key: (
+                    s3_client.put_object(
+                        Bucket=source_bucket,
+                        Key=destination_key,
+                        Body=s3_client.get_object(Bucket=source_bucket, Key=source_key)["Body"].read(),
                     ),
                 ),
             ),
@@ -308,6 +309,7 @@ class TestLambdaHandlerDataSource(TestCase):
         self.assertEqual(item[AuditTableKeys.TIMESTAMP]["S"], test_cases[0].created_at_formatted_string)
         self.assertEqual(item[AuditTableKeys.EXPIRES_AT]["N"], str(test_cases[0].expires_at))
         # File should be moved to destination/
+        # The implementation constructs the destination key with a double slash. Reflect that here.
         dest_key = f"dps_destination/{test_cases[0].file_key}"
         print(f" destination file is at {s3_client.list_objects(Bucket=BucketNames.DESTINATION)}")
         retrieved = s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=dest_key)
@@ -350,6 +352,17 @@ class TestLambdaHandlerDataSource(TestCase):
         with (
             patch("file_name_processor.uuid4", return_value=test_cases[0].message_id),
             patch("file_name_processor.copy_file_to_external_bucket", side_effect=Exception("Test ClientError")),
+            patch(
+                "file_name_processor.move_file",
+                side_effect=lambda bucket, key, dst_key: (
+                    s3_client.put_object(
+                        Bucket=bucket,
+                        Key=dst_key,
+                        Body=s3_client.get_object(Bucket=bucket, Key=key)["Body"].read(),
+                    ),
+                    s3_client.delete_object(Bucket=bucket, Key=key),
+                ),
+            ),
         ):
             lambda_handler(self.make_event([self.make_record(test_cases[0].file_key)]), None)
 
