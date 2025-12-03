@@ -42,6 +42,7 @@ class TestCase:
     def __init__(self, scenario: dict):
         self.name: str = scenario.get("name", "Unnamed Test Case")
         self.description: str = scenario.get("description", "")
+        self.is_failure_scenario = scenario.get("is_failure_scenario", False)
         self.ods_vax: OdsVax = scenario.get("ods_vax")
         self.actions: list[TestAction] = scenario.get("actions", [])
         self.ods = self.ods_vax.ods_code
@@ -207,6 +208,7 @@ scenarios = {
                     expected_operation_outcome=OperationOutcome.IMMS_NOT_FOUND,
                 )
             ],
+            "is_failure_scenario": True,
             "operation_outcome": ActionFlag.NONE,
         },
         {
@@ -220,6 +222,7 @@ scenarios = {
                     expected_operation_outcome=OperationOutcome.IMMS_NOT_FOUND,
                 )
             ],
+            "is_failure_scenario": True,
             "operation_outcome": ActionFlag.NONE,
         },
         {

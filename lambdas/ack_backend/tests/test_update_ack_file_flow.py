@@ -37,6 +37,8 @@ class TestUpdateAckFileFlow(unittest.TestCase):
 
         self.change_audit_status_patcher = patch("update_ack_file.change_audit_table_status_to_processed")
         self.mock_change_audit_status = self.change_audit_status_patcher.start()
+        self.get_record_count_patcher = patch("update_ack_file.get_record_count_by_message_id")
+        self.mock_get_record_count = self.get_record_count_patcher.start()
 
     def tearDown(self):
         self.logger_patcher.stop()
@@ -56,6 +58,7 @@ class TestUpdateAckFileFlow(unittest.TestCase):
         self.s3_client.put_object(
             Bucket=self.ack_bucket_name, Key=f"TempAck/audit_table_test_BusAck_{mock_created_at_string}.csv"
         )
+        self.mock_get_record_count.return_value = 10
 
         # Act
         update_ack_file.complete_batch_file_process(
@@ -64,8 +67,8 @@ class TestUpdateAckFileFlow(unittest.TestCase):
             vaccine_type="vaccine-type",
             created_at_formatted_string=mock_created_at_string,
             file_key=file_key,
-            total_ack_rows_processed=3,
         )
 
-        # Assert: Only check audit table update
+        # Assert: Only check audit table interactions
+        self.mock_get_record_count.assert_called_once_with(message_id)
         self.mock_change_audit_status.assert_called_once_with(file_key, message_id)
