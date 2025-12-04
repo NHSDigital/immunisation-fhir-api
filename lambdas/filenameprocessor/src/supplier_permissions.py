@@ -22,7 +22,7 @@ def validate_vaccine_type_permissions(vaccine_type: str, supplier: str) -> list:
     return supplier_permissions
 
 
-def validate_permissions_for_extended_attributes_files(vaccine_type: str, supplier: str) -> tuple[str]:
+def validate_permissions_for_extended_attributes_files(vaccine_type: str, supplier: str) -> str:
     """
     Checks that the supplier has COVID vaccine type and its CUD permissions.
     Raises an exception if the supplier does not have at least one permission for the vaccine type.

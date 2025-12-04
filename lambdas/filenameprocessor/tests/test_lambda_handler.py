@@ -427,37 +427,40 @@ class TestLambdaHandlerDataSource(TestCase):
     @patch("elasticache.get_redis_client")
     def test_lambda_handler_extended_attributes_invalid_timestamp(self, mock_get_redis_client):
         """
-        Invalid timestamps (too short or non-parseable) should fail validation and move to archive.
+        Invalid timestamps (too short or non-parseable) should fail validation
+        and move to extended-attributes-archive/.
         """
-        # Valid Redis
+        # Set up valid Redis responses
         mock_redis = fakeredis.FakeStrictRedis()
         mock_redis.hget = Mock(side_effect=create_mock_hget({"X8E5B": "RAVS"}, {}))
         mock_redis.hkeys = Mock(return_value=["COVID", *all_vaccine_types_in_this_test_file])
         mock_get_redis_client.return_value = mock_redis
 
-        # Case 1: too short timestamp
-        invalid_timestamp_key = "Vaccination_Extended_Attributes_v1_5_X8E5B_20000101T0000.csv"
-        s3_client.put_object(
-            Bucket=BucketNames.SOURCE, Key=invalid_timestamp_key, Body=MOCK_EXTENDED_ATTRIBUTES_FILE_CONTENT
-        )
-        with patch("file_name_processor.uuid4", return_value="invalid_timestamp_id"):
-            lambda_handler(self.make_event([self.make_record(invalid_timestamp_key)]), None)
-        # Failed audit and archive
-        item1 = self.get_audit_table_items()[0]
-        self.assertEqual(item1[AuditTableKeys.STATUS]["S"], "Failed")
-        s3_client.get_object(Bucket=BucketNames.SOURCE, Key=f"extended-attributes-archive/{invalid_timestamp_key}")
+        invalid_cases = [
+            ("Vaccination_Extended_Attributes_v1_5_X8E5B_20000101T0000.csv", "invalid_timestamp_id"),
+            ("Vaccination_Extended_Attributes_v1_5_X8E5B_20XX0101T00000001.csv", "invalid_timestamp_id2"),
+        ]
 
-        # Case 2: non-parseable timestamp
-        invalid_timestamp_key2 = "Vaccination_Extended_Attributes_v1_5_X8E5B_20XX0101T00000001.csv"
-        s3_client.put_object(
-            Bucket=BucketNames.SOURCE, Key=invalid_timestamp_key2, Body=MOCK_EXTENDED_ATTRIBUTES_FILE_CONTENT
-        )
-        with patch("file_name_processor.uuid4", return_value="invalid_timestamp_id2"):
-            lambda_handler(self.make_event([self.make_record(invalid_timestamp_key2)]), None)
-        # Failed audit and archive
-        item2 = self.get_audit_table_items()[-1]
-        self.assertEqual(item2[AuditTableKeys.STATUS]["S"], "Failed")
-        s3_client.get_object(Bucket=BucketNames.SOURCE, Key=f"extended-attributes-archive/{invalid_timestamp_key2}")
+        for file_key, fake_msg_id in invalid_cases:
+            with self.subTest(f"Invalid timestamp test for: {file_key}"):
+                # Upload the invalid file
+                s3_client.put_object(
+                    Bucket=BucketNames.SOURCE,
+                    Key=file_key,
+                    Body=MOCK_EXTENDED_ATTRIBUTES_FILE_CONTENT,
+                )
+
+                with patch("file_name_processor.uuid4", return_value=fake_msg_id):
+                    lambda_handler(self.make_event([self.make_record(file_key)]), None)
+
+                # Validate audit entry
+                audit_items = self.get_audit_table_items()
+                last_item = audit_items[-1]  # always get the most recent write
+                self.assertEqual(last_item[AuditTableKeys.STATUS]["S"], "Failed")
+
+                archived_key = f"extended-attributes-archive/{file_key}"
+                retrieved = s3_client.get_object(Bucket=BucketNames.SOURCE, Key=archived_key)
+                self.assertIsNotNone(retrieved)
 
     @patch("elasticache.get_redis_client")
     def test_lambda_handler_extended_attributes_extension_checks(self, mock_get_redis_client):
@@ -569,16 +572,11 @@ class TestLambdaHandlerDataSource(TestCase):
             patch("file_name_processor.uuid4", return_value=test_cases[0].message_id),
             patch(
                 "file_name_processor.copy_file_to_external_bucket",
-                side_effect=lambda src_bucket, key, dst_bucket, dst_key, exp_owner, exp_src_owner: (
-                    # effectively do nothing
-                    None,
-                ),
+                side_effect=lambda src_bucket, key, dst_bucket, dst_key, exp_owner, exp_src_owner: (None,),
             ),
         ):
             lambda_handler(self.make_event([self.make_record(invalid_file_key)]), None)
 
-        # Assert audit table entry captured with Failed and queue_name set to the identifier.
-        # Assert that the ClientError message is an InvalidFileKeyError.
         table_items = self.get_audit_table_items()
         # Removed brittle assertion on total audit count; subsequent checks below verify the expected audit content
         item = table_items[-1]
@@ -594,7 +592,6 @@ class TestLambdaHandlerDataSource(TestCase):
         self.assertEqual(item[AuditTableKeys.EXPIRES_AT]["N"], str(test_cases[0].expires_at))
         # File should be moved to source under archive/
         dest_key = f"extended-attributes-archive/{invalid_file_key}"
-        print(f" destination file is at {s3_client.list_objects(Bucket=BucketNames.SOURCE)}")
         retrieved = s3_client.get_object(Bucket=BucketNames.SOURCE, Key=dest_key)
         self.assertIsNotNone(retrieved)
 

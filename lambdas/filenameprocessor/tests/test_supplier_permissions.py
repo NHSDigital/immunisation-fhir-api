@@ -91,9 +91,6 @@ class TestSupplierPermissions(TestCase):
 
     def test_validate_permissions_for_extended_attributes_files_fail_partial_ops(self):
         """Supplier with only partial COVID permissions (e.g., C only) should raise error as CUD required."""
-        # Note: Implementation checks only the first matching COVID entry's operation string.
-        # Therefore, entries like COVID.CRUD (which includes C, U, D letters) will pass.
-        # The following cases should fail because the first COVID entry lacks at least one of C/U/D.
         partial_permission_cases = [
             ["COVID.C"],
             ["COVID.U"],
@@ -101,7 +98,7 @@ class TestSupplierPermissions(TestCase):
             ["COVID.CU"],
             ["COVID.UD"],
             ["COVID.CD"],
-            ["COVID.S"],  # status only
+            ["COVID.S"],
         ]
 
         for permissions in partial_permission_cases:
@@ -119,7 +116,6 @@ class TestSupplierPermissions(TestCase):
 
     def test_validate_permissions_for_extended_attributes_files_multiple_entries(self):
         """Multiple COVID permission entries should pass only if the first matching COVID entry contains CUD."""
-        # Case: First entry has CUDS -> success
         with patch(
             "supplier_permissions.get_supplier_permissions_from_cache",
             return_value=["COVID.CUDS", "COVID.C"],
@@ -127,7 +123,6 @@ class TestSupplierPermissions(TestCase):
             result = validate_permissions_for_extended_attributes_files("COVID", "RAVS")
             self.assertEqual(result, "RAVS_COVID")
 
-        # Case: First entry lacks CUD (even if later one has CUDS) -> fail
         with patch(
             "supplier_permissions.get_supplier_permissions_from_cache",
             return_value=["COVID.C", "COVID.CUDS"],

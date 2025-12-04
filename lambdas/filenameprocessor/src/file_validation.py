@@ -37,7 +37,7 @@ def is_valid_datetime(timestamp: str) -> bool:
     return True
 
 
-def validate_extended_attributes_file_key(file_key: str) -> str:
+def validate_extended_attributes_file_key(file_key: str) -> tuple[str, str]:
     """
     Checks that all elements of the file key are valid, raises an exception otherwise.
     Returns a string containing the organization code.
