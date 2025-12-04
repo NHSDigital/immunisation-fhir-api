@@ -76,7 +76,7 @@ class FileDetails:
             AuditTableKeys.MESSAGE_ID: {"S": self.message_id},
             AuditTableKeys.FILENAME: {"S": self.file_key},
             AuditTableKeys.QUEUE_NAME: {"S": self.queue_name},
-            AuditTableKeys.CREATED_AT: {"S": self.created_at_formatted_string},
+            AuditTableKeys.TIMESTAMP: {"S": self.created_at_formatted_string},
             AuditTableKeys.EXPIRES_AT: {"N": str(self.expires_at)},
         }
 

@@ -76,7 +76,7 @@ class AuditTableKeys:
     QUEUE_NAME = "queue_name"
     STATUS = "status"
     ERROR_DETAILS = "error_details"
-    CREATED_AT = "created_at"
+    TIMESTAMP = "timestamp"
     COMPLETED_AT = "completed_at"
     RECORD_COUNT = "record_count"
     RECORDS_SUCCEEDED = "records_succeeded"
