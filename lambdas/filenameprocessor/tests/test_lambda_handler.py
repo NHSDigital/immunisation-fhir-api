@@ -303,7 +303,7 @@ class TestLambdaHandlerDataSource(TestCase):
             item[AuditTableKeys.QUEUE_NAME]["S"], test_cases[0].ods_code + "_" + EXTENDED_ATTRIBUTES_VACC_TYPE
         )
         self.assertEqual(item[AuditTableKeys.STATUS]["S"], "Processed")
-        self.assertEqual(item[AuditTableKeys.CREATED_AT]["S"], test_cases[0].created_at_formatted_string)
+        self.assertEqual(item[AuditTableKeys.TIMESTAMP]["S"], test_cases[0].created_at_formatted_string)
         self.assertEqual(item[AuditTableKeys.EXPIRES_AT]["N"], str(test_cases[0].expires_at))
         # File should be moved to destination/
         dest_key = f"dps_destination/{test_cases[0].file_key}"
@@ -356,7 +356,7 @@ class TestLambdaHandlerDataSource(TestCase):
         self.assertEqual(
             item[AuditTableKeys.QUEUE_NAME]["S"], test_cases[0].ods_code + "_" + EXTENDED_ATTRIBUTES_VACC_TYPE
         )
-        self.assertEqual(item[AuditTableKeys.CREATED_AT]["S"], test_cases[0].created_at_formatted_string)
+        self.assertEqual(item[AuditTableKeys.TIMESTAMP]["S"], test_cases[0].created_at_formatted_string)
         self.assertEqual(item[AuditTableKeys.STATUS]["S"], "Failed")
         self.assertEqual(
             item[AuditTableKeys.ERROR_DETAILS]["S"],
@@ -418,7 +418,7 @@ class TestLambdaHandlerDataSource(TestCase):
         self.assertEqual(item[AuditTableKeys.MESSAGE_ID]["S"], test_cases[0].message_id)
         self.assertEqual(item[AuditTableKeys.FILENAME]["S"], invalid_file_key)
         self.assertEqual(item[AuditTableKeys.QUEUE_NAME]["S"], "unknown")
-        self.assertEqual(item[AuditTableKeys.CREATED_AT]["S"], test_cases[0].created_at_formatted_string)
+        self.assertEqual(item[AuditTableKeys.TIMESTAMP]["S"], test_cases[0].created_at_formatted_string)
         self.assertEqual(item[AuditTableKeys.STATUS]["S"], "Failed")
         self.assertEqual(
             item[AuditTableKeys.ERROR_DETAILS]["S"],
@@ -474,7 +474,7 @@ class TestLambdaHandlerDataSource(TestCase):
                 "queue_name": {"S": "unknown_unknown"},
                 "status": {"S": "Failed"},
                 "error_details": {"S": "Initial file validation failed: invalid file key"},
-                "created_at": {"S": file_details.created_at_formatted_string},
+                "timestamp": {"S": file_details.created_at_formatted_string},
                 "expires_at": {"N": str(file_details.expires_at)},
             }
         ]
@@ -517,7 +517,7 @@ class TestLambdaHandlerDataSource(TestCase):
                 "queue_name": {"S": "RAVS_RSV"},
                 "status": {"S": "Not processed - Unauthorised"},
                 "error_details": {"S": "Initial file validation failed: RAVS does not have permissions for RSV"},
-                "created_at": {"S": file_details.created_at_formatted_string},
+                "timestamp": {"S": file_details.created_at_formatted_string},
                 "expires_at": {"N": str(file_details.expires_at)},
             }
         ]
@@ -561,7 +561,7 @@ class TestLambdaHandlerDataSource(TestCase):
                 "queue_name": {"S": "EMIS_FLU"},
                 "status": {"S": "Failed"},
                 "error_details": {"S": "Some unexpected exception"},
-                "created_at": {"S": test_file_details.created_at_formatted_string},
+                "timestamp": {"S": test_file_details.created_at_formatted_string},
                 "expires_at": {"N": str(test_file_details.expires_at)},
             }
         ]
