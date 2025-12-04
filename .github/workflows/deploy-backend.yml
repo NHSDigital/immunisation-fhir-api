@@ -23,6 +23,7 @@ on:
         description: Select the Apigee proxy environment
         options:
           - internal-dev
+          - internal-qa
           - int
           - ref
           - prod
