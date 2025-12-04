@@ -272,6 +272,7 @@ class TestLambdaHandlerDataSource(TestCase):
 
         # Patch uuid4 (message id), and prevent external copy issues by simulating move
         with (
+            patch("file_name_processor.validate_permissions_for_extended_attributes_files", return_value="X8E5B_COVID"),
             patch("file_name_processor.uuid4", return_value=test_cases[0].message_id),
             patch(
                 "file_name_processor.copy_file_to_external_bucket",
@@ -348,6 +349,7 @@ class TestLambdaHandlerDataSource(TestCase):
 
         # Patch uuid4 (message id), and raise an exception instead of moving the file.
         with (
+            patch("file_name_processor.validate_permissions_for_extended_attributes_files", return_value="X8E5B_COVID"),
             patch("file_name_processor.uuid4", return_value=test_cases[0].message_id),
             patch("file_name_processor.copy_file_to_external_bucket", side_effect=Exception("Test ClientError")),
             patch(
@@ -472,6 +474,7 @@ class TestLambdaHandlerDataSource(TestCase):
         csv_key = MockFileDetails.extended_attributes_file.file_key
         s3_client.put_object(Bucket=BucketNames.SOURCE, Key=csv_key, Body=MOCK_EXTENDED_ATTRIBUTES_FILE_CONTENT)
         with (
+            patch("file_name_processor.validate_permissions_for_extended_attributes_files", return_value="X8E5B_COVID"),
             patch("file_name_processor.uuid4", return_value="EA_csv_id"),
             patch(
                 "file_name_processor.copy_file_to_external_bucket",
@@ -500,9 +503,10 @@ class TestLambdaHandlerDataSource(TestCase):
         s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=f"dps_destination/{csv_key}")
 
         # .DAT accepted
-        dat_key = csv_key[:-3] + "dat"
+        dat_key = MockFileDetails.extended_attributes_file.file_key[:-3] + "dat"
         s3_client.put_object(Bucket=BucketNames.SOURCE, Key=dat_key, Body=MOCK_EXTENDED_ATTRIBUTES_FILE_CONTENT)
         with (
+            patch("file_name_processor.validate_permissions_for_extended_attributes_files", return_value="X8E5B_COVID"),
             patch("file_name_processor.uuid4", return_value="EA_dat_id"),
             patch(
                 "file_name_processor.copy_file_to_external_bucket",

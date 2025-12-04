@@ -135,8 +135,9 @@ class TestFileKeyValidation(TestCase):
                 mock_redis.hget.side_effect = create_mock_hget(MOCK_ODS_CODE_TO_SUPPLIER, {})
                 mock_redis.hkeys.return_value = ["COVID"]
                 mock_get_redis_client.return_value = mock_redis
+                vaccine_type, supplier = validate_extended_attributes_file_key(file_key)
                 self.assertEqual(
-                    validate_extended_attributes_file_key(file_key),
+                    supplier,
                     expected_result,
                 )
 

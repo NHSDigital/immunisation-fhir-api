@@ -3,7 +3,7 @@
 from datetime import datetime
 from re import match
 
-from constants import EXTENDED_ATTRIBUTES_FILE_PREFIX, VALID_EA_VERSIONS, VALID_VERSIONS
+from constants import EXTENDED_ATTRIBUTES_FILE_PREFIX, EXTENDED_ATTRIBUTES_VACC_TYPE, VALID_EA_VERSIONS, VALID_VERSIONS
 from elasticache import (
     get_supplier_system_from_cache,
     get_valid_vaccine_types_from_cache,
@@ -52,7 +52,7 @@ def validate_extended_attributes_file_key(file_key: str) -> str:
     timestamp = file_key_parts_without_extension[6]
     supplier = get_supplier_system_from_cache(organization_code)
     valid_vaccine_types = get_valid_vaccine_types_from_cache()
-    vaccine_type = "COVID"
+    vaccine_type = EXTENDED_ATTRIBUTES_VACC_TYPE
 
     if not (
         vaccine_type in valid_vaccine_types
@@ -66,7 +66,7 @@ def validate_extended_attributes_file_key(file_key: str) -> str:
     ):
         raise InvalidFileKeyError("Initial file validation failed: invalid file key")
 
-    return organization_code
+    return vaccine_type, organization_code
 
 
 def validate_batch_file_key(file_key: str) -> tuple[str, str]:

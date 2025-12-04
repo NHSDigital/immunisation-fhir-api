@@ -24,7 +24,6 @@ from constants import (
     ERROR_TYPE_TO_STATUS_CODE_MAP,
     EXPECTED_BUCKET_OWNER_ACCOUNT,
     EXTENDED_ATTRIBUTES_FILE_PREFIX,
-    EXTENDED_ATTRIBUTES_VACC_TYPE,
     SOURCE_BUCKET_NAME,
     FileNotProcessedReason,
     FileStatus,
@@ -37,7 +36,7 @@ from models.errors import (
     VaccineTypePermissionsError,
 )
 from send_sqs_message import make_and_send_sqs_message
-from supplier_permissions import validate_vaccine_type_permissions
+from supplier_permissions import validate_permissions_for_extended_attributes_files, validate_vaccine_type_permissions
 from utils_for_filenameprocessor import get_creation_and_expiry_times
 
 
@@ -108,8 +107,8 @@ def handle_unexpected_bucket_name(bucket_name: str, file_key: str) -> dict:
     config and overarching design"""
     try:
         if file_key.startswith(EXTENDED_ATTRIBUTES_FILE_PREFIX):
-            organization_code = validate_extended_attributes_file_key(file_key)
-            extended_attribute_identifier = f"{organization_code}_{EXTENDED_ATTRIBUTES_VACC_TYPE}"
+            vaccine_type, supplier = validate_extended_attributes_file_key(file_key)
+            extended_attribute_identifier = f"{supplier}_{vaccine_type}"
             logger.error(
                 "Unable to process file %s due to unexpected bucket name %s",
                 file_key,
@@ -250,8 +249,8 @@ def handle_extended_attributes_file(
 
     extended_attribute_identifier = None
     try:
-        organization_code = validate_extended_attributes_file_key(file_key)
-        extended_attribute_identifier = f"{organization_code}_{EXTENDED_ATTRIBUTES_VACC_TYPE}"
+        vaccine_type, supplier = validate_extended_attributes_file_key(file_key)
+        extended_attribute_identifier = validate_permissions_for_extended_attributes_files(vaccine_type, supplier)
 
         upsert_audit_table(
             message_id,

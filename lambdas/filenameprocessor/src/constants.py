@@ -62,3 +62,9 @@ class AuditTableKeys(StrEnum):
     TIMESTAMP = "timestamp"
     EXPIRES_AT = "expires_at"
     ERROR_DETAILS = "error_details"
+
+
+class Operation(str):
+    CREATE = "C"
+    UPDATE = "U"
+    DELETE = "D"
