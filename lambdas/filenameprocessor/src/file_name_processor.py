@@ -107,8 +107,8 @@ def handle_unexpected_bucket_name(bucket_name: str, file_key: str) -> dict:
     config and overarching design"""
     try:
         if file_key.startswith(EXTENDED_ATTRIBUTES_FILE_PREFIX):
-            vaccine_type, supplier = validate_extended_attributes_file_key(file_key)
-            extended_attribute_identifier = f"{supplier}_{vaccine_type}"
+            vaccine_type, organisation_code = validate_extended_attributes_file_key(file_key)
+            extended_attribute_identifier = f"{organisation_code}_{vaccine_type}"
             logger.error(
                 "Unable to process file %s due to unexpected bucket name %s",
                 file_key,
@@ -249,8 +249,10 @@ def handle_extended_attributes_file(
 
     extended_attribute_identifier = None
     try:
-        vaccine_type, supplier = validate_extended_attributes_file_key(file_key)
-        extended_attribute_identifier = validate_permissions_for_extended_attributes_files(vaccine_type, supplier)
+        vaccine_type, organisation_code = validate_extended_attributes_file_key(file_key)
+        extended_attribute_identifier = validate_permissions_for_extended_attributes_files(
+            vaccine_type, organisation_code
+        )
 
         upsert_audit_table(
             message_id,

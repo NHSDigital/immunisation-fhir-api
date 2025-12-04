@@ -478,6 +478,11 @@ class TestLambdaHandlerDataSource(TestCase):
         s3_client.put_object(Bucket=BucketNames.SOURCE, Key=csv_key, Body=MOCK_EXTENDED_ATTRIBUTES_FILE_CONTENT)
         with (
             patch("file_name_processor.validate_permissions_for_extended_attributes_files", return_value="X8E5B_COVID"),
+            # Ensure EA DAT case passes permission validation by returning CUDS for X8E5B
+            patch(
+                "supplier_permissions.get_supplier_permissions_from_cache",
+                return_value=["COVID.CUDS"],
+            ),
             patch("file_name_processor.uuid4", return_value="EA_csv_id"),
             patch(
                 "file_name_processor.copy_file_to_external_bucket",

@@ -69,18 +69,30 @@ class TestSupplierPermissions(TestCase):
 
     def test_validate_permissions_for_extended_attributes_files_success(self):
         """Supplier with COVID CUD permissions should be accepted and identifier returned."""
-        with patch(
-            "supplier_permissions.get_supplier_permissions_from_cache",
-            return_value=["COVID.CUDS", "FLU.CRUDS"],
+        with (
+            patch(
+                "supplier_permissions.get_supplier_permissions_from_cache",
+                return_value=["COVID.CUDS", "FLU.CRUDS"],
+            ),
+            patch(
+                "supplier_permissions.get_supplier_system_from_cache",
+                return_value="X8E5B",
+            ),
         ):
             result = validate_permissions_for_extended_attributes_files("COVID", "X8E5B")
             self.assertEqual(result, "X8E5B_COVID")
 
     def test_validate_permissions_for_extended_attributes_files_fail_no_covid(self):
         """Supplier without any COVID permissions should raise VaccineTypePermissionsError."""
-        with patch(
-            "supplier_permissions.get_supplier_permissions_from_cache",
-            return_value=["FLU.CRUDS"],
+        with (
+            patch(
+                "supplier_permissions.get_supplier_permissions_from_cache",
+                return_value=["FLU.CRUDS"],
+            ),
+            patch(
+                "supplier_permissions.get_supplier_system_from_cache",
+                return_value="X8E5B",
+            ),
         ):
             with self.assertRaises(VaccineTypePermissionsError) as context:
                 validate_permissions_for_extended_attributes_files("COVID", "X8E5B")
@@ -103,9 +115,15 @@ class TestSupplierPermissions(TestCase):
 
         for permissions in partial_permission_cases:
             with self.subTest(permissions=permissions):
-                with patch(
-                    "supplier_permissions.get_supplier_permissions_from_cache",
-                    return_value=permissions,
+                with (
+                    patch(
+                        "supplier_permissions.get_supplier_permissions_from_cache",
+                        return_value=permissions,
+                    ),
+                    patch(
+                        "supplier_permissions.get_supplier_system_from_cache",
+                        return_value="X8E5B",
+                    ),
                 ):
                     with self.assertRaises(VaccineTypePermissionsError) as context:
                         validate_permissions_for_extended_attributes_files("COVID", "X8E5B")
@@ -116,16 +134,28 @@ class TestSupplierPermissions(TestCase):
 
     def test_validate_permissions_for_extended_attributes_files_multiple_entries(self):
         """Multiple COVID permission entries should pass only if the first matching COVID entry contains CUD."""
-        with patch(
-            "supplier_permissions.get_supplier_permissions_from_cache",
-            return_value=["COVID.CUDS", "COVID.C"],
+        with (
+            patch(
+                "supplier_permissions.get_supplier_permissions_from_cache",
+                return_value=["COVID.CUDS", "COVID.C"],
+            ),
+            patch(
+                "supplier_permissions.get_supplier_system_from_cache",
+                return_value="RAVS",
+            ),
         ):
             result = validate_permissions_for_extended_attributes_files("COVID", "RAVS")
             self.assertEqual(result, "RAVS_COVID")
 
-        with patch(
-            "supplier_permissions.get_supplier_permissions_from_cache",
-            return_value=["COVID.C", "COVID.CUDS"],
+        with (
+            patch(
+                "supplier_permissions.get_supplier_permissions_from_cache",
+                return_value=["COVID.C", "COVID.CUDS"],
+            ),
+            patch(
+                "supplier_permissions.get_supplier_system_from_cache",
+                return_value="RAVS",
+            ),
         ):
             with self.assertRaises(VaccineTypePermissionsError) as context:
                 validate_permissions_for_extended_attributes_files("COVID", "RAVS")
@@ -136,9 +166,15 @@ class TestSupplierPermissions(TestCase):
 
     def test_validate_permissions_for_extended_attributes_files_crud_passes(self):
         """COVID.CRUD contains C, U, D letters and should be accepted by the current implementation."""
-        with patch(
-            "supplier_permissions.get_supplier_permissions_from_cache",
-            return_value=["COVID.CRUD"],
+        with (
+            patch(
+                "supplier_permissions.get_supplier_permissions_from_cache",
+                return_value=["COVID.CRUD"],
+            ),
+            patch(
+                "supplier_permissions.get_supplier_system_from_cache",
+                return_value="X8E5B",
+            ),
         ):
             result = validate_permissions_for_extended_attributes_files("COVID", "X8E5B")
             self.assertEqual(result, "X8E5B_COVID")
