@@ -11,20 +11,21 @@ def change_audit_table_status_to_processed(file_key: str, message_id: str) -> No
     """Updates the status in the audit table to 'Processed' and returns the queue name."""
     try:
         # Update the status in the audit table to "Processed"
-        dynamodb_client.update_item(
+        response = dynamodb_client.update_item(
             TableName=AUDIT_TABLE_NAME,
             Key={AuditTableKeys.MESSAGE_ID: {"S": message_id}},
             UpdateExpression="SET #status = :status",
             ExpressionAttributeNames={"#status": "status"},
             ExpressionAttributeValues={":status": {"S": FileStatus.PROCESSED}},
             ConditionExpression="attribute_exists(message_id)",
+            ReturnValues="UPDATED_NEW",
         )
-
+        result = response.get("Attributes", {}).get("status").get("S")
         logger.info(
             "The status of %s file, with message id %s, was successfully updated to %s in the audit table",
             file_key,
             message_id,
-            FileStatus.PROCESSED,
+            result,
         )
 
     except Exception as error:  # pylint: disable = broad-exception-caught
@@ -46,7 +47,7 @@ def get_record_count_by_message_id(event_message_id: str) -> Optional[int]:
     return int(record_count)
 
 
-def set_record_success_count(message_id: str) -> Optional[int]:
+def set_records_succeeded_count(message_id: str) -> None:
     """Set the 'records_succeeded' item in the audit table entry"""
     audit_record = dynamodb_client.get_item(
         TableName=AUDIT_TABLE_NAME, Key={AuditTableKeys.MESSAGE_ID: {"S": message_id}}
@@ -58,21 +59,23 @@ def set_record_success_count(message_id: str) -> Optional[int]:
     records_failed = int(records_failed_item) if records_failed_item else 0
     records_succeeded = record_count - records_failed
 
+    counter_name = AuditTableKeys.RECORDS_SUCCEEDED
     try:
         response = dynamodb_client.update_item(
             TableName=AUDIT_TABLE_NAME,
             Key={AuditTableKeys.MESSAGE_ID: {"S": message_id}},
             UpdateExpression="SET #counter = :value",
-            ExpressionAttributeNames={"#counter": AuditTableKeys.RECORDS_SUCCEEDED},
-            ExpressionAttributeValues={":value": {"S": str(records_succeeded)}},
+            ExpressionAttributeNames={"#counter": counter_name},
+            ExpressionAttributeValues={":value": {"N": str(records_succeeded)}},
             ConditionExpression="attribute_exists(message_id)",
             ReturnValues="UPDATED_NEW",
         )
+        result = response.get("Attributes", {}).get(counter_name).get("N")
         logger.info(
             "Counter %s for message id %s set to %s in the audit table",
-            AuditTableKeys.RECORDS_SUCCEEDED,
+            counter_name,
             message_id,
-            response.get("Attributes", {}).get(AuditTableKeys.RECORDS_SUCCEEDED),
+            result,
         )
 
     except Exception as error:  # pylint: disable = broad-exception-caught
@@ -80,7 +83,7 @@ def set_record_success_count(message_id: str) -> Optional[int]:
         raise UnhandledAuditTableError(error) from error
 
 
-def increment_record_counter(message_id: str, counter_name: str = AuditTableKeys.RECORDS_FAILED) -> None:
+def increment_records_failed_count(message_id: str) -> None:
     """
     Increment a counter attribute safely, handling the case where it might not exist.
     From https://docs.aws.amazon.com/code-library/latest/ug/dynamodb_example_dynamodb_Scenario_AtomicCounterOperations_section.html
@@ -88,6 +91,7 @@ def increment_record_counter(message_id: str, counter_name: str = AuditTableKeys
 
     increment_value = 1
     initial_value = 0
+    counter_name = AuditTableKeys.RECORDS_FAILED
     try:
         # Use SET with if_not_exists to safely increment the counter
         response = dynamodb_client.update_item(
@@ -95,15 +99,16 @@ def increment_record_counter(message_id: str, counter_name: str = AuditTableKeys
             Key={AuditTableKeys.MESSAGE_ID: {"S": message_id}},
             UpdateExpression="SET #counter = if_not_exists(#counter, :initial) + :increment",
             ExpressionAttributeNames={"#counter": counter_name},
-            ExpressionAttributeValues={":increment": {"S": str(increment_value)}, ":initial": {"S": str(initial_value)}},
+            ExpressionAttributeValues={":increment": {"N": str(increment_value)}, ":initial": {"N": str(initial_value)}},
             ConditionExpression="attribute_exists(message_id)",
             ReturnValues="UPDATED_NEW",
         )
+        result = response.get("Attributes", {}).get(counter_name).get("N")
         logger.info(
             "Counter %s for message id %s incremented to %s in the audit table",
             counter_name,
             message_id,
-            response.get("Attributes", {}).get(counter_name),
+            result,
         )
 
     except Exception as error:  # pylint: disable = broad-exception-caught
