@@ -6,6 +6,8 @@ from common.clients import dynamodb_client, logger
 from common.models.errors import UnhandledAuditTableError
 from constants import AUDIT_TABLE_NAME, AuditTableKeys, FileStatus
 
+CONDITION_EXPRESSION = "attribute_exists(message_id)"
+
 
 def change_audit_table_status_to_processed(file_key: str, message_id: str) -> None:
     """Updates the status in the audit table to 'Processed' and returns the queue name."""
@@ -17,7 +19,7 @@ def change_audit_table_status_to_processed(file_key: str, message_id: str) -> No
             UpdateExpression="SET #status = :status",
             ExpressionAttributeNames={"#status": "status"},
             ExpressionAttributeValues={":status": {"S": FileStatus.PROCESSED}},
-            ConditionExpression="attribute_exists(message_id)",
+            ConditionExpression=CONDITION_EXPRESSION,
             ReturnValues="UPDATED_NEW",
         )
         result = response.get("Attributes", {}).get("status").get("S")
@@ -67,7 +69,7 @@ def set_records_succeeded_count(message_id: str) -> None:
             UpdateExpression="SET #counter = :value",
             ExpressionAttributeNames={"#counter": counter_name},
             ExpressionAttributeValues={":value": {"N": str(records_succeeded)}},
-            ConditionExpression="attribute_exists(message_id)",
+            ConditionExpression=CONDITION_EXPRESSION,
             ReturnValues="UPDATED_NEW",
         )
         result = response.get("Attributes", {}).get(counter_name).get("N")
@@ -100,7 +102,7 @@ def increment_records_failed_count(message_id: str) -> None:
             UpdateExpression="SET #counter = if_not_exists(#counter, :initial) + :increment",
             ExpressionAttributeNames={"#counter": counter_name},
             ExpressionAttributeValues={":increment": {"N": str(increment_value)}, ":initial": {"N": str(initial_value)}},
-            ConditionExpression="attribute_exists(message_id)",
+            ConditionExpression=CONDITION_EXPRESSION,
             ReturnValues="UPDATED_NEW",
         )
         result = response.get("Attributes", {}).get(counter_name).get("N")
