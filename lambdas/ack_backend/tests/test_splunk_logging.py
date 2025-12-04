@@ -224,6 +224,7 @@ class TestLoggingDecorators(unittest.TestCase):
             with (  # noqa: E999
                 patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
                 patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
+                patch("ack_processor.increment_records_failed_count") as mock_increment_records_failed_count,  # noqa: E999
             ):  # noqa: E999
                 result = lambda_handler(
                     event=generate_event([{"diagnostics": test_case["diagnostics"]}]),
@@ -253,6 +254,7 @@ class TestLoggingDecorators(unittest.TestCase):
                     call(self.stream_name, expected_second_logger_info_data),
                 ]
             )
+            mock_increment_records_failed_count.assert_called()
 
     def test_splunk_logging_multiple_rows(self):
         """Tests logging for multiple objects in the body of the event"""
@@ -311,6 +313,7 @@ class TestLoggingDecorators(unittest.TestCase):
         with (  # noqa: E999
             patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
+            patch("ack_processor.increment_records_failed_count") as mock_increment_records_failed_count,  # noqa: E999
         ):  # noqa: E999
             result = lambda_handler(generate_event(messages), context={})
 
@@ -363,6 +366,7 @@ class TestLoggingDecorators(unittest.TestCase):
                 call(self.stream_name, expected_fourth_logger_info_data),
             ]
         )
+        mock_increment_records_failed_count.assert_called()
 
     def test_splunk_update_ack_file_not_logged(self):
         """Tests that update_ack_file is not logged if we have sent acks for less than the whole file"""
@@ -419,6 +423,7 @@ class TestLoggingDecorators(unittest.TestCase):
             patch(
                 "update_ack_file.change_audit_table_status_to_processed"
             ) as mock_change_audit_table_status_to_processed,  # noqa: E999
+            patch("update_ack_file.set_records_succeeded_count") as mock_set_records_succeeded_count,  # noqa: E999
         ):  # noqa: E999
             result = lambda_handler(generate_event(messages, include_eof_message=True), context={})
 
@@ -453,6 +458,7 @@ class TestLoggingDecorators(unittest.TestCase):
             ]
         )
         mock_change_audit_table_status_to_processed.assert_called()
+        mock_set_records_succeeded_count.assert_called()
 
 
 if __name__ == "__main__":

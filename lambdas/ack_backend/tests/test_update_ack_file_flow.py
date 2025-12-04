@@ -39,6 +39,8 @@ class TestUpdateAckFileFlow(unittest.TestCase):
         self.mock_change_audit_status = self.change_audit_status_patcher.start()
         self.get_record_count_patcher = patch("update_ack_file.get_record_count_by_message_id")
         self.mock_get_record_count = self.get_record_count_patcher.start()
+        self.set_records_succeeded_count_patcher = patch("update_ack_file.set_records_succeeded_count")
+        self.mock_set_records_succeeded_count = self.set_records_succeeded_count_patcher.start()
 
     def tearDown(self):
         self.logger_patcher.stop()
@@ -72,3 +74,4 @@ class TestUpdateAckFileFlow(unittest.TestCase):
         # Assert: Only check audit table interactions
         self.mock_get_record_count.assert_called_once_with(message_id)
         self.mock_change_audit_status.assert_called_once_with(file_key, message_id)
+        self.mock_set_records_succeeded_count.assert_called_once()

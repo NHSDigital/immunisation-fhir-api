@@ -2,7 +2,7 @@
 
 import json
 
-# from audit_table import increment_record_counter
+from audit_table import increment_records_failed_count
 from common.batch.eof_utils import is_eof_message
 from convert_message_to_ack_row import convert_message_to_ack_row
 from logging_decorators import ack_lambda_handler_logging_decorator
@@ -51,9 +51,7 @@ def lambda_handler(event, _):
 
             ack_data_rows.append(convert_message_to_ack_row(message, created_at_formatted_string))
             if message.get("diagnostics"):
-                # TODO: unit tests will fail; we need to mock the audit table to get this to work.
-                print("TODO: increment the record counter")
-                # increment_record_counter(message_id)
+                increment_records_failed_count(message_id)
 
     update_ack_file(file_key, created_at_formatted_string, ack_data_rows)
 
