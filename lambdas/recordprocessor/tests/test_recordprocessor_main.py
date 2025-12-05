@@ -79,6 +79,7 @@ class TestRecordProcessor(unittest.TestCase):
         )
         mock_redis_getter.return_value = mock_redis
         self.mock_logger_info = create_patch("logging.Logger.info")
+        self.mock_set_audit_table_ingestion_started = create_patch("logging_decorator.set_audit_table_ingestion_started")
 
     def tearDown(self) -> None:
         patch.stopall()

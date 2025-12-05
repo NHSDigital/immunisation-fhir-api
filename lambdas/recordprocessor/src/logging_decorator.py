@@ -5,6 +5,7 @@ import time
 from datetime import datetime
 from functools import wraps
 
+from audit_table import set_audit_table_ingestion_started
 from common.log_decorator import generate_and_send_logs
 from models.errors import InvalidHeaders, NoOperationPermissions
 
@@ -20,11 +21,13 @@ def file_level_validation_logging_decorator(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         incoming_message_body = kwargs.get("incoming_message_body") or args[0]
+        file_key = incoming_message_body.get("filename")
+        message_id = incoming_message_body.get("message_id")
         base_log_data = {
             "function_name": f"record_processor_{func.__name__}",
             "date_time": str(datetime.now()),
-            "file_key": incoming_message_body.get("filename"),
-            "message_id": incoming_message_body.get("message_id"),
+            "file_key": file_key,
+            "message_id": message_id,
             "vaccine_type": incoming_message_body.get("vaccine_type"),
             "supplier": incoming_message_body.get("supplier"),
         }
@@ -36,6 +39,8 @@ def file_level_validation_logging_decorator(func):
                 "statusCode": 200,
                 "message": "Successfully sent for record processing",
             }
+            set_audit_table_ingestion_started(file_key, message_id, start_time)
+
             generate_and_send_logs(STREAM_NAME, start_time, base_log_data, additional_log_data)
             return result
 

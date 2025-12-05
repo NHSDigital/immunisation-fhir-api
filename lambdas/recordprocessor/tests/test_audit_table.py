@@ -23,7 +23,10 @@ from utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from audit_table import update_audit_table_status
+    from audit_table import (
+        set_audit_table_ingestion_started,
+        update_audit_table_status,
+    )
     from common.clients import REGION_NAME
     from constants import (
         AUDIT_TABLE_NAME,
@@ -121,6 +124,38 @@ class TestAuditTable(TestCase):
 
         with self.assertRaises(UnhandledAuditTableError):
             update_audit_table_status(file_key, message_id, FileStatus.PROCESSED)
+
+        self.mock_logger.error.assert_called_once()
+
+    def test_set_audit_table_ingestion_started(self):
+        """Checks audit table correctly sets ingestion_started to the requested value"""
+        # Test case 1: file should be updated with status of 'Processed'.
+
+        add_entry_to_table(MockFileDetails.rsv_ravs, file_status=FileStatus.PROCESSING)
+
+        ravs_rsv_test_file = FileDetails("RSV", "RAVS", "X26")
+        file_key = ravs_rsv_test_file.file_key
+        message_id = ravs_rsv_test_file.message_id
+        test_start_time = 1627647000
+
+        set_audit_table_ingestion_started(file_key, message_id, test_start_time)
+
+        self.mock_logger.info.assert_called_once_with(
+            "ingestion_started for %s file, with message id %s, was successfully updated to %s in the audit table",
+            "RSV_Vaccinations_v5_X26_20210730T12000000.csv",
+            "rsv_ravs_test_id",
+            "20210730T12100000",
+        )
+
+    def test_set_audit_table_ingestion_started_throws_exception_with_invalid_id(self):
+        emis_flu_test_file_2 = FileDetails("FLU", "EMIS", "YGM41")
+
+        message_id = emis_flu_test_file_2.message_id
+        file_key = emis_flu_test_file_2.file_key
+        test_start_time = 1627647000
+
+        with self.assertRaises(UnhandledAuditTableError):
+            set_audit_table_ingestion_started(file_key, message_id, test_start_time)
 
         self.mock_logger.error.assert_called_once()
 

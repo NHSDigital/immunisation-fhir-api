@@ -90,6 +90,9 @@ def complete_batch_file_process_logging_decorator(func):
                 "statusCode": 200,
                 "message": message_for_logs,
             }
+
+            # here: add start_time to audit table as "ingestion_complete" for message_id
+
             generate_and_send_logs(STREAM_NAME, start_time, base_log_data, additional_log_data)
         return result
 
