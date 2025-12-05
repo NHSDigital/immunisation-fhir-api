@@ -30,15 +30,9 @@ class FileNotProcessedReason(StrEnum):
 class AuditTableKeys(StrEnum):
     """Audit table keys"""
 
-    MESSAGE_ID = "message_id"
     FILENAME = "filename"
+    MESSAGE_ID = "message_id"
     QUEUE_NAME = "queue_name"
     STATUS = "status"
-    ERROR_DETAILS = "error_details"
     TIMESTAMP = "timestamp"
-    INGESTION_STARTED = "ingestion_started"
-    INGESTION_COMPLETE = "ingestion_complete"
-    RECORD_COUNT = "record_count"
-    RECORDS_SUCCEEDED = "records_succeeded"
-    RECORDS_FAILED = "records_failed"
-    EXPIRES_AT = "expires_at"
+    ERROR_DETAILS = "error_details"
