@@ -274,26 +274,6 @@ class TestLambdaHandlerDataSource(TestCase):
         with (
             patch("file_name_processor.validate_permissions_for_extended_attributes_files", return_value="X8E5B_COVID"),
             patch("file_name_processor.uuid4", return_value=test_cases[0].message_id),
-            patch(
-                "file_name_processor.copy_file_to_external_bucket",
-                side_effect=lambda src_bucket, key, dst_bucket, dst_key, exp_owner, exp_src_owner: (
-                    s3_client.put_object(
-                        Bucket=BucketNames.DESTINATION,
-                        Key=dst_key,
-                        Body=s3_client.get_object(Bucket=src_bucket, Key=key)["Body"].read(),
-                    ),
-                ),
-            ),
-            patch(
-                "file_name_processor.move_file",
-                side_effect=lambda source_bucket, source_key, destination_key: (
-                    s3_client.put_object(
-                        Bucket=source_bucket,
-                        Key=destination_key,
-                        Body=s3_client.get_object(Bucket=source_bucket, Key=source_key)["Body"].read(),
-                    ),
-                ),
-            ),
         ):
             lambda_handler(self.make_event([self.make_record(test_cases[0].file_key)]), None)
 
@@ -310,7 +290,6 @@ class TestLambdaHandlerDataSource(TestCase):
         self.assertEqual(item[AuditTableKeys.EXPIRES_AT]["N"], str(test_cases[0].expires_at))
         # File should be moved to destination/
         dest_key = f"dps_destination/{test_cases[0].file_key}"
-        print(f" destination file is at {s3_client.list_objects(Bucket=BucketNames.DESTINATION)}")
         retrieved = s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=dest_key)
         self.assertIsNotNone(retrieved)
 
@@ -352,17 +331,6 @@ class TestLambdaHandlerDataSource(TestCase):
             patch("file_name_processor.validate_permissions_for_extended_attributes_files", return_value="X8E5B_COVID"),
             patch("file_name_processor.uuid4", return_value=test_cases[0].message_id),
             patch("file_name_processor.copy_file_to_external_bucket", side_effect=Exception("Test ClientError")),
-            patch(
-                "file_name_processor.move_file",
-                side_effect=lambda bucket, key, dst_key: (
-                    s3_client.put_object(
-                        Bucket=bucket,
-                        Key=dst_key,
-                        Body=s3_client.get_object(Bucket=bucket, Key=key)["Body"].read(),
-                    ),
-                    s3_client.delete_object(Bucket=bucket, Key=key),
-                ),
-            ),
         ):
             lambda_handler(self.make_event([self.make_record(test_cases[0].file_key)]), None)
 
@@ -384,7 +352,6 @@ class TestLambdaHandlerDataSource(TestCase):
         self.assertEqual(item[AuditTableKeys.EXPIRES_AT]["N"], str(test_cases[0].expires_at))
         # File should be moved to source under archive/
         dest_key = f"extended-attributes-archive/{test_cases[0].file_key}"
-        print(f" destination file is at {s3_client.list_objects(Bucket=BucketNames.SOURCE)}")
         retrieved = s3_client.get_object(Bucket=BucketNames.SOURCE, Key=dest_key)
         self.assertIsNotNone(retrieved)
 
@@ -484,27 +451,6 @@ class TestLambdaHandlerDataSource(TestCase):
                 return_value=["COVID.CUDS"],
             ),
             patch("file_name_processor.uuid4", return_value="EA_csv_id"),
-            patch(
-                "file_name_processor.copy_file_to_external_bucket",
-                side_effect=lambda src_bucket, key, dst_bucket, dst_key, exp_owner, exp_src_owner: (
-                    s3_client.put_object(
-                        Bucket=BucketNames.DESTINATION,
-                        Key=dst_key,
-                        Body=s3_client.get_object(Bucket=src_bucket, Key=key)["Body"].read(),
-                    ),
-                ),
-            ),
-            patch(
-                "file_name_processor.move_file",
-                side_effect=lambda bucket, key, dst_key: (
-                    s3_client.put_object(
-                        Bucket=bucket,
-                        Key=dst_key,
-                        Body=s3_client.get_object(Bucket=bucket, Key=key)["Body"].read(),
-                    ),
-                    s3_client.delete_object(Bucket=bucket, Key=key),
-                ),
-            ),
         ):
             lambda_handler(self.make_event([self.make_record(csv_key)]), None)
         # Ensure processed path hit by checking destination (implementation currently uses single slash)
@@ -516,27 +462,6 @@ class TestLambdaHandlerDataSource(TestCase):
         with (
             patch("file_name_processor.validate_permissions_for_extended_attributes_files", return_value="X8E5B_COVID"),
             patch("file_name_processor.uuid4", return_value="EA_dat_id"),
-            patch(
-                "file_name_processor.copy_file_to_external_bucket",
-                side_effect=lambda src_bucket, key, dst_bucket, dst_key, exp_owner, exp_src_owner: (
-                    s3_client.put_object(
-                        Bucket=BucketNames.DESTINATION,
-                        Key=dst_key,
-                        Body=s3_client.get_object(Bucket=src_bucket, Key=key)["Body"].read(),
-                    ),
-                ),
-            ),
-            patch(
-                "file_name_processor.move_file",
-                side_effect=lambda bucket, key, dst_key: (
-                    s3_client.put_object(
-                        Bucket=bucket,
-                        Key=dst_key,
-                        Body=s3_client.get_object(Bucket=bucket, Key=key)["Body"].read(),
-                    ),
-                    s3_client.delete_object(Bucket=bucket, Key=key),
-                ),
-            ),
         ):
             lambda_handler(self.make_event([self.make_record(dat_key)]), None)
         s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=f"dps_destination/{dat_key}")
@@ -569,10 +494,6 @@ class TestLambdaHandlerDataSource(TestCase):
             Key=invalid_file_key,
             Body=MOCK_EXTENDED_ATTRIBUTES_FILE_CONTENT,
         )
-
-        # TODO: rewrite the bucket patches to use moto
-
-        # Patch uuid4 (message id), and don't move the file
         with (
             patch("file_name_processor.uuid4", return_value=test_cases[0].message_id),
             patch(

@@ -162,6 +162,19 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
           "firehose:PutRecordBatch"
         ],
         "Resource" : "arn:aws:firehose:*:*:deliverystream/${module.splunk.firehose_stream_name}"
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ],
+        "Resource" : [
+          "arn:aws:s3:::nhsd-dspp-core-ref-extended-attributes-gdp",
+          "arn:aws:s3:::nhsd-dspp-core-ref-extended-attributes-gdp/*"
+        ]
       }
     ]
   })
@@ -277,9 +290,10 @@ resource "aws_lambda_function" "file_processor_lambda" {
 
   environment {
     variables = {
-      ACCOUNT_ID           = var.immunisation_account_id
+      ACCOUNT_ID           = var.dspp_core_account_id
       SOURCE_BUCKET_NAME   = aws_s3_bucket.batch_data_source_bucket.bucket
       ACK_BUCKET_NAME      = aws_s3_bucket.batch_data_destination_bucket.bucket
+      DPS_BUCKET_NAME      = "nhsd-dspp-core-ref-extended-attributes-gdp"
       QUEUE_URL            = aws_sqs_queue.batch_file_created.url
       REDIS_HOST           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
       REDIS_PORT           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
