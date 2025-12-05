@@ -129,8 +129,6 @@ class TestAuditTable(TestCase):
 
     def test_set_audit_table_ingestion_started(self):
         """Checks audit table correctly sets ingestion_started to the requested value"""
-        # Test case 1: file should be updated with status of 'Processed'.
-
         add_entry_to_table(MockFileDetails.rsv_ravs, file_status=FileStatus.PROCESSING)
 
         ravs_rsv_test_file = FileDetails("RSV", "RAVS", "X26")

@@ -67,21 +67,21 @@ def set_audit_table_ingestion_started(
     expression_attr_values = {f":{AuditTableKeys.INGESTION_STARTED}": {"S": ingestion_started}}
 
     try:
-        # Update the status in the audit table to "Processed"
-        dynamodb_client.update_item(
+        response = dynamodb_client.update_item(
             TableName=AUDIT_TABLE_NAME,
             Key={AuditTableKeys.MESSAGE_ID: {"S": message_id}},
             UpdateExpression=update_expression,
             ExpressionAttributeNames=expression_attr_names,
             ExpressionAttributeValues=expression_attr_values,
             ConditionExpression=f"attribute_exists({AuditTableKeys.MESSAGE_ID})",
+            ReturnValues="UPDATED_NEW",
         )
-
+        result = response.get("Attributes", {}).get(AuditTableKeys.INGESTION_STARTED).get("S")
         logger.info(
             "ingestion_started for %s file, with message id %s, was successfully updated to %s in the audit table",
             file_key,
             message_id,
-            ingestion_started,
+            result,
         )
 
     except Exception as error:  # pylint: disable = broad-exception-caught
