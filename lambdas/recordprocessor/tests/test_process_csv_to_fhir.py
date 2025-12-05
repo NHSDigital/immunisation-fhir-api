@@ -61,6 +61,10 @@ class TestProcessCsvToFhir(unittest.TestCase):
         )
         mock_redis_getter.return_value = mock_redis
 
+        set_audit_table_ingestion_started_patcher = patch("logging_decorator.set_audit_table_ingestion_started")
+        self.addCleanup(set_audit_table_ingestion_started_patcher.stop)
+        set_audit_table_ingestion_started_patcher.start()
+
     def tearDown(self) -> None:
         GenericTearDown(
             s3_client=s3_client,
