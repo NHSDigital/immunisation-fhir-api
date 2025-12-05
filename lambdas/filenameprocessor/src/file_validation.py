@@ -3,7 +3,7 @@
 from datetime import datetime
 from re import match
 
-from constants import VALID_VERSIONS
+from constants import EXTENDED_ATTRIBUTES_FILE_PREFIX, EXTENDED_ATTRIBUTES_VACC_TYPE, VALID_EA_VERSIONS, VALID_VERSIONS
 from elasticache import (
     get_supplier_system_from_cache,
     get_valid_vaccine_types_from_cache,
@@ -37,7 +37,7 @@ def is_valid_datetime(timestamp: str) -> bool:
     return True
 
 
-def validate_extended_attributes_file_key(file_key: str) -> str:
+def validate_extended_attributes_file_key(file_key: str) -> tuple[str, str]:
     """
     Checks that all elements of the file key are valid, raises an exception otherwise.
     Returns a string containing the organization code.
@@ -45,9 +45,28 @@ def validate_extended_attributes_file_key(file_key: str) -> str:
     if not match(r"^[^_.]*_[^_.]*_[^_.]*_[^_.]*_[^_.]*_[^_.]*_[^_.]*", file_key):
         raise InvalidFileKeyError("Initial file validation failed: invalid extended attributes file key format")
 
-    file_key_parts_without_extension, _ = split_file_key(file_key)
+    file_key_parts_without_extension, extension = split_file_key(file_key)
+    file_type = "_".join(file_key_parts_without_extension[:3])
+    version = "_".join(file_key_parts_without_extension[3:5])
     organization_code = file_key_parts_without_extension[5]
-    return organization_code
+    timestamp = file_key_parts_without_extension[6]
+    supplier = get_supplier_system_from_cache(organization_code)
+    valid_vaccine_types = get_valid_vaccine_types_from_cache()
+    vaccine_type = EXTENDED_ATTRIBUTES_VACC_TYPE
+
+    if not (
+        vaccine_type in valid_vaccine_types
+        and file_type == EXTENDED_ATTRIBUTES_FILE_PREFIX.upper()
+        and version in VALID_EA_VERSIONS
+        and supplier  # Note that if supplier could be identified, this also implies that ODS code is valid
+        and is_valid_datetime(timestamp)
+        and (
+            (extension == "CSV") or (extension == "DAT") or (extension == "CTL")
+        )  # The DAT extension has been added for MESH file processing
+    ):
+        raise InvalidFileKeyError("Initial file validation failed: invalid file key")
+
+    return vaccine_type, organization_code
 
 
 def validate_batch_file_key(file_key: str) -> tuple[str, str]:
