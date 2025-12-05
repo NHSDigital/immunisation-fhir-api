@@ -115,6 +115,7 @@ class TestAuditTable(unittest.TestCase):
         self.mock_logger.error.assert_called_once()
 
     def test_increment_records_failed_count(self):
+        """Checks audit table correctly increments the records_failed count"""
         test_message_id = "1234"
         audit_table.increment_records_failed_count(test_message_id)
         self.mock_dynamodb_client.update_item.assert_called_once_with(
@@ -132,5 +133,32 @@ class TestAuditTable(unittest.TestCase):
         self.mock_dynamodb_client.update_item.side_effect = Exception("fail!")
         with self.assertRaises(UnhandledAuditTableError) as ctx:
             audit_table.increment_records_failed_count("msg1")
+        self.assertIn("fail!", str(ctx.exception))
+        self.mock_logger.error.assert_called_once()
+
+    def test_set_audit_table_ingestion_complete(self):
+        """Checks audit table correctly sets ingestion_complete to the requested value"""
+        test_file_key = "RSV_Vaccinations_v5_X26_20210730T12000000.csv"
+        test_message_id = "1234"
+        test_start_time = 1627647000
+        audit_table.set_audit_table_ingestion_complete(test_file_key, test_message_id, test_start_time)
+        self.mock_dynamodb_client.update_item.assert_called_once_with(
+            TableName=AUDIT_TABLE_NAME,
+            Key={AuditTableKeys.MESSAGE_ID: {"S": test_message_id}},
+            UpdateExpression=f"SET #{AuditTableKeys.INGESTION_COMPLETE} = :{AuditTableKeys.INGESTION_COMPLETE}",
+            ExpressionAttributeNames={f"#{AuditTableKeys.INGESTION_COMPLETE}": AuditTableKeys.INGESTION_COMPLETE},
+            ExpressionAttributeValues={f":{AuditTableKeys.INGESTION_COMPLETE}": {"S": "20210730T12100000"}},
+            ConditionExpression="attribute_exists(message_id)",
+            ReturnValues="UPDATED_NEW",
+        )
+        self.mock_logger.info.assert_called_once()
+
+    def test_set_audit_table_ingestion_complete_throws_exception_with_invalid_id(self):
+        test_file_key = "RSV_Vaccinations_v5_X26_20210730T12000000.csv"
+        test_message_id = "1234"
+        test_start_time = 1627647000
+        self.mock_dynamodb_client.update_item.side_effect = Exception("fail!")
+        with self.assertRaises(UnhandledAuditTableError) as ctx:
+            audit_table.set_audit_table_ingestion_complete(test_file_key, test_message_id, test_start_time)
         self.assertIn("fail!", str(ctx.exception))
         self.mock_logger.error.assert_called_once()

@@ -424,6 +424,7 @@ class TestLoggingDecorators(unittest.TestCase):
                 "update_ack_file.change_audit_table_status_to_processed"
             ) as mock_change_audit_table_status_to_processed,  # noqa: E999
             patch("update_ack_file.set_records_succeeded_count") as mock_set_records_succeeded_count,  # noqa: E999
+            patch("logging_decorators.set_audit_table_ingestion_complete"),  # noqa: E999
         ):  # noqa: E999
             result = lambda_handler(generate_event(messages, include_eof_message=True), context={})
 

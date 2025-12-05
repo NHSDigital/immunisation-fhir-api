@@ -1,5 +1,6 @@
 """Add the filename to the audit table and check for duplicates."""
 
+import time
 from typing import Optional
 
 from common.clients import dynamodb_client, logger
@@ -109,6 +110,42 @@ def increment_records_failed_count(message_id: str) -> None:
         logger.info(
             "Counter %s for message id %s incremented to %s in the audit table",
             counter_name,
+            message_id,
+            result,
+        )
+
+    except Exception as error:  # pylint: disable = broad-exception-caught
+        logger.error(error)
+        raise UnhandledAuditTableError(error) from error
+
+
+def set_audit_table_ingestion_complete(
+    file_key: str,
+    message_id: str,
+    complete_time: float,
+) -> None:
+    """Sets the ingestion_complete in the audit table to the requested time"""
+    # format the time
+    ingestion_complete = time.strftime("%Y%m%dT%H%M%S00", time.gmtime(complete_time))
+
+    update_expression = f"SET #{AuditTableKeys.INGESTION_COMPLETE} = :{AuditTableKeys.INGESTION_COMPLETE}"
+    expression_attr_names = {f"#{AuditTableKeys.INGESTION_COMPLETE}": AuditTableKeys.INGESTION_COMPLETE}
+    expression_attr_values = {f":{AuditTableKeys.INGESTION_COMPLETE}": {"S": ingestion_complete}}
+
+    try:
+        response = dynamodb_client.update_item(
+            TableName=AUDIT_TABLE_NAME,
+            Key={AuditTableKeys.MESSAGE_ID: {"S": message_id}},
+            UpdateExpression=update_expression,
+            ExpressionAttributeNames=expression_attr_names,
+            ExpressionAttributeValues=expression_attr_values,
+            ConditionExpression=f"attribute_exists({AuditTableKeys.MESSAGE_ID})",
+            ReturnValues="UPDATED_NEW",
+        )
+        result = response.get("Attributes", {}).get(AuditTableKeys.INGESTION_COMPLETE).get("S")
+        logger.info(
+            "ingestion_complete for %s file, with message id %s, was successfully updated to %s in the audit table",
+            file_key,
             message_id,
             result,
         )

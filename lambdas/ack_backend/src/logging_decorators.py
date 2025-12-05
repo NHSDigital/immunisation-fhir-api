@@ -5,6 +5,7 @@ import time
 from datetime import datetime
 from functools import wraps
 
+from audit_table import set_audit_table_ingestion_complete
 from common.log_decorator import generate_and_send_logs
 
 PREFIX = "ack_processor"
@@ -78,7 +79,7 @@ def complete_batch_file_process_logging_decorator(func):
             "function_name": f"{PREFIX}_{func.__name__}",
             "date_time": str(datetime.now()),
         }
-        start_time = time.time()
+        complete_time = time.time()
 
         # NB this doesn't require a try-catch block as the wrapped function never throws an exception
         result = func(*args, **kwargs)
@@ -90,10 +91,11 @@ def complete_batch_file_process_logging_decorator(func):
                 "statusCode": 200,
                 "message": message_for_logs,
             }
+            file_key = base_log_data.get("filename")
+            message_id = base_log_data.get("message_id")
+            set_audit_table_ingestion_complete(file_key, message_id, complete_time)
 
-            # here: add start_time to audit table as "ingestion_complete" for message_id
-
-            generate_and_send_logs(STREAM_NAME, start_time, base_log_data, additional_log_data)
+            generate_and_send_logs(STREAM_NAME, complete_time, base_log_data, additional_log_data)
         return result
 
     return wrapper

@@ -41,10 +41,15 @@ class TestUpdateAckFileFlow(unittest.TestCase):
         self.mock_get_record_count = self.get_record_count_patcher.start()
         self.set_records_succeeded_count_patcher = patch("update_ack_file.set_records_succeeded_count")
         self.mock_set_records_succeeded_count = self.set_records_succeeded_count_patcher.start()
+        self.set_audit_table_ingestion_complete_patcher = patch("logging_decorators.set_audit_table_ingestion_complete")
+        self.mock_set_audit_table_ingestion_complete = self.set_audit_table_ingestion_complete_patcher.start()
 
     def tearDown(self):
         self.logger_patcher.stop()
         self.change_audit_status_patcher.stop()
+        self.get_record_count_patcher.stop()
+        self.set_records_succeeded_count_patcher.stop()
+        self.set_audit_table_ingestion_complete_patcher.stop()
 
     def test_audit_table_updated_correctly_when_ack_process_complete(self):
         """VED-167 - Test that the audit table has been updated correctly"""
