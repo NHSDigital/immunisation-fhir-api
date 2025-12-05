@@ -35,10 +35,10 @@ class AuditTableKeys:
     FILENAME = "filename"
     MESSAGE_ID = "message_id"
     QUEUE_NAME = "queue_name"
+    RECORD_COUNT = "record_count"
     STATUS = "status"
     TIMESTAMP = "timestamp"
     INGESTION_COMPLETE = "ingestion_complete"
-    RECORD_COUNT = "record_count"
     RECORDS_SUCCEEDED = "records_succeeded"
     RECORDS_FAILED = "records_failed"
 
