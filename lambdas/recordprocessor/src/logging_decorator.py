@@ -30,14 +30,15 @@ def file_level_validation_logging_decorator(func):
             "vaccine_type": incoming_message_body.get("vaccine_type"),
             "supplier": incoming_message_body.get("supplier"),
         }
+        start_time = time.time()
 
         try:
-            result, ingestion_start_time = func(*args, **kwargs)
+            result = func(*args, **kwargs)
             additional_log_data = {
                 "statusCode": 200,
                 "message": "Successfully sent for record processing",
             }
-            generate_and_send_logs(STREAM_NAME, ingestion_start_time, base_log_data, additional_log_data)
+            generate_and_send_logs(STREAM_NAME, start_time, base_log_data, additional_log_data)
             return result
 
         except Exception as e:

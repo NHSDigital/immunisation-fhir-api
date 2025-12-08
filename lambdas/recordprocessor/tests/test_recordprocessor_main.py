@@ -463,7 +463,7 @@ class TestRecordProcessor(unittest.TestCase):
         with (  # noqa: E999
             patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
             patch("logging_decorator.datetime") as mock_datetime,  # noqa: E999
-            patch("file_level_validation.time") as mock_start_time,  # noqa: E999
+            patch("logging_decorator.time") as mock_start_time,  # noqa: E999
             patch("common.log_decorator.time") as mock_end_time,  # noqa: E999
         ):  # noqa: E999
             mock_start_time.time.return_value = 1672531200

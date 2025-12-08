@@ -423,13 +423,14 @@ class TestLoggingDecorators(unittest.TestCase):
         with (  # noqa: E999
             patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
-            patch("update_ack_file.get_record_count_by_message_id", return_value=99),
+            patch("update_ack_file.get_record_count_and_failures_by_message_id", return_value=(99, 2)),
             patch(
                 "update_ack_file.change_audit_table_status_to_processed"
             ) as mock_change_audit_table_status_to_processed,  # noqa: E999
-            patch("update_ack_file.set_records_succeeded_count") as mock_set_records_succeeded_count,  # noqa: E999
+            patch(
+                "update_ack_file.set_audit_record_success_count_and_end_time"
+            ) as mock_set_records_succeeded_count_and_end_time,  # noqa: E999
             patch("ack_processor.increment_records_failed_count"),  # noqa: E999
-            patch("update_ack_file.set_audit_table_ingestion_end_time"),  # noqa: E999
         ):  # noqa: E999
             result = lambda_handler(generate_event(messages, include_eof_message=True), context={})
 
@@ -464,7 +465,7 @@ class TestLoggingDecorators(unittest.TestCase):
             ]
         )
         mock_change_audit_table_status_to_processed.assert_called()
-        mock_set_records_succeeded_count.assert_called()
+        mock_set_records_succeeded_count_and_end_time.assert_called()
 
 
 if __name__ == "__main__":

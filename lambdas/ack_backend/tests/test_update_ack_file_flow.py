@@ -37,19 +37,16 @@ class TestUpdateAckFileFlow(unittest.TestCase):
 
         self.change_audit_status_patcher = patch("update_ack_file.change_audit_table_status_to_processed")
         self.mock_change_audit_status = self.change_audit_status_patcher.start()
-        self.get_record_count_patcher = patch("update_ack_file.get_record_count_by_message_id")
-        self.mock_get_record_count = self.get_record_count_patcher.start()
-        self.set_records_succeeded_count_patcher = patch("update_ack_file.set_records_succeeded_count")
+        self.get_record_and_failure_count_patcher = patch("update_ack_file.get_record_count_and_failures_by_message_id")
+        self.mock_get_record_and_failure_count = self.get_record_and_failure_count_patcher.start()
+        self.set_records_succeeded_count_patcher = patch("update_ack_file.set_audit_record_success_count_and_end_time")
         self.mock_set_records_succeeded_count = self.set_records_succeeded_count_patcher.start()
-        self.set_audit_table_ingestion_end_time_patcher = patch("update_ack_file.set_audit_table_ingestion_end_time")
-        self.mock_set_audit_table_ingestion_end_time = self.set_audit_table_ingestion_end_time_patcher.start()
 
     def tearDown(self):
         self.logger_patcher.stop()
         self.change_audit_status_patcher.stop()
-        self.get_record_count_patcher.stop()
+        self.get_record_and_failure_count_patcher.stop()
         self.set_records_succeeded_count_patcher.stop()
-        self.set_audit_table_ingestion_end_time_patcher.stop()
 
     def test_audit_table_updated_correctly_when_ack_process_complete(self):
         """VED-167 - Test that the audit table has been updated correctly"""
@@ -65,7 +62,7 @@ class TestUpdateAckFileFlow(unittest.TestCase):
         self.s3_client.put_object(
             Bucket=self.ack_bucket_name, Key=f"TempAck/audit_table_test_BusAck_{mock_created_at_string}.csv"
         )
-        self.mock_get_record_count.return_value = 10
+        self.mock_get_record_and_failure_count.return_value = 10, 2
 
         # Act
         update_ack_file.complete_batch_file_process(
@@ -77,6 +74,6 @@ class TestUpdateAckFileFlow(unittest.TestCase):
         )
 
         # Assert: Only check audit table interactions
-        self.mock_get_record_count.assert_called_once_with(message_id)
+        self.mock_get_record_and_failure_count.assert_called_once_with(message_id)
         self.mock_change_audit_status.assert_called_once_with(file_key, message_id)
         self.mock_set_records_succeeded_count.assert_called_once()

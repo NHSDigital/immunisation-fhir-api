@@ -64,7 +64,7 @@ def get_permitted_operations(supplier: str, vaccine_type: str, allowed_permissio
 
 
 @file_level_validation_logging_decorator
-def file_level_validation(incoming_message_body: dict) -> tuple[dict, float]:
+def file_level_validation(incoming_message_body: dict) -> dict:
     """
     Validates that the csv headers are correct and that the supplier has permission to perform at least one of
     the requested operations. Uploads the inf ack file and moves the source file to the processing folder.
@@ -101,7 +101,7 @@ def file_level_validation(incoming_message_body: dict) -> tuple[dict, float]:
         ingestion_start_time = time.time()
         set_audit_table_ingestion_start_time(file_key, message_id, ingestion_start_time)
 
-        result = {
+        return {
             "message_id": message_id,
             "vaccine": vaccine,
             "supplier": supplier,
@@ -110,7 +110,6 @@ def file_level_validation(incoming_message_body: dict) -> tuple[dict, float]:
             "created_at_formatted_string": created_at_formatted_string,
             "csv_dict_reader": csv_reader,
         }
-        return result, ingestion_start_time
 
     except Exception as error:
         logger.error("Error in file_level_validation: %s", error)

@@ -7,9 +7,8 @@ from botocore.exceptions import ClientError
 
 from audit_table import (
     change_audit_table_status_to_processed,
-    get_record_count_by_message_id,
-    set_audit_table_ingestion_end_time,
-    set_records_succeeded_count,
+    get_record_count_and_failures_by_message_id,
+    set_audit_record_success_count_and_end_time,
 )
 from common.aws_s3_utils import move_file
 from common.clients import get_s3_client, logger
@@ -67,7 +66,7 @@ def complete_batch_file_process(
     vaccine_type: str,
     created_at_formatted_string: str,
     file_key: str,
-) -> tuple[dict, float]:
+) -> dict:
     """Mark the batch file as processed. This involves moving the ack and original file to destinations and updating
     the audit table status"""
     ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.csv')}"
@@ -77,21 +76,23 @@ def complete_batch_file_process(
         get_source_bucket_name(), f"{BATCH_FILE_PROCESSING_DIR}/{file_key}", f"{BATCH_FILE_ARCHIVE_DIR}/{file_key}"
     )
 
-    total_ack_rows_processed = get_record_count_by_message_id(message_id)
+    total_ack_rows_processed, total_failures = get_record_count_and_failures_by_message_id(message_id)
     change_audit_table_status_to_processed(file_key, message_id)
-    set_records_succeeded_count(message_id)
 
-    ingestion_end_time = time.time()
-    set_audit_table_ingestion_end_time(file_key, message_id, ingestion_end_time)
+    # Consider creating time utils and using datetime instead of time
+    ingestion_end_time = time.strftime("%Y%m%dT%H%M%S00", time.gmtime())
+    successful_record_count = total_ack_rows_processed - total_failures
+    set_audit_record_success_count_and_end_time(file_key, message_id, successful_record_count, ingestion_end_time)
 
-    result = {
+    return {
         "message_id": message_id,
         "file_key": file_key,
         "supplier": supplier,
         "vaccine_type": vaccine_type,
         "row_count": total_ack_rows_processed,
+        "success_count": successful_record_count,
+        "failure_count": total_failures,
     }
-    return result, ingestion_end_time
 
 
 def obtain_current_ack_content(temp_ack_file_key: str) -> StringIO:
