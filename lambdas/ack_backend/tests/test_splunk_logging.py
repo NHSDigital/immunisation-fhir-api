@@ -66,7 +66,7 @@ class TestLoggingDecorators(unittest.TestCase):
             # Time is incremented by 1.0 for each call to time.time for ease of testing.
             # Range is set to a large number (300) due to many calls being made to time.time for some tests.
             patch(
-                "logging_decorators.time.time",
+                "update_ack_file.time.time",
                 side_effect=[0.0 + i for i in range(300)],
             ),
         ]
@@ -121,6 +121,7 @@ class TestLoggingDecorators(unittest.TestCase):
             with (  # noqa: E999
                 patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
                 patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
+                patch("ack_processor.increment_records_failed_count"),  # noqa: E999
             ):  # noqa: E999
                 result = lambda_handler(
                     event=generate_event([{"operation_requested": operation}]),
@@ -161,6 +162,7 @@ class TestLoggingDecorators(unittest.TestCase):
         with (  # noqa: E999
             patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
+            patch("ack_processor.increment_records_failed_count"),  # noqa: E999
         ):  # noqa: E999
             with self.assertRaises(AttributeError):
                 lambda_handler(event={"Records": [{"body": json.dumps([{"": "456", "row_id": "test^1"}])}]}, context={})
@@ -263,6 +265,7 @@ class TestLoggingDecorators(unittest.TestCase):
         with (  # noqa: E999
             patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
+            patch("ack_processor.increment_records_failed_count"),  # noqa: E999
         ):  # noqa: E999
             result = lambda_handler(generate_event(messages), context={})
 
@@ -382,6 +385,7 @@ class TestLoggingDecorators(unittest.TestCase):
             patch(
                 "update_ack_file.change_audit_table_status_to_processed"
             ) as mock_change_audit_table_status_to_processed,  # noqa: E999
+            patch("ack_processor.increment_records_failed_count"),  # noqa: E999
         ):  # noqa: E999
             result = lambda_handler(generate_event(messages), context={})
 
@@ -424,7 +428,8 @@ class TestLoggingDecorators(unittest.TestCase):
                 "update_ack_file.change_audit_table_status_to_processed"
             ) as mock_change_audit_table_status_to_processed,  # noqa: E999
             patch("update_ack_file.set_records_succeeded_count") as mock_set_records_succeeded_count,  # noqa: E999
-            patch("logging_decorators.set_audit_table_ingestion_complete"),  # noqa: E999
+            patch("ack_processor.increment_records_failed_count"),  # noqa: E999
+            patch("update_ack_file.set_audit_table_ingestion_end_time"),  # noqa: E999
         ):  # noqa: E999
             result = lambda_handler(generate_event(messages, include_eof_message=True), context={})
 

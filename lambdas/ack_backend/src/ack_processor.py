@@ -50,6 +50,9 @@ def lambda_handler(event, _):
                 break
 
             ack_data_rows.append(convert_message_to_ack_row(message, created_at_formatted_string))
+            # Note: we are only currently receiving failure records.
+            # Nevertheless, we leave this here pending rewrite of tests (which currently still incorporate
+            # success records and use "diagnostics" to identify failures).
             if message.get("diagnostics"):
                 increment_records_failed_count(message_id)
 

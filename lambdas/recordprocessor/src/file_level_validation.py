@@ -3,9 +3,10 @@ Functions for completing file-level validation
 (validating headers and ensuring that the supplier has permission to perform at least one of the requested operations)
 """
 
+import time
 from csv import DictReader
 
-from audit_table import update_audit_table_status
+from audit_table import set_audit_table_ingestion_start_time, update_audit_table_status
 from common.aws_s3_utils import move_file
 from common.clients import logger
 from constants import (
@@ -63,7 +64,7 @@ def get_permitted_operations(supplier: str, vaccine_type: str, allowed_permissio
 
 
 @file_level_validation_logging_decorator
-def file_level_validation(incoming_message_body: dict) -> dict:
+def file_level_validation(incoming_message_body: dict) -> tuple[dict, float]:
     """
     Validates that the csv headers are correct and that the supplier has permission to perform at least one of
     the requested operations. Uploads the inf ack file and moves the source file to the processing folder.
@@ -97,7 +98,10 @@ def file_level_validation(incoming_message_body: dict) -> dict:
 
         move_file(SOURCE_BUCKET_NAME, file_key, f"{PROCESSING_DIR_NAME}/{file_key}")
 
-        return {
+        ingestion_start_time = time.time()
+        set_audit_table_ingestion_start_time(file_key, message_id, ingestion_start_time)
+
+        result = {
             "message_id": message_id,
             "vaccine": vaccine,
             "supplier": supplier,
@@ -106,6 +110,7 @@ def file_level_validation(incoming_message_body: dict) -> dict:
             "created_at_formatted_string": created_at_formatted_string,
             "csv_dict_reader": csv_reader,
         }
+        return result, ingestion_start_time
 
     except Exception as error:
         logger.error("Error in file_level_validation: %s", error)

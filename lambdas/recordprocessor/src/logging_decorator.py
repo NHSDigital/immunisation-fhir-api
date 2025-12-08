@@ -5,7 +5,6 @@ import time
 from datetime import datetime
 from functools import wraps
 
-from audit_table import set_audit_table_ingestion_started
 from common.log_decorator import generate_and_send_logs
 from models.errors import InvalidHeaders, NoOperationPermissions
 
@@ -31,17 +30,14 @@ def file_level_validation_logging_decorator(func):
             "vaccine_type": incoming_message_body.get("vaccine_type"),
             "supplier": incoming_message_body.get("supplier"),
         }
-        start_time = time.time()
 
         try:
-            result = func(*args, **kwargs)
+            result, ingestion_start_time = func(*args, **kwargs)
             additional_log_data = {
                 "statusCode": 200,
                 "message": "Successfully sent for record processing",
             }
-            set_audit_table_ingestion_started(file_key, message_id, start_time)
-
-            generate_and_send_logs(STREAM_NAME, start_time, base_log_data, additional_log_data)
+            generate_and_send_logs(STREAM_NAME, ingestion_start_time, base_log_data, additional_log_data)
             return result
 
         except Exception as e:
@@ -60,7 +56,7 @@ def file_level_validation_logging_decorator(func):
                 "message": message,
                 "error": str(e),
             }
-            generate_and_send_logs(STREAM_NAME, start_time, base_log_data, additional_log_data, is_error_log=True)
+            generate_and_send_logs(STREAM_NAME, time.time(), base_log_data, additional_log_data, is_error_log=True)
             raise
 
     return wrapper

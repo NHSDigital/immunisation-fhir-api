@@ -53,18 +53,18 @@ def update_audit_table_status(
         raise UnhandledAuditTableError(error) from error
 
 
-def set_audit_table_ingestion_started(
+def set_audit_table_ingestion_start_time(
     file_key: str,
     message_id: str,
     start_time: float,
 ) -> None:
-    """Sets the ingestion_started in the audit table to the requested time"""
+    """Sets the ingestion_start_time in the audit table to the requested time"""
     # format the time
-    ingestion_started = time.strftime("%Y%m%dT%H%M%S00", time.gmtime(start_time))
+    ingestion_start_time = time.strftime("%Y%m%dT%H%M%S00", time.gmtime(start_time))
 
-    update_expression = f"SET #{AuditTableKeys.INGESTION_STARTED} = :{AuditTableKeys.INGESTION_STARTED}"
-    expression_attr_names = {f"#{AuditTableKeys.INGESTION_STARTED}": AuditTableKeys.INGESTION_STARTED}
-    expression_attr_values = {f":{AuditTableKeys.INGESTION_STARTED}": {"S": ingestion_started}}
+    update_expression = f"SET #{AuditTableKeys.INGESTION_START_TIME} = :{AuditTableKeys.INGESTION_START_TIME}"
+    expression_attr_names = {f"#{AuditTableKeys.INGESTION_START_TIME}": AuditTableKeys.INGESTION_START_TIME}
+    expression_attr_values = {f":{AuditTableKeys.INGESTION_START_TIME}": {"S": ingestion_start_time}}
 
     try:
         response = dynamodb_client.update_item(
@@ -76,9 +76,9 @@ def set_audit_table_ingestion_started(
             ConditionExpression=f"attribute_exists({AuditTableKeys.MESSAGE_ID})",
             ReturnValues="UPDATED_NEW",
         )
-        result = response.get("Attributes", {}).get(AuditTableKeys.INGESTION_STARTED).get("S")
+        result = response.get("Attributes", {}).get(AuditTableKeys.INGESTION_START_TIME).get("S")
         logger.info(
-            "ingestion_started for %s file, with message id %s, was successfully updated to %s in the audit table",
+            "ingestion_start_time for %s file, with message id %s, was successfully updated to %s in the audit table",
             file_key,
             message_id,
             result,

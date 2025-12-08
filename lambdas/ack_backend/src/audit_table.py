@@ -62,21 +62,21 @@ def set_records_succeeded_count(message_id: str) -> None:
     records_failed = int(records_failed_item) if records_failed_item else 0
     records_succeeded = record_count - records_failed
 
-    counter_name = AuditTableKeys.RECORDS_SUCCEEDED
+    attribute_name = AuditTableKeys.RECORDS_SUCCEEDED
     try:
         response = dynamodb_client.update_item(
             TableName=AUDIT_TABLE_NAME,
             Key={AuditTableKeys.MESSAGE_ID: {"S": message_id}},
-            UpdateExpression="SET #counter = :value",
-            ExpressionAttributeNames={"#counter": counter_name},
+            UpdateExpression="SET #attribute = :value",
+            ExpressionAttributeNames={"#attribute": attribute_name},
             ExpressionAttributeValues={":value": {"N": str(records_succeeded)}},
             ConditionExpression=CONDITION_EXPRESSION,
             ReturnValues="UPDATED_NEW",
         )
-        result = response.get("Attributes", {}).get(counter_name).get("N")
+        result = response.get("Attributes", {}).get(attribute_name).get("N")
         logger.info(
-            "Counter %s for message id %s set to %s in the audit table",
-            counter_name,
+            "Attribute %s for message id %s set to %s in the audit table",
+            attribute_name,
             message_id,
             result,
         )
@@ -94,43 +94,37 @@ def increment_records_failed_count(message_id: str) -> None:
 
     increment_value = 1
     initial_value = 0
-    counter_name = AuditTableKeys.RECORDS_FAILED
+    attribute_name = AuditTableKeys.RECORDS_FAILED
     try:
-        # Use SET with if_not_exists to safely increment the counter
+        # Use SET with if_not_exists to safely increment the counter attribute
         response = dynamodb_client.update_item(
             TableName=AUDIT_TABLE_NAME,
             Key={AuditTableKeys.MESSAGE_ID: {"S": message_id}},
-            UpdateExpression="SET #counter = if_not_exists(#counter, :initial) + :increment",
-            ExpressionAttributeNames={"#counter": counter_name},
+            UpdateExpression="SET #attribute = if_not_exists(#attribute, :initial) + :increment",
+            ExpressionAttributeNames={"#attribute": attribute_name},
             ExpressionAttributeValues={":increment": {"N": str(increment_value)}, ":initial": {"N": str(initial_value)}},
             ConditionExpression=CONDITION_EXPRESSION,
             ReturnValues="UPDATED_NEW",
         )
-        result = response.get("Attributes", {}).get(counter_name).get("N")
-        logger.info(
-            "Counter %s for message id %s incremented to %s in the audit table",
-            counter_name,
-            message_id,
-            result,
-        )
+        response.get("Attributes", {}).get(attribute_name).get("N")
 
     except Exception as error:  # pylint: disable = broad-exception-caught
         logger.error(error)
         raise UnhandledAuditTableError(error) from error
 
 
-def set_audit_table_ingestion_complete(
+def set_audit_table_ingestion_end_time(
     file_key: str,
     message_id: str,
     complete_time: float,
 ) -> None:
-    """Sets the ingestion_complete in the audit table to the requested time"""
+    """Sets the ingestion_end_time in the audit table to the requested time"""
     # format the time
-    ingestion_complete = time.strftime("%Y%m%dT%H%M%S00", time.gmtime(complete_time))
+    ingestion_end_time = time.strftime("%Y%m%dT%H%M%S00", time.gmtime(complete_time))
 
-    update_expression = f"SET #{AuditTableKeys.INGESTION_COMPLETE} = :{AuditTableKeys.INGESTION_COMPLETE}"
-    expression_attr_names = {f"#{AuditTableKeys.INGESTION_COMPLETE}": AuditTableKeys.INGESTION_COMPLETE}
-    expression_attr_values = {f":{AuditTableKeys.INGESTION_COMPLETE}": {"S": ingestion_complete}}
+    update_expression = f"SET #{AuditTableKeys.INGESTION_END_TIME} = :{AuditTableKeys.INGESTION_END_TIME}"
+    expression_attr_names = {f"#{AuditTableKeys.INGESTION_END_TIME}": AuditTableKeys.INGESTION_END_TIME}
+    expression_attr_values = {f":{AuditTableKeys.INGESTION_END_TIME}": {"S": ingestion_end_time}}
 
     try:
         response = dynamodb_client.update_item(
@@ -142,9 +136,9 @@ def set_audit_table_ingestion_complete(
             ConditionExpression=f"attribute_exists({AuditTableKeys.MESSAGE_ID})",
             ReturnValues="UPDATED_NEW",
         )
-        result = response.get("Attributes", {}).get(AuditTableKeys.INGESTION_COMPLETE).get("S")
+        result = response.get("Attributes", {}).get(AuditTableKeys.INGESTION_END_TIME).get("S")
         logger.info(
-            "ingestion_complete for %s file, with message id %s, was successfully updated to %s in the audit table",
+            "ingestion_end_time for %s file, with message id %s, was successfully updated to %s in the audit table",
             file_key,
             message_id,
             result,

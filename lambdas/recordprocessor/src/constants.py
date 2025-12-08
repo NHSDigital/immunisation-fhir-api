@@ -77,7 +77,7 @@ class AuditTableKeys:
     RECORD_COUNT = "record_count"
     STATUS = "status"
     TIMESTAMP = "timestamp"
-    INGESTION_STARTED = "ingestion_started"
+    INGESTION_START_TIME = "ingestion_start_time"
     ERROR_DETAILS = "error_details"
 
 

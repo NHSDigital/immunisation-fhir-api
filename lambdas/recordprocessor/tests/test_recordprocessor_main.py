@@ -79,7 +79,9 @@ class TestRecordProcessor(unittest.TestCase):
         )
         mock_redis_getter.return_value = mock_redis
         self.mock_logger_info = create_patch("logging.Logger.info")
-        self.mock_set_audit_table_ingestion_started = create_patch("logging_decorator.set_audit_table_ingestion_started")
+        self.mock_set_audit_table_ingestion_start_time = create_patch(
+            "file_level_validation.set_audit_table_ingestion_start_time"
+        )
 
     def tearDown(self) -> None:
         patch.stopall()
@@ -461,7 +463,7 @@ class TestRecordProcessor(unittest.TestCase):
         with (  # noqa: E999
             patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
             patch("logging_decorator.datetime") as mock_datetime,  # noqa: E999
-            patch("logging_decorator.time") as mock_start_time,  # noqa: E999
+            patch("file_level_validation.time") as mock_start_time,  # noqa: E999
             patch("common.log_decorator.time") as mock_end_time,  # noqa: E999
         ):  # noqa: E999
             mock_start_time.time.return_value = 1672531200

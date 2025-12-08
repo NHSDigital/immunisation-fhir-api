@@ -65,8 +65,8 @@ class TestAuditTable(unittest.TestCase):
         self.mock_dynamodb_client.update_item.assert_called_once_with(
             TableName=AUDIT_TABLE_NAME,
             Key={AuditTableKeys.MESSAGE_ID: {"S": test_message_id}},
-            UpdateExpression="SET #counter = :value",
-            ExpressionAttributeNames={"#counter": AuditTableKeys.RECORDS_SUCCEEDED},
+            UpdateExpression="SET #attribute = :value",
+            ExpressionAttributeNames={"#attribute": AuditTableKeys.RECORDS_SUCCEEDED},
             ExpressionAttributeValues={":value": {"N": "958"}},
             ConditionExpression="attribute_exists(message_id)",
             ReturnValues="UPDATED_NEW",
@@ -83,8 +83,8 @@ class TestAuditTable(unittest.TestCase):
         self.mock_dynamodb_client.update_item.assert_called_once_with(
             TableName=AUDIT_TABLE_NAME,
             Key={AuditTableKeys.MESSAGE_ID: {"S": test_message_id}},
-            UpdateExpression="SET #counter = :value",
-            ExpressionAttributeNames={"#counter": AuditTableKeys.RECORDS_SUCCEEDED},
+            UpdateExpression="SET #attribute = :value",
+            ExpressionAttributeNames={"#attribute": AuditTableKeys.RECORDS_SUCCEEDED},
             ExpressionAttributeValues={":value": {"N": "1000"}},
             ConditionExpression="attribute_exists(message_id)",
             ReturnValues="UPDATED_NEW",
@@ -99,8 +99,8 @@ class TestAuditTable(unittest.TestCase):
         self.mock_dynamodb_client.update_item.assert_called_once_with(
             TableName=AUDIT_TABLE_NAME,
             Key={AuditTableKeys.MESSAGE_ID: {"S": test_message_id}},
-            UpdateExpression="SET #counter = :value",
-            ExpressionAttributeNames={"#counter": AuditTableKeys.RECORDS_SUCCEEDED},
+            UpdateExpression="SET #attribute = :value",
+            ExpressionAttributeNames={"#attribute": AuditTableKeys.RECORDS_SUCCEEDED},
             ExpressionAttributeValues={":value": {"N": "0"}},
             ConditionExpression="attribute_exists(message_id)",
             ReturnValues="UPDATED_NEW",
@@ -121,13 +121,12 @@ class TestAuditTable(unittest.TestCase):
         self.mock_dynamodb_client.update_item.assert_called_once_with(
             TableName=AUDIT_TABLE_NAME,
             Key={AuditTableKeys.MESSAGE_ID: {"S": test_message_id}},
-            UpdateExpression="SET #counter = if_not_exists(#counter, :initial) + :increment",
-            ExpressionAttributeNames={"#counter": AuditTableKeys.RECORDS_FAILED},
+            UpdateExpression="SET #attribute = if_not_exists(#attribute, :initial) + :increment",
+            ExpressionAttributeNames={"#attribute": AuditTableKeys.RECORDS_FAILED},
             ExpressionAttributeValues={":increment": {"N": "1"}, ":initial": {"N": "0"}},
             ConditionExpression="attribute_exists(message_id)",
             ReturnValues="UPDATED_NEW",
         )
-        self.mock_logger.info.assert_called_once()
 
     def test_increment_records_failed_count_raises(self):
         self.mock_dynamodb_client.update_item.side_effect = Exception("fail!")
@@ -136,29 +135,29 @@ class TestAuditTable(unittest.TestCase):
         self.assertIn("fail!", str(ctx.exception))
         self.mock_logger.error.assert_called_once()
 
-    def test_set_audit_table_ingestion_complete(self):
-        """Checks audit table correctly sets ingestion_complete to the requested value"""
+    def test_set_audit_table_ingestion_end_time(self):
+        """Checks audit table correctly sets ingestion_end_time to the requested value"""
         test_file_key = "RSV_Vaccinations_v5_X26_20210730T12000000.csv"
         test_message_id = "1234"
-        test_start_time = 1627647000
-        audit_table.set_audit_table_ingestion_complete(test_file_key, test_message_id, test_start_time)
+        test_end_time = 1627647000
+        audit_table.set_audit_table_ingestion_end_time(test_file_key, test_message_id, test_end_time)
         self.mock_dynamodb_client.update_item.assert_called_once_with(
             TableName=AUDIT_TABLE_NAME,
             Key={AuditTableKeys.MESSAGE_ID: {"S": test_message_id}},
-            UpdateExpression=f"SET #{AuditTableKeys.INGESTION_COMPLETE} = :{AuditTableKeys.INGESTION_COMPLETE}",
-            ExpressionAttributeNames={f"#{AuditTableKeys.INGESTION_COMPLETE}": AuditTableKeys.INGESTION_COMPLETE},
-            ExpressionAttributeValues={f":{AuditTableKeys.INGESTION_COMPLETE}": {"S": "20210730T12100000"}},
+            UpdateExpression=f"SET #{AuditTableKeys.INGESTION_END_TIME} = :{AuditTableKeys.INGESTION_END_TIME}",
+            ExpressionAttributeNames={f"#{AuditTableKeys.INGESTION_END_TIME}": AuditTableKeys.INGESTION_END_TIME},
+            ExpressionAttributeValues={f":{AuditTableKeys.INGESTION_END_TIME}": {"S": "20210730T12100000"}},
             ConditionExpression="attribute_exists(message_id)",
             ReturnValues="UPDATED_NEW",
         )
         self.mock_logger.info.assert_called_once()
 
-    def test_set_audit_table_ingestion_complete_throws_exception_with_invalid_id(self):
+    def test_set_audit_table_ingestion_end_time_throws_exception_with_invalid_id(self):
         test_file_key = "RSV_Vaccinations_v5_X26_20210730T12000000.csv"
         test_message_id = "1234"
-        test_start_time = 1627647000
+        test_end_time = 1627647000
         self.mock_dynamodb_client.update_item.side_effect = Exception("fail!")
         with self.assertRaises(UnhandledAuditTableError) as ctx:
-            audit_table.set_audit_table_ingestion_complete(test_file_key, test_message_id, test_start_time)
+            audit_table.set_audit_table_ingestion_end_time(test_file_key, test_message_id, test_end_time)
         self.assertIn("fail!", str(ctx.exception))
         self.mock_logger.error.assert_called_once()
