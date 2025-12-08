@@ -38,6 +38,9 @@ class AuditTableKeys:
     RECORD_COUNT = "record_count"
     STATUS = "status"
     TIMESTAMP = "timestamp"
+    INGESTION_END_TIME = "ingestion_end_time"
+    RECORDS_SUCCEEDED = "records_succeeded"
+    RECORDS_FAILED = "records_failed"
 
 
 ACK_HEADERS = [
