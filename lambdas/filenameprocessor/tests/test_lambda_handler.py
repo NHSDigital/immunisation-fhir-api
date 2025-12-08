@@ -270,6 +270,12 @@ class TestLambdaHandlerDataSource(TestCase):
         mock_redis.hkeys = Mock(return_value=["COVID", *all_vaccine_types_in_this_test_file])
         mock_get_redis_client.return_value = mock_redis
 
+        # Ensure DPS destination bucket exists in moto so copy succeeds
+        try:
+            s3_client.create_bucket(Bucket=BucketNames.DPS_DESTINATION)
+        except Exception:
+            pass
+
         # Patch uuid4 (message id), and prevent external copy issues by simulating move
         with (
             patch("file_name_processor.validate_permissions_for_extended_attributes_files", return_value="X8E5B_COVID"),
@@ -288,10 +294,15 @@ class TestLambdaHandlerDataSource(TestCase):
         self.assertEqual(item[AuditTableKeys.STATUS]["S"], "Processed")
         self.assertEqual(item[AuditTableKeys.TIMESTAMP]["S"], test_cases[0].created_at_formatted_string)
         self.assertEqual(item[AuditTableKeys.EXPIRES_AT]["N"], str(test_cases[0].expires_at))
-        # File should be moved to destination/
-        dest_key = f"dps_destination/{test_cases[0].file_key}"
-        retrieved = s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=dest_key)
-        self.assertIsNotNone(retrieved)
+        # File should be moved to source extended-attributes-archive/<file_key>
+        archived_key = f"extended-attributes-archive/{test_cases[0].file_key}"
+        archived_obj = s3_client.get_object(Bucket=BucketNames.SOURCE, Key=archived_key)
+        self.assertIsNotNone(archived_obj)
+
+        # Also verify file copied to DPS destination bucket under dps_destination/<file_key>
+        dps_key = f"dps_destination/{test_cases[0].file_key}"
+        copied_obj = s3_client.get_object(Bucket=BucketNames.DPS_DESTINATION, Key=dps_key)
+        self.assertIsNotNone(copied_obj)
 
         # No SQS and no ack file
         self.assert_no_sqs_message()
@@ -443,6 +454,12 @@ class TestLambdaHandlerDataSource(TestCase):
         # .CSV accepted
         csv_key = MockFileDetails.extended_attributes_file.file_key
         s3_client.put_object(Bucket=BucketNames.SOURCE, Key=csv_key, Body=MOCK_EXTENDED_ATTRIBUTES_FILE_CONTENT)
+        # Ensure DPS destination bucket exists so copy can succeed
+        try:
+            s3_client.create_bucket(Bucket=BucketNames.DPS_DESTINATION)
+        except Exception:
+            pass
+
         with (
             patch("file_name_processor.validate_permissions_for_extended_attributes_files", return_value="X8E5B_COVID"),
             # Ensure EA DAT case passes permission validation by returning CUDS for X8E5B
@@ -453,8 +470,11 @@ class TestLambdaHandlerDataSource(TestCase):
             patch("file_name_processor.uuid4", return_value="EA_csv_id"),
         ):
             lambda_handler(self.make_event([self.make_record(csv_key)]), None)
-        # Ensure processed path hit by checking destination (implementation currently uses single slash)
-        s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=f"dps_destination/{csv_key}")
+
+        # Ensure processed path hit by checking archive move in source bucket
+        s3_client.get_object(Bucket=BucketNames.SOURCE, Key=f"extended-attributes-archive/{csv_key}")
+        # And verify copy to DPS destination
+        s3_client.get_object(Bucket=BucketNames.DPS_DESTINATION, Key=f"dps_destination/{csv_key}")
 
         # .DAT accepted
         dat_key = MockFileDetails.extended_attributes_file.file_key[:-3] + "dat"
@@ -464,7 +484,8 @@ class TestLambdaHandlerDataSource(TestCase):
             patch("file_name_processor.uuid4", return_value="EA_dat_id"),
         ):
             lambda_handler(self.make_event([self.make_record(dat_key)]), None)
-        s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=f"dps_destination/{dat_key}")
+        s3_client.get_object(Bucket=BucketNames.SOURCE, Key=f"extended-attributes-archive/{dat_key}")
+        s3_client.get_object(Bucket=BucketNames.DPS_DESTINATION, Key=f"dps_destination/{dat_key}")
 
         # Invalid extension fails
         bad_ext_key = csv_key[:-3] + "txt"

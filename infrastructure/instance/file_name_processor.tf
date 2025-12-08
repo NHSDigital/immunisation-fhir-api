@@ -290,7 +290,8 @@ resource "aws_lambda_function" "file_processor_lambda" {
 
   environment {
     variables = {
-      ACCOUNT_ID           = var.dspp_core_account_id
+      ACCOUNT_ID           = var.immunisation_account_id
+      DPS_ACCOUNT_ID       = var.dspp_core_account_id
       SOURCE_BUCKET_NAME   = aws_s3_bucket.batch_data_source_bucket.bucket
       ACK_BUCKET_NAME      = aws_s3_bucket.batch_data_destination_bucket.bucket
       DPS_BUCKET_NAME      = "nhsd-dspp-core-ref-extended-attributes-gdp"

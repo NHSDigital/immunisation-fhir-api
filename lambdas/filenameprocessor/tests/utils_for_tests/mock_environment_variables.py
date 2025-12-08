@@ -12,6 +12,7 @@ class BucketNames:
     CONFIG = "immunisation-batch-internal-dev-data-configs"
     SOURCE = "immunisation-batch-internal-dev-data-sources"
     DESTINATION = "immunisation-batch-internal-dev-data-destinations"
+    DPS_DESTINATION = "nhsd-dspp-core-ref-extended-attributes-gdp"
     # Mock firehose bucket used for testing only (due to limitations of the moto testing package)
     MOCK_FIREHOSE = "mock-firehose-bucket"
 
@@ -36,7 +37,9 @@ class Sqs:
 MOCK_ENVIRONMENT_DICT = {
     "SOURCE_BUCKET_NAME": BucketNames.SOURCE,
     "ACK_BUCKET_NAME": BucketNames.DESTINATION,
+    "DPS_BUCKET_NAME": BucketNames.DESTINATION,
     "ACCOUNT_ID": MOCK_ACCOUNT_ID,
+    "DPS_ACCOUNT_ID": MOCK_ACCOUNT_ID,
     "QUEUE_URL": "https://sqs.eu-west-2.amazonaws.com/123456789012/imms-batch-file-created-queue.fifo",
     "REDIS_HOST": "localhost",
     "REDIS_PORT": "6379",

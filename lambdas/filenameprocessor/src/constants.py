@@ -14,7 +14,8 @@ SOURCE_BUCKET_NAME = os.getenv("SOURCE_BUCKET_NAME")
 
 # We have used an internal temporary bucket here and an actual dps bucket will replace this
 DPS_DESTINATION_BUCKET_NAME = os.getenv("DPS_BUCKET_NAME")
-EXPECTED_BUCKET_OWNER_ACCOUNT = os.getenv("ACCOUNT_ID")
+EXPECTED_SOURCE_BUCKET_ACCOUNT = os.getenv("ACCOUNT_ID")
+EXPECTED_DPS_DESTINATION_ACCOUNT = os.getenv("DPS_ACCOUNT_ID")
 AUDIT_TABLE_NAME = os.getenv("AUDIT_TABLE_NAME")
 AUDIT_TABLE_TTL_DAYS = os.getenv("AUDIT_TABLE_TTL_DAYS")
 VALID_VERSIONS = ["V5"]

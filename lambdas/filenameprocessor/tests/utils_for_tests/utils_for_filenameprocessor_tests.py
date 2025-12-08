@@ -91,6 +91,7 @@ class GenericSetUp:
             for bucket_name in [
                 BucketNames.SOURCE,
                 BucketNames.DESTINATION,
+                BucketNames.DPS_DESTINATION,
                 BucketNames.CONFIG,
                 BucketNames.MOCK_FIREHOSE,
             ]:
@@ -136,6 +137,7 @@ class GenericTearDown:
             for bucket_name in [
                 BucketNames.SOURCE,
                 BucketNames.DESTINATION,
+                BucketNames.DPS_DESTINATION,
                 BucketNames.CONFIG,
                 BucketNames.MOCK_FIREHOSE,
             ]:
