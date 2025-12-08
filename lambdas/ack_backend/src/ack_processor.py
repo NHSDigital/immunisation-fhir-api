@@ -2,6 +2,7 @@
 
 import json
 
+from audit_table import increment_records_failed_count
 from common.batch.eof_utils import is_eof_message
 from convert_message_to_ack_row import convert_message_to_ack_row
 from logging_decorators import ack_lambda_handler_logging_decorator
@@ -49,6 +50,7 @@ def lambda_handler(event, _):
                 break
 
             ack_data_rows.append(convert_message_to_ack_row(message, created_at_formatted_string))
+            increment_records_failed_count(message_id)
 
     update_ack_file(file_key, created_at_formatted_string, ack_data_rows)
 

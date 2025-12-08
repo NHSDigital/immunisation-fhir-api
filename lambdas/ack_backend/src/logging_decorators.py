@@ -91,6 +91,7 @@ def complete_batch_file_process_logging_decorator(func):
                 "message": message_for_logs,
             }
             generate_and_send_logs(STREAM_NAME, start_time, base_log_data, additional_log_data)
+
         return result
 
     return wrapper
