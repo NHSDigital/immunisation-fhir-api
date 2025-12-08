@@ -1,3 +1,11 @@
+terraform {
+  required_providers {
+    terraform = {
+      source  = "builtin/terraform"
+      version = ""
+    }
+  }
+}
 locals {
   # NHSD cert file
   truststore_file_name = var.environment == "preprod" ? "imms-int-cert.pem" : "server-renewed-cert.pem"
@@ -10,6 +18,10 @@ data "aws_s3_bucket" "cert_storage" {
 data "aws_s3_object" "cert" {
   bucket = data.aws_s3_bucket.cert_storage.bucket
   key    = local.truststore_file_name
+}
+
+resource "terraform_data" "cert_version" {
+  input = data.aws_s3_object.cert.version_id
 }
 
 resource "aws_s3_bucket" "truststore_bucket" {
@@ -29,6 +41,6 @@ resource "aws_s3_object_copy" "copy_cert_from_storage" {
   key    = local.truststore_file_name
   source = "${data.aws_s3_object.cert.bucket}/${local.truststore_file_name}"
   lifecycle {
-    replace_triggered_by = [data.aws_s3_object.cert.etag]
+    replace_triggered_by = [terraform_data.cert_version]
   }
 }
