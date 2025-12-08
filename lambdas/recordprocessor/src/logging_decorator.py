@@ -20,11 +20,13 @@ def file_level_validation_logging_decorator(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         incoming_message_body = kwargs.get("incoming_message_body") or args[0]
+        file_key = incoming_message_body.get("filename")
+        message_id = incoming_message_body.get("message_id")
         base_log_data = {
             "function_name": f"record_processor_{func.__name__}",
             "date_time": str(datetime.now()),
-            "file_key": incoming_message_body.get("filename"),
-            "message_id": incoming_message_body.get("message_id"),
+            "file_key": file_key,
+            "message_id": message_id,
             "vaccine_type": incoming_message_body.get("vaccine_type"),
             "supplier": incoming_message_body.get("supplier"),
         }
@@ -55,7 +57,7 @@ def file_level_validation_logging_decorator(func):
                 "message": message,
                 "error": str(e),
             }
-            generate_and_send_logs(STREAM_NAME, start_time, base_log_data, additional_log_data, is_error_log=True)
+            generate_and_send_logs(STREAM_NAME, time.time(), base_log_data, additional_log_data, is_error_log=True)
             raise
 
     return wrapper

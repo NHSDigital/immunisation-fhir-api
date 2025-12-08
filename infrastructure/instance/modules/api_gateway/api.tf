@@ -38,7 +38,8 @@ resource "aws_apigatewayv2_domain_name" "service_api_domain_name" {
     security_policy = "TLS_1_2"
   }
   mutual_tls_authentication {
-    truststore_uri = "s3://${aws_s3_bucket.truststore_bucket.bucket}/${local.truststore_file_name}"
+    truststore_uri     = "s3://${aws_s3_bucket.truststore_bucket.bucket}/${local.truststore_file_name}"
+    truststore_version = aws_s3_object_copy.copy_cert_from_storage.version_id
   }
   tags = {
     Name = "${var.prefix}-api-domain-name"
