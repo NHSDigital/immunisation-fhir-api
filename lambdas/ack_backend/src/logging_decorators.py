@@ -78,9 +78,10 @@ def complete_batch_file_process_logging_decorator(func):
             "function_name": f"{PREFIX}_{func.__name__}",
             "date_time": str(datetime.now()),
         }
+        start_time = time.time()
 
         # NB this doesn't require a try-catch block as the wrapped function never throws an exception
-        result, ingestion_end_time = func(*args, **kwargs)
+        result = func(*args, **kwargs)
         if result is not None:
             message_for_logs = "Record processing complete"
             base_log_data.update(result)
@@ -89,7 +90,7 @@ def complete_batch_file_process_logging_decorator(func):
                 "statusCode": 200,
                 "message": message_for_logs,
             }
-            generate_and_send_logs(STREAM_NAME, ingestion_end_time, base_log_data, additional_log_data)
+            generate_and_send_logs(STREAM_NAME, start_time, base_log_data, additional_log_data)
 
         return result
 

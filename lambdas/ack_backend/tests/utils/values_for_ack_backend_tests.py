@@ -253,6 +253,8 @@ class ValidValues:
         "vaccine_type": MOCK_MESSAGE_DETAILS.vaccine_type,
         "message_id": MOCK_MESSAGE_DETAILS.row_id,
         "row_count": 99,
+        "success_count": 97,
+        "failure_count": 2,
         "statusCode": 200,
         "message": "Record processing complete",
     }
