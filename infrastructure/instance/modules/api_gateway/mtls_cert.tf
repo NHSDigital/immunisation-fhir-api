@@ -1,11 +1,3 @@
-terraform {
-  required_providers {
-    terraform = {
-      source  = "builtin/terraform"
-      version = ""
-    }
-  }
-}
 locals {
   # NHSD cert file
   truststore_file_name = var.environment == "preprod" ? "imms-int-cert.pem" : "server-renewed-cert.pem"
