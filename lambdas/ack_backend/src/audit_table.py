@@ -62,21 +62,20 @@ def set_records_succeeded_count(message_id: str) -> None:
     records_failed = int(records_failed_item) if records_failed_item else 0
     records_succeeded = record_count - records_failed
 
-    attribute_name = AuditTableKeys.RECORDS_SUCCEEDED
     try:
         response = dynamodb_client.update_item(
             TableName=AUDIT_TABLE_NAME,
             Key={AuditTableKeys.MESSAGE_ID: {"S": message_id}},
             UpdateExpression="SET #attribute = :value",
-            ExpressionAttributeNames={"#attribute": attribute_name},
+            ExpressionAttributeNames={"#attribute": AuditTableKeys.RECORDS_SUCCEEDED},
             ExpressionAttributeValues={":value": {"N": str(records_succeeded)}},
             ConditionExpression=CONDITION_EXPRESSION,
             ReturnValues="UPDATED_NEW",
         )
-        result = response.get("Attributes", {}).get(attribute_name).get("N")
+        result = response.get("Attributes", {}).get(AuditTableKeys.RECORDS_SUCCEEDED).get("N")
         logger.info(
             "Attribute %s for message id %s set to %s in the audit table",
-            attribute_name,
+            AuditTableKeys.RECORDS_SUCCEEDED,
             message_id,
             result,
         )
@@ -94,19 +93,17 @@ def increment_records_failed_count(message_id: str) -> None:
 
     increment_value = 1
     initial_value = 0
-    attribute_name = AuditTableKeys.RECORDS_FAILED
     try:
         # Use SET with if_not_exists to safely increment the counter attribute
-        response = dynamodb_client.update_item(
+        dynamodb_client.update_item(
             TableName=AUDIT_TABLE_NAME,
             Key={AuditTableKeys.MESSAGE_ID: {"S": message_id}},
             UpdateExpression="SET #attribute = if_not_exists(#attribute, :initial) + :increment",
-            ExpressionAttributeNames={"#attribute": attribute_name},
+            ExpressionAttributeNames={"#attribute": AuditTableKeys.RECORDS_FAILED},
             ExpressionAttributeValues={":increment": {"N": str(increment_value)}, ":initial": {"N": str(initial_value)}},
             ConditionExpression=CONDITION_EXPRESSION,
             ReturnValues="UPDATED_NEW",
         )
-        response.get("Attributes", {}).get(attribute_name).get("N")
 
     except Exception as error:  # pylint: disable = broad-exception-caught
         logger.error(error)
