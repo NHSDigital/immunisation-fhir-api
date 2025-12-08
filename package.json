@@ -16,7 +16,6 @@
   "devDependencies": {
     "@redocly/cli": "^2.12.3",
     "husky": "^9.1.7",
-    "license-checker": "^25.0.1",
     "lint-staged": "^16.2.7",
     "prettier": "^3.7.4"
   },
