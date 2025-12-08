@@ -12,7 +12,7 @@ from models.errors import (
 
 SOURCE_BUCKET_NAME = os.getenv("SOURCE_BUCKET_NAME")
 
-# We have used an internal temporary bucket here and an actual dps bucket will replace this
+
 DPS_DESTINATION_BUCKET_NAME = os.getenv("DPS_BUCKET_NAME")
 EXPECTED_SOURCE_BUCKET_ACCOUNT = os.getenv("ACCOUNT_ID")
 EXPECTED_DPS_DESTINATION_ACCOUNT = os.getenv("DPS_ACCOUNT_ID")

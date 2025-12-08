@@ -270,12 +270,6 @@ class TestLambdaHandlerDataSource(TestCase):
         mock_redis.hkeys = Mock(return_value=["COVID", *all_vaccine_types_in_this_test_file])
         mock_get_redis_client.return_value = mock_redis
 
-        # Ensure DPS destination bucket exists in moto so copy succeeds
-        try:
-            s3_client.create_bucket(Bucket=BucketNames.DPS_DESTINATION)
-        except Exception:
-            pass
-
         # Patch uuid4 (message id), and prevent external copy issues by simulating move
         with (
             patch("file_name_processor.validate_permissions_for_extended_attributes_files", return_value="X8E5B_COVID"),

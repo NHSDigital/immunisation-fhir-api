@@ -37,7 +37,7 @@ class Sqs:
 MOCK_ENVIRONMENT_DICT = {
     "SOURCE_BUCKET_NAME": BucketNames.SOURCE,
     "ACK_BUCKET_NAME": BucketNames.DESTINATION,
-    "DPS_BUCKET_NAME": BucketNames.DESTINATION,
+    "DPS_BUCKET_NAME": BucketNames.DPS_DESTINATION,
     "ACCOUNT_ID": MOCK_ACCOUNT_ID,
     "DPS_ACCOUNT_ID": MOCK_ACCOUNT_ID,
     "QUEUE_URL": "https://sqs.eu-west-2.amazonaws.com/123456789012/imms-batch-file-created-queue.fifo",

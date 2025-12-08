@@ -166,10 +166,7 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
       {
         "Effect" : "Allow",
         "Action" : [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:DeleteObject",
-          "s3:ListBucket"
+          "s3:PutObject"
         ],
         "Resource" : [
           "arn:aws:s3:::nhsd-dspp-core-ref-extended-attributes-gdp",
