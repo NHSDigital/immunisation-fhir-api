@@ -66,7 +66,7 @@ class TestLoggingDecorators(unittest.TestCase):
             # Time is incremented by 1.0 for each call to time.time for ease of testing.
             # Range is set to a large number (300) due to many calls being made to time.time for some tests.
             patch(
-                "logging_decorators.time.time",
+                "update_ack_file.time.time",
                 side_effect=[0.0 + i for i in range(300)],
             ),
         ]
@@ -121,6 +121,7 @@ class TestLoggingDecorators(unittest.TestCase):
             with (  # noqa: E999
                 patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
                 patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
+                patch("ack_processor.increment_records_failed_count"),  # noqa: E999
             ):  # noqa: E999
                 result = lambda_handler(
                     event=generate_event([{"operation_requested": operation}]),
@@ -161,6 +162,7 @@ class TestLoggingDecorators(unittest.TestCase):
         with (  # noqa: E999
             patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
+            patch("ack_processor.increment_records_failed_count"),  # noqa: E999
         ):  # noqa: E999
             with self.assertRaises(AttributeError):
                 lambda_handler(event={"Records": [{"body": json.dumps([{"": "456", "row_id": "test^1"}])}]}, context={})
@@ -224,6 +226,7 @@ class TestLoggingDecorators(unittest.TestCase):
             with (  # noqa: E999
                 patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
                 patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
+                patch("ack_processor.increment_records_failed_count") as mock_increment_records_failed_count,  # noqa: E999
             ):  # noqa: E999
                 result = lambda_handler(
                     event=generate_event([{"diagnostics": test_case["diagnostics"]}]),
@@ -253,6 +256,7 @@ class TestLoggingDecorators(unittest.TestCase):
                     call(self.stream_name, expected_second_logger_info_data),
                 ]
             )
+            mock_increment_records_failed_count.assert_called()
 
     def test_splunk_logging_multiple_rows(self):
         """Tests logging for multiple objects in the body of the event"""
@@ -261,6 +265,7 @@ class TestLoggingDecorators(unittest.TestCase):
         with (  # noqa: E999
             patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
+            patch("ack_processor.increment_records_failed_count"),  # noqa: E999
         ):  # noqa: E999
             result = lambda_handler(generate_event(messages), context={})
 
@@ -311,6 +316,7 @@ class TestLoggingDecorators(unittest.TestCase):
         with (  # noqa: E999
             patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
+            patch("ack_processor.increment_records_failed_count") as mock_increment_records_failed_count,  # noqa: E999
         ):  # noqa: E999
             result = lambda_handler(generate_event(messages), context={})
 
@@ -363,6 +369,7 @@ class TestLoggingDecorators(unittest.TestCase):
                 call(self.stream_name, expected_fourth_logger_info_data),
             ]
         )
+        mock_increment_records_failed_count.assert_called()
 
     def test_splunk_update_ack_file_not_logged(self):
         """Tests that update_ack_file is not logged if we have sent acks for less than the whole file"""
@@ -378,6 +385,7 @@ class TestLoggingDecorators(unittest.TestCase):
             patch(
                 "update_ack_file.change_audit_table_status_to_processed"
             ) as mock_change_audit_table_status_to_processed,  # noqa: E999
+            patch("ack_processor.increment_records_failed_count"),  # noqa: E999
         ):  # noqa: E999
             result = lambda_handler(generate_event(messages), context={})
 
@@ -415,10 +423,14 @@ class TestLoggingDecorators(unittest.TestCase):
         with (  # noqa: E999
             patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
-            patch("update_ack_file.get_record_count_by_message_id", return_value=99),
+            patch("update_ack_file.get_record_count_and_failures_by_message_id", return_value=(99, 2)),
             patch(
                 "update_ack_file.change_audit_table_status_to_processed"
             ) as mock_change_audit_table_status_to_processed,  # noqa: E999
+            patch(
+                "update_ack_file.set_audit_record_success_count_and_end_time"
+            ) as mock_set_records_succeeded_count_and_end_time,  # noqa: E999
+            patch("ack_processor.increment_records_failed_count"),  # noqa: E999
         ):  # noqa: E999
             result = lambda_handler(generate_event(messages, include_eof_message=True), context={})
 
@@ -453,6 +465,7 @@ class TestLoggingDecorators(unittest.TestCase):
             ]
         )
         mock_change_audit_table_status_to_processed.assert_called()
+        mock_set_records_succeeded_count_and_end_time.assert_called()
 
 
 if __name__ == "__main__":

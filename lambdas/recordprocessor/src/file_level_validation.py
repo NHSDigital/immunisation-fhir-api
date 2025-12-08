@@ -3,9 +3,10 @@ Functions for completing file-level validation
 (validating headers and ensuring that the supplier has permission to perform at least one of the requested operations)
 """
 
+import time
 from csv import DictReader
 
-from audit_table import update_audit_table_status
+from audit_table import set_audit_table_ingestion_start_time, update_audit_table_status
 from common.aws_s3_utils import move_file
 from common.clients import logger
 from constants import (
@@ -96,6 +97,9 @@ def file_level_validation(incoming_message_body: dict) -> dict:
         make_and_upload_ack_file(message_id, file_key, True, True, created_at_formatted_string)
 
         move_file(SOURCE_BUCKET_NAME, file_key, f"{PROCESSING_DIR_NAME}/{file_key}")
+
+        ingestion_start_time = time.time()
+        set_audit_table_ingestion_start_time(file_key, message_id, ingestion_start_time)
 
         return {
             "message_id": message_id,
