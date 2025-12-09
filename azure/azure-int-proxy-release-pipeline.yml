@@ -24,10 +24,10 @@ parameters:
   - name: sub_environment
     displayName: Sub-Environment
     type: string
-    default: blue
+    default: int-blue
     values:
-      - blue
-      - green
+      - int-blue
+      - int-green
 
 extends:
   template: azure/common/apigee-deployment.yml@common
@@ -39,5 +39,5 @@ extends:
       - environment: int
         depends_on: []
         jinja_templates:
-          DOMAIN_ENDPOINT: https://int-${{ parameters.sub_environment }}.imms.preprod.vds.platform.nhs.uk
+          DOMAIN_ENDPOINT: https://${{ parameters.sub_environment }}.imms.preprod.vds.platform.nhs.uk
           KEYSTORE_REF: imms-int-client
