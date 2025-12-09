@@ -386,11 +386,11 @@ info:
 
     For help and support connecting to our APIs and to join our developer
     community, see [Help and support building healthcare
-    software](https://digital.nhs.uk/developer/help-and-support). 
+    software](https://digital.nhs.uk/developer/help-and-support).
 servers:
-  - url: 'https://sandbox.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4'
+  - url: "https://sandbox.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4"
     description: Sandbox Server
-  - url: 'https://int.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4'
+  - url: "https://int.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4"
     description: Integration Server
 paths:
   /Immunization:
@@ -435,8 +435,8 @@ paths:
         Didn't pass `resourceType`  in request body          |              
         HTTP Status   400 Bad Request               |
       parameters:
-        - $ref: '#/components/parameters/CorrelationID'
-        - $ref: '#/components/parameters/RequestID'
+        - $ref: "#/components/parameters/CorrelationID"
+        - $ref: "#/components/parameters/RequestID"
       requestBody:
         content:
           application/fhir+json:
@@ -451,7 +451,7 @@ paths:
                 - status
                 - vaccineCode
                 - patient
-                - 'occurrence[X]'
+                - "occurrence[X]"
                 - recorded
                 - primarySource
                 - location
@@ -480,7 +480,7 @@ paths:
                       description: >-
                         When the resource last changed - e.g. when the version
                         changed.
-                      example: '2017-01-01T00:00:00Z'
+                      example: "2017-01-01T00:00:00Z"
                     source:
                       type: string
                       description: >-
@@ -504,11 +504,11 @@ paths:
                     security:
                       type: array
                       items:
-                        $ref: '#/components/schemas/Coding'
+                        $ref: "#/components/schemas/Coding"
                     tag:
                       type: array
                       items:
-                        $ref: '#/components/schemas/Coding'
+                        $ref: "#/components/schemas/Coding"
                 contained:
                   type: array
                   description: >-
@@ -555,7 +555,7 @@ paths:
                           id:
                             type: string
                             description: Logical id of this artifact
-                            example: '#Pat1'
+                            example: "#Pat1"
                           identifier:
                             type: array
                             description: An identifier for the patient
@@ -699,11 +699,11 @@ paths:
                                     defines the meaning of the symbol in the
                                     code.
                                   type: string
-                                  example: 'http://snomed.info/sct'
+                                  example: "http://snomed.info/sct"
                                 code:
                                   description: A particular code in the system.
                                   type: string
-                                  example: '1303503001'
+                                  example: "1303503001"
                                 display:
                                   description: Representation defined by the system.
                                   type: string
@@ -792,11 +792,11 @@ paths:
                               The identification of the code system that defines
                               the meaning of the symbol in the code.
                             type: string
-                            example: 'http://snomed.info/sct'
+                            example: "http://snomed.info/sct"
                           code:
                             description: SNOMED code for the vaccine product.
                             type: string
-                            example: '42605811000001109'
+                            example: "42605811000001109"
                           display:
                             description: Description of the vaccine product.
                             type: string
@@ -817,8 +817,8 @@ paths:
                     reference:
                       description: Reference of patient from contained section
                       type: string
-                      example: '#Pat1'
-                'occurrence[X]':
+                      example: "#Pat1"
+                "occurrence[X]":
                   type: object
                   description: >-
                     When immunizations are given a specific date and time should
@@ -832,7 +832,7 @@ paths:
                         subject to the FHIR rules for dateTime.  
                          Only positive timezone offsets of '+00:00' (GMT) and '+01:00' (BST) are allowed. Where time zone information is required but is not available in the source system the time zone element can be a hardcoded static value of `+00:00`.
                       type: string
-                      example: '2021-02-07T13:28:17.271000+00:00'
+                      example: "2021-02-07T13:28:17.271000+00:00"
                   required:
                     - occurrenceDateTime
                 recorded:
@@ -841,7 +841,7 @@ paths:
                     captured in the record - potentially significantly after the
                     occurrence of the event.
                   type: string
-                  example: '2021-02-07T13:28:17.271000+00:00'
+                  example: "2021-02-07T13:28:17.271000+00:00"
                 primarySource:
                   description: >-
                     Set as `TRUE` when the content of the record is based on
@@ -874,9 +874,9 @@ paths:
                             https://fhir.nhs.uk/Id/ods-organization-code for a
                             health setting (ODS use) or
                             https://fhir.hl7.org.uk/Id/urn-school-number for an
-                            education setting (URN use). 
+                            education setting (URN use).
                           type: string
-                          example: 'https://fhir.nhs.uk/Id/ods-organization-code'
+                          example: "https://fhir.nhs.uk/Id/ods-organization-code"
                         value:
                           description: >-
                             The ODS or URN code of the location where the
@@ -933,7 +933,7 @@ paths:
                     vaccine, whichever is earliest. This `SHOULD be populated`
                     where the data is available.
                   type: string
-                  example: '2021-04-29'
+                  example: "2021-04-29"
                 site:
                   description: >-
                     Body site where vaccine was administered. This `SHOULD be
@@ -955,11 +955,11 @@ paths:
                               Coding system used to describe vaccination body
                               site.
                             type: string
-                            example: 'http://snomed.info/sct'
+                            example: "http://snomed.info/sct"
                           code:
                             description: Code for the vaccination body site.
                             type: string
-                            example: '368208006'
+                            example: "368208006"
                           display:
                             description: Description of the vaccination body site.
                             type: string
@@ -984,11 +984,11 @@ paths:
                           system:
                             description: Coding system used to describe vaccination route.
                             type: string
-                            example: 'http://snomed.info/sct'
+                            example: "http://snomed.info/sct"
                           code:
                             description: Code for the vaccination route.
                             type: string
-                            example: '78421000'
+                            example: "78421000"
                           display:
                             description: Description of the vaccination route.
                             type: string
@@ -1025,7 +1025,7 @@ paths:
                         The code system from which the provided code is taken.
                         This `SHOULD be populated` where the data is available.
                       type: string
-                      example: 'http://unitsofmeasure.org'
+                      example: "http://unitsofmeasure.org"
                     code:
                       description: >-
                         The code for the unit of measure. SNOMED coded dose
@@ -1081,7 +1081,7 @@ paths:
                                   ODS code which comes from
                                   `https://fhir.nhs.uk/Id/ods-organization-code`.
                                 type: string
-                                example: 'https://fhir.nhs.uk/Id/ods-organization-code'
+                                example: "https://fhir.nhs.uk/Id/ods-organization-code"
                               value:
                                 description: >-
                                   The ODS code for the Commissioned Healthcare
@@ -1099,7 +1099,7 @@ paths:
                               practitioner resource. If the actor is the
                               managing organisation, this SHOULD be absent.
                             type: string
-                            example: '#Pract1'
+                            example: "#Pract1"
                 reasonCode:
                   description: >-
                     A SNOMED-CT Concept representing the clinical indication or
@@ -1126,11 +1126,11 @@ paths:
                                 Coding system used to describe the reason for
                                 administration of vaccine.
                               type: string
-                              example: 'http://snomed.info/sct'
+                              example: "http://snomed.info/sct"
                             code:
                               description: SNOMED code for the vaccination reason.
                               type: string
-                              example: '443684005'
+                              example: "443684005"
                             display:
                               description: Description of the vaccination reason.
                               type: string
@@ -1146,7 +1146,7 @@ paths:
                     type: object
                     required:
                       - targetDisease
-                      - 'doseNumber[X]'
+                      - "doseNumber[X]"
                     properties:
                       targetDisease:
                         type: array
@@ -1198,7 +1198,7 @@ paths:
                                       code in the system, following the rules of
                                       the system.
                                     type: string
-                      'doseNumber[X]':
+                      "doseNumber[X]":
                         type: object
                         description: >-
                           Nominal position in a series. This SHALL be provided
@@ -1235,14 +1235,14 @@ paths:
                 - resourceType: Patient
                   id: Pat1
                   identifier:
-                    - system: 'https://fhir.nhs.uk/Id/nhs-number'
-                      value: '9449310475'
+                    - system: "https://fhir.nhs.uk/Id/nhs-number"
+                      value: "9449310475"
                   name:
                     - family: Taylor
                       given:
                         - Sarah
                   gender: unknown
-                  birthDate: '1965-02-28'
+                  birthDate: "1965-02-28"
                   address:
                     - postalCode: EC1A 1BB
               extension:
@@ -1250,85 +1250,85 @@ paths:
                     https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure
                   valueCodeableConcept:
                     coding:
-                      - system: 'http://snomed.info/sct'
-                        code: '1324681000000101'
+                      - system: "http://snomed.info/sct"
+                        code: "1324681000000101"
                         display: >-
                           Administration of first dose of severe acute
                           respiratory syndrome coronavirus 2 vaccine (procedure)
               identifier:
-                - system: 'https://supplierABC/identifiers/vacc'
+                - system: "https://supplierABC/identifiers/vacc"
                   value: a7437179-e86e-4855-b68e-24b5jhg3g
               status: completed
               vaccineCode:
                 coding:
-                  - system: 'http://snomed.info/sct'
-                    code: '39114911000001105'
+                  - system: "http://snomed.info/sct"
+                    code: "39114911000001105"
                     display: >-
                       COVID-19 Vaccine Vaxzevria (ChAdOx1 S [recombinant]) not
                       less than 2.5x100,000,000 infectious units/0.5ml dose
                       suspension for injection multidose vials (AstraZeneca UK
                       Ltd) (product)
               patient:
-                reference: '#Pat1'
-              occurrenceDateTime: '2021-02-07T13:28:17.271+00:00'
-              recorded: '2021-02-07T13:28:17.271+00:00'
+                reference: "#Pat1"
+              occurrenceDateTime: "2021-02-07T13:28:17.271+00:00"
+              recorded: "2021-02-07T13:28:17.271+00:00"
               primarySource: true
               manufacturer:
                 display: AstraZeneca Ltd
               location:
                 identifier:
-                  system: 'https://fhir.nhs.uk/Id/ods-organization-code'
+                  system: "https://fhir.nhs.uk/Id/ods-organization-code"
                   value: X99999
               lotNumber: 4120Z001
-              expirationDate: '2021-07-02'
+              expirationDate: "2021-07-02"
               site:
                 coding:
-                  - system: 'http://snomed.info/sct'
-                    code: '368208006'
+                  - system: "http://snomed.info/sct"
+                    code: "368208006"
                     display: Left upper arm structure (body structure)
               route:
                 coding:
-                  - system: 'http://snomed.info/sct'
-                    code: '78421000'
+                  - system: "http://snomed.info/sct"
+                    code: "78421000"
                     display: Intramuscular route (qualifier value)
               doseQuantity:
                 value: 0.5
                 unit: milliliter
-                system: 'http://unitsofmeasure.org'
+                system: "http://unitsofmeasure.org"
                 code: ml
               performer:
                 - actor:
-                    reference: '#Pract1'
+                    reference: "#Pract1"
                 - actor:
                     type: Organization
                     identifier:
-                      system: 'https://fhir.nhs.uk/Id/ods-organization-code'
+                      system: "https://fhir.nhs.uk/Id/ods-organization-code"
                       value: B0C4P
               reasonCode:
                 - coding:
-                    - code: '443684005'
-                      system: 'http://snomed.info/sct'
+                    - code: "443684005"
+                      system: "http://snomed.info/sct"
               protocolApplied:
                 - targetDisease:
                     - coding:
-                        - system: 'http://snomed.info/sct'
-                          code: '840539006'
+                        - system: "http://snomed.info/sct"
+                          code: "840539006"
                           display: >-
                             Disease caused by severe acute respiratory syndrome
                             coronavirus 2 (disorder)
                   doseNumberPositiveInt: 1
       responses:
-        '201':
+        "201":
           description: Create Immunization operation successful
           headers:
             Location:
-              $ref: '#/components/headers/Location'
+              $ref: "#/components/headers/Location"
             CorrelationID:
-              $ref: '#/components/headers/CorrelationID'
+              $ref: "#/components/headers/CorrelationID"
             RequestID:
-              $ref: '#/components/headers/RequestID'
+              $ref: "#/components/headers/RequestID"
         4XX:
-          $ref: '#/components/responses/4XX-imms-create'
+          $ref: "#/components/responses/4XX-imms-create"
     get:
       summary: Search for a patient's immunisation records
       operationId: searchImmunization
@@ -1395,15 +1395,15 @@ paths:
         `patient.identifier`  or  `-immunization.target`          | HTTP Status
         400 Bad Request               |
       parameters:
-        - $ref: '#/components/parameters/CorrelationID'
-        - $ref: '#/components/parameters/RequestID'
-        - $ref: '#/components/parameters/PatientIdentifier'
-        - $ref: '#/components/parameters/ImmunizationTarget'
-        - $ref: '#/components/parameters/DateFrom'
-        - $ref: '#/components/parameters/DateTo'
-        - $ref: '#/components/parameters/Include'
+        - $ref: "#/components/parameters/CorrelationID"
+        - $ref: "#/components/parameters/RequestID"
+        - $ref: "#/components/parameters/PatientIdentifier"
+        - $ref: "#/components/parameters/ImmunizationTarget"
+        - $ref: "#/components/parameters/DateFrom"
+        - $ref: "#/components/parameters/DateTo"
+        - $ref: "#/components/parameters/Include"
       responses:
-        '200':
+        "200":
           description: Search immunisation operation successful
           content:
             application/fhir+json:
@@ -1482,7 +1482,7 @@ paths:
                                 - status
                                 - vaccineCode
                                 - patient
-                                - 'occurrence[X]'
+                                - "occurrence[X]"
                                 - recorded
                                 - primarySource
                                 - location
@@ -1516,7 +1516,7 @@ paths:
                                       description: >-
                                         When the resource last changed - e.g.
                                         when the version changed.
-                                      example: '2017-01-01T00:00:00Z'
+                                      example: "2017-01-01T00:00:00Z"
                                     source:
                                       type: string
                                       description: >-
@@ -1536,11 +1536,11 @@ paths:
                                     security:
                                       type: array
                                       items:
-                                        $ref: '#/components/schemas/Coding'
+                                        $ref: "#/components/schemas/Coding"
                                     tag:
                                       type: array
                                       items:
-                                        $ref: '#/components/schemas/Coding'
+                                        $ref: "#/components/schemas/Coding"
                                   required:
                                     - versionId
                                 extension:
@@ -1590,11 +1590,11 @@ paths:
                                                     that defines the meaning of the symbol
                                                     in the code.
                                                   type: string
-                                                  example: 'http://snomed.info/sct'
+                                                  example: "http://snomed.info/sct"
                                                 code:
                                                   description: A particular code in the system.
                                                   type: string
-                                                  example: '1303503001'
+                                                  example: "1303503001"
                                                 display:
                                                   description: Representation defined by the system.
                                                   type: string
@@ -1629,7 +1629,7 @@ paths:
                                       system:
                                         description: URI of the namespace of this identifier.
                                         type: string
-                                        example: 'https://supplierABC/identifiers/vacc'
+                                        example: "https://supplierABC/identifiers/vacc"
                                       value:
                                         description: Identifier value within `system`.
                                         type: string
@@ -1668,11 +1668,11 @@ paths:
                                               that defines the meaning of the symbol
                                               in the code.
                                             type: string
-                                            example: 'http://snomed.info/sct'
+                                            example: "http://snomed.info/sct"
                                           code:
                                             description: SNOMED code for the vaccine product.
                                             type: string
-                                            example: '42605811000001109'
+                                            example: "42605811000001109"
                                           display:
                                             description: Description of the vaccine product.
                                             type: string
@@ -1716,14 +1716,14 @@ paths:
                                             linked patient. Always
                                             https://fhir.nhs.uk/Id/nhs-number
                                           type: string
-                                          example: 'https://fhir.nhs.uk/Id/nhs-number'
+                                          example: "https://fhir.nhs.uk/Id/nhs-number"
                                         value:
                                           description: >-
                                             Value in coding system representing
                                             linked patient.
                                           type: string
-                                          example: '9000000009'
-                                'occurrence[X]':
+                                          example: "9000000009"
+                                "occurrence[X]":
                                   type: object
                                   description: >-
                                     When immunizations are given a specific date
@@ -1734,7 +1734,7 @@ paths:
                                     occurrenceDateTime:
                                       description: Date and time of immunisation.
                                       type: string
-                                      example: '2021-02-07T13:28:17.271000+00:00'
+                                      example: "2021-02-07T13:28:17.271000+00:00"
                                   required:
                                     - occurrenceDateTime
                                 recorded:
@@ -1744,7 +1744,7 @@ paths:
                                     potentially significantly after the
                                     occurrence of the event.
                                   type: string
-                                  example: '2021-02-07T13:28:17.271000+00:00'
+                                  example: "2021-02-07T13:28:17.271000+00:00"
                                 primarySource:
                                   description: >-
                                     An indication that the content of the record
@@ -1805,7 +1805,7 @@ paths:
                                 expirationDate:
                                   description: Date vaccine batch expires.
                                   type: string
-                                  example: '2021-04-29'
+                                  example: "2021-04-29"
                                 site:
                                   description: Body site where vaccine was administered.
                                   type: object
@@ -1824,11 +1824,11 @@ paths:
                                               Coding system used to describe
                                               vaccination body site.
                                             type: string
-                                            example: 'http://snomed.info/sct'
+                                            example: "http://snomed.info/sct"
                                           code:
                                             description: Code for the vaccination body site.
                                             type: string
-                                            example: '368208006'
+                                            example: "368208006"
                                           display:
                                             description: >-
                                               Description of the vaccination body
@@ -1861,11 +1861,11 @@ paths:
                                               Coding system used to describe
                                               vaccination route.
                                             type: string
-                                            example: 'http://snomed.info/sct'
+                                            example: "http://snomed.info/sct"
                                           code:
                                             description: Code for the vaccination route.
                                             type: string
-                                            example: '78421000'
+                                            example: "78421000"
                                           display:
                                             description: Description of the vaccination route.
                                             type: string
@@ -1887,7 +1887,7 @@ paths:
                                     system:
                                       description: System that defines coded unit form.
                                       type: string
-                                      example: 'http://unitsofmeasure.org'
+                                      example: "http://unitsofmeasure.org"
                                     code:
                                       description: Code describing the unit.
                                       type: string
@@ -1967,11 +1967,11 @@ paths:
                                                 Coding system used to describe the
                                                 reason for administration of vaccine.
                                               type: string
-                                              example: 'http://snomed.info/sct'
+                                              example: "http://snomed.info/sct"
                                             code:
                                               description: SNOMED code for the vaccination reason.
                                               type: string
-                                              example: '443684005'
+                                              example: "443684005"
                                             display:
                                               description: Description of the vaccination reason.
                                               type: string
@@ -1987,7 +1987,7 @@ paths:
                                     type: object
                                     required:
                                       - targetDisease
-                                      - 'doseNumber[X]'
+                                      - "doseNumber[X]"
                                     properties:
                                       targetDisease:
                                         type: array
@@ -2030,7 +2030,7 @@ paths:
                                                   - display
                                           required:
                                             - coding
-                                      'doseNumber[X]':
+                                      "doseNumber[X]":
                                         type: object
                                         description: >-
                                           Nominal position in a series. This SHALL
@@ -2073,7 +2073,7 @@ paths:
                                 id:
                                   description: Patient ID (NHS Number)
                                   type: string
-                                  example: '9000000009'
+                                  example: "9000000009"
                                 identifier:
                                   description: >-
                                     Unique identifier for this patient. Always
@@ -2089,11 +2089,11 @@ paths:
                                       system:
                                         description: Coding system used to identify patients.
                                         type: string
-                                        example: 'https://fhir.nhs.uk/Id/nhs-number'
+                                        example: "https://fhir.nhs.uk/Id/nhs-number"
                                       value:
                                         description: Code identifying the patient.
                                         type: string
-                                        example: '9000000009'
+                                        example: "9000000009"
                         search:
                           description: Search-related information for the Immunization.
                           type: object
@@ -2126,96 +2126,96 @@ paths:
                       resourceType: Immunization
                       id: 191f288a-17f3-4cd5-a33c-a52aade6473c
                       meta:
-                        versionId: '1'
+                        versionId: "1"
                       extension:
                         - url: >-
                             https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure
                           valueCodeableConcept:
                             coding:
-                              - system: 'http://snomed.info/sct'
-                                code: '1303503001'
+                              - system: "http://snomed.info/sct"
+                                code: "1303503001"
                                 display: >-
                                   Administration of RSV (respiratory syncytial
                                   virus) vaccine
                       identifier:
                         - use: official
-                          system: 'https://supplierABC/identifiers/vacc'
+                          system: "https://supplierABC/identifiers/vacc"
                           value: e2154d29-1ead-4830-a513-0d59705078fa
                       status: completed
                       vaccineCode:
                         coding:
-                          - system: 'http://snomed.info/sct'
-                            code: '42605811000001109'
+                          - system: "http://snomed.info/sct"
+                            code: "42605811000001109"
                             display: >-
                               Abrysvo vaccine powder and solvent for solution
                               for injection 0.5ml vials (Pfizer Ltd)
                       patient:
-                        reference: 'urn:uuid:a7a5bc28-5831-4158-8a73-0d3e6e43c1ac'
+                        reference: "urn:uuid:a7a5bc28-5831-4158-8a73-0d3e6e43c1ac"
                         type: Patient
                         identifier:
-                          system: 'https://fhir.nhs.uk/Id/nhs-number'
-                          value: '9000000009'
-                      occurrenceDateTime: '2021-02-07T13:28:17.271000+00:00'
-                      recorded: '2021-02-07T13:28:17.271000+00:00'
+                          system: "https://fhir.nhs.uk/Id/nhs-number"
+                          value: "9000000009"
+                      occurrenceDateTime: "2021-02-07T13:28:17.271000+00:00"
+                      recorded: "2021-02-07T13:28:17.271000+00:00"
                       primarySource: true
                       location:
                         identifier:
-                          system: 'https://fhir.nhs.uk/Id/ods-organization-code'
+                          system: "https://fhir.nhs.uk/Id/ods-organization-code"
                           value: X99999
                       manufacturer:
                         display: AstraZeneca Ltd
                       lotNumber: 4120Z001
-                      expirationDate: '2021-07-02'
+                      expirationDate: "2021-07-02"
                       site:
                         coding:
-                          - system: 'http://snomed.info/sct'
-                            code: '368208006'
+                          - system: "http://snomed.info/sct"
+                            code: "368208006"
                             display: Left upper arm structure (body structure)
                       route:
                         coding:
-                          - system: 'http://snomed.info/sct'
-                            code: '78421000'
+                          - system: "http://snomed.info/sct"
+                            code: "78421000"
                             display: Intramuscular route (qualifier value)
                       doseQuantity:
                         value: 0.5
                         unit: milliliter
-                        system: 'http://unitsofmeasure.org'
+                        system: "http://unitsofmeasure.org"
                         code: ml
                       performer:
                         - actor:
                             type: Organization
                             identifier:
-                              system: 'https://fhir.nhs.uk/Id/ods-organization-code'
+                              system: "https://fhir.nhs.uk/Id/ods-organization-code"
                               value: B0C4P
                             display: UNIVERSITY HOSPITAL OF WALES
                       reasonCode:
                         - coding:
-                            - system: 'http://snomed.info/sct'
-                              code: '443684005'
+                            - system: "http://snomed.info/sct"
+                              code: "443684005"
                               display: Disease outbreak (event)
                       protocolApplied:
                         - targetDisease:
                             - coding:
-                                - system: 'http://snomed.info/sct'
-                                  code: '55735004'
+                                - system: "http://snomed.info/sct"
+                                  code: "55735004"
                                   display: >-
                                     Respiratory syncytial virus infection
                                     (disorder)
                           doseNumberPositiveInt: 1
                     search:
                       mode: match
-                  - fullUrl: 'urn:uuid:a7a5bc28-5831-4158-8a73-0d3e6e43c1ac'
+                  - fullUrl: "urn:uuid:a7a5bc28-5831-4158-8a73-0d3e6e43c1ac"
                     resource:
                       resourceType: Patient
-                      id: '9000000009'
+                      id: "9000000009"
                       identifier:
-                        - system: 'https://fhir.nhs.uk/Id/nhs-number'
-                          value: '9000000009'
+                        - system: "https://fhir.nhs.uk/Id/nhs-number"
+                          value: "9000000009"
                     search:
                       mode: include
                 total: 1
         4XX:
-          $ref: '#/components/responses/4XX-imms-search'
+          $ref: "#/components/responses/4XX-imms-search"
   /Immunization/$search-by-identifier:
     get:
       summary: Search immunisations by record identifier
@@ -2227,11 +2227,11 @@ paths:
         `identifier=https://supplierABC/identifiers/vacc|e2154d29-1ead-4830-a513-0d59705078fa`.
         This returns a Bundle of matching Immunization resources.
       parameters:
-        - $ref: '#/components/parameters/CorrelationID'
-        - $ref: '#/components/parameters/RequestID'
-        - $ref: '#/components/parameters/Identifier'
+        - $ref: "#/components/parameters/CorrelationID"
+        - $ref: "#/components/parameters/RequestID"
+        - $ref: "#/components/parameters/Identifier"
       responses:
-        '200':
+        "200":
           description: Search immunisation operation successful
           content:
             application/fhir+json:
@@ -2309,7 +2309,7 @@ paths:
                                 - identifier
                                 - status
                                 - vaccineCode
-                                - 'occurrence[X]'
+                                - "occurrence[X]"
                                 - recorded
                                 - primarySource
                                 - location
@@ -2343,7 +2343,7 @@ paths:
                                       description: >-
                                         When the resource last changed - e.g.
                                         when the version changed.
-                                      example: '2017-01-01T00:00:00Z'
+                                      example: "2017-01-01T00:00:00Z"
                                     source:
                                       type: string
                                       description: >-
@@ -2363,11 +2363,11 @@ paths:
                                     security:
                                       type: array
                                       items:
-                                        $ref: '#/components/schemas/Coding'
+                                        $ref: "#/components/schemas/Coding"
                                     tag:
                                       type: array
                                       items:
-                                        $ref: '#/components/schemas/Coding'
+                                        $ref: "#/components/schemas/Coding"
                                   required:
                                     - versionId
                                 extension:
@@ -2417,11 +2417,11 @@ paths:
                                                     that defines the meaning of the symbol
                                                     in the code.
                                                   type: string
-                                                  example: 'http://snomed.info/sct'
+                                                  example: "http://snomed.info/sct"
                                                 code:
                                                   description: A particular code in the system.
                                                   type: string
-                                                  example: '1303503001'
+                                                  example: "1303503001"
                                                 display:
                                                   description: Representation defined by the system.
                                                   type: string
@@ -2456,7 +2456,7 @@ paths:
                                       system:
                                         description: URI of the namespace of this identifier.
                                         type: string
-                                        example: 'https://supplierABC/identifiers/vacc'
+                                        example: "https://supplierABC/identifiers/vacc"
                                       value:
                                         description: Identifier value within `system`.
                                         type: string
@@ -2495,11 +2495,11 @@ paths:
                                               that defines the meaning of the symbol
                                               in the code.
                                             type: string
-                                            example: 'http://snomed.info/sct'
+                                            example: "http://snomed.info/sct"
                                           code:
                                             description: SNOMED code for the vaccine product.
                                             type: string
-                                            example: '42605811000001109'
+                                            example: "42605811000001109"
                                           display:
                                             description: Description of the vaccine product.
                                             type: string
@@ -2543,14 +2543,14 @@ paths:
                                             linked patient. Always
                                             https://fhir.nhs.uk/Id/nhs-number
                                           type: string
-                                          example: 'https://fhir.nhs.uk/Id/nhs-number'
+                                          example: "https://fhir.nhs.uk/Id/nhs-number"
                                         value:
                                           description: >-
                                             Value in coding system representing
                                             linked patient.
                                           type: string
-                                          example: '9000000009'
-                                'occurrence[X]':
+                                          example: "9000000009"
+                                "occurrence[X]":
                                   type: object
                                   description: >-
                                     When immunizations are given a specific date
@@ -2561,7 +2561,7 @@ paths:
                                     occurrenceDateTime:
                                       description: Date and time of immunisation.
                                       type: string
-                                      example: '2021-02-07T13:28:17.271000+00:00'
+                                      example: "2021-02-07T13:28:17.271000+00:00"
                                   required:
                                     - occurrenceDateTime
                                 recorded:
@@ -2571,7 +2571,7 @@ paths:
                                     potentially significantly after the
                                     occurrence of the event.
                                   type: string
-                                  example: '2021-02-07T13:28:17.271000+00:00'
+                                  example: "2021-02-07T13:28:17.271000+00:00"
                                 primarySource:
                                   description: >-
                                     An indication that the content of the record
@@ -2632,7 +2632,7 @@ paths:
                                 expirationDate:
                                   description: Date vaccine batch expires.
                                   type: string
-                                  example: '2021-04-29'
+                                  example: "2021-04-29"
                                 site:
                                   description: Body site where vaccine was administered.
                                   type: object
@@ -2651,11 +2651,11 @@ paths:
                                               Coding system used to describe
                                               vaccination body site.
                                             type: string
-                                            example: 'http://snomed.info/sct'
+                                            example: "http://snomed.info/sct"
                                           code:
                                             description: Code for the vaccination body site.
                                             type: string
-                                            example: '368208006'
+                                            example: "368208006"
                                           display:
                                             description: >-
                                               Description of the vaccination body
@@ -2688,11 +2688,11 @@ paths:
                                               Coding system used to describe
                                               vaccination route.
                                             type: string
-                                            example: 'http://snomed.info/sct'
+                                            example: "http://snomed.info/sct"
                                           code:
                                             description: Code for the vaccination route.
                                             type: string
-                                            example: '78421000'
+                                            example: "78421000"
                                           display:
                                             description: Description of the vaccination route.
                                             type: string
@@ -2714,7 +2714,7 @@ paths:
                                     system:
                                       description: System that defines coded unit form.
                                       type: string
-                                      example: 'http://unitsofmeasure.org'
+                                      example: "http://unitsofmeasure.org"
                                     code:
                                       description: Code describing the unit.
                                       type: string
@@ -2794,11 +2794,11 @@ paths:
                                                 Coding system used to describe the
                                                 reason for administration of vaccine.
                                               type: string
-                                              example: 'http://snomed.info/sct'
+                                              example: "http://snomed.info/sct"
                                             code:
                                               description: SNOMED code for the vaccination reason.
                                               type: string
-                                              example: '443684005'
+                                              example: "443684005"
                                             display:
                                               description: Description of the vaccination reason.
                                               type: string
@@ -2814,7 +2814,7 @@ paths:
                                     type: object
                                     required:
                                       - targetDisease
-                                      - 'doseNumber[X]'
+                                      - "doseNumber[X]"
                                     properties:
                                       targetDisease:
                                         type: array
@@ -2857,7 +2857,7 @@ paths:
                                                   - display
                                           required:
                                             - coding
-                                      'doseNumber[X]':
+                                      "doseNumber[X]":
                                         type: object
                                         description: >-
                                           Nominal position in a series. This SHALL
@@ -2900,7 +2900,7 @@ paths:
                                 id:
                                   description: Patient ID (NHS Number)
                                   type: string
-                                  example: '9000000009'
+                                  example: "9000000009"
                                 identifier:
                                   description: >-
                                     Unique identifier for this patient. Always
@@ -2916,11 +2916,11 @@ paths:
                                       system:
                                         description: Coding system used to identify patients.
                                         type: string
-                                        example: 'https://fhir.nhs.uk/Id/nhs-number'
+                                        example: "https://fhir.nhs.uk/Id/nhs-number"
                                       value:
                                         description: Code identifying the patient.
                                         type: string
-                                        example: '9000000009'
+                                        example: "9000000009"
                         search:
                           description: Search-related information for the Immunization.
                           type: object
@@ -2952,78 +2952,78 @@ paths:
                       resourceType: Immunization
                       id: 191f288a-17f3-4cd5-a33c-a52aade6473c
                       meta:
-                        versionId: '1'
+                        versionId: "1"
                       extension:
                         - url: >-
                             https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure
                           valueCodeableConcept:
                             coding:
-                              - system: 'http://snomed.info/sct'
-                                code: '1303503001'
+                              - system: "http://snomed.info/sct"
+                                code: "1303503001"
                                 display: >-
                                   Administration of RSV (respiratory syncytial
                                   virus) vaccine
                       identifier:
                         - use: official
-                          system: 'https://supplierABC/identifiers/vacc'
+                          system: "https://supplierABC/identifiers/vacc"
                           value: e2154d29-1ead-4830-a513-0d59705078fa
                       status: completed
                       vaccineCode:
                         coding:
-                          - system: 'http://snomed.info/sct'
-                            code: '42605811000001109'
+                          - system: "http://snomed.info/sct"
+                            code: "42605811000001109"
                             display: >-
                               Abrysvo vaccine powder and solvent for solution
                               for injection 0.5ml vials (Pfizer Ltd)
                       patient:
-                        reference: 'urn:uuid:a7a5bc28-5831-4158-8a73-0d3e6e43c1ac'
+                        reference: "urn:uuid:a7a5bc28-5831-4158-8a73-0d3e6e43c1ac"
                         type: Patient
                         identifier:
-                          system: 'https://fhir.nhs.uk/Id/nhs-number'
-                          value: '9000000009'
-                      occurrenceDateTime: '2021-02-07T13:28:17.271000+00:00'
-                      recorded: '2021-02-07T13:28:17.271000+00:00'
+                          system: "https://fhir.nhs.uk/Id/nhs-number"
+                          value: "9000000009"
+                      occurrenceDateTime: "2021-02-07T13:28:17.271000+00:00"
+                      recorded: "2021-02-07T13:28:17.271000+00:00"
                       primarySource: true
                       location:
                         identifier:
-                          system: 'https://fhir.nhs.uk/Id/ods-organization-code'
+                          system: "https://fhir.nhs.uk/Id/ods-organization-code"
                           value: X99999
                       manufacturer:
                         display: AstraZeneca Ltd
                       lotNumber: 4120Z001
-                      expirationDate: '2021-07-02'
+                      expirationDate: "2021-07-02"
                       site:
                         coding:
-                          - system: 'http://snomed.info/sct'
-                            code: '368208006'
+                          - system: "http://snomed.info/sct"
+                            code: "368208006"
                             display: Left upper arm structure (body structure)
                       route:
                         coding:
-                          - system: 'http://snomed.info/sct'
-                            code: '78421000'
+                          - system: "http://snomed.info/sct"
+                            code: "78421000"
                             display: Intramuscular route (qualifier value)
                       doseQuantity:
                         value: 0.5
                         unit: milliliter
-                        system: 'http://unitsofmeasure.org'
+                        system: "http://unitsofmeasure.org"
                         code: ml
                       performer:
                         - actor:
                             type: Organization
                             identifier:
-                              system: 'https://fhir.nhs.uk/Id/ods-organization-code'
+                              system: "https://fhir.nhs.uk/Id/ods-organization-code"
                               value: B0C4P
                             display: UNIVERSITY HOSPITAL OF WALES
                       reasonCode:
                         - coding:
-                            - system: 'http://snomed.info/sct'
-                              code: '443684005'
+                            - system: "http://snomed.info/sct"
+                              code: "443684005"
                               display: Disease outbreak (event)
                       protocolApplied:
                         - targetDisease:
                             - coding:
-                                - system: 'http://snomed.info/sct'
-                                  code: '55735004'
+                                - system: "http://snomed.info/sct"
+                                  code: "55735004"
                                   display: >-
                                     Respiratory syncytial virus infection
                                     (disorder)
@@ -3032,8 +3032,8 @@ paths:
                       mode: match
                 total: 1
         4XX:
-          $ref: '#/components/responses/4XX-imms-search-by-identifier'
-  '/Immunization/{id}':
+          $ref: "#/components/responses/4XX-imms-search-by-identifier"
+  "/Immunization/{id}":
     get:
       summary: Retrieve a record of an immunisation by its unique identifier
       operationId: readImmunization
@@ -3084,19 +3084,19 @@ paths:
         |  Bad Request                            | Didn't pass required fields
         `id`            | HTTP Status 400 Bad Request               |
       parameters:
-        - $ref: '#/components/parameters/CorrelationID'
-        - $ref: '#/components/parameters/RequestID'
-        - $ref: '#/components/parameters/Id'
+        - $ref: "#/components/parameters/CorrelationID"
+        - $ref: "#/components/parameters/RequestID"
+        - $ref: "#/components/parameters/Id"
       responses:
-        '200':
+        "200":
           description: Read Immunization operation successful
           headers:
             CorrelationID:
-              $ref: '#/components/headers/CorrelationID'
+              $ref: "#/components/headers/CorrelationID"
             RequestID:
-              $ref: '#/components/headers/RequestID'
+              $ref: "#/components/headers/RequestID"
             E-Tag:
-              $ref: '#/components/headers/E-Tag'
+              $ref: "#/components/headers/E-Tag"
           content:
             application/fhir+json:
               schema:
@@ -3112,7 +3112,7 @@ paths:
                   - status
                   - vaccineCode
                   - patient
-                  - 'occurrence[X]'
+                  - "occurrence[X]"
                   - recorded
                   - primarySource
                   - location
@@ -3144,7 +3144,7 @@ paths:
                         description: >-
                           When the resource last changed - e.g. when the version
                           changed.
-                        example: '2017-01-01T00:00:00Z'
+                        example: "2017-01-01T00:00:00Z"
                       source:
                         type: string
                         description: >-
@@ -3168,11 +3168,11 @@ paths:
                       security:
                         type: array
                         items:
-                          $ref: '#/components/schemas/Coding'
+                          $ref: "#/components/schemas/Coding"
                       tag:
                         type: array
                         items:
-                          $ref: '#/components/schemas/Coding'
+                          $ref: "#/components/schemas/Coding"
                   contained:
                     type: array
                     description: >-
@@ -3219,7 +3219,7 @@ paths:
                             id:
                               type: string
                               description: Logical id of this artifact
-                              example: '#Pat1'
+                              example: "#Pat1"
                             identifier:
                               type: array
                               description: An identifier for the patient
@@ -3318,11 +3318,11 @@ paths:
                                       defines the meaning of the symbol in the
                                       code.
                                     type: string
-                                    example: 'http://snomed.info/sct'
+                                    example: "http://snomed.info/sct"
                                   code:
                                     description: A particular code in the system.
                                     type: string
-                                    example: '1303503001'
+                                    example: "1303503001"
                                   display:
                                     description: Representation defined by the system.
                                     type: string
@@ -3357,7 +3357,7 @@ paths:
                         system:
                           description: URI of the namespace of this identifier.
                           type: string
-                          example: 'https://supplierABC/identifiers/vacc'
+                          example: "https://supplierABC/identifiers/vacc"
                         value:
                           description: Identifier value within `system`.
                           type: string
@@ -3394,11 +3394,11 @@ paths:
                                 The identification of the code system that
                                 defines the meaning of the symbol in the code.
                               type: string
-                              example: 'http://snomed.info/sct'
+                              example: "http://snomed.info/sct"
                             code:
                               description: SNOMED code for the vaccine product.
                               type: string
-                              example: '42605811000001109'
+                              example: "42605811000001109"
                             display:
                               description: Description of the vaccine product.
                               type: string
@@ -3414,8 +3414,8 @@ paths:
                       reference:
                         description: Reference of patient from contained section
                         type: string
-                        example: '#Pat1'
-                  'occurrence[X]':
+                        example: "#Pat1"
+                  "occurrence[X]":
                     type: object
                     description: >-
                       When immunizations are given a specific date and time
@@ -3426,7 +3426,7 @@ paths:
                       occurrenceDateTime:
                         description: Date and time of immunisation.
                         type: string
-                        example: '2021-02-07T13:28:17.271000+00:00'
+                        example: "2021-02-07T13:28:17.271000+00:00"
                     required:
                       - occurrenceDateTime
                   recorded:
@@ -3435,7 +3435,7 @@ paths:
                       captured in the record - potentially significantly after
                       the occurrence of the event.
                     type: string
-                    example: '2021-02-07T13:28:17.271000+00:00'
+                    example: "2021-02-07T13:28:17.271000+00:00"
                   primarySource:
                     description: >-
                       An indication that the content of the record is based on
@@ -3463,7 +3463,7 @@ paths:
                               https://fhir.hl7.org.uk/Id/urn-school-number for
                               an education setting.
                             type: string
-                            example: 'https://fhir.nhs.uk/Id/ods-organization-code'
+                            example: "https://fhir.nhs.uk/Id/ods-organization-code"
                           value:
                             description: >-
                               A code from the system to represent the location.
@@ -3491,7 +3491,7 @@ paths:
                   expirationDate:
                     description: Date vaccine batch expires.
                     type: string
-                    example: '2021-04-29'
+                    example: "2021-04-29"
                   site:
                     description: Body site where vaccine was administered.
                     type: object
@@ -3508,11 +3508,11 @@ paths:
                                 Coding system used to describe vaccination body
                                 site.
                               type: string
-                              example: 'http://snomed.info/sct'
+                              example: "http://snomed.info/sct"
                             code:
                               description: Code for the vaccination body site.
                               type: string
-                              example: '368208006'
+                              example: "368208006"
                             display:
                               description: Description of the vaccination body site.
                               type: string
@@ -3539,11 +3539,11 @@ paths:
                                 Coding system used to describe vaccination
                                 route.
                               type: string
-                              example: 'http://snomed.info/sct'
+                              example: "http://snomed.info/sct"
                             code:
                               description: Code for the vaccination route.
                               type: string
-                              example: '78421000'
+                              example: "78421000"
                             display:
                               description: Description of the vaccination route.
                               type: string
@@ -3563,7 +3563,7 @@ paths:
                       system:
                         description: System that defines coded unit form.
                         type: string
-                        example: 'http://unitsofmeasure.org'
+                        example: "http://unitsofmeasure.org"
                       code:
                         description: Code describing the unit.
                         type: string
@@ -3604,7 +3604,7 @@ paths:
                                     identifier. Always
                                     `https://fhir.nhs.uk/Id/ods-organization-code`.
                                   type: string
-                                  example: 'https://fhir.nhs.uk/Id/ods-organization-code'
+                                  example: "https://fhir.nhs.uk/Id/ods-organization-code"
                                 value:
                                   description: Organisation's ODS code.
                                   type: string
@@ -3638,11 +3638,11 @@ paths:
                                   Coding system used to describe the reason for
                                   administration of vaccine.
                                 type: string
-                                example: 'http://snomed.info/sct'
+                                example: "http://snomed.info/sct"
                               code:
                                 description: SNOMED code for the vaccination reason.
                                 type: string
-                                example: '443684005'
+                                example: "443684005"
                               display:
                                 description: Description of the vaccination reason.
                                 type: string
@@ -3657,7 +3657,7 @@ paths:
                       type: object
                       required:
                         - targetDisease
-                        - 'doseNumber[X]'
+                        - "doseNumber[X]"
                       properties:
                         targetDisease:
                           type: array
@@ -3700,7 +3700,7 @@ paths:
                                     - display
                             required:
                               - coding
-                        'doseNumber[X]':
+                        "doseNumber[X]":
                           type: object
                           description: >-
                             Nominal position in a series. This SHALL be provided
@@ -3738,14 +3738,14 @@ paths:
                   - resourceType: Patient
                     id: Pat1
                     identifier:
-                      - system: 'https://fhir.nhs.uk/Id/nhs-number'
-                        value: '9449310475'
+                      - system: "https://fhir.nhs.uk/Id/nhs-number"
+                        value: "9449310475"
                     name:
                       - family: Owler
                         given:
                           - Ozzie
                     gender: unknown
-                    birthDate: '1965-02-28'
+                    birthDate: "1965-02-28"
                     address:
                       - postalCode: EC1A 1BB
                 extension:
@@ -3753,72 +3753,72 @@ paths:
                       https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure
                     valueCodeableConcept:
                       coding:
-                        - system: 'http://snomed.info/sct'
-                          code: '1303503001'
+                        - system: "http://snomed.info/sct"
+                          code: "1303503001"
                           display: >-
                             Administration of RSV (respiratory syncytial virus)
                             vaccine
                 identifier:
                   - use: official
-                    system: 'https://supplierABC/identifiers/vacc'
+                    system: "https://supplierABC/identifiers/vacc"
                     value: e2154d29-1ead-4830-a513-0d59705078fa
                 status: completed
                 vaccineCode:
                   coding:
-                    - system: 'http://snomed.info/sct'
-                      code: '42605811000001109'
+                    - system: "http://snomed.info/sct"
+                      code: "42605811000001109"
                       display: >-
                         Abrysvo vaccine powder and solvent for solution for
                         injection 0.5ml vials (Pfizer Ltd)
                 patient:
-                  reference: '#Pat1'
-                occurrenceDateTime: '2021-02-07T13:28:17.271000+00:00'
-                recorded: '2021-02-07T13:28:17.271000+00:00'
+                  reference: "#Pat1"
+                occurrenceDateTime: "2021-02-07T13:28:17.271000+00:00"
+                recorded: "2021-02-07T13:28:17.271000+00:00"
                 primarySource: true
                 location:
                   identifier:
-                    system: 'https://fhir.nhs.uk/Id/ods-organization-code'
+                    system: "https://fhir.nhs.uk/Id/ods-organization-code"
                     value: X99999
                 manufacturer:
                   display: AstraZeneca Ltd
                 lotNumber: 4120Z001
-                expirationDate: '2021-07-02'
+                expirationDate: "2021-07-02"
                 site:
                   coding:
-                    - system: 'http://snomed.info/sct'
-                      code: '368208006'
+                    - system: "http://snomed.info/sct"
+                      code: "368208006"
                       display: Left upper arm structure (body structure)
                 route:
                   coding:
-                    - system: 'http://snomed.info/sct'
-                      code: '78421000'
+                    - system: "http://snomed.info/sct"
+                      code: "78421000"
                       display: Intramuscular route (qualifier value)
                 doseQuantity:
                   value: 0.5
                   unit: milliliter
-                  system: 'http://unitsofmeasure.org'
+                  system: "http://unitsofmeasure.org"
                   code: ml
                 performer:
                   - actor:
-                      reference: '#Pract1'
+                      reference: "#Pract1"
                   - actor:
                       type: Organization
                       identifier:
-                        system: 'https://fhir.nhs.uk/Id/ods-organization-code'
+                        system: "https://fhir.nhs.uk/Id/ods-organization-code"
                         value: B0C4P
                 reasonCode:
                   - coding:
-                      - system: 'http://snomed.info/sct'
-                        code: '443684005'
+                      - system: "http://snomed.info/sct"
+                        code: "443684005"
                 protocolApplied:
                   - targetDisease:
                       - coding:
-                          - system: 'http://snomed.info/sct'
-                            code: '55735004'
+                          - system: "http://snomed.info/sct"
+                            code: "55735004"
                             display: Respiratory syncytial virus infection (disorder)
                     doseNumberPositiveInt: 1
         4XX:
-          $ref: '#/components/responses/4XX-imms-read'
+          $ref: "#/components/responses/4XX-imms-read"
     put:
       summary: Update a record of vaccination
       operationId: updateImmunization
@@ -3869,10 +3869,10 @@ paths:
         Didn't pass `E-Tag`  in request header          |               HTTP
         Status   400 Bad Request               |
       parameters:
-        - $ref: '#/components/parameters/CorrelationID'
-        - $ref: '#/components/parameters/RequestID'
-        - $ref: '#/components/parameters/Id'
-        - $ref: '#/components/parameters/E-Tag'
+        - $ref: "#/components/parameters/CorrelationID"
+        - $ref: "#/components/parameters/RequestID"
+        - $ref: "#/components/parameters/Id"
+        - $ref: "#/components/parameters/E-Tag"
       requestBody:
         content:
           application/fhir+json:
@@ -3888,7 +3888,7 @@ paths:
                 - status
                 - vaccineCode
                 - patient
-                - 'occurrence[X]'
+                - "occurrence[X]"
                 - recorded
                 - primarySource
                 - location
@@ -3920,7 +3920,7 @@ paths:
                       description: >-
                         When the resource last changed - e.g. when the version
                         changed.
-                      example: '2017-01-01T00:00:00Z'
+                      example: "2017-01-01T00:00:00Z"
                     source:
                       type: string
                       description: >-
@@ -3944,11 +3944,11 @@ paths:
                     security:
                       type: array
                       items:
-                        $ref: '#/components/schemas/Coding'
+                        $ref: "#/components/schemas/Coding"
                     tag:
                       type: array
                       items:
-                        $ref: '#/components/schemas/Coding'
+                        $ref: "#/components/schemas/Coding"
                 contained:
                   type: array
                   description: >-
@@ -3995,7 +3995,7 @@ paths:
                           id:
                             type: string
                             description: Logical id of this artifact
-                            example: '#Pat1'
+                            example: "#Pat1"
                           identifier:
                             type: array
                             description: An identifier for the patient
@@ -4139,11 +4139,11 @@ paths:
                                     defines the meaning of the symbol in the
                                     code.
                                   type: string
-                                  example: 'http://snomed.info/sct'
+                                  example: "http://snomed.info/sct"
                                 code:
                                   description: A particular code in the system.
                                   type: string
-                                  example: '1303503001'
+                                  example: "1303503001"
                                 display:
                                   description: Representation defined by the system.
                                   type: string
@@ -4232,11 +4232,11 @@ paths:
                               The identification of the code system that defines
                               the meaning of the symbol in the code.
                             type: string
-                            example: 'http://snomed.info/sct'
+                            example: "http://snomed.info/sct"
                           code:
                             description: SNOMED code for the vaccine product.
                             type: string
-                            example: '42605811000001109'
+                            example: "42605811000001109"
                           display:
                             description: Description of the vaccine product.
                             type: string
@@ -4257,8 +4257,8 @@ paths:
                     reference:
                       description: Reference of patient from contained section
                       type: string
-                      example: '#Pat1'
-                'occurrence[X]':
+                      example: "#Pat1"
+                "occurrence[X]":
                   type: object
                   description: >-
                     When immunizations are given a specific date and time should
@@ -4272,7 +4272,7 @@ paths:
                         subject to the FHIR rules for dateTime.  
                          Only positive timezone offsets of '+00:00' (GMT) and '+01:00' (BST) are allowed. Where time zone information is required but is not available in the source system the time zone element can be a hardcoded static value of `+00:00`.
                       type: string
-                      example: '2021-02-07T13:28:17.271000+00:00'
+                      example: "2021-02-07T13:28:17.271000+00:00"
                   required:
                     - occurrenceDateTime
                 recorded:
@@ -4281,7 +4281,7 @@ paths:
                     captured in the record - potentially significantly after the
                     occurrence of the event.
                   type: string
-                  example: '2021-02-07T13:28:17.271000+00:00'
+                  example: "2021-02-07T13:28:17.271000+00:00"
                 primarySource:
                   description: >-
                     Set as `TRUE` when the content of the record is based on
@@ -4314,9 +4314,9 @@ paths:
                             https://fhir.nhs.uk/Id/ods-organization-code for a
                             health setting (ODS use) or
                             https://fhir.hl7.org.uk/Id/urn-school-number for an
-                            education setting (URN use). 
+                            education setting (URN use).
                           type: string
-                          example: 'urn:iso:std:iso:3166'
+                          example: "urn:iso:std:iso:3166"
                         value:
                           description: >-
                             The ODS or URN code of the location where the
@@ -4373,7 +4373,7 @@ paths:
                     vaccine, whichever is earliest. This `SHOULD be populated`
                     where the data is available.
                   type: string
-                  example: '2021-04-29'
+                  example: "2021-04-29"
                 site:
                   description: >-
                     Body site where vaccine was administered. This `SHOULD be
@@ -4395,11 +4395,11 @@ paths:
                               Coding system used to describe vaccination body
                               site.
                             type: string
-                            example: 'http://snomed.info/sct'
+                            example: "http://snomed.info/sct"
                           code:
                             description: Code for the vaccination body site.
                             type: string
-                            example: '368208006'
+                            example: "368208006"
                           display:
                             description: Description of the vaccination body site.
                             type: string
@@ -4424,11 +4424,11 @@ paths:
                           system:
                             description: Coding system used to describe vaccination route.
                             type: string
-                            example: 'http://snomed.info/sct'
+                            example: "http://snomed.info/sct"
                           code:
                             description: Code for the vaccination route.
                             type: string
-                            example: '78421000'
+                            example: "78421000"
                           display:
                             description: Description of the vaccination route.
                             type: string
@@ -4465,7 +4465,7 @@ paths:
                         The code system from which the provided code is taken.
                         This `SHOULD be populated` where the data is available.
                       type: string
-                      example: 'http://unitsofmeasure.org'
+                      example: "http://unitsofmeasure.org"
                     code:
                       description: >-
                         The code for the unit of measure. SNOMED coded dose
@@ -4521,7 +4521,7 @@ paths:
                                   ODS code which comes from
                                   `https://fhir.nhs.uk/Id/ods-organization-code`.
                                 type: string
-                                example: 'https://fhir.nhs.uk/Id/ods-organization-code'
+                                example: "https://fhir.nhs.uk/Id/ods-organization-code"
                               value:
                                 description: >-
                                   The ODS code for the Commissioned Healthcare
@@ -4539,7 +4539,7 @@ paths:
                               practitioner resource. If the actor is the
                               managing organisation, this SHOULD be absent.
                             type: string
-                            example: '#Pract1'
+                            example: "#Pract1"
                 reasonCode:
                   description: >-
                     A SNOMED-CT Concept representing the clinical indication or
@@ -4566,11 +4566,11 @@ paths:
                                 Coding system used to describe the reason for
                                 administration of vaccine.
                               type: string
-                              example: 'http://snomed.info/sct'
+                              example: "http://snomed.info/sct"
                             code:
                               description: SNOMED code for the vaccination reason.
                               type: string
-                              example: '443684005'
+                              example: "443684005"
                             display:
                               description: Description of the vaccination reason.
                               type: string
@@ -4586,7 +4586,7 @@ paths:
                     type: object
                     required:
                       - targetDisease
-                      - 'doseNumber[X]'
+                      - "doseNumber[X]"
                     properties:
                       targetDisease:
                         type: array
@@ -4638,7 +4638,7 @@ paths:
                                       code in the system, following the rules of
                                       the system.
                                     type: string
-                      'doseNumber[X]':
+                      "doseNumber[X]":
                         type: object
                         description: >-
                           Nominal position in a series. This SHALL be provided
@@ -4676,14 +4676,14 @@ paths:
                 - resourceType: Patient
                   id: Pat1
                   identifier:
-                    - system: 'https://fhir.nhs.uk/Id/nhs-number'
-                      value: '9449310475'
+                    - system: "https://fhir.nhs.uk/Id/nhs-number"
+                      value: "9449310475"
                   name:
                     - family: Taylor
                       given:
                         - Sarah
                   gender: unknown
-                  birthDate: '1965-02-28'
+                  birthDate: "1965-02-28"
                   address:
                     - postalCode: EC1A 1BB
               extension:
@@ -4691,83 +4691,83 @@ paths:
                     https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure
                   valueCodeableConcept:
                     coding:
-                      - system: 'http://snomed.info/sct'
-                        code: '1324681000000101'
+                      - system: "http://snomed.info/sct"
+                        code: "1324681000000101"
                         display: >-
                           Administration of first dose of severe acute
                           respiratory syndrome coronavirus 2 vaccine (procedure)
               identifier:
-                - system: 'https://supplierABC/identifiers/vacc'
+                - system: "https://supplierABC/identifiers/vacc"
                   value: a7437179-e86e-4855-b68e-24b5jhg3g
               status: completed
               vaccineCode:
                 coding:
-                  - system: 'http://snomed.info/sct'
-                    code: '39114911000001105'
+                  - system: "http://snomed.info/sct"
+                    code: "39114911000001105"
                     display: >-
                       COVID-19 Vaccine Vaxzevria (ChAdOx1 S [recombinant]) not
                       less than 2.5x100,000,000 infectious units/0.5ml dose
                       suspension for injection multidose vials (AstraZeneca UK
                       Ltd) (product)
               patient:
-                reference: '#Pat1'
-              occurrenceDateTime: '2021-02-07T13:28:17.271+00:00'
-              recorded: '2021-02-07T13:28:17.271+00:00'
+                reference: "#Pat1"
+              occurrenceDateTime: "2021-02-07T13:28:17.271+00:00"
+              recorded: "2021-02-07T13:28:17.271+00:00"
               primarySource: true
               manufacturer:
                 display: AstraZeneca Ltd
               location:
                 identifier:
                   value: X99999
-                  system: 'https://fhir.nhs.uk/Id/ods-organization-code'
+                  system: "https://fhir.nhs.uk/Id/ods-organization-code"
               lotNumber: 4120Z001
-              expirationDate: '2021-07-02'
+              expirationDate: "2021-07-02"
               site:
                 coding:
-                  - system: 'http://snomed.info/sct'
-                    code: '368208006'
+                  - system: "http://snomed.info/sct"
+                    code: "368208006"
                     display: Left upper arm structure (body structure)
               route:
                 coding:
-                  - system: 'http://snomed.info/sct'
-                    code: '78421000'
+                  - system: "http://snomed.info/sct"
+                    code: "78421000"
                     display: Intramuscular route (qualifier value)
               doseQuantity:
                 value: 0.5
                 unit: milliliter
-                system: 'http://unitsofmeasure.org'
+                system: "http://unitsofmeasure.org"
                 code: ml
               performer:
                 - actor:
-                    reference: '#Pract1'
+                    reference: "#Pract1"
                 - actor:
                     type: Organization
                     identifier:
-                      system: 'https://fhir.nhs.uk/Id/ods-organization-code'
+                      system: "https://fhir.nhs.uk/Id/ods-organization-code"
                       value: B0C4P
               reasonCode:
                 - coding:
-                    - code: '443684005'
-                      system: 'http://snomed.info/sct'
+                    - code: "443684005"
+                      system: "http://snomed.info/sct"
               protocolApplied:
                 - targetDisease:
                     - coding:
-                        - system: 'http://snomed.info/sct'
-                          code: '840539006'
+                        - system: "http://snomed.info/sct"
+                          code: "840539006"
                           display: >-
                             Disease caused by severe acute respiratory syndrome
                             coronavirus 2 (disorder)
                   doseNumberPositiveInt: 1
       responses:
-        '200':
+        "200":
           description: Update Immunization operation successful
           headers:
             CorrelationID:
-              $ref: '#/components/headers/CorrelationID'
+              $ref: "#/components/headers/CorrelationID"
             RequestID:
-              $ref: '#/components/headers/RequestID'
+              $ref: "#/components/headers/RequestID"
         4XX:
-          $ref: '#/components/responses/4XX-imms-update'
+          $ref: "#/components/responses/4XX-imms-update"
     delete:
       summary: Mark a record of vaccination as being entered in error
       operationId: deleteImmunization
@@ -4809,14 +4809,14 @@ paths:
         |  Bad Request                            | Didn't pass required fields
         `id`            | HTTP Status 400 Bad Request               |
       parameters:
-        - $ref: '#/components/parameters/CorrelationID'
-        - $ref: '#/components/parameters/RequestID'
-        - $ref: '#/components/parameters/Id'
+        - $ref: "#/components/parameters/CorrelationID"
+        - $ref: "#/components/parameters/RequestID"
+        - $ref: "#/components/parameters/Id"
       responses:
-        '204':
+        "204":
           description: Delete Immunization operation successful
         4XX:
-          $ref: '#/components/responses/4XX-imms-delete'
+          $ref: "#/components/responses/4XX-imms-delete"
 components:
   responses:
     4XX-imms-create:
@@ -4962,7 +4962,7 @@ components:
       content:
         application/fhir+json:
           schema:
-            $ref: '#/components/schemas/OperationOutcome'
+            $ref: "#/components/schemas/OperationOutcome"
           example:
             resourceType: OperationOutcome
             id: a5abca2a-4eda-41da-b2cc-95d48c6b791d
@@ -4975,7 +4975,7 @@ components:
                 code: expired
                 details:
                   coding:
-                    - system: 'https://fhir.nhs.uk/Codesystem/http-error-codes'
+                    - system: "https://fhir.nhs.uk/Codesystem/http-error-codes"
                       code: SEND_UNAUTHORIZED
                 diagnostics: >-
                   The sender has not provided a token or it has expired or is
@@ -5054,7 +5054,7 @@ components:
       content:
         application/fhir+json:
           schema:
-            $ref: '#/components/schemas/OperationOutcome'
+            $ref: "#/components/schemas/OperationOutcome"
           example:
             resourceType: OperationOutcome
             id: a5abca2a-4eda-41da-b2cc-95d48c6b791d
@@ -5067,7 +5067,7 @@ components:
                 code: expired
                 details:
                   coding:
-                    - system: 'https://fhir.nhs.uk/Codesystem/http-error-codes'
+                    - system: "https://fhir.nhs.uk/Codesystem/http-error-codes"
                       code: SEND_UNAUTHORIZED
                 diagnostics: >-
                   The sender has not provided a token or it has expired or is
@@ -5128,7 +5128,7 @@ components:
       content:
         application/fhir+json:
           schema:
-            $ref: '#/components/schemas/OperationOutcome'
+            $ref: "#/components/schemas/OperationOutcome"
           example:
             resourceType: OperationOutcome
             id: 3c5e8a1f-2f61-4a9c-8f5e-615e8ea5d9a0
@@ -5141,7 +5141,7 @@ components:
                 code: expired
                 details:
                   coding:
-                    - system: 'https://fhir.nhs.uk/Codesystem/http-error-codes'
+                    - system: "https://fhir.nhs.uk/Codesystem/http-error-codes"
                       code: SEND_UNAUTHORIZED
                 diagnostics: >-
                   The sender has not provided a token or it has expired or is
@@ -5203,7 +5203,7 @@ components:
       content:
         application/fhir+json:
           schema:
-            $ref: '#/components/schemas/OperationOutcome'
+            $ref: "#/components/schemas/OperationOutcome"
           example:
             resourceType: OperationOutcome
             id: a5abca2a-4eda-41da-b2cc-95d48c6b791d
@@ -5216,7 +5216,7 @@ components:
                 code: expired
                 details:
                   coding:
-                    - system: 'https://fhir.nhs.uk/Codesystem/http-error-codes'
+                    - system: "https://fhir.nhs.uk/Codesystem/http-error-codes"
                       code: SEND_UNAUTHORIZED
                 diagnostics: >-
                   The sender has not provided a token or it has expired or is
@@ -5348,7 +5348,7 @@ components:
       content:
         application/fhir+json:
           schema:
-            $ref: '#/components/schemas/OperationOutcome'
+            $ref: "#/components/schemas/OperationOutcome"
           example:
             resourceType: OperationOutcome
             id: a5abca2a-4eda-41da-b2cc-95d48c6b791d
@@ -5361,7 +5361,7 @@ components:
                 code: expired
                 details:
                   coding:
-                    - system: 'https://fhir.nhs.uk/Codesystem/http-error-codes'
+                    - system: "https://fhir.nhs.uk/Codesystem/http-error-codes"
                       code: SEND_UNAUTHORIZED
                 diagnostics: >-
                   The sender has not provided a token or it has expired or is
@@ -5424,7 +5424,7 @@ components:
       content:
         application/fhir+json:
           schema:
-            $ref: '#/components/schemas/OperationOutcome'
+            $ref: "#/components/schemas/OperationOutcome"
           example:
             resourceType: OperationOutcome
             id: a5abca2a-4eda-41da-b2cc-95d48c6b791d
@@ -5437,7 +5437,7 @@ components:
                 code: expired
                 details:
                   coding:
-                    - system: 'https://fhir.nhs.uk/Codesystem/http-error-codes'
+                    - system: "https://fhir.nhs.uk/Codesystem/http-error-codes"
                       code: SEND_UNAUTHORIZED
                 diagnostics: >-
                   The sender has not provided a token or it has expired or is
@@ -5557,10 +5557,10 @@ components:
       required: true
       schema:
         type: string
-        example: 'https://fhir.nhs.uk/Id/nhs-number|9000000009'
+        example: "https://fhir.nhs.uk/Id/nhs-number|9000000009"
     ImmunizationTarget:
       in: query
-      name: '-immunization.target'
+      name: "-immunization.target"
       description: |
         Specific procedures, disorders, diseases, infections or organisms.
       required: true
@@ -5580,20 +5580,20 @@ components:
           - SHINGLES
     DateFrom:
       in: query
-      name: '-date.from'
+      name: "-date.from"
       description: The earliest date to be included (e.g. 2020-01-01)
       schema:
         type: string
         format: date
-        default: '1900-01-01'
+        default: "1900-01-01"
     DateTo:
       in: query
-      name: '-date.to'
+      name: "-date.to"
       description: The latest date to be included (e.g. 2020-12-31)
       schema:
         type: string
         format: date
-        default: '9999-12-31'
+        default: "9999-12-31"
     Include:
       in: query
       name: _include
@@ -5606,7 +5606,7 @@ components:
       required: false
       schema:
         type: string
-        default: 'Immunization:patient'
+        default: "Immunization:patient"
     Identifier:
       in: query
       name: identifier
@@ -5634,7 +5634,7 @@ components:
       type: object
       properties:
         text:
-          $ref: '#/components/schemas/Narrative'
+          $ref: "#/components/schemas/Narrative"
         contained:
           type: array
           items:
@@ -5657,7 +5657,7 @@ components:
                   The logical id of the resource, as used in the URL for the
                   resource. Once assigned, this value never changes.
               meta:
-                $ref: '#/components/schemas/Meta'
+                $ref: "#/components/schemas/Meta"
               issue:
                 type: array
                 items:
@@ -5686,15 +5686,15 @@ components:
         extension:
           type: array
           items:
-            $ref: '#/components/schemas/Extension'
+            $ref: "#/components/schemas/Extension"
         modifierExtension:
           type: array
           items:
-            $ref: '#/components/schemas/Extension'
+            $ref: "#/components/schemas/Extension"
         issue:
           type: array
           items:
-            $ref: '#/components/schemas/OperationOutcome_Issue'
+            $ref: "#/components/schemas/OperationOutcome_Issue"
           minItems: 1
       required:
         - issue
@@ -5702,7 +5702,7 @@ components:
         resourceType: OperationOutcome
         meta:
           versionId: BnpJOa5-Sb
-          lastUpdated: '2021-04-12T14:34:36.061-05:00'
+          lastUpdated: "2021-04-12T14:34:36.061-05:00"
           source: BCL3d5NERb
           profile:
             - xSempdez3Y
@@ -5742,7 +5742,7 @@ components:
               - Uidx_swV4Z
     OperationOutcome_Issue:
       allOf:
-        - $ref: '#/components/schemas/BackboneElement'
+        - $ref: "#/components/schemas/BackboneElement"
         - type: object
           properties:
             severity:
@@ -5760,7 +5760,7 @@ components:
                 IssueType value set, and may additional provide its own code for
                 the error in the details element.
             details:
-              $ref: '#/components/schemas/CodeableConcept'
+              $ref: "#/components/schemas/CodeableConcept"
             diagnostics:
               type: string
               pattern: '[ \r\n\t\S]+'
@@ -5807,9 +5807,9 @@ components:
         extension:
           type: array
           items:
-            $ref: '#/components/schemas/Extension'
+            $ref: "#/components/schemas/Extension"
           example:
-            - url: 'http://example.com'
+            - url: "http://example.com"
               valueString: text value
     BackboneElement:
       type: object
@@ -5824,14 +5824,14 @@ components:
         extension:
           type: array
           items:
-            $ref: '#/components/schemas/Extension'
+            $ref: "#/components/schemas/Extension"
         modifierExtension:
           type: array
           items:
-            $ref: '#/components/schemas/Extension'
+            $ref: "#/components/schemas/Extension"
     Address:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             use:
@@ -5889,19 +5889,19 @@ components:
               pattern: '[ \r\n\t\S]+'
               description: Country - a nation as commonly understood or generally accepted.
             period:
-              $ref: '#/components/schemas/Period'
+              $ref: "#/components/schemas/Period"
     Age:
       allOf:
-        - $ref: '#/components/schemas/Quantity'
+        - $ref: "#/components/schemas/Quantity"
         - type: object
           properties: {}
     Annotation:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             authorReference:
-              $ref: '#/components/schemas/Reference'
+              $ref: "#/components/schemas/Reference"
             authorString:
               type: string
               pattern: '[ \r\n\t\S]+'
@@ -5919,7 +5919,7 @@ components:
             - text
     Attachment:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             contentType:
@@ -5979,11 +5979,11 @@ components:
         extension:
           type: array
           items:
-            $ref: '#/components/schemas/Extension'
+            $ref: "#/components/schemas/Extension"
         coding:
           type: array
           items:
-            $ref: '#/components/schemas/Coding'
+            $ref: "#/components/schemas/Coding"
         text:
           type: string
           pattern: '[ \r\n\t\S]+'
@@ -6030,7 +6030,7 @@ components:
             a pick list of available items (codes or displays).
     ContactPoint:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             system:
@@ -6058,25 +6058,25 @@ components:
                 ContactPoints with lower rank values are more preferred than
                 those with higher rank values.
             period:
-              $ref: '#/components/schemas/Period'
+              $ref: "#/components/schemas/Period"
     Count:
       allOf:
-        - $ref: '#/components/schemas/Quantity'
+        - $ref: "#/components/schemas/Quantity"
         - type: object
           properties: {}
     Distance:
       allOf:
-        - $ref: '#/components/schemas/Quantity'
+        - $ref: "#/components/schemas/Quantity"
         - type: object
           properties: {}
     Duration:
       allOf:
-        - $ref: '#/components/schemas/Quantity'
+        - $ref: "#/components/schemas/Quantity"
         - type: object
           properties: {}
     HumanName:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             use:
@@ -6122,7 +6122,7 @@ components:
                   legal, employment or nobility status, etc. and that appears at
                   the end of the name.
             period:
-              $ref: '#/components/schemas/Period'
+              $ref: "#/components/schemas/Period"
     Identifier:
       type: object
       properties:
@@ -6136,13 +6136,13 @@ components:
         extension:
           type: array
           items:
-            $ref: '#/components/schemas/Extension'
+            $ref: "#/components/schemas/Extension"
         use:
           type: string
           pattern: '[^\s]+(\s[^\s]+)*'
           description: The purpose of this identifier.
         type:
-          $ref: '#/components/schemas/CodeableConcept'
+          $ref: "#/components/schemas/CodeableConcept"
         system:
           type: string
           pattern: \S*
@@ -6156,12 +6156,12 @@ components:
             The portion of the identifier typically relevant to the user and
             which is unique within the context of the system.
         period:
-          $ref: '#/components/schemas/Period'
+          $ref: "#/components/schemas/Period"
         assigner:
-          $ref: '#/components/schemas/Reference'
+          $ref: "#/components/schemas/Reference"
     Money:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             value:
@@ -6173,7 +6173,7 @@ components:
               description: ISO 4217 Currency Code.
     Period:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             start:
@@ -6193,7 +6193,7 @@ components:
                 that time.
     Quantity:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             value:
@@ -6227,22 +6227,22 @@ components:
                 representation system.
     Range:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             low:
-              $ref: '#/components/schemas/SimpleQuantity'
+              $ref: "#/components/schemas/SimpleQuantity"
             high:
-              $ref: '#/components/schemas/SimpleQuantity'
+              $ref: "#/components/schemas/SimpleQuantity"
     Ratio:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             numerator:
-              $ref: '#/components/schemas/Quantity'
+              $ref: "#/components/schemas/Quantity"
             denominator:
-              $ref: '#/components/schemas/Quantity'
+              $ref: "#/components/schemas/Quantity"
     Reference:
       type: object
       properties:
@@ -6256,7 +6256,7 @@ components:
         extension:
           type: array
           items:
-            $ref: '#/components/schemas/Extension'
+            $ref: "#/components/schemas/Extension"
         reference:
           type: string
           pattern: '[ \r\n\t\S]+'
@@ -6284,7 +6284,7 @@ components:
             Absolute URLs are only allowed for logical models (and can only be
             used in references in logical models, not resources).
         identifier:
-          $ref: '#/components/schemas/Identifier'
+          $ref: "#/components/schemas/Identifier"
         display:
           type: string
           pattern: '[ \r\n\t\S]+'
@@ -6293,11 +6293,11 @@ components:
             resource reference.
     SampledData:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             origin:
-              $ref: '#/components/schemas/SimpleQuantity'
+              $ref: "#/components/schemas/SimpleQuantity"
             period:
               type: number
               description: >-
@@ -6341,18 +6341,18 @@ components:
             - dimensions
     SimpleQuantity:
       allOf:
-        - $ref: '#/components/schemas/Quantity'
+        - $ref: "#/components/schemas/Quantity"
         - type: object
           properties: {}
     Signature:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             type:
               type: array
               items:
-                $ref: '#/components/schemas/Coding'
+                $ref: "#/components/schemas/Coding"
               minItems: 1
             when:
               type: string
@@ -6360,9 +6360,9 @@ components:
                 ([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))
               description: When the digital signature was signed.
             who:
-              $ref: '#/components/schemas/Reference'
+              $ref: "#/components/schemas/Reference"
             onBehalfOf:
-              $ref: '#/components/schemas/Reference'
+              $ref: "#/components/schemas/Reference"
             targetFormat:
               type: string
               pattern: '[^\s]+(\s[^\s]+)*'
@@ -6389,7 +6389,7 @@ components:
             - who
     Timing:
       allOf:
-        - $ref: '#/components/schemas/BackboneElement'
+        - $ref: "#/components/schemas/BackboneElement"
         - type: object
           properties:
             event:
@@ -6400,20 +6400,20 @@ components:
                   ([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|3[0-1])(T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00)))?)?)?
                 description: Identifies specific times when the event occurs.
             repeat:
-              $ref: '#/components/schemas/Timing_Repeat'
+              $ref: "#/components/schemas/Timing_Repeat"
             code:
-              $ref: '#/components/schemas/CodeableConcept'
+              $ref: "#/components/schemas/CodeableConcept"
     Timing_Repeat:
       allOf:
-        - $ref: '#/components/schemas/BackboneElement'
+        - $ref: "#/components/schemas/BackboneElement"
         - type: object
           properties:
             boundsDuration:
-              $ref: '#/components/schemas/Duration'
+              $ref: "#/components/schemas/Duration"
             boundsRange:
-              $ref: '#/components/schemas/Range'
+              $ref: "#/components/schemas/Range"
             boundsPeriod:
-              $ref: '#/components/schemas/Period'
+              $ref: "#/components/schemas/Period"
             count:
               type: integer
               format: int32
@@ -6443,7 +6443,7 @@ components:
             durationUnit:
               type: string
               pattern: '[^\s]+(\s[^\s]+)*'
-              description: 'The units of time for the duration, in UCUM units.'
+              description: "The units of time for the duration, in UCUM units."
             frequency:
               type: integer
               format: int32
@@ -6508,7 +6508,7 @@ components:
                 the offset is assumed to be after the event.
     ContactDetail:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             name:
@@ -6518,10 +6518,10 @@ components:
             telecom:
               type: array
               items:
-                $ref: '#/components/schemas/ContactPoint'
+                $ref: "#/components/schemas/ContactPoint"
     RelatedArtifact:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             type:
@@ -6553,7 +6553,7 @@ components:
                 A url for the artifact that can be followed to access the actual
                 content.
             document:
-              $ref: '#/components/schemas/Attachment'
+              $ref: "#/components/schemas/Attachment"
             resource:
               type: string
               pattern: \S*
@@ -6564,24 +6564,24 @@ components:
             - type
     UsageContext:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             code:
-              $ref: '#/components/schemas/Coding'
+              $ref: "#/components/schemas/Coding"
             valueCodeableConcept:
-              $ref: '#/components/schemas/CodeableConcept'
+              $ref: "#/components/schemas/CodeableConcept"
             valueQuantity:
-              $ref: '#/components/schemas/Quantity'
+              $ref: "#/components/schemas/Quantity"
             valueRange:
-              $ref: '#/components/schemas/Range'
+              $ref: "#/components/schemas/Range"
             valueReference:
-              $ref: '#/components/schemas/Reference'
+              $ref: "#/components/schemas/Reference"
           required:
             - code
     Meta:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             versionId:
@@ -6619,16 +6619,16 @@ components:
             security:
               type: array
               items:
-                $ref: '#/components/schemas/Coding'
+                $ref: "#/components/schemas/Coding"
             tag:
               type: array
               items:
-                $ref: '#/components/schemas/Coding'
+                $ref: "#/components/schemas/Coding"
           required:
             - versionId
     Narrative:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             status:
@@ -6640,7 +6640,7 @@ components:
                 human authored it and it may contain additional data.
             div:
               type: string
-              description: 'The actual narrative content, a stripped down version of XHTML.'
+              description: "The actual narrative content, a stripped down version of XHTML."
           required:
             - status
             - div
@@ -6657,7 +6657,7 @@ components:
         extension:
           type: array
           items:
-            $ref: '#/components/schemas/Extension'
+            $ref: "#/components/schemas/Extension"
         url:
           type: string
           pattern: \S*
@@ -6781,54 +6781,54 @@ components:
             Value of extension - must be one of a constrained set of the data
             types (see [Extensibility](extensibility.html) for a list).
         valueAddress:
-          $ref: '#/components/schemas/Address'
+          $ref: "#/components/schemas/Address"
         valueAge:
-          $ref: '#/components/schemas/Age'
+          $ref: "#/components/schemas/Age"
         valueAnnotation:
-          $ref: '#/components/schemas/Annotation'
+          $ref: "#/components/schemas/Annotation"
         valueAttachment:
-          $ref: '#/components/schemas/Attachment'
+          $ref: "#/components/schemas/Attachment"
         valueCodeableConcept:
-          $ref: '#/components/schemas/CodeableConcept'
+          $ref: "#/components/schemas/CodeableConcept"
         valueCoding:
-          $ref: '#/components/schemas/Coding'
+          $ref: "#/components/schemas/Coding"
         valueContactPoint:
-          $ref: '#/components/schemas/ContactPoint'
+          $ref: "#/components/schemas/ContactPoint"
         valueCount:
-          $ref: '#/components/schemas/Count'
+          $ref: "#/components/schemas/Count"
         valueDistance:
-          $ref: '#/components/schemas/Distance'
+          $ref: "#/components/schemas/Distance"
         valueDuration:
-          $ref: '#/components/schemas/Duration'
+          $ref: "#/components/schemas/Duration"
         valueHumanName:
-          $ref: '#/components/schemas/HumanName'
+          $ref: "#/components/schemas/HumanName"
         valueIdentifier:
-          $ref: '#/components/schemas/Identifier'
+          $ref: "#/components/schemas/Identifier"
         valueMoney:
-          $ref: '#/components/schemas/Money'
+          $ref: "#/components/schemas/Money"
         valuePeriod:
-          $ref: '#/components/schemas/Period'
+          $ref: "#/components/schemas/Period"
         valueQuantity:
-          $ref: '#/components/schemas/Quantity'
+          $ref: "#/components/schemas/Quantity"
         valueRange:
-          $ref: '#/components/schemas/Range'
+          $ref: "#/components/schemas/Range"
         valueRatio:
-          $ref: '#/components/schemas/Ratio'
+          $ref: "#/components/schemas/Ratio"
         valueReference:
-          $ref: '#/components/schemas/Reference'
+          $ref: "#/components/schemas/Reference"
         valueSampledData:
-          $ref: '#/components/schemas/SampledData'
+          $ref: "#/components/schemas/SampledData"
         valueSignature:
-          $ref: '#/components/schemas/Signature'
+          $ref: "#/components/schemas/Signature"
         valueTiming:
-          $ref: '#/components/schemas/Timing'
+          $ref: "#/components/schemas/Timing"
         valueContactDetail:
-          $ref: '#/components/schemas/ContactDetail'
+          $ref: "#/components/schemas/ContactDetail"
         valueRelatedArtifact:
-          $ref: '#/components/schemas/RelatedArtifact'
+          $ref: "#/components/schemas/RelatedArtifact"
         valueUsageContext:
-          $ref: '#/components/schemas/UsageContext'
+          $ref: "#/components/schemas/UsageContext"
         valueMeta:
-          $ref: '#/components/schemas/Meta'
+          $ref: "#/components/schemas/Meta"
       required:
         - url
