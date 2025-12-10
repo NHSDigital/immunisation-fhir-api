@@ -12,9 +12,10 @@ from models.errors import (
 
 SOURCE_BUCKET_NAME = os.getenv("SOURCE_BUCKET_NAME")
 
-# We have used an internal temporary bucket here and an actual dps bucket will replace this
-DPS_DESTINATION_BUCKET_NAME = os.getenv("ACK_BUCKET_NAME")
-EXPECTED_BUCKET_OWNER_ACCOUNT = os.getenv("ACCOUNT_ID")
+
+DPS_DESTINATION_BUCKET_NAME = os.getenv("DPS_BUCKET_NAME")
+EXPECTED_SOURCE_BUCKET_ACCOUNT = os.getenv("ACCOUNT_ID")
+EXPECTED_DPS_DESTINATION_ACCOUNT = os.getenv("DPS_ACCOUNT_ID")
 AUDIT_TABLE_NAME = os.getenv("AUDIT_TABLE_NAME")
 AUDIT_TABLE_TTL_DAYS = os.getenv("AUDIT_TABLE_TTL_DAYS")
 VALID_VERSIONS = ["V5"]
@@ -22,9 +23,13 @@ VALID_VERSIONS = ["V5"]
 VACCINE_TYPE_TO_DISEASES_HASH_KEY = "vacc_to_diseases"
 ODS_CODE_TO_SUPPLIER_SYSTEM_HASH_KEY = "ods_code_to_supplier"
 EXTENDED_ATTRIBUTES_FILE_PREFIX = "Vaccination_Extended_Attributes"
-EXTENDED_ATTRIBUTES_VACC_TYPE = "COVID"
-DPS_DESTINATION_PREFIX = "dps_destination/"
 
+# Currently only COVID extended attributes files are supported, might be extended in future for other vaccine types
+EXTENDED_ATTRIBUTES_VACC_TYPE = "COVID"
+
+DPS_DESTINATION_PREFIX = "dps_destination"
+EXTENDED_ATTRIBUTES_ARCHIVE_PREFIX = "extended-attributes-archive"
+VALID_EA_VERSIONS = ["V1_5"]
 ERROR_TYPE_TO_STATUS_CODE_MAP = {
     VaccineTypePermissionsError: 403,
     InvalidFileKeyError: 400,  # Includes invalid ODS code, therefore unable to identify supplier
@@ -61,3 +66,9 @@ class AuditTableKeys(StrEnum):
     TIMESTAMP = "timestamp"
     EXPIRES_AT = "expires_at"
     ERROR_DETAILS = "error_details"
+
+
+class Operation(str):
+    CREATE = "C"
+    UPDATE = "U"
+    DELETE = "D"

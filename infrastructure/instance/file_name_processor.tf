@@ -3,7 +3,17 @@ locals {
   filename_lambda_dir     = abspath("${path.root}/../../lambdas/filenameprocessor")
   filename_lambda_files   = fileset(local.filename_lambda_dir, "**")
   filename_lambda_dir_sha = sha1(join("", [for f in local.filename_lambda_files : filesha1("${local.filename_lambda_dir}/${f}")]))
+  dps_bucket_name_for_extended_attribute = (
+    var.environment == "prod"
+    ? "nhsd-dspp-core-prod-extended-attributes-gdp"
+    : "nhsd-dspp-core-ref-extended-attributes-gdp"
+  )
+  dps_bucket_arn_for_extended_attribute = [
+    "arn:aws:s3:::${local.dps_bucket_name_for_extended_attribute}/*"
+  ]
 }
+
+
 
 resource "aws_ecr_repository" "file_name_processor_lambda_repository" {
   image_scanning_configuration {
@@ -162,6 +172,13 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
           "firehose:PutRecordBatch"
         ],
         "Resource" : "arn:aws:firehose:*:*:deliverystream/${module.splunk.firehose_stream_name}"
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "s3:PutObject"
+        ],
+        "Resource" : local.dps_bucket_arn_for_extended_attribute
       }
     ]
   })
@@ -278,8 +295,10 @@ resource "aws_lambda_function" "file_processor_lambda" {
   environment {
     variables = {
       ACCOUNT_ID           = var.immunisation_account_id
+      DPS_ACCOUNT_ID       = var.dspp_core_account_id
       SOURCE_BUCKET_NAME   = aws_s3_bucket.batch_data_source_bucket.bucket
       ACK_BUCKET_NAME      = aws_s3_bucket.batch_data_destination_bucket.bucket
+      DPS_BUCKET_NAME      = local.dps_bucket_name_for_extended_attribute
       QUEUE_URL            = aws_sqs_queue.batch_file_created.url
       REDIS_HOST           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
       REDIS_PORT           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
