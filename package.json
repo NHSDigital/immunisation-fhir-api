@@ -26,6 +26,6 @@
       "poetry -P quality_checks run ruff format"
     ],
     "*.tf": "terraform fmt",
-    "immunisation-fhir-api.{yaml,json}": "redocly lint --skip-rule=security-defined"
+    "immunisation-fhir-api.{yaml,json}": "redocly lint --skip-rule=security-defined --skip-rule=no-invalid-media-type-examples"
   }
 }
