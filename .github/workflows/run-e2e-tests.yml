@@ -115,7 +115,7 @@ jobs:
       APIGEE_USERNAME: ${{ vars.APIGEE_USERNAME }}
       TF_OUTPUTS_REQUIRED: ${{ vars.RUN_FULL_E2E_TESTS == 'true' || vars.RUN_PROXY_E2E_TESTS == 'true' }}
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
 
       - name: Connect to AWS
         if: ${{ env.TF_OUTPUTS_REQUIRED == 'true' }}
@@ -207,7 +207,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.apigee_environment }}
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
 
       - name: Connect to AWS
         uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708
