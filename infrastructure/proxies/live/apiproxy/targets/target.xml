@@ -36,7 +36,7 @@
     <SSLInfo>
       <Enabled>true</Enabled>
       <ClientAuthEnabled>true</ClientAuthEnabled>
-      <KeyStore>ref://imms-client</KeyStore>
+      <KeyStore>ref://{{ KEYSTORE_REF | default('imms-client') }}</KeyStore>
       <KeyAlias>cert</KeyAlias>
     </SSLInfo>
     <Properties>
