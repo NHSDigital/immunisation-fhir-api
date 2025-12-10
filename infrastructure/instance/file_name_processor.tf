@@ -3,7 +3,16 @@ locals {
   filename_lambda_dir     = abspath("${path.root}/../../lambdas/filenameprocessor")
   filename_lambda_files   = fileset(local.filename_lambda_dir, "**")
   filename_lambda_dir_sha = sha1(join("", [for f in local.filename_lambda_files : filesha1("${local.filename_lambda_dir}/${f}")]))
+  dps_bucket_for_extended_attribute = (
+    var.environment == "prod" ? "nhsd-dspp-core-prod-extended-attributes-gdp" : "nhsd-dspp-core-ref-extended-attributes-gdp"
+  )
+
+  dps_bucket_arn_for_extended_attribute = [
+    "arn:aws:s3:::${local.dps_bucket_for_extended_attribute}/*"
+  ]
 }
+
+
 
 resource "aws_ecr_repository" "file_name_processor_lambda_repository" {
   image_scanning_configuration {
@@ -168,10 +177,7 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
         "Action" : [
           "s3:PutObject"
         ],
-        "Resource" : [
-          "arn:aws:s3:::nhsd-dspp-core-ref-extended-attributes-gdp",
-          "arn:aws:s3:::nhsd-dspp-core-ref-extended-attributes-gdp/*"
-        ]
+        "Resource" : local.dps_bucket_arn_for_extended_attribute
       }
     ]
   })
