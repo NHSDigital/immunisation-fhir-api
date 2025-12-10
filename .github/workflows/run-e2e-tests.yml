@@ -30,6 +30,7 @@ on:
           - internal-dev
           - internal-dev-sandbox
           - sandbox
+          - internal-qa
           - int
           - ref
           - prod
