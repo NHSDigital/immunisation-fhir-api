@@ -3,7 +3,7 @@ SHELL=/usr/bin/env bash -euo pipefail
 PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS = lambdas/backend lambdas/ack_backend lambdas/batch_processor_filter lambdas/delta_backend lambdas/filenameprocessor lambdas/id_sync lambdas/mesh_processor lambdas/mns_subscription lambdas/recordforwarder lambdas/recordprocessor lambdas/redis_sync lambdas/shared
 PYTHON_PROJECT_DIRS = tests/e2e tests/e2e_batch quality_checks $(PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS)
 
-.PHONY: install lint format format-check clean publish make-oas build-proxy release initialise-all-python-venvs update-all-python-dependencies run-all-python-unit-tests build-all-docker-images
+.PHONY: install lint format format-check clean publish oas build-proxy release initialise-all-python-venvs update-all-python-dependencies run-all-python-unit-tests build-all-docker-images
 
 #Installs dependencies using npm.
 install:
@@ -34,7 +34,7 @@ publish: clean
 
 #Creates a versioned, minified OAS spec in JSON for sending to APIM
 oas: publish
-	( cd utilities/scripts && python -m set_version < ../../build/immunisation-fhir-api.json | jq -c > ../../specification/immunisation-fhir-api.json )
+	( cd utilities/scripts && python -m set_version < ../../build/immunisation-fhir-api.json | jq -c > ../../specification/immunisation-fhir-api.oas.json )
 
 #Runs build proxy script
 build-proxy:
