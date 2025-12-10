@@ -35,6 +35,7 @@ publish: clean
 #Creates a versioned, minified OAS spec in JSON for sending to APIM
 oas: publish
 	( cd utilities/scripts && python -m set_version < ../../build/immunisation-fhir-api.json | jq -c > ../../specification/immunisation-fhir-api.oas.json )
+	chmod -w specification/immunisation-fhir-api.oas.json
 
 #Runs build proxy script
 build-proxy:
