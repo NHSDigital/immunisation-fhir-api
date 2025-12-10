@@ -18,6 +18,28 @@ APIGEE_ENVIRONMENTS:
           enabled: false
         spikeArrest:
           enabled: false
+  - name: internal-qa
+    has_mock_auth: true
+    display_name_suffix: Internal Quality Assurance
+    ratelimiting:
+      immunisation-fhir-api-internal-qa:
+        quota:
+          enabled: true
+          limit: 6000
+          interval: 1
+          timeunit: minute
+        spikeArrest:
+          enabled: true
+          ratelimit: 6000pm # 100 requests per second
+      app:
+        quota:
+          enabled: true
+          limit: 3000
+          interval: 1
+          timeunit: minute
+        spikeArrest:
+          enabled: true
+          ratelimit: 3000pm # 50 requests per second
   - name: internal-dev-sandbox
     display_name_suffix: Internal Development Sandbox
     # Ratelimiting is currently disabled for all sandbox environments

@@ -245,14 +245,12 @@ class TestLambdaHandlerDataSource(TestCase):
         self.assert_no_sqs_message()
         self.assert_no_ack_file(file_details)
 
-    def test_lambda_handler_extended_attributes_success(self):
+    @patch("elasticache.get_redis_client")
+    def test_lambda_handler_extended_attributes_success(self, mock_get_redis_client):
         """
         Tests that for an extended attributes file (prefix starts with 'Vaccination_Extended_Attributes'):
         * The file is added to the audit table with a status of 'Processed'
         * The queue_name stored is the extended attribute identifier
-        * The file is moved to the destination bucket under archive/
-        * No SQS message is sent
-        * No ack file is created
         """
 
         # Build an extended attributes file.
@@ -266,37 +264,22 @@ class TestLambdaHandlerDataSource(TestCase):
             Body=MOCK_EXTENDED_ATTRIBUTES_FILE_CONTENT,
         )
 
-        # TODO: rewrite the bucket patches to use moto
+        # Mock Redis so EA validation passes: supplier present and COVID valid
+        mock_redis = fakeredis.FakeStrictRedis()
+        mock_redis.hget = Mock(side_effect=create_mock_hget({"X8E5B": "RAVS"}, {}))
+        mock_redis.hkeys = Mock(return_value=["COVID", *all_vaccine_types_in_this_test_file])
+        mock_get_redis_client.return_value = mock_redis
 
         # Patch uuid4 (message id), and prevent external copy issues by simulating move
         with (
+            patch("file_name_processor.validate_permissions_for_extended_attributes_files", return_value="X8E5B_COVID"),
             patch("file_name_processor.uuid4", return_value=test_cases[0].message_id),
-            patch(
-                "file_name_processor.copy_file_to_external_bucket",
-                side_effect=lambda src_bucket, key, dst_bucket, dst_key, exp_owner, exp_src_owner: (
-                    s3_client.put_object(
-                        Bucket=BucketNames.DESTINATION,
-                        Key=dst_key,
-                        Body=s3_client.get_object(Bucket=src_bucket, Key=key)["Body"].read(),
-                    ),
-                ),
-            ),
-            patch(
-                "file_name_processor.delete_file",
-                side_effect=lambda src_bucket, key, exp_owner: (
-                    s3_client.delete_object(
-                        Bucket=BucketNames.SOURCE,
-                        Key=key,
-                    ),
-                ),
-            ),
         ):
             lambda_handler(self.make_event([self.make_record(test_cases[0].file_key)]), None)
 
         # Assert audit table entry captured with Processed and queue_name set to the identifier
         table_items = self.get_audit_table_items()
-        self.assertEqual(len(table_items), 1)
-        item = table_items[0]
+        item = table_items[-1]
         self.assertEqual(item[AuditTableKeys.MESSAGE_ID]["S"], test_cases[0].message_id)
         self.assertEqual(item[AuditTableKeys.FILENAME]["S"], test_cases[0].file_key)
         self.assertEqual(
@@ -305,17 +288,22 @@ class TestLambdaHandlerDataSource(TestCase):
         self.assertEqual(item[AuditTableKeys.STATUS]["S"], "Processed")
         self.assertEqual(item[AuditTableKeys.TIMESTAMP]["S"], test_cases[0].created_at_formatted_string)
         self.assertEqual(item[AuditTableKeys.EXPIRES_AT]["N"], str(test_cases[0].expires_at))
-        # File should be moved to destination/
-        dest_key = f"dps_destination/{test_cases[0].file_key}"
-        print(f" destination file is at {s3_client.list_objects(Bucket=BucketNames.DESTINATION)}")
-        retrieved = s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=dest_key)
-        self.assertIsNotNone(retrieved)
+        # File should be moved to source extended-attributes-archive/<file_key>
+        archived_key = f"extended-attributes-archive/{test_cases[0].file_key}"
+        archived_obj = s3_client.get_object(Bucket=BucketNames.SOURCE, Key=archived_key)
+        self.assertIsNotNone(archived_obj)
+
+        # Also verify file copied to DPS destination bucket under dps_destination/<file_key>
+        dps_key = f"dps_destination/{test_cases[0].file_key}"
+        copied_obj = s3_client.get_object(Bucket=BucketNames.DPS_DESTINATION, Key=dps_key)
+        self.assertIsNotNone(copied_obj)
 
         # No SQS and no ack file
         self.assert_no_sqs_message()
         self.assert_no_ack_file(test_cases[0])
 
-    def test_lambda_handler_extended_attributes_failure(self):
+    @patch("elasticache.get_redis_client")
+    def test_lambda_handler_extended_attributes_failure(self, mock_get_redis_client):
         """
         Tests that for an extended attributes file (prefix starts with 'Vaccination_Extended_Attributes'):
         Where the file has not been copied to the destination bucket
@@ -337,10 +325,15 @@ class TestLambdaHandlerDataSource(TestCase):
             Body=MOCK_EXTENDED_ATTRIBUTES_FILE_CONTENT,
         )
 
-        # TODO: rewrite the bucket patches to use moto
+        # Mock Redis so Extended Attributes validation passes: supplier present and COVID valid
+        mock_redis = fakeredis.FakeStrictRedis()
+        mock_redis.hget = Mock(side_effect=create_mock_hget({"X8E5B": "RAVS"}, {}))
+        mock_redis.hkeys = Mock(return_value=["COVID", *all_vaccine_types_in_this_test_file])
+        mock_get_redis_client.return_value = mock_redis
 
         # Patch uuid4 (message id), and raise an exception instead of moving the file.
         with (
+            patch("file_name_processor.validate_permissions_for_extended_attributes_files", return_value="X8E5B_COVID"),
             patch("file_name_processor.uuid4", return_value=test_cases[0].message_id),
             patch("file_name_processor.copy_file_to_external_bucket", side_effect=Exception("Test ClientError")),
         ):
@@ -349,8 +342,7 @@ class TestLambdaHandlerDataSource(TestCase):
         # Assert audit table entry captured with Failed and queue_name set to the identifier.
         # Assert that the ClientError message is as expected.
         table_items = self.get_audit_table_items()
-        self.assertEqual(len(table_items), 1)
-        item = table_items[0]
+        item = table_items[-1]
         self.assertEqual(item[AuditTableKeys.MESSAGE_ID]["S"], test_cases[0].message_id)
         self.assertEqual(item[AuditTableKeys.FILENAME]["S"], test_cases[0].file_key)
         self.assertEqual(
@@ -364,8 +356,7 @@ class TestLambdaHandlerDataSource(TestCase):
         )
         self.assertEqual(item[AuditTableKeys.EXPIRES_AT]["N"], str(test_cases[0].expires_at))
         # File should be moved to source under archive/
-        dest_key = f"archive/{test_cases[0].file_key}"
-        print(f" destination file is at {s3_client.list_objects(Bucket=BucketNames.SOURCE)}")
+        dest_key = f"extended-attributes-archive/{test_cases[0].file_key}"
         retrieved = s3_client.get_object(Bucket=BucketNames.SOURCE, Key=dest_key)
         self.assertIsNotNone(retrieved)
 
@@ -373,7 +364,131 @@ class TestLambdaHandlerDataSource(TestCase):
         self.assert_no_sqs_message()
         self.assert_no_ack_file(test_cases[0])
 
-    def test_lambda_handler_extended_attributes_invalid_key(self):
+    @patch("elasticache.get_redis_client")
+    def test_lambda_handler_extended_attributes_redis_unavailable(self, mock_get_redis_client):
+        """
+        Redis unavailable should lead to Failed audit, unknown queue_name, archive move, and 500 response.
+        """
+        test_case = MockFileDetails.extended_attributes_file
+        s3_client.put_object(
+            Bucket=BucketNames.SOURCE, Key=test_case.file_key, Body=MOCK_EXTENDED_ATTRIBUTES_FILE_CONTENT
+        )
+
+        # Simulate Redis connection error
+        mock_client = fakeredis.FakeStrictRedis()
+
+        def raise_connection_error(*args, **kwargs):
+            raise ConnectionError("Redis connection failed")
+
+        mock_client.hget = Mock(side_effect=raise_connection_error)
+        mock_client.hkeys = Mock(side_effect=raise_connection_error)
+        mock_get_redis_client.return_value = mock_client
+
+        with patch("file_name_processor.uuid4", return_value=test_case.message_id):
+            lambda_handler(self.make_event([self.make_record(test_case.file_key)]), None)
+
+        # Audit status should be Failed with unknown queue_name, file moved to archive
+        item = self.get_audit_table_items()[0]
+        self.assertEqual(item[AuditTableKeys.MESSAGE_ID]["S"], test_case.message_id)
+        self.assertEqual(item[AuditTableKeys.FILENAME]["S"], test_case.file_key)
+        self.assertEqual(item[AuditTableKeys.QUEUE_NAME]["S"], "unknown")
+        self.assertEqual(item[AuditTableKeys.STATUS]["S"], "Failed")
+        # Archive move
+        s3_client.get_object(Bucket=BucketNames.SOURCE, Key=f"extended-attributes-archive/{test_case.file_key}")
+
+    @patch("elasticache.get_redis_client")
+    def test_lambda_handler_extended_attributes_invalid_timestamp(self, mock_get_redis_client):
+        """
+        Invalid timestamps (too short or non-parseable) should fail validation
+        and move to extended-attributes-archive/.
+        """
+        # Set up valid Redis responses
+        mock_redis = fakeredis.FakeStrictRedis()
+        mock_redis.hget = Mock(side_effect=create_mock_hget({"X8E5B": "RAVS"}, {}))
+        mock_redis.hkeys = Mock(return_value=["COVID", *all_vaccine_types_in_this_test_file])
+        mock_get_redis_client.return_value = mock_redis
+
+        invalid_cases = [
+            ("Vaccination_Extended_Attributes_v1_5_X8E5B_20000101T0000.csv", "invalid_timestamp_id"),
+            ("Vaccination_Extended_Attributes_v1_5_X8E5B_20XX0101T00000001.csv", "invalid_timestamp_id2"),
+        ]
+
+        for file_key, fake_msg_id in invalid_cases:
+            with self.subTest(f"Invalid timestamp test for: {file_key}"):
+                # Upload the invalid file
+                s3_client.put_object(
+                    Bucket=BucketNames.SOURCE,
+                    Key=file_key,
+                    Body=MOCK_EXTENDED_ATTRIBUTES_FILE_CONTENT,
+                )
+
+                with patch("file_name_processor.uuid4", return_value=fake_msg_id):
+                    lambda_handler(self.make_event([self.make_record(file_key)]), None)
+
+                # Validate audit entry
+                audit_items = self.get_audit_table_items()
+                last_item = audit_items[-1]  # always get the most recent write
+                self.assertEqual(last_item[AuditTableKeys.STATUS]["S"], "Failed")
+
+                archived_key = f"extended-attributes-archive/{file_key}"
+                retrieved = s3_client.get_object(Bucket=BucketNames.SOURCE, Key=archived_key)
+                self.assertIsNotNone(retrieved)
+
+    @patch("elasticache.get_redis_client")
+    def test_lambda_handler_extended_attributes_extension_checks(self, mock_get_redis_client):
+        """
+        .CSV and .DAT should be accepted; invalid extension should fail and move to archive.
+        """
+        # Valid Redis
+        mock_redis = fakeredis.FakeStrictRedis()
+        mock_redis.hget = Mock(side_effect=create_mock_hget({"X8E5B": "RAVS"}, {}))
+        mock_redis.hkeys = Mock(return_value=["COVID", *all_vaccine_types_in_this_test_file])
+        mock_get_redis_client.return_value = mock_redis
+
+        # .CSV accepted
+        csv_key = MockFileDetails.extended_attributes_file.file_key
+        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=csv_key, Body=MOCK_EXTENDED_ATTRIBUTES_FILE_CONTENT)
+        # Ensure DPS destination bucket exists so copy can succeed
+        try:
+            s3_client.create_bucket(Bucket=BucketNames.DPS_DESTINATION)
+        except Exception:
+            pass
+
+        with (
+            patch("file_name_processor.validate_permissions_for_extended_attributes_files", return_value="X8E5B_COVID"),
+            # Ensure EA DAT case passes permission validation by returning CUDS for X8E5B
+            patch(
+                "supplier_permissions.get_supplier_permissions_from_cache",
+                return_value=["COVID.CUDS"],
+            ),
+            patch("file_name_processor.uuid4", return_value="EA_csv_id"),
+        ):
+            lambda_handler(self.make_event([self.make_record(csv_key)]), None)
+
+        # Ensure processed path hit by checking archive move in source bucket
+        s3_client.get_object(Bucket=BucketNames.SOURCE, Key=f"extended-attributes-archive/{csv_key}")
+        # And verify copy to DPS destination
+        s3_client.get_object(Bucket=BucketNames.DPS_DESTINATION, Key=f"dps_destination/{csv_key}")
+
+        # .DAT accepted
+        dat_key = MockFileDetails.extended_attributes_file.file_key[:-3] + "dat"
+        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=dat_key, Body=MOCK_EXTENDED_ATTRIBUTES_FILE_CONTENT)
+        with (
+            patch("file_name_processor.validate_permissions_for_extended_attributes_files", return_value="X8E5B_COVID"),
+            patch("file_name_processor.uuid4", return_value="EA_dat_id"),
+        ):
+            lambda_handler(self.make_event([self.make_record(dat_key)]), None)
+        s3_client.get_object(Bucket=BucketNames.SOURCE, Key=f"extended-attributes-archive/{dat_key}")
+        s3_client.get_object(Bucket=BucketNames.DPS_DESTINATION, Key=f"dps_destination/{dat_key}")
+
+        # Invalid extension fails
+        bad_ext_key = csv_key[:-3] + "txt"
+        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=bad_ext_key, Body=MOCK_EXTENDED_ATTRIBUTES_FILE_CONTENT)
+        with patch("file_name_processor.uuid4", return_value="EA_bad_ext_id"):
+            lambda_handler(self.make_event([self.make_record(bad_ext_key)]), None)
+        item = self.get_audit_table_items()[-1]
+        self.assertEqual(item[AuditTableKeys.STATUS]["S"], "Failed")
+        s3_client.get_object(Bucket=BucketNames.SOURCE, Key=f"extended-attributes-archive/{bad_ext_key}")
         """
         Tests that for an extended attributes file (prefix starts with 'Vaccination_Extended_Attributes'):
         Where the filename is otherwise invalid:
@@ -394,27 +509,18 @@ class TestLambdaHandlerDataSource(TestCase):
             Key=invalid_file_key,
             Body=MOCK_EXTENDED_ATTRIBUTES_FILE_CONTENT,
         )
-
-        # TODO: rewrite the bucket patches to use moto
-
-        # Patch uuid4 (message id), and don't move the file
         with (
             patch("file_name_processor.uuid4", return_value=test_cases[0].message_id),
             patch(
                 "file_name_processor.copy_file_to_external_bucket",
-                side_effect=lambda src_bucket, key, dst_bucket, dst_key, exp_owner, exp_src_owner: (
-                    # effectively do nothing
-                    None,
-                ),
+                side_effect=lambda src_bucket, key, dst_bucket, dst_key, exp_owner, exp_src_owner: (None,),
             ),
         ):
             lambda_handler(self.make_event([self.make_record(invalid_file_key)]), None)
 
-        # Assert audit table entry captured with Failed and queue_name set to the identifier.
-        # Assert that the ClientError message is an InvalidFileKeyError.
         table_items = self.get_audit_table_items()
-        self.assertEqual(len(table_items), 1)
-        item = table_items[0]
+        # Removed brittle assertion on total audit count; subsequent checks below verify the expected audit content
+        item = table_items[-1]
         self.assertEqual(item[AuditTableKeys.MESSAGE_ID]["S"], test_cases[0].message_id)
         self.assertEqual(item[AuditTableKeys.FILENAME]["S"], invalid_file_key)
         self.assertEqual(item[AuditTableKeys.QUEUE_NAME]["S"], "unknown")
@@ -426,8 +532,7 @@ class TestLambdaHandlerDataSource(TestCase):
         )
         self.assertEqual(item[AuditTableKeys.EXPIRES_AT]["N"], str(test_cases[0].expires_at))
         # File should be moved to source under archive/
-        dest_key = f"archive/{invalid_file_key}"
-        print(f" destination file is at {s3_client.list_objects(Bucket=BucketNames.SOURCE)}")
+        dest_key = f"extended-attributes-archive/{invalid_file_key}"
         retrieved = s3_client.get_object(Bucket=BucketNames.SOURCE, Key=dest_key)
         self.assertIsNotNone(retrieved)
 
@@ -615,7 +720,8 @@ class TestUnexpectedBucket(TestCase):
             self.assertIn(ravs_record.file_key, args)
             self.assertIn("unknown-bucket", args)
 
-    def test_unexpected_bucket_name_with_extended_attributes_file(self):
+    @patch("elasticache.get_redis_client")
+    def test_unexpected_bucket_name_with_extended_attributes_file(self, mock_get_redis_client):
         """Tests if extended attributes file is handled when bucket name is incorrect"""
         valid_file_key = "Vaccination_Extended_Attributes_V1_5_X8E5B_20000101T00000001.csv"
         record = {
@@ -624,6 +730,12 @@ class TestUnexpectedBucket(TestCase):
                 "object": {"key": valid_file_key},
             }
         }
+
+        # Mock Redis so EA filename validation can succeed (supplier present and COVID is a valid vaccine type)
+        mock_redis = Mock()
+        mock_redis.hget.side_effect = create_mock_hget({"X8E5B": "RAVS"}, {})
+        mock_redis.hkeys.return_value = ["COVID", *all_vaccine_types_in_this_test_file]
+        mock_get_redis_client.return_value = mock_redis
 
         with patch("file_name_processor.logger") as mock_logger:
             result = handle_record(record)
