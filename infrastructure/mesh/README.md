@@ -1,7 +1,7 @@
 # Important
 
 The Mesh module is not idempotent, which is why it is kept separate from the main infrastructure folder. Each time the module is applied, it triggers the recreation of various AWS resources related to the Mesh configuration.
-There is 1 mesh mailbox for int that currently resides in the dev AWS account. This should be moved to the new INT AWS account once it becomes active.
+There is 1 mesh mailbox for MESH int that currently resides in the preprod AWS account.
 
 ## Running terraform
 
