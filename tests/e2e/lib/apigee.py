@@ -13,6 +13,7 @@ class ApigeeOrg(StrEnum):
 
 class ApigeeEnv(StrEnum):
     INTERNAL_DEV = "internal-dev"
+    INTERNAL_QA = "internal-qa"
     INTERNAL_DEV_SANDBOX = "internal-dev-sandbox"
     SANDBOX = "sandbox"
     INT = "int"
