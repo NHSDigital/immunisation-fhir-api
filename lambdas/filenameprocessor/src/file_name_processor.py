@@ -12,7 +12,6 @@ from uuid import uuid4
 from audit_table import upsert_audit_table
 from common.aws_s3_utils import (
     copy_file_to_external_bucket,
-    delete_file,
     move_file,
 )
 from common.clients import STREAM_NAME, get_s3_client, logger
@@ -20,10 +19,12 @@ from common.log_decorator import logging_decorator
 from common.models.errors import UnhandledAuditTableError
 from constants import (
     DPS_DESTINATION_BUCKET_NAME,
+    DPS_DESTINATION_PREFIX,
     ERROR_TYPE_TO_STATUS_CODE_MAP,
-    EXPECTED_BUCKET_OWNER_ACCOUNT,
+    EXPECTED_DPS_DESTINATION_ACCOUNT,
+    EXPECTED_SOURCE_BUCKET_ACCOUNT,
+    EXTENDED_ATTRIBUTES_ARCHIVE_PREFIX,
     EXTENDED_ATTRIBUTES_FILE_PREFIX,
-    EXTENDED_ATTRIBUTES_VACC_TYPE,
     SOURCE_BUCKET_NAME,
     FileNotProcessedReason,
     FileStatus,
@@ -36,7 +37,7 @@ from models.errors import (
     VaccineTypePermissionsError,
 )
 from send_sqs_message import make_and_send_sqs_message
-from supplier_permissions import validate_vaccine_type_permissions
+from supplier_permissions import validate_permissions_for_extended_attributes_files, validate_vaccine_type_permissions
 from utils_for_filenameprocessor import get_creation_and_expiry_times
 
 
@@ -107,8 +108,8 @@ def handle_unexpected_bucket_name(bucket_name: str, file_key: str) -> dict:
     config and overarching design"""
     try:
         if file_key.startswith(EXTENDED_ATTRIBUTES_FILE_PREFIX):
-            organization_code = validate_extended_attributes_file_key(file_key)
-            extended_attribute_identifier = f"{organization_code}_{EXTENDED_ATTRIBUTES_VACC_TYPE}"
+            vaccine_type, organisation_code = validate_extended_attributes_file_key(file_key)
+            extended_attribute_identifier = f"{organisation_code}_{vaccine_type}"
             logger.error(
                 "Unable to process file %s due to unexpected bucket name %s",
                 file_key,
@@ -249,8 +250,10 @@ def handle_extended_attributes_file(
 
     extended_attribute_identifier = None
     try:
-        organization_code = validate_extended_attributes_file_key(file_key)
-        extended_attribute_identifier = f"{organization_code}_{EXTENDED_ATTRIBUTES_VACC_TYPE}"
+        vaccine_type, organisation_code = validate_extended_attributes_file_key(file_key)
+        extended_attribute_identifier = validate_permissions_for_extended_attributes_files(
+            vaccine_type, organisation_code
+        )
 
         upsert_audit_table(
             message_id,
@@ -262,16 +265,17 @@ def handle_extended_attributes_file(
         )
 
         # TODO: agree the prefix with DPS
-        dest_file_key = f"dps_destination/{file_key}"
+        dest_file_key = f"{DPS_DESTINATION_PREFIX}/{file_key}"
         copy_file_to_external_bucket(
             bucket_name,
             file_key,
             DPS_DESTINATION_BUCKET_NAME,
             dest_file_key,
-            EXPECTED_BUCKET_OWNER_ACCOUNT,
-            EXPECTED_BUCKET_OWNER_ACCOUNT,
+            EXPECTED_DPS_DESTINATION_ACCOUNT,
+            EXPECTED_SOURCE_BUCKET_ACCOUNT,
         )
-        delete_file(bucket_name, dest_file_key, EXPECTED_BUCKET_OWNER_ACCOUNT)
+
+        move_file(bucket_name, file_key, f"{EXTENDED_ATTRIBUTES_ARCHIVE_PREFIX}/{file_key}")
 
         upsert_audit_table(
             message_id,
@@ -305,7 +309,7 @@ def handle_extended_attributes_file(
             extended_attribute_identifier = "unknown"
 
         # Move file to archive
-        move_file(bucket_name, file_key, f"archive/{file_key}")
+        move_file(bucket_name, file_key, f"{EXTENDED_ATTRIBUTES_ARCHIVE_PREFIX}/{file_key}")
 
         upsert_audit_table(
             message_id,
