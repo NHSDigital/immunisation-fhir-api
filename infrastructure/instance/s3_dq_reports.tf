@@ -86,14 +86,3 @@ resource "aws_s3_bucket_policy" "data_quality_bucket_policy" {
     ]
   })
 }
-
-resource "aws_s3_bucket_server_side_encryption_configuration" "s3_data_quality_encryption" {
-  bucket = aws_s3_bucket.data_quality_reports_bucket.id
-
-  rule {
-    apply_server_side_encryption_by_default {
-      kms_master_key_id = data.aws_kms_key.existing_s3_encryption_key.arn
-      sse_algorithm     = "aws:kms"
-    }
-  }
-}
