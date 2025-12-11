@@ -5,3 +5,6 @@
 # TODO - investigate
 /infrastructure/proxies/live/apiproxy/resources/jsc/
 /infrastructure/proxies/sandbox/apiproxy/resources/jsc/
+
+# The oas.json file is deliberately minified
+immunisation-fhir-api.oas.json
