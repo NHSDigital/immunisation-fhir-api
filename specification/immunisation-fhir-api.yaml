@@ -3784,8 +3784,6 @@ paths:
                   code: ml
                 performer:
                   - actor:
-                      reference: "#Pract1"
-                  - actor:
                       type: Organization
                       identifier:
                         system: "https://fhir.nhs.uk/Id/ods-organization-code"
