@@ -2939,6 +2939,7 @@ paths:
                   - coding:
                       - system: "http://snomed.info/sct"
                         code: "443684005"
+                        display: Disease outbreak (event)
                 protocolApplied:
                   - targetDisease:
                       - coding:
