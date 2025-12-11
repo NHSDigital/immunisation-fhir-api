@@ -41,9 +41,7 @@ $ make install
 You can install some pre-commit hooks to ensure you can't commit invalid spec changes by accident. These are also run
 in CI, but it's useful to run them locally too.
 
-```
-$ make install-hooks
-```
+Note that this step is now done automatically in `make install` above. `make install-hooks` is no longer run.
 
 ### Environment Variables
 
@@ -56,8 +54,20 @@ Various scripts and commands rely on environment variables being set. These are 
 There are `make` commands that alias some of this functionality:
 
 - `lint` -- Lints the spec and code
-- `publish` -- Outputs the specification as a **single file** into the `build/` directory
-- `serve` -- Serves a preview of the specification in human-readable format
+- `publish` -- Outputs the specification as a **single** JSON file into the `build/` directory
+
+### Modifying the OAS file
+
+Note that the master OAS file is now the **YAML** version, as it is far easier to maintain than the JSON.
+
+To review your modifications, use Swagger Editor (https://editor.swagger.io).
+
+### Update the OAS file to the public website
+
+Note that this is currently a **manual** process.
+
+After modifying the OAS YAML file, run `make oas` on your local machine. This will output the specification into `oas/immunisation-fhir-api.json`. This is a **minified** JSON file suitable for sending to APIM
+for uploading to the pubic website.
 
 ### Testing
 
@@ -72,25 +82,7 @@ Each API and team is unique. We encourage you to use a `test/` folder in the roo
 
 - [**openapi-yaml-mode**](https://github.com/esc-emacs/openapi-yaml-mode) provides syntax highlighting, completion, and path help
 
-### Speccy
-
-> [Speccy](http://speccy.io/) _A handy toolkit for OpenAPI, with a linter to enforce quality rules, documentation rendering, and resolution._
-
-Speccy does the lifting for the following npm scripts:
-
-- `test` -- Lints the definition
-- `publish` -- Outputs the specification as a **single file** into the `build/` directory
-- `serve` -- Serves a preview of the specification in human-readable format
-
-(Workflow detailed in a [post](https://developerjack.com/blog/2018/maintaining-large-design-first-api-specs/) on the _developerjack_ blog.)
-
-:bulb: The `publish` command is useful when uploading to Apigee which requires the spec as a single file.
-
 ### Caveats
-
-#### Swagger UI
-
-Swagger UI unfortunately doesn't correctly render `$ref`s in examples, so use `speccy serve` instead.
 
 #### Apigee Portal
 
