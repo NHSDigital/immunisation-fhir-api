@@ -8,7 +8,8 @@ from unittest.mock import patch
 from boto3 import resource as boto3_resource
 from moto import mock_aws
 
-from mappings import ActionFlag, EventName, Operation
+from common.fhir_to_flat_json.converter import Converter
+from common.fhir_to_flat_json.mappings import ActionFlag, EventName, Operation
 from utils_for_converter_tests import ErrorValuesForTests, ValuesForTests
 
 MOCK_ENV_VARS = {
@@ -19,7 +20,7 @@ MOCK_ENV_VARS = {
 }
 request_json_data = ValuesForTests.json_data
 with patch.dict("os.environ", MOCK_ENV_VARS):
-    from delta import Converter, handler
+    from delta import handler
 
 
 @patch.dict("os.environ", MOCK_ENV_VARS, clear=True)

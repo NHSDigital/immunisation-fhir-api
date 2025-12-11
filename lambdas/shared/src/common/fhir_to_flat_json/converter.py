@@ -1,8 +1,8 @@
 # Main validation engine
-import exception_messages
-from conversion_layout import ConversionField, ConversionLayout
-from extractor import Extractor
-from mappings import ActionFlag
+from common.fhir_to_flat_json import exception_messages
+from common.fhir_to_flat_json.conversion_layout import ConversionField, ConversionLayout
+from common.fhir_to_flat_json.extractor import Extractor
+from common.fhir_to_flat_json.mappings import ActionFlag
 
 
 class Converter:

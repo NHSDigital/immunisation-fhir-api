@@ -2,8 +2,8 @@ import decimal
 import json
 from datetime import datetime, timedelta, timezone
 
-import exception_messages
-from mappings import ConversionFieldName, Gender
+from common.fhir_to_flat_json import exception_messages
+from common.fhir_to_flat_json.mappings import ConversionFieldName, Gender
 
 
 class Extractor:

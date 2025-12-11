@@ -7,12 +7,12 @@ from unittest.mock import MagicMock, patch
 from botocore.exceptions import ClientError
 
 import delta
+from common.fhir_to_flat_json.mappings import ActionFlag, EventName, Operation
 from delta import (
     handler,
     process_record,
     send_message,
 )
-from mappings import ActionFlag, EventName, Operation
 from utils_for_converter_tests import RecordConfig, ValuesForTests
 
 TEST_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123456789012/test-queue"
