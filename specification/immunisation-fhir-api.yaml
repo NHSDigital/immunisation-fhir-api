@@ -1146,7 +1146,11 @@ paths:
                     type: object
                     required:
                       - targetDisease
-                      - "doseNumber[X]"
+                    oneOf:
+                      - required:
+                          - doseNumberPositiveInt
+                      - required:
+                          - doseNumberString
                     properties:
                       targetDisease:
                         type: array
@@ -1198,31 +1202,23 @@ paths:
                                       code in the system, following the rules of
                                       the system.
                                     type: string
-                      "doseNumber[X]":
-                        type: object
+                      doseNumberPositiveInt:
                         description: >-
-                          Nominal position in a series. This SHALL be provided
-                          but may be populated using either of the dataTypes
-                          available: PositiveInt or String. The use of an
-                          integer is preferred. Maximum value is 9.
-                        properties:
-                          doseNumberPositiveInt:
-                            description: >-
-                              Nominal position in a course of vaccines. This
-                              `SHOULD be populated` where the data is
-                              available.. Maximum value is 9.
-                            type: integer
-                            maximum: 9
-                            example: 1
-                          doseNumberString:
-                            description: >-
-                              Description of the dose sequence where it is not a
-                              numeric or a reason a dose number cannot be
-                              provided.  
+                          Nominal position in a course of vaccines. This
+                          `SHOULD be populated` where the data is
+                          available.. Maximum value is 9.
+                        type: integer
+                        maximum: 9
+                        example: 1
+                      doseNumberString:
+                        description: >-
+                          Description of the dose sequence where it is not a
+                          numeric or a reason a dose number cannot be
+                          provided.  
 
-                              A string should only be used in cases where an
-                              integer is not available.
-                            type: string
+                          A string should only be used in cases where an
+                          integer is not available.
+                        type: string
             example:
               resourceType: Immunization
               contained:
@@ -1984,7 +1980,11 @@ paths:
                                     type: object
                                     required:
                                       - targetDisease
-                                      - "doseNumber[X]"
+                                    oneOf:
+                                      - required:
+                                          - doseNumberPositiveInt
+                                      - required:
+                                          - doseNumberString
                                     properties:
                                       targetDisease:
                                         type: array
@@ -2027,34 +2027,24 @@ paths:
                                                   - display
                                           required:
                                             - coding
-                                      "doseNumber[X]":
-                                        type: object
+                                      doseNumberPositiveInt:
                                         description: >-
-                                          Nominal position in a series. This SHALL
-                                          be provided but may be populated using
-                                          either of the dataTypes available:
-                                          PositiveInt or String. The use of an
-                                          integer is preferred. Maximum value is
-                                          9.
-                                        properties:
-                                          doseNumberPositiveInt:
-                                            description: >-
-                                              Nominal position in a course of
-                                              vaccines. This `SHOULD be populated`
-                                              where the data is available. Maximum
-                                              value is 9.
-                                            type: integer
-                                            maximum: 9
-                                            example: 1
-                                          doseNumberString:
-                                            description: >-
-                                              Description of the dose sequence where
-                                              it is not a numeric or a reason a dose
-                                              number cannot be provided.  
+                                          Nominal position in a course of
+                                          vaccines. This `SHOULD be populated`
+                                          where the data is available. Maximum
+                                          value is 9.
+                                        type: integer
+                                        maximum: 9
+                                        example: 1
+                                      doseNumberString:
+                                        description: >-
+                                          Description of the dose sequence where
+                                          it is not a numeric or a reason a dose
+                                          number cannot be provided.  
 
-                                              A string should only be used in cases
-                                              where an integer is not available.
-                                            type: string
+                                          A string should only be used in cases
+                                          where an integer is not available.
+                                        type: string
                             - description: Demographic information about the patient receiving an immunisation.
                               type: object
                               required:
@@ -2832,7 +2822,11 @@ paths:
                       type: object
                       required:
                         - targetDisease
-                        - "doseNumber[X]"
+                      oneOf:
+                        - required:
+                            - doseNumberPositiveInt
+                        - required:
+                            - doseNumberString
                       properties:
                         targetDisease:
                           type: array
@@ -2875,31 +2869,23 @@ paths:
                                     - display
                             required:
                               - coding
-                        "doseNumber[X]":
-                          type: object
+                        doseNumberPositiveInt:
                           description: >-
-                            Nominal position in a series. This SHALL be provided
-                            but may be populated using either of the dataTypes
-                            available: PositiveInt or String. The use of an
-                            integer is preferred. Maximum value is 9.
-                          properties:
-                            doseNumberPositiveInt:
-                              description: >-
-                                Nominal position in a course of vaccines. This
-                                `SHOULD be populated` where the data is
-                                available. Maximum value is 9.
-                              type: integer
-                              maximum: 9
-                              example: 1
-                            doseNumberString:
-                              description: >-
-                                Description of the dose sequence where it is not
-                                a numeric or a reason a dose number cannot be
-                                provided.  
+                            Nominal position in a course of vaccines. This
+                            `SHOULD be populated` where the data is
+                            available. Maximum value is 9.
+                          type: integer
+                          maximum: 9
+                          example: 1
+                        doseNumberString:
+                          description: >-
+                            Description of the dose sequence where it is not
+                            a numeric or a reason a dose number cannot be
+                            provided.  
 
-                                A string should only be used in cases where an
-                                integer is not available.
-                              type: string
+                            A string should only be used in cases where an
+                            integer is not available.
+                          type: string
               example:
                 resourceType: Immunization
                 id: 12a33650-6f94-4e8f-a971-1c5c41da5b22
@@ -3758,7 +3744,11 @@ paths:
                     type: object
                     required:
                       - targetDisease
-                      - "doseNumber[X]"
+                    oneOf:
+                      - required:
+                          - doseNumberPositiveInt
+                      - required:
+                          - doseNumberString
                     properties:
                       targetDisease:
                         type: array
@@ -3810,31 +3800,23 @@ paths:
                                       code in the system, following the rules of
                                       the system.
                                     type: string
-                      "doseNumber[X]":
-                        type: object
+                      doseNumberPositiveInt:
                         description: >-
-                          Nominal position in a series. This SHALL be provided
-                          but may be populated using either of the dataTypes
-                          available: PositiveInt or String. The use of an
-                          integer is preferred. Maximum value is 9.
-                        properties:
-                          doseNumberPositiveInt:
-                            description: >-
-                              Nominal position in a course of vaccines. This
-                              `SHOULD be populated` where the data is available.
-                              Maximum value is 9.
-                            type: integer
-                            maximum: 9
-                            example: 1
-                          doseNumberString:
-                            description: >-
-                              Description of the dose sequence where it is not a
-                              numeric or a reason a dose number cannot be
-                              provided.  
+                          Nominal position in a course of vaccines. This
+                          `SHOULD be populated` where the data is available.
+                          Maximum value is 9.
+                        type: integer
+                        maximum: 9
+                        example: 1
+                      doseNumberString:
+                        description: >-
+                          Description of the dose sequence where it is not a
+                          numeric or a reason a dose number cannot be
+                          provided.  
 
-                              A string should only be used in cases where an
-                              integer is not available.
-                            type: string
+                          A string should only be used in cases where an
+                          integer is not available.
+                        type: string
             example:
               resourceType: Immunization
               id: 4ff607e0-c6e9-4fe0-a2b6-3bcd7fdc44c9
