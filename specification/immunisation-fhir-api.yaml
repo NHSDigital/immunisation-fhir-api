@@ -451,7 +451,7 @@ paths:
                 - status
                 - vaccineCode
                 - patient
-                - "occurrence[X]"
+                - occurrenceDateTime
                 - recorded
                 - primarySource
                 - location
@@ -818,23 +818,14 @@ paths:
                       description: Reference of patient from contained section
                       type: string
                       example: "#Pat1"
-                "occurrence[X]":
-                  type: object
+                occurrenceDateTime:
                   description: >-
-                    When immunizations are given a specific date and time should
-                    always be known. The string data type for this element is
-                    not supported. Only occurrenceDateTime SHALL be used.
-                  properties:
-                    occurrenceDateTime:
-                      description: >-
-                        A dateTime format SHALL be provided. It SHOULD be to the
-                        level of precision as recorded within the source system,
-                        subject to the FHIR rules for dateTime.  
-                         Only positive timezone offsets of '+00:00' (GMT) and '+01:00' (BST) are allowed. Where time zone information is required but is not available in the source system the time zone element can be a hardcoded static value of `+00:00`.
-                      type: string
-                      example: "2021-02-07T13:28:17.271000+00:00"
-                  required:
-                    - occurrenceDateTime
+                    A dateTime format SHALL be provided. It SHOULD be to the
+                    level of precision as recorded within the source system,
+                    subject to the FHIR rules for dateTime.  
+                    Only positive timezone offsets of '+00:00' (GMT) and '+01:00' (BST) are allowed. Where time zone information is required but is not available in the source system the time zone element can be a hardcoded static value of `+00:00`.
+                  type: string
+                  example: "2021-02-07T13:28:17.271000+00:00"
                 recorded:
                   description: >-
                     The date the occurrence of the immunization was first
@@ -1475,7 +1466,7 @@ paths:
                                 - status
                                 - vaccineCode
                                 - patient
-                                - "occurrence[X]"
+                                - occurrenceDateTime
                                 - recorded
                                 - primarySource
                                 - location
@@ -1716,20 +1707,10 @@ paths:
                                             linked patient.
                                           type: string
                                           example: "9000000009"
-                                "occurrence[X]":
-                                  type: object
-                                  description: >-
-                                    When immunizations are given a specific date
-                                    and time should always be known. The string
-                                    data type for this element is not supported.
-                                    Only occurrenceDateTime SHALL be used.
-                                  properties:
-                                    occurrenceDateTime:
-                                      description: Date and time of immunisation.
-                                      type: string
-                                      example: "2021-02-07T13:28:17.271000+00:00"
-                                  required:
-                                    - occurrenceDateTime
+                                occurrenceDateTime:
+                                  description: Date and time of immunisation.
+                                  type: string
+                                  example: "2021-02-07T13:28:17.271000+00:00"
                                 recorded:
                                   description: >-
                                     The date the occurrence of the immunization
@@ -2277,7 +2258,7 @@ paths:
                   - status
                   - vaccineCode
                   - patient
-                  - "occurrence[X]"
+                  - occurrenceDateTime
                   - recorded
                   - primarySource
                   - location
@@ -2580,20 +2561,10 @@ paths:
                         description: Reference of patient from contained section
                         type: string
                         example: "#Pat1"
-                  "occurrence[X]":
-                    type: object
-                    description: >-
-                      When immunizations are given a specific date and time
-                      should always be known. The string data type for this
-                      element is not supported. Only occurrenceDateTime SHALL be
-                      used.
-                    properties:
-                      occurrenceDateTime:
-                        description: Date and time of immunisation.
-                        type: string
-                        example: "2021-02-07T13:28:17.271000+00:00"
-                    required:
-                      - occurrenceDateTime
+                  occurrenceDateTime:
+                    description: Date and time of immunisation.
+                    type: string
+                    example: "2021-02-07T13:28:17.271000+00:00"
                   recorded:
                     description: >-
                       The date the occurrence of the immunization was first
@@ -3046,7 +3017,7 @@ paths:
                 - status
                 - vaccineCode
                 - patient
-                - "occurrence[X]"
+                - occurrenceDateTime
                 - recorded
                 - primarySource
                 - location
@@ -3416,23 +3387,14 @@ paths:
                       description: Reference of patient from contained section
                       type: string
                       example: "#Pat1"
-                "occurrence[X]":
-                  type: object
+                occurrenceDateTime:
                   description: >-
-                    When immunizations are given a specific date and time should
-                    always be known. The string data type for this element is
-                    not supported. Only occurrenceDateTime SHALL be used.
-                  properties:
-                    occurrenceDateTime:
-                      description: >-
-                        A dateTime format SHALL be provided. It SHOULD be to the
-                        level of precision as recorded within the source system,
-                        subject to the FHIR rules for dateTime.  
-                         Only positive timezone offsets of '+00:00' (GMT) and '+01:00' (BST) are allowed. Where time zone information is required but is not available in the source system the time zone element can be a hardcoded static value of `+00:00`.
-                      type: string
-                      example: "2021-02-07T13:28:17.271000+00:00"
-                  required:
-                    - occurrenceDateTime
+                    A dateTime format SHALL be provided. It SHOULD be to the
+                    level of precision as recorded within the source system,
+                    subject to the FHIR rules for dateTime.  
+                    Only positive timezone offsets of '+00:00' (GMT) and '+01:00' (BST) are allowed. Where time zone information is required but is not available in the source system the time zone element can be a hardcoded static value of `+00:00`.
+                  type: string
+                  example: "2021-02-07T13:28:17.271000+00:00"
                 recorded:
                   description: >-
                     The date the occurrence of the immunization was first
