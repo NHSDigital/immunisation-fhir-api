@@ -32,11 +32,12 @@ publish: clean
 	cp build/immunisation-fhir-api.json sandbox/
 	cp -r specification sandbox/specification
 
-#Creates a versioned, minified OAS spec in JSON for sending to APIM
+#Creates a minified OAS spec in JSON for sending to APIM
 oas: publish
-	rm -f specification/immunisation-fhir-api.oas.json
-	( cd utilities/scripts && python -m set_version < ../../build/immunisation-fhir-api.json | jq -c > ../../specification/immunisation-fhir-api.oas.json )
-	chmod -w specification/immunisation-fhir-api.oas.json
+	mkdir -p oas
+	rm -f specification/immunisation-fhir-api.json
+	jq -c . build/immunisation-fhir-api.json > oas/immunisation-fhir-api.json
+	chmod -w oas/immunisation-fhir-api.json
 
 #Runs build proxy script
 build-proxy:

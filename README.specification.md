@@ -56,8 +56,6 @@ There are `make` commands that alias some of this functionality:
 - `lint` -- Lints the spec and code
 - `publish` -- Outputs the specification as a **single** JSON file into the `build/` directory
 
-Note: the npm scripts are no longer based on Speccy.
-
 ### Modifying the OAS file
 
 Note that the master OAS file is now the **YAML** version, as it is far easier to maintain than the JSON.
@@ -68,11 +66,8 @@ To review your modifications, use Swagger Editor (https://editor.swagger.io).
 
 Note that this is currently a **manual** process.
 
-After modifying the OAS YAML file, run `make oas` on your local machine. This will output the specification into `specification/immunisation-fhir-api.oas.json`. This is a **minified, versioned** JSON file suitable for sending to APIM
+After modifying the OAS YAML file, run `make oas` on your local machine. This will output the specification into `oas/immunisation-fhir-api.json`. This is a **minified** JSON file suitable for sending to APIM
 for uploading to the pubic website.
-
-Please push the minified JSON file to GitHub to along with the YAML file to keep the two in sync, and so that the JSON file can be
-re-submitted to APIM without re-processing if need be.
 
 ### Testing
 
