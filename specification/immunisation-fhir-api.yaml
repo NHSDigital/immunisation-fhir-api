@@ -1246,8 +1246,7 @@ paths:
                   address:
                     - postalCode: EC1A 1BB
               extension:
-                - url: >-
-                    https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure
+                - url: https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure
                   valueCodeableConcept:
                     coding:
                       - system: "http://snomed.info/sct"
@@ -1471,9 +1470,7 @@ paths:
                         resource:
                           description: The Immunization or Patient resource.
                           oneOf:
-                            - description: >-
-                                A matching immunisation, formatted as a FHIR
-                                Immunization resource.
+                            - description: A matching immunisation, formatted as a FHIR Immunization resource.
                               type: object
                               required:
                                 - resourceType
@@ -2058,9 +2055,7 @@ paths:
                                               A string should only be used in cases
                                               where an integer is not available.
                                             type: string
-                            - description: >-
-                                Demographic information about the patient
-                                receiving an immunisation.
+                            - description: Demographic information about the patient receiving an immunisation.
                               type: object
                               required:
                                 - resourceType
@@ -2117,19 +2112,16 @@ paths:
                 type: searchset
                 link:
                   - relation: self
-                    url: >-
-                      https://sandbox.api.service.nhs.uk/immunisation-fhir-api/Immunization?immunization.target=RSV&_include=Immunization%3Apatient&patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C9000000009
+                    url: https://sandbox.api.service.nhs.uk/immunisation-fhir-api/Immunization?immunization.target=RSV&_include=Immunization%3Apatient&patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C9000000009
                 entry:
-                  - fullUrl: >-
-                      https://sandbox.api.service.nhs.uk/immunisation-fhir-api/Immunization/191f288a-17f3-4cd5-a33c-a52aade6473c
+                  - fullUrl: https://sandbox.api.service.nhs.uk/immunisation-fhir-api/Immunization/191f288a-17f3-4cd5-a33c-a52aade6473c
                     resource:
                       resourceType: Immunization
                       id: 191f288a-17f3-4cd5-a33c-a52aade6473c
                       meta:
                         versionId: "1"
                       extension:
-                        - url: >-
-                            https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure
+                        - url: https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure
                           valueCodeableConcept:
                             coding:
                               - system: "http://snomed.info/sct"
@@ -2299,9 +2291,7 @@ paths:
                         resource:
                           description: The Immunization resource.
                           oneOf:
-                            - description: >-
-                                A matching immunisation, formatted as a FHIR
-                                Immunization resource.
+                            - description: A matching immunisation, formatted as a FHIR Immunization resource.
                               type: object
                               required:
                                 - resourceType
@@ -2885,9 +2875,7 @@ paths:
                                               A string should only be used in cases
                                               where an integer is not available.
                                             type: string
-                            - description: >-
-                                Demographic information about the patient
-                                receiving an immunisation.
+                            - description: Demographic information about the patient receiving an immunisation.
                               type: object
                               required:
                                 - resourceType
@@ -2943,19 +2931,16 @@ paths:
                 type: searchset
                 link:
                   - relation: self
-                    url: >-
-                      https://sandbox.api.service.nhs.uk/immunisation-fhir-api/Immunization?immunization.target=RSV&_include=Immunization%3Apatient&patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C9000000009
+                    url: https://sandbox.api.service.nhs.uk/immunisation-fhir-api/Immunization?immunization.target=RSV&_include=Immunization%3Apatient&patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C9000000009
                 entry:
-                  - fullUrl: >-
-                      https://sandbox.api.service.nhs.uk/immunisation-fhir-api/Immunization/191f288a-17f3-4cd5-a33c-a52aade6473c
+                  - fullUrl: https://sandbox.api.service.nhs.uk/immunisation-fhir-api/Immunization/191f288a-17f3-4cd5-a33c-a52aade6473c
                     resource:
                       resourceType: Immunization
                       id: 191f288a-17f3-4cd5-a33c-a52aade6473c
                       meta:
                         versionId: "1"
                       extension:
-                        - url: >-
-                            https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure
+                        - url: https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure
                           valueCodeableConcept:
                             coding:
                               - system: "http://snomed.info/sct"
@@ -3749,8 +3734,7 @@ paths:
                     address:
                       - postalCode: EC1A 1BB
                 extension:
-                  - url: >-
-                      https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure
+                  - url: https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure
                     valueCodeableConcept:
                       coding:
                         - system: "http://snomed.info/sct"
@@ -4687,8 +4671,7 @@ paths:
                   address:
                     - postalCode: EC1A 1BB
               extension:
-                - url: >-
-                    https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure
+                - url: https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure
                   valueCodeableConcept:
                     coding:
                       - system: "http://snomed.info/sct"
