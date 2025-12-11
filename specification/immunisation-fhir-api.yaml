@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: Immunization-fhir-api
-  version: Computed and injected at build time by `scripts/set_version.py`
+  version: 1.0.0
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
