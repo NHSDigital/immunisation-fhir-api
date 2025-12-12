@@ -66,7 +66,7 @@ def get_service_url(
     if not service_base_path:
         service_base_path = "immunisation-fhir-api/FHIR/R4"
 
-    non_prod = ["internal-dev", "int", "sandbox"]
+    non_prod = ["internal-dev", "internal-qa", "int", "sandbox"]
     if service_env in non_prod:
         subdomain = f"{service_env}."
     elif service_env == "prod":
