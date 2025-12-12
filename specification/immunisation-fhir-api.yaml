@@ -403,9 +403,9 @@ paths:
         Use this interaction to record the administration of a vaccination.  The
         immunization resource must include a targetDisease(s) matching the
         disease types enabled in this interaction and represented by the correct
-        SNOMED concept(s) for that disease type. A [code
-        list](https://digital.nhs.uk/developer/guides-and-documentation/building-healthcare-software/vaccinations/coding-for-vaccination-disease-types#how-this-applies-to-vaccinations-submitted-to-the-api)
+        SNOMED concept(s) for that disease type. A [code list](https://digital.nhs.uk/developer/guides-and-documentation/building-healthcare-software/vaccinations/coding-for-vaccination-disease-types#how-this-applies-to-vaccinations-submitted-to-the-api)
         is provided for supported disease types.  
+
 
         You must be authorised for the create interaction and the disease type
         associated with the vaccination event in order to submit a new record. 
@@ -1316,8 +1316,8 @@ paths:
         4XX:
           $ref: "#/components/responses/4XX-imms-create"
     get:
-      summary: Search for a patient's immunisation records
-      operationId: searchImmunization
+      summary: Search for a patient's immunisation records (GET)
+      operationId: searchImmunizationGet
       description: >
         ## Overview
 
@@ -1327,30 +1327,18 @@ paths:
         limit the vaccination records by specifying date criteria, for example
         if you only need to know about vaccinations administered in the last 12
         months. 
-         Location related data items are included. Patient location sensitivity indicators (such as flags for sensitive patient records) should be used to apply data filtering as appropriate. The response will not include contained resources for patient or practitioner within each immunization resource it returns. A single, separate patient resource will be included in the bundle and referenced by each immunization. 
+
+
+        Sensitivity indicators (such as flags for sensitive patient records) should
+        be used to apply data filtering as appropriate.
+
+
         Vaccination events submitted without an NHS Number will not be available
-        for retrieval via this interaction. Also, where a patient has a change
-        of NHS Number some or all records may be unavailable via this
-        interaction for a short period of time while records are updated. 
+        for retrieval via this interaction. 
+
 
         You must be authorised for the search interaction and the disease
         type(s) specified in your search in order to access the records. 
-         
-        ### Search using POST
-         
-        A POST search interaction is supported in accordance with [FHIR
-        guidance](https://digital.nhs.uk/developer/guides-and-documentation/our-api-technologies#fhir)
-        as an alternative to a search with the GET verb. A POST search allows
-        you to supply some or all parameters in the body of the request should
-        you need to do so. It offers the same search functionality as the GET
-        search interaction. 
-
-
-        Note that the API call for the POST search is different: 
-
-
-        `POST /Immunization/_search`
-
 
         ## Sandbox testing
 
@@ -1390,795 +1378,74 @@ paths:
         - $ref: "#/components/parameters/Include"
       responses:
         "200":
-          description: Search immunisation operation successful
-          content:
-            application/fhir+json:
-              schema:
-                description: >-
-                  FHIR Bundle containing the query results - a list of matching
-                  immunisations and associated patients.
-                type: object
-                required:
-                  - resourceType
-                  - type
-                  - total
-                  - entry
-                properties:
-                  resourceType:
-                    description: FHIR resource type. Always `Bundle`.
-                    type: string
-                    example: Bundle
-                  type:
-                    description: >-
-                      Indicates how the bundle is intended to be used. Always
-                      `searchset`.
-                    type: string
-                    example: searchset
-                  link:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        relation:
-                          description: >-
-                            A name which details the functional use for this
-                            link - see
-                            [http://www.iana.org/assignments/link-relations/link-relations.xhtml#link-relations-1](http://www.iana.org/assignments/link-relations/link-relations.xhtml#link-relations-1).
-                            Always `Self`.
-                          type: string
-                        url:
-                          description: >-
-                            A url representing the search applied by the API to
-                            generate the result which may differ from the
-                            request if unrecognised or unsupported parameters
-                            have been ignored.
-                          type: string
-                      required:
-                        - relation
-                        - url
-                  entry:
-                    description: >-
-                      List of matching immunisations and associated patient. If
-                      there were no matching immunisations, this is an empty
-                      list.
-                    type: array
-                    items:
-                      type: object
-                      required:
-                        - fullUrl
-                        - resource
-                        - search
-                      properties:
-                        fullUrl:
-                          description: URI for the Immunization or Patient resource.
-                          type: string
-                          example: >-
-                            https://sandbox.api.service.nhs.uk/immunisation-fhir-api/Immunization/191f288a-17f3-4cd5-a33c-a52aade6473c
-                        resource:
-                          description: The Immunization or Patient resource.
-                          oneOf:
-                            - description: A matching immunisation, formatted as a FHIR Immunization resource.
-                              type: object
-                              required:
-                                - resourceType
-                                - extension
-                                - identifier
-                                - status
-                                - vaccineCode
-                                - patient
-                                - occurrenceDateTime
-                                - recorded
-                                - primarySource
-                                - location
-                                - performer
-                                - protocolApplied
-                              properties:
-                                resourceType:
-                                  description: FHIR resource type. Always `Immunization`.
-                                  type: string
-                                  example: Immunization
-                                id:
-                                  description: Immunization record Id.
-                                  type: string
-                                  example: 191f288a-17f3-4cd5-a33c-a52aade6473c
-                                meta:
-                                  type: object
-                                  properties:
-                                    versionId:
-                                      type: string
-                                      pattern: '[A-Za-z0-9\-\.]{1,64}'
-                                      description: >-
-                                        The version specific identifier, as it
-                                        appears in the version portion of the
-                                        URL. This value changes when the
-                                        resource is created, updated, or
-                                        deleted.
-                                    lastUpdated:
-                                      type: string
-                                      pattern: >-
-                                        ([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))
-                                      description: >-
-                                        When the resource last changed - e.g.
-                                        when the version changed.
-                                      example: "2017-01-01T00:00:00Z"
-                                    source:
-                                      type: string
-                                      description: >-
-                                        Identifies where the resource comes
-                                        from.
-                                    profile:
-                                      type: array
-                                      items:
-                                        type: string
-                                        pattern: \S*
-                                        description: >-
-                                          A list of profiles (references to
-                                          [StructureDefinition](structuredefinition.html#)
-                                          resources) that this resource claims to
-                                          conform to. The URL is a reference to
-                                          [StructureDefinition.url](structuredefinition-definitions.html#StructureDefinition.url).
-                                    security:
-                                      type: array
-                                      items:
-                                        $ref: "#/components/schemas/Coding"
-                                    tag:
-                                      type: array
-                                      items:
-                                        $ref: "#/components/schemas/Coding"
-                                  required:
-                                    - versionId
-                                extension:
-                                  description: >-
-                                    FHIR extension wrapper for the vaccination
-                                    procedure performed. Always contains exactly
-                                    one object.
-                                  type: array
-                                  minItems: 1
-                                  maxItems: 1
-                                  items:
-                                    type: object
-                                    required:
-                                      - url
-                                      - valueCodeableConcept
-                                    properties:
-                                      url:
-                                        description: >-
-                                          URI for the type of extension -
-                                          https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure
-                                        type: string
-                                        example: >-
-                                          https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure
-                                      valueCodeableConcept:
-                                        description: >-
-                                          Wrapper for the vaccination procedure
-                                          coding.
-                                        type: object
-                                        required:
-                                          - coding
-                                        properties:
-                                          coding:
-                                            description: >-
-                                              Wrapper for the vaccination procedure
-                                              coding.
-                                            type: array
-                                            items:
-                                              type: object
-                                              required:
-                                                - system
-                                                - code
-                                                - display
-                                              properties:
-                                                system:
-                                                  description: >-
-                                                    The identification of the code system
-                                                    that defines the meaning of the symbol
-                                                    in the code.
-                                                  type: string
-                                                  example: "http://snomed.info/sct"
-                                                code:
-                                                  description: A particular code in the system.
-                                                  type: string
-                                                  example: "1303503001"
-                                                display:
-                                                  description: Representation defined by the system.
-                                                  type: string
-                                                  example: >-
-                                                    Administration of RSV (respiratory
-                                                    syncytial virus) vaccine
-                                identifier:
-                                  description: >-
-                                    Unique identifier for this immunisation
-                                    record, as generated by the source system.
-                                  type: array
-                                  minItems: 1
-                                  maxItems: 1
-                                  items:
-                                    type: object
-                                    required:
-                                      - system
-                                      - value
-                                    properties:
-                                      use:
-                                        description: >-
-                                          Identifier use as defined by
-                                          https://www.hl7.org/fhir/valueset-identifier-use.html.
-                                        type: string
-                                        enum:
-                                          - usual
-                                          - official
-                                          - temp
-                                          - secondary
-                                          - old
-                                        example: official
-                                      system:
-                                        description: URI of the namespace of this identifier.
-                                        type: string
-                                        example: "https://supplierABC/identifiers/vacc"
-                                      value:
-                                        description: Identifier value within `system`.
-                                        type: string
-                                        example: e2154d29-1ead-4830-a513-0d59705078fa
-                                status:
-                                  description: >-
-                                    Status of the immunisation event. This is
-                                    *not* an indication of patient immunity,
-                                    only whether the immunisation was completed
-                                    or not. Currently we only return details of
-                                    completed immunisations.
-                                  type: string
-                                  enum:
-                                    - completed
-                                  example: completed
-                                vaccineCode:
-                                  description: Vaccine product administered.
-                                  type: object
-                                  required:
-                                    - coding
-                                  properties:
-                                    coding:
-                                      description: Wrapper for the vaccine product details.
-                                      type: array
-                                      minItems: 1
-                                      items:
-                                        type: object
-                                        required:
-                                          - system
-                                          - code
-                                          - display
-                                        properties:
-                                          system:
-                                            description: >-
-                                              The identification of the code system
-                                              that defines the meaning of the symbol
-                                              in the code.
-                                            type: string
-                                            example: "http://snomed.info/sct"
-                                          code:
-                                            description: SNOMED code for the vaccine product.
-                                            type: string
-                                            example: "42605811000001109"
-                                          display:
-                                            description: Description of the vaccine product.
-                                            type: string
-                                            example: >-
-                                              Abrysvo vaccine powder and solvent for
-                                              solution for injection 0.5ml vials
-                                              (Pfizer Ltd)
-                                patient:
-                                  description: The patient who was immunised.
-                                  type: object
-                                  required:
-                                    - reference
-                                    - type
-                                    - identifier
-                                  properties:
-                                    reference:
-                                      description: >-
-                                        URI for the associated Patient resource
-                                        in the bundle.
-                                      type: string
-                                      example: >-
-                                        urn:uuid:a7a5bc28-5831-4158-8a73-0d3e6e43c1ac
-                                    type:
-                                      description: >-
-                                        Type of resource this reference refers
-                                        to. Always `Patient`.
-                                      type: string
-                                      example: Patient
-                                    identifier:
-                                      description: >-
-                                        Business identifier for linked Patient.
-                                        Always an NHS number.
-                                      type: object
-                                      required:
-                                        - system
-                                        - value
-                                      properties:
-                                        system:
-                                          description: >-
-                                            URI of coding system used to identify
-                                            linked patient. Always
-                                            https://fhir.nhs.uk/Id/nhs-number
-                                          type: string
-                                          example: "https://fhir.nhs.uk/Id/nhs-number"
-                                        value:
-                                          description: >-
-                                            Value in coding system representing
-                                            linked patient.
-                                          type: string
-                                          example: "9000000009"
-                                occurrenceDateTime:
-                                  description: Date and time of immunisation.
-                                  type: string
-                                  example: "2021-02-07T13:28:17.271000+00:00"
-                                recorded:
-                                  description: >-
-                                    The date the occurrence of the immunization
-                                    was first captured in the record -
-                                    potentially significantly after the
-                                    occurrence of the event.
-                                  type: string
-                                  example: "2021-02-07T13:28:17.271000+00:00"
-                                primarySource:
-                                  description: >-
-                                    An indication that the content of the record
-                                    is based on information from the person who
-                                    administered the vaccine. This reflects the
-                                    context under which the data was originally
-                                    recorded.
-                                  type: boolean
-                                  example: true
-                                location:
-                                  type: object
-                                  description: >-
-                                    The service delivery location where the
-                                    vaccine administration occurred.
-                                  properties:
-                                    identifier:
-                                      type: object
-                                      description: >-
-                                        An identifier for the service delivery
-                                        location.
-                                      properties:
-                                        system:
-                                          description: >-
-                                            The system which defines the location.
-                                            Typically this will be
-                                            https://fhir.nhs.uk/Id/ods-organization-code
-                                            for a health setting or
-                                            https://fhir.hl7.org.uk/Id/urn-school-number
-                                            for an education setting.
-                                          type: string
-                                          example: >-
-                                            https://fhir.nhs.uk/Id/ods-organization-code
-                                        value:
-                                          description: >-
-                                            A code from the system to represent the
-                                            location. An ODS code of X99999
-                                            represents a location where a code is
-                                            not available.
-                                          type: string
-                                          example: X99999
-                                      required:
-                                        - system
-                                        - value
-                                  required:
-                                    - identifier
-                                manufacturer:
-                                  description: Vaccine manufacturer details.
-                                  type: object
-                                  properties:
-                                    display:
-                                      description: Decsription of the vaccine manufacturer.
-                                      type: string
-                                      example: AstraZeneca Ltd
-                                lotNumber:
-                                  description: Lot number of the vaccine product.
-                                  type: string
-                                  example: 4120Z001
-                                expirationDate:
-                                  description: Date vaccine batch expires.
-                                  type: string
-                                  example: "2021-04-29"
-                                site:
-                                  description: Body site where vaccine was administered.
-                                  type: object
-                                  properties:
-                                    coding:
-                                      description: >-
-                                        Wrapper for the vaccination body site
-                                        details.
-                                      type: array
-                                      minItems: 1
-                                      items:
-                                        type: object
-                                        properties:
-                                          system:
-                                            description: >-
-                                              Coding system used to describe
-                                              vaccination body site.
-                                            type: string
-                                            example: "http://snomed.info/sct"
-                                          code:
-                                            description: Code for the vaccination body site.
-                                            type: string
-                                            example: "368208006"
-                                          display:
-                                            description: >-
-                                              Description of the vaccination body
-                                              site.
-                                            type: string
-                                            example: >-
-                                              Left upper arm structure (body
-                                              structure)
-                                  required:
-                                    - coding
-                                route:
-                                  description: >-
-                                    The path by which the vaccine product is
-                                    taken into the body.
-                                  type: object
-                                  required:
-                                    - coding
-                                  properties:
-                                    coding:
-                                      description: >-
-                                        Wrapper for the vaccination route
-                                        details.
-                                      type: array
-                                      minItems: 1
-                                      items:
-                                        type: object
-                                        properties:
-                                          system:
-                                            description: >-
-                                              Coding system used to describe
-                                              vaccination route.
-                                            type: string
-                                            example: "http://snomed.info/sct"
-                                          code:
-                                            description: Code for the vaccination route.
-                                            type: string
-                                            example: "78421000"
-                                          display:
-                                            description: Description of the vaccination route.
-                                            type: string
-                                            example: Intramuscular route (qualifier value)
-                                doseQuantity:
-                                  description: >-
-                                    The quantity of vaccine product that was
-                                    administered.
-                                  type: object
-                                  properties:
-                                    value:
-                                      description: Number of units administered.
-                                      type: number
-                                      example: 1
-                                    unit:
-                                      description: Description of unit.
-                                      type: string
-                                      example: milliliter
-                                    system:
-                                      description: System that defines coded unit form.
-                                      type: string
-                                      example: "http://unitsofmeasure.org"
-                                    code:
-                                      description: Code describing the unit.
-                                      type: string
-                                      example: ml
-                                performer:
-                                  description: >-
-                                    Details of the organisation that performed
-                                    the immunisation.
-                                  type: array
-                                  minItems: 1
-                                  maxItems: 1
-                                  items:
-                                    type: object
-                                    required:
-                                      - actor
-                                    properties:
-                                      actor:
-                                        description: >-
-                                          Organisation that performed the
-                                          immunisation.
-                                        type: object
-                                        required:
-                                          - type
-                                          - identifier
-                                        properties:
-                                          type:
-                                            description: Type of actor. Always `Organisation`.
-                                            type: string
-                                            example: Organisation
-                                          identifier:
-                                            description: Organisation identifier.
-                                            type: object
-                                            required:
-                                              - system
-                                              - value
-                                            properties:
-                                              system:
-                                                description: >-
-                                                  Coding system used for the organisation
-                                                  identifier. Always
-                                                  `https://fhir.nhs.uk/Id/ods-organization-code`.
-                                                type: string
-                                                example: >-
-                                                  https://fhir.nhs.uk/Id/ods-organization-code
-                                              value:
-                                                description: Organisation's ODS code.
-                                                type: string
-                                                example: B0C4P
-                                          display:
-                                            description: >-
-                                              Organisation that performed the
-                                              immunisation.
-                                            type: string
-                                            example: UNIVERSITY HOSPITAL OF WALES
-                                reasonCode:
-                                  description: Reasons why the vaccine was administered.
-                                  type: array
-                                  minItems: 1
-                                  items:
-                                    type: object
-                                    required:
-                                      - coding
-                                    properties:
-                                      coding:
-                                        description: Wrapper for the reason code details.
-                                        type: array
-                                        minItems: 1
-                                        items:
-                                          type: object
-                                          required:
-                                            - system
-                                            - code
-                                            - display
-                                          properties:
-                                            system:
-                                              description: >-
-                                                Coding system used to describe the
-                                                reason for administration of vaccine.
-                                              type: string
-                                              example: "http://snomed.info/sct"
-                                            code:
-                                              description: SNOMED code for the vaccination reason.
-                                              type: string
-                                              example: "443684005"
-                                            display:
-                                              description: Description of the vaccination reason.
-                                              type: string
-                                              example: Disease outbreak (event)
-                                protocolApplied:
-                                  description: >-
-                                    The protocol (set of recommendations) being
-                                    followed by the provider who administered
-                                    the dose.
-                                  type: array
-                                  minItems: 1
-                                  items:
-                                    type: object
-                                    required:
-                                      - targetDisease
-                                    oneOf:
-                                      - required:
-                                          - doseNumberPositiveInt
-                                      - required:
-                                          - doseNumberString
-                                    properties:
-                                      targetDisease:
-                                        type: array
-                                        description: >-
-                                          The vaccine preventable disease the dose
-                                          is being administered against.
-                                        items:
-                                          type: object
-                                          properties:
-                                            coding:
-                                              type: array
-                                              description: >-
-                                                A reference to a code defined by a
-                                                terminology system.
-                                              items:
-                                                type: object
-                                                properties:
-                                                  system:
-                                                    description: >-
-                                                      The identification of the code system
-                                                      that defines the meaning of the symbol
-                                                      in the code.
-                                                    type: string
-                                                  code:
-                                                    description: >-
-                                                      A symbol in syntax defined by the
-                                                      system. The symbol may be a predefined
-                                                      code or an expression in a syntax
-                                                      defined by the coding system
-                                                    type: string
-                                                  display:
-                                                    description: >-
-                                                      A representation of the meaning of the
-                                                      code in the system, following the rules
-                                                      of the system.
-                                                    type: string
-                                                required:
-                                                  - system
-                                                  - code
-                                                  - display
-                                          required:
-                                            - coding
-                                      doseNumberPositiveInt:
-                                        description: >-
-                                          Nominal position in a course of
-                                          vaccines. This `SHOULD be populated`
-                                          where the data is available. Maximum
-                                          value is 9.
-                                        type: integer
-                                        maximum: 9
-                                        example: 1
-                                      doseNumberString:
-                                        description: >-
-                                          Description of the dose sequence where
-                                          it is not a numeric or a reason a dose
-                                          number cannot be provided.  
-
-                                          A string should only be used in cases
-                                          where an integer is not available.
-                                        type: string
-                            - description: Demographic information about the patient receiving an immunisation.
-                              type: object
-                              required:
-                                - resourceType
-                                - id
-                              properties:
-                                resourceType:
-                                  description: FHIR resource type. Always `Patient`.
-                                  type: string
-                                  example: Patient
-                                id:
-                                  description: Patient ID (NHS Number)
-                                  type: string
-                                  example: "9000000009"
-                                identifier:
-                                  description: >-
-                                    Unique identifier for this patient. Always
-                                    an NHS number.
-                                  type: array
-                                  minItems: 1
-                                  items:
-                                    type: object
-                                    required:
-                                      - system
-                                      - value
-                                    properties:
-                                      system:
-                                        description: Coding system used to identify patients.
-                                        type: string
-                                        example: "https://fhir.nhs.uk/Id/nhs-number"
-                                      value:
-                                        description: Code identifying the patient.
-                                        type: string
-                                        example: "9000000009"
-                        search:
-                          description: Search-related information for the Immunization.
-                          type: object
-                          required:
-                            - mode
-                          properties:
-                            mode:
-                              description: >-
-                                Indicates why this resource is in the result
-                                set. For Immunization resources this is always
-                                `match`.
-                              enum:
-                                - match
-                                - include
-                  total:
-                    description: Number of matching immunisations found.
-                    type: integer
-                    example: 2
-              example:
-                resourceType: Bundle
-                type: searchset
-                link:
-                  - relation: self
-                    url: https://sandbox.api.service.nhs.uk/immunisation-fhir-api/Immunization?immunization.target=RSV&_include=Immunization%3Apatient&patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C9000000009
-                entry:
-                  - fullUrl: https://sandbox.api.service.nhs.uk/immunisation-fhir-api/Immunization/191f288a-17f3-4cd5-a33c-a52aade6473c
-                    resource:
-                      resourceType: Immunization
-                      id: 191f288a-17f3-4cd5-a33c-a52aade6473c
-                      meta:
-                        versionId: "1"
-                      extension:
-                        - url: https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure
-                          valueCodeableConcept:
-                            coding:
-                              - system: "http://snomed.info/sct"
-                                code: "1303503001"
-                                display: >-
-                                  Administration of RSV (respiratory syncytial
-                                  virus) vaccine
-                      identifier:
-                        - use: official
-                          system: "https://supplierABC/identifiers/vacc"
-                          value: e2154d29-1ead-4830-a513-0d59705078fa
-                      status: completed
-                      vaccineCode:
-                        coding:
-                          - system: "http://snomed.info/sct"
-                            code: "42605811000001109"
-                            display: >-
-                              Abrysvo vaccine powder and solvent for solution
-                              for injection 0.5ml vials (Pfizer Ltd)
-                      patient:
-                        reference: "urn:uuid:a7a5bc28-5831-4158-8a73-0d3e6e43c1ac"
-                        type: Patient
-                        identifier:
-                          system: "https://fhir.nhs.uk/Id/nhs-number"
-                          value: "9000000009"
-                      occurrenceDateTime: "2021-02-07T13:28:17.271000+00:00"
-                      recorded: "2021-02-07T13:28:17.271000+00:00"
-                      primarySource: true
-                      location:
-                        identifier:
-                          system: "https://fhir.nhs.uk/Id/ods-organization-code"
-                          value: X99999
-                      manufacturer:
-                        display: AstraZeneca Ltd
-                      lotNumber: 4120Z001
-                      expirationDate: "2021-07-02"
-                      site:
-                        coding:
-                          - system: "http://snomed.info/sct"
-                            code: "368208006"
-                            display: Left upper arm structure (body structure)
-                      route:
-                        coding:
-                          - system: "http://snomed.info/sct"
-                            code: "78421000"
-                            display: Intramuscular route (qualifier value)
-                      doseQuantity:
-                        value: 0.5
-                        unit: milliliter
-                        system: "http://unitsofmeasure.org"
-                        code: ml
-                      performer:
-                        - actor:
-                            type: Organization
-                            identifier:
-                              system: "https://fhir.nhs.uk/Id/ods-organization-code"
-                              value: B0C4P
-                            display: UNIVERSITY HOSPITAL OF WALES
-                      reasonCode:
-                        - coding:
-                            - system: "http://snomed.info/sct"
-                              code: "443684005"
-                              display: Disease outbreak (event)
-                      protocolApplied:
-                        - targetDisease:
-                            - coding:
-                                - system: "http://snomed.info/sct"
-                                  code: "55735004"
-                                  display: >-
-                                    Respiratory syncytial virus infection
-                                    (disorder)
-                          doseNumberPositiveInt: 1
-                    search:
-                      mode: match
-                  - fullUrl: "urn:uuid:a7a5bc28-5831-4158-8a73-0d3e6e43c1ac"
-                    resource:
-                      resourceType: Patient
-                      id: "9000000009"
-                      identifier:
-                        - system: "https://fhir.nhs.uk/Id/nhs-number"
-                          value: "9000000009"
-                    search:
-                      mode: include
-                total: 1
+          $ref: "#/components/responses/200-imms-search"
         4XX:
           $ref: "#/components/responses/4XX-imms-search"
+  /Immunization/_search:
+    post:
+      summary: Search for a patient's immunisation records (POST)
+      operationId: searchImmunizationPost
+      description: >
+        ## Overview
+
+        A POST search interaction is supported in accordance with [FHIR
+        guidance](https://digital.nhs.uk/developer/guides-and-documentation/our-api-technologies#fhir)
+        as an alternative to a search with the GET verb. 
+
+
+        A POST search allows
+        you to supply some or all parameters in the body of the request should
+        you need to do so. It offers the same search functionality as the GET
+        search interaction. 
+
+
+        Note that the API call for the POST search is different: 
+
+
+        `POST /Immunization/_search`
+
+        ## Sandbox testing
+
+        You can test the following scenarios in our sandbox environment:
+
+
+        | Scenario                                |
+        Request                                                                                                                                                        
+        |
+        Response                                                               
+        |
+
+        | ----------------------------------------|
+        ----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+        ------------------------------------------------------------------------|
+
+        |                                        
+        |                                                                                                                                                                
+        |                                                                        
+        |
+
+        |  Immunisation history found             |
+        `patient.identifier`=https://fhir.nhs.uk/Id/nhs-number&#124;9000000009                                                                                           
+        | HTTP Status 200 with immunisation data in response
+        body                 |
+
+        |  Bad Request                            | Didn't pass required fields
+        `patient.identifier`  or  `-immunization.target`          | HTTP Status
+        400 Bad Request               |
+      parameters:
+        - $ref: "#/components/parameters/CorrelationID"
+        - $ref: "#/components/parameters/RequestID"
+        - $ref: "#/components/parameters/PatientIdentifier"
+        - $ref: "#/components/parameters/ImmunizationTarget"
+        - $ref: "#/components/parameters/DateFrom"
+        - $ref: "#/components/parameters/DateTo"
+        - $ref: "#/components/parameters/Include"
+      responses:
+        "200":
+          $ref: "#/components/responses/200-imms-search"
+        4XX:
+          $ref: "#/components/responses/4XX-imms-search"
+
   "/Immunization/{id}":
     get:
       summary: Retrieve a record of an immunisation by its unique identifier
@@ -2190,13 +1457,16 @@ paths:
         vaccination by our assigned id. We will return the full immunization
         resource as submitted. 
 
+
         The response will include an eTag for the version of the record which
         has been returned. If you intend to update a record, it is recommended
         that you use this interaction to obtain the latest version (and eTag for
         the version). 
 
+
         To retrieve a full vaccination history for a patient, see the search
         interaction. 
+
 
         You must be authorised for the read interaction and the disease type
         associated with the vaccination event in order to access the record. 
@@ -2962,12 +2232,15 @@ paths:
         event using the read interaction, which will also return an eTag for the
         version. 
 
+
         You may use update to re-instate a deleted record, but our update
         interaction does not support creating a new vaccination event where one
         does not currently exist. 
 
+
         You must not change the identifier when updating a vaccination event.
         The identifier is used as a primary identifier by downstream systems.  
+
 
         You must be authorised for update interaction and the disease type
         associated with the vaccination event in order to update the record. 
@@ -3893,8 +3166,10 @@ paths:
         This interaction allows you to mark a record that has been entered in
         error.
 
+
         Deleted records will continue to be stored for a period of time but are
         not returned in response to read or search requests.
+
 
         A deleted record can be re-instated using the update interaction if it
         was incorrectly deleted. 
@@ -3935,6 +3210,794 @@ paths:
           $ref: "#/components/responses/4XX-imms-delete"
 components:
   responses:
+    200-imms-search:
+      description: Search immunisation operation successful
+      content:
+        application/fhir+json:
+          schema:
+            description: >-
+              FHIR Bundle containing the query results - a list of matching
+              immunisations and associated patients.
+            type: object
+            required:
+              - resourceType
+              - type
+              - total
+              - entry
+            properties:
+              resourceType:
+                description: FHIR resource type. Always `Bundle`.
+                type: string
+                example: Bundle
+              type:
+                description: >-
+                  Indicates how the bundle is intended to be used. Always
+                  `searchset`.
+                type: string
+                example: searchset
+              link:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    relation:
+                      description: >-
+                        A name which details the functional use for this
+                        link - see
+                        [http://www.iana.org/assignments/link-relations/link-relations.xhtml#link-relations-1](http://www.iana.org/assignments/link-relations/link-relations.xhtml#link-relations-1).
+                        Always `Self`.
+                      type: string
+                    url:
+                      description: >-
+                        A url representing the search applied by the API to
+                        generate the result which may differ from the
+                        request if unrecognised or unsupported parameters
+                        have been ignored.
+                      type: string
+                  required:
+                    - relation
+                    - url
+              entry:
+                description: >-
+                  List of matching immunisations and associated patient. If
+                  there were no matching immunisations, this is an empty
+                  list.
+                type: array
+                items:
+                  type: object
+                  required:
+                    - fullUrl
+                    - resource
+                    - search
+                  properties:
+                    fullUrl:
+                      description: URI for the Immunization or Patient resource.
+                      type: string
+                      example: >-
+                        https://sandbox.api.service.nhs.uk/immunisation-fhir-api/Immunization/191f288a-17f3-4cd5-a33c-a52aade6473c
+                    resource:
+                      description: The Immunization or Patient resource.
+                      oneOf:
+                        - description: A matching immunisation, formatted as a FHIR Immunization resource.
+                          type: object
+                          required:
+                            - resourceType
+                            - extension
+                            - identifier
+                            - status
+                            - vaccineCode
+                            - patient
+                            - occurrenceDateTime
+                            - recorded
+                            - primarySource
+                            - location
+                            - performer
+                            - protocolApplied
+                          properties:
+                            resourceType:
+                              description: FHIR resource type. Always `Immunization`.
+                              type: string
+                              example: Immunization
+                            id:
+                              description: Immunization record Id.
+                              type: string
+                              example: 191f288a-17f3-4cd5-a33c-a52aade6473c
+                            meta:
+                              type: object
+                              properties:
+                                versionId:
+                                  type: string
+                                  pattern: '[A-Za-z0-9\-\.]{1,64}'
+                                  description: >-
+                                    The version specific identifier, as it
+                                    appears in the version portion of the
+                                    URL. This value changes when the
+                                    resource is created, updated, or
+                                    deleted.
+                                lastUpdated:
+                                  type: string
+                                  pattern: >-
+                                    ([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))
+                                  description: >-
+                                    When the resource last changed - e.g.
+                                    when the version changed.
+                                  example: "2017-01-01T00:00:00Z"
+                                source:
+                                  type: string
+                                  description: >-
+                                    Identifies where the resource comes
+                                    from.
+                                profile:
+                                  type: array
+                                  items:
+                                    type: string
+                                    pattern: \S*
+                                    description: >-
+                                      A list of profiles (references to
+                                      [StructureDefinition](structuredefinition.html#)
+                                      resources) that this resource claims to
+                                      conform to. The URL is a reference to
+                                      [StructureDefinition.url](structuredefinition-definitions.html#StructureDefinition.url).
+                                security:
+                                  type: array
+                                  items:
+                                    $ref: "#/components/schemas/Coding"
+                                tag:
+                                  type: array
+                                  items:
+                                    $ref: "#/components/schemas/Coding"
+                              required:
+                                - versionId
+                            extension:
+                              description: >-
+                                FHIR extension wrapper for the vaccination
+                                procedure performed. Always contains exactly
+                                one object.
+                              type: array
+                              minItems: 1
+                              maxItems: 1
+                              items:
+                                type: object
+                                required:
+                                  - url
+                                  - valueCodeableConcept
+                                properties:
+                                  url:
+                                    description: >-
+                                      URI for the type of extension -
+                                      https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure
+                                    type: string
+                                    example: >-
+                                      https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure
+                                  valueCodeableConcept:
+                                    description: >-
+                                      Wrapper for the vaccination procedure
+                                      coding.
+                                    type: object
+                                    required:
+                                      - coding
+                                    properties:
+                                      coding:
+                                        description: >-
+                                          Wrapper for the vaccination procedure
+                                          coding.
+                                        type: array
+                                        items:
+                                          type: object
+                                          required:
+                                            - system
+                                            - code
+                                            - display
+                                          properties:
+                                            system:
+                                              description: >-
+                                                The identification of the code system
+                                                that defines the meaning of the symbol
+                                                in the code.
+                                              type: string
+                                              example: "http://snomed.info/sct"
+                                            code:
+                                              description: A particular code in the system.
+                                              type: string
+                                              example: "1303503001"
+                                            display:
+                                              description: Representation defined by the system.
+                                              type: string
+                                              example: >-
+                                                Administration of RSV (respiratory
+                                                syncytial virus) vaccine
+                            identifier:
+                              description: >-
+                                Unique identifier for this immunisation
+                                record, as generated by the source system.
+                              type: array
+                              minItems: 1
+                              maxItems: 1
+                              items:
+                                type: object
+                                required:
+                                  - system
+                                  - value
+                                properties:
+                                  use:
+                                    description: >-
+                                      Identifier use as defined by
+                                      https://www.hl7.org/fhir/valueset-identifier-use.html.
+                                    type: string
+                                    enum:
+                                      - usual
+                                      - official
+                                      - temp
+                                      - secondary
+                                      - old
+                                    example: official
+                                  system:
+                                    description: URI of the namespace of this identifier.
+                                    type: string
+                                    example: "https://supplierABC/identifiers/vacc"
+                                  value:
+                                    description: Identifier value within `system`.
+                                    type: string
+                                    example: e2154d29-1ead-4830-a513-0d59705078fa
+                            status:
+                              description: >-
+                                Status of the immunisation event. This is
+                                *not* an indication of patient immunity,
+                                only whether the immunisation was completed
+                                or not. Currently we only return details of
+                                completed immunisations.
+                              type: string
+                              enum:
+                                - completed
+                              example: completed
+                            vaccineCode:
+                              description: Vaccine product administered.
+                              type: object
+                              required:
+                                - coding
+                              properties:
+                                coding:
+                                  description: Wrapper for the vaccine product details.
+                                  type: array
+                                  minItems: 1
+                                  items:
+                                    type: object
+                                    required:
+                                      - system
+                                      - code
+                                      - display
+                                    properties:
+                                      system:
+                                        description: >-
+                                          The identification of the code system
+                                          that defines the meaning of the symbol
+                                          in the code.
+                                        type: string
+                                        example: "http://snomed.info/sct"
+                                      code:
+                                        description: SNOMED code for the vaccine product.
+                                        type: string
+                                        example: "42605811000001109"
+                                      display:
+                                        description: Description of the vaccine product.
+                                        type: string
+                                        example: >-
+                                          Abrysvo vaccine powder and solvent for
+                                          solution for injection 0.5ml vials
+                                          (Pfizer Ltd)
+                            patient:
+                              description: The patient who was immunised.
+                              type: object
+                              required:
+                                - reference
+                                - type
+                                - identifier
+                              properties:
+                                reference:
+                                  description: >-
+                                    URI for the associated Patient resource
+                                    in the bundle.
+                                  type: string
+                                  example: >-
+                                    urn:uuid:a7a5bc28-5831-4158-8a73-0d3e6e43c1ac
+                                type:
+                                  description: >-
+                                    Type of resource this reference refers
+                                    to. Always `Patient`.
+                                  type: string
+                                  example: Patient
+                                identifier:
+                                  description: >-
+                                    Business identifier for linked Patient.
+                                    Always an NHS number.
+                                  type: object
+                                  required:
+                                    - system
+                                    - value
+                                  properties:
+                                    system:
+                                      description: >-
+                                        URI of coding system used to identify
+                                        linked patient. Always
+                                        https://fhir.nhs.uk/Id/nhs-number
+                                      type: string
+                                      example: "https://fhir.nhs.uk/Id/nhs-number"
+                                    value:
+                                      description: >-
+                                        Value in coding system representing
+                                        linked patient.
+                                      type: string
+                                      example: "9000000009"
+                            occurrenceDateTime:
+                              description: Date and time of immunisation.
+                              type: string
+                              example: "2021-02-07T13:28:17.271000+00:00"
+                            recorded:
+                              description: >-
+                                The date the occurrence of the immunization
+                                was first captured in the record -
+                                potentially significantly after the
+                                occurrence of the event.
+                              type: string
+                              example: "2021-02-07T13:28:17.271000+00:00"
+                            primarySource:
+                              description: >-
+                                An indication that the content of the record
+                                is based on information from the person who
+                                administered the vaccine. This reflects the
+                                context under which the data was originally
+                                recorded.
+                              type: boolean
+                              example: true
+                            location:
+                              type: object
+                              description: >-
+                                The service delivery location where the
+                                vaccine administration occurred.
+                              properties:
+                                identifier:
+                                  type: object
+                                  description: >-
+                                    An identifier for the service delivery
+                                    location.
+                                  properties:
+                                    system:
+                                      description: >-
+                                        The system which defines the location.
+                                        Typically this will be
+                                        https://fhir.nhs.uk/Id/ods-organization-code
+                                        for a health setting or
+                                        https://fhir.hl7.org.uk/Id/urn-school-number
+                                        for an education setting.
+                                      type: string
+                                      example: >-
+                                        https://fhir.nhs.uk/Id/ods-organization-code
+                                    value:
+                                      description: >-
+                                        A code from the system to represent the
+                                        location. An ODS code of X99999
+                                        represents a location where a code is
+                                        not available.
+                                      type: string
+                                      example: X99999
+                                  required:
+                                    - system
+                                    - value
+                              required:
+                                - identifier
+                            manufacturer:
+                              description: Vaccine manufacturer details.
+                              type: object
+                              properties:
+                                display:
+                                  description: Decsription of the vaccine manufacturer.
+                                  type: string
+                                  example: AstraZeneca Ltd
+                            lotNumber:
+                              description: Lot number of the vaccine product.
+                              type: string
+                              example: 4120Z001
+                            expirationDate:
+                              description: Date vaccine batch expires.
+                              type: string
+                              example: "2021-04-29"
+                            site:
+                              description: Body site where vaccine was administered.
+                              type: object
+                              properties:
+                                coding:
+                                  description: >-
+                                    Wrapper for the vaccination body site
+                                    details.
+                                  type: array
+                                  minItems: 1
+                                  items:
+                                    type: object
+                                    properties:
+                                      system:
+                                        description: >-
+                                          Coding system used to describe
+                                          vaccination body site.
+                                        type: string
+                                        example: "http://snomed.info/sct"
+                                      code:
+                                        description: Code for the vaccination body site.
+                                        type: string
+                                        example: "368208006"
+                                      display:
+                                        description: >-
+                                          Description of the vaccination body
+                                          site.
+                                        type: string
+                                        example: >-
+                                          Left upper arm structure (body
+                                          structure)
+                              required:
+                                - coding
+                            route:
+                              description: >-
+                                The path by which the vaccine product is
+                                taken into the body.
+                              type: object
+                              required:
+                                - coding
+                              properties:
+                                coding:
+                                  description: >-
+                                    Wrapper for the vaccination route
+                                    details.
+                                  type: array
+                                  minItems: 1
+                                  items:
+                                    type: object
+                                    properties:
+                                      system:
+                                        description: >-
+                                          Coding system used to describe
+                                          vaccination route.
+                                        type: string
+                                        example: "http://snomed.info/sct"
+                                      code:
+                                        description: Code for the vaccination route.
+                                        type: string
+                                        example: "78421000"
+                                      display:
+                                        description: Description of the vaccination route.
+                                        type: string
+                                        example: Intramuscular route (qualifier value)
+                            doseQuantity:
+                              description: >-
+                                The quantity of vaccine product that was
+                                administered.
+                              type: object
+                              properties:
+                                value:
+                                  description: Number of units administered.
+                                  type: number
+                                  example: 1
+                                unit:
+                                  description: Description of unit.
+                                  type: string
+                                  example: milliliter
+                                system:
+                                  description: System that defines coded unit form.
+                                  type: string
+                                  example: "http://unitsofmeasure.org"
+                                code:
+                                  description: Code describing the unit.
+                                  type: string
+                                  example: ml
+                            performer:
+                              description: >-
+                                Details of the organisation that performed
+                                the immunisation.
+                              type: array
+                              minItems: 1
+                              maxItems: 1
+                              items:
+                                type: object
+                                required:
+                                  - actor
+                                properties:
+                                  actor:
+                                    description: >-
+                                      Organisation that performed the
+                                      immunisation.
+                                    type: object
+                                    required:
+                                      - type
+                                      - identifier
+                                    properties:
+                                      type:
+                                        description: Type of actor. Always `Organisation`.
+                                        type: string
+                                        example: Organisation
+                                      identifier:
+                                        description: Organisation identifier.
+                                        type: object
+                                        required:
+                                          - system
+                                          - value
+                                        properties:
+                                          system:
+                                            description: >-
+                                              Coding system used for the organisation
+                                              identifier. Always
+                                              `https://fhir.nhs.uk/Id/ods-organization-code`.
+                                            type: string
+                                            example: >-
+                                              https://fhir.nhs.uk/Id/ods-organization-code
+                                          value:
+                                            description: Organisation's ODS code.
+                                            type: string
+                                            example: B0C4P
+                                      display:
+                                        description: >-
+                                          Organisation that performed the
+                                          immunisation.
+                                        type: string
+                                        example: UNIVERSITY HOSPITAL OF WALES
+                            reasonCode:
+                              description: Reasons why the vaccine was administered.
+                              type: array
+                              minItems: 1
+                              items:
+                                type: object
+                                required:
+                                  - coding
+                                properties:
+                                  coding:
+                                    description: Wrapper for the reason code details.
+                                    type: array
+                                    minItems: 1
+                                    items:
+                                      type: object
+                                      required:
+                                        - system
+                                        - code
+                                        - display
+                                      properties:
+                                        system:
+                                          description: >-
+                                            Coding system used to describe the
+                                            reason for administration of vaccine.
+                                          type: string
+                                          example: "http://snomed.info/sct"
+                                        code:
+                                          description: SNOMED code for the vaccination reason.
+                                          type: string
+                                          example: "443684005"
+                                        display:
+                                          description: Description of the vaccination reason.
+                                          type: string
+                                          example: Disease outbreak (event)
+                            protocolApplied:
+                              description: >-
+                                The protocol (set of recommendations) being
+                                followed by the provider who administered
+                                the dose.
+                              type: array
+                              minItems: 1
+                              items:
+                                type: object
+                                required:
+                                  - targetDisease
+                                oneOf:
+                                  - required:
+                                      - doseNumberPositiveInt
+                                  - required:
+                                      - doseNumberString
+                                properties:
+                                  targetDisease:
+                                    type: array
+                                    description: >-
+                                      The vaccine preventable disease the dose
+                                      is being administered against.
+                                    items:
+                                      type: object
+                                      properties:
+                                        coding:
+                                          type: array
+                                          description: >-
+                                            A reference to a code defined by a
+                                            terminology system.
+                                          items:
+                                            type: object
+                                            properties:
+                                              system:
+                                                description: >-
+                                                  The identification of the code system
+                                                  that defines the meaning of the symbol
+                                                  in the code.
+                                                type: string
+                                              code:
+                                                description: >-
+                                                  A symbol in syntax defined by the
+                                                  system. The symbol may be a predefined
+                                                  code or an expression in a syntax
+                                                  defined by the coding system
+                                                type: string
+                                              display:
+                                                description: >-
+                                                  A representation of the meaning of the
+                                                  code in the system, following the rules
+                                                  of the system.
+                                                type: string
+                                            required:
+                                              - system
+                                              - code
+                                              - display
+                                      required:
+                                        - coding
+                                  doseNumberPositiveInt:
+                                    description: >-
+                                      Nominal position in a course of
+                                      vaccines. This `SHOULD be populated`
+                                      where the data is available. Maximum
+                                      value is 9.
+                                    type: integer
+                                    maximum: 9
+                                    example: 1
+                                  doseNumberString:
+                                    description: >-
+                                      Description of the dose sequence where
+                                      it is not a numeric or a reason a dose
+                                      number cannot be provided.  
+
+                                      A string should only be used in cases
+                                      where an integer is not available.
+                                    type: string
+                        - description: Demographic information about the patient receiving an immunisation.
+                          type: object
+                          required:
+                            - resourceType
+                            - id
+                          properties:
+                            resourceType:
+                              description: FHIR resource type. Always `Patient`.
+                              type: string
+                              example: Patient
+                            id:
+                              description: Patient ID (NHS Number)
+                              type: string
+                              example: "9000000009"
+                            identifier:
+                              description: >-
+                                Unique identifier for this patient. Always
+                                an NHS number.
+                              type: array
+                              minItems: 1
+                              items:
+                                type: object
+                                required:
+                                  - system
+                                  - value
+                                properties:
+                                  system:
+                                    description: Coding system used to identify patients.
+                                    type: string
+                                    example: "https://fhir.nhs.uk/Id/nhs-number"
+                                  value:
+                                    description: Code identifying the patient.
+                                    type: string
+                                    example: "9000000009"
+                    search:
+                      description: Search-related information for the Immunization.
+                      type: object
+                      required:
+                        - mode
+                      properties:
+                        mode:
+                          description: >-
+                            Indicates why this resource is in the result
+                            set. For Immunization resources this is always
+                            `match`.
+                          enum:
+                            - match
+                            - include
+              total:
+                description: Number of matching immunisations found.
+                type: integer
+                example: 2
+          example:
+            resourceType: Bundle
+            type: searchset
+            link:
+              - relation: self
+                url: https://sandbox.api.service.nhs.uk/immunisation-fhir-api/Immunization?immunization.target=RSV&_include=Immunization%3Apatient&patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C9000000009
+            entry:
+              - fullUrl: https://sandbox.api.service.nhs.uk/immunisation-fhir-api/Immunization/191f288a-17f3-4cd5-a33c-a52aade6473c
+                resource:
+                  resourceType: Immunization
+                  id: 191f288a-17f3-4cd5-a33c-a52aade6473c
+                  meta:
+                    versionId: "1"
+                  extension:
+                    - url: https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure
+                      valueCodeableConcept:
+                        coding:
+                          - system: "http://snomed.info/sct"
+                            code: "1303503001"
+                            display: >-
+                              Administration of RSV (respiratory syncytial
+                              virus) vaccine
+                  identifier:
+                    - use: official
+                      system: "https://supplierABC/identifiers/vacc"
+                      value: e2154d29-1ead-4830-a513-0d59705078fa
+                  status: completed
+                  vaccineCode:
+                    coding:
+                      - system: "http://snomed.info/sct"
+                        code: "42605811000001109"
+                        display: >-
+                          Abrysvo vaccine powder and solvent for solution
+                          for injection 0.5ml vials (Pfizer Ltd)
+                  patient:
+                    reference: "urn:uuid:a7a5bc28-5831-4158-8a73-0d3e6e43c1ac"
+                    type: Patient
+                    identifier:
+                      system: "https://fhir.nhs.uk/Id/nhs-number"
+                      value: "9000000009"
+                  occurrenceDateTime: "2021-02-07T13:28:17.271000+00:00"
+                  recorded: "2021-02-07T13:28:17.271000+00:00"
+                  primarySource: true
+                  location:
+                    identifier:
+                      system: "https://fhir.nhs.uk/Id/ods-organization-code"
+                      value: X99999
+                  manufacturer:
+                    display: AstraZeneca Ltd
+                  lotNumber: 4120Z001
+                  expirationDate: "2021-07-02"
+                  site:
+                    coding:
+                      - system: "http://snomed.info/sct"
+                        code: "368208006"
+                        display: Left upper arm structure (body structure)
+                  route:
+                    coding:
+                      - system: "http://snomed.info/sct"
+                        code: "78421000"
+                        display: Intramuscular route (qualifier value)
+                  doseQuantity:
+                    value: 0.5
+                    unit: milliliter
+                    system: "http://unitsofmeasure.org"
+                    code: ml
+                  performer:
+                    - actor:
+                        type: Organization
+                        identifier:
+                          system: "https://fhir.nhs.uk/Id/ods-organization-code"
+                          value: B0C4P
+                        display: UNIVERSITY HOSPITAL OF WALES
+                  reasonCode:
+                    - coding:
+                        - system: "http://snomed.info/sct"
+                          code: "443684005"
+                          display: Disease outbreak (event)
+                  protocolApplied:
+                    - targetDisease:
+                        - coding:
+                            - system: "http://snomed.info/sct"
+                              code: "55735004"
+                              display: >-
+                                Respiratory syncytial virus infection
+                                (disorder)
+                      doseNumberPositiveInt: 1
+                search:
+                  mode: match
+              - fullUrl: "urn:uuid:a7a5bc28-5831-4158-8a73-0d3e6e43c1ac"
+                resource:
+                  resourceType: Patient
+                  id: "9000000009"
+                  identifier:
+                    - system: "https://fhir.nhs.uk/Id/nhs-number"
+                      value: "9000000009"
+                search:
+                  mode: include
+            total: 1
     4XX-imms-create:
       description: >
         Below are examples of potential HTTP status codes and their associated
