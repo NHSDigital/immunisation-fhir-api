@@ -1399,11 +1399,6 @@ paths:
         search interaction. 
 
 
-        Note that the API call for the POST search is different: 
-
-
-        `POST /Immunization/_search`
-
         ## Sandbox testing
 
         You can test the following scenarios in our sandbox environment:
@@ -1435,11 +1430,8 @@ paths:
       parameters:
         - $ref: "#/components/parameters/CorrelationID"
         - $ref: "#/components/parameters/RequestID"
-        - $ref: "#/components/parameters/PatientIdentifier"
-        - $ref: "#/components/parameters/ImmunizationTarget"
-        - $ref: "#/components/parameters/DateFrom"
-        - $ref: "#/components/parameters/DateTo"
-        - $ref: "#/components/parameters/Include"
+      requestBody:
+        $ref: "#/components/requestBodies/SearchImmunizationPost"
       responses:
         "200":
           $ref: "#/components/responses/200-imms-search"
@@ -4598,6 +4590,58 @@ components:
       schema:
         type: integer
         example: 1
+  requestBodies:
+    SearchImmunizationPost:
+      content:
+        application/x-www-form-urlencoded:
+          schema:
+            type: object
+            properties:
+              patient.identifier:
+                type: string
+                description: >
+                  The patient's NHS number.
+
+                  Expressed as `<type>|<value>` where `<type>` must be
+                  `https://fhir.nhs.uk/Id/nhs-number` and `<value>` must be a [valid NHS
+                  number](https://www.datadictionary.nhs.uk/attributes/nhs_number.html).
+                default: "https://fhir.nhs.uk/Id/nhs-number|9000000009"
+              "-immunization.target":
+                type: string
+                description: >
+                  Specific procedures, disorders, diseases, infections or
+                  organisms.
+                enum:
+                  - 3IN1
+                  - COVID
+                  - FLU
+                  - HPV
+                  - MENACWY
+                  - MMR
+                  - MMRV
+                  - PNEUMOCOCCAL
+                  - PERTUSSIS
+                  - RSV
+                  - SHINGLES
+              "-date.from":
+                type: string
+                format: date
+                description: The earliest date to be included (e.g. 2020-01-01)
+                default: "1900-01-01"
+              "-date.to":
+                type: string
+                format: date
+                description: The latest date to be included (e.g. 2020-12-31)
+                default: "9999-12-31"
+              _include:
+                description: >-
+                  Specifies other resources to be included in the response along
+                  with the immunisations.
+
+                  Must be `Immunization:patient`, which will include patient
+                  demographic details.
+                type: string
+                default: "Immunization:patient"
   parameters:
     Id:
       in: path
