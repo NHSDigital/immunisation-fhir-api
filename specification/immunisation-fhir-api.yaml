@@ -367,21 +367,6 @@ info:
     To understand how our online digital onboarding process works, see [digital
     onboarding](https://digital.nhs.uk/developer/guides-and-documentation/digital-onboarding#using-the-digital-onboarding-portal).
 
-
-    ## Related APIs
-
-
-    The following APIs are related to this API:
-
-
-    ### Immunisation History - FHIR API
-
-    Use the [Immunisation History - FHIR
-    API](https://digital.nhs.uk/developer/api-catalogue/immunisation-history-fhir)
-    if you want to access vaccination records that are not yet available on this
-    API.
-
-
     ## Contact us
 
     For help and support connecting to our APIs and to join our developer
