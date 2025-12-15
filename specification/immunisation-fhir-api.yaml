@@ -4581,6 +4581,9 @@ components:
         application/x-www-form-urlencoded:
           schema:
             type: object
+            required:
+              - patient.identifier
+              - "-immunization.target"
             properties:
               patient.identifier:
                 type: string
@@ -4591,6 +4594,7 @@ components:
                   `https://fhir.nhs.uk/Id/nhs-number` and `<value>` must be a [valid NHS
                   number](https://www.datadictionary.nhs.uk/attributes/nhs_number.html).
                 default: "https://fhir.nhs.uk/Id/nhs-number|9000000009"
+                example: "https://fhir.nhs.uk/Id/nhs-number|9000000009"
               "-immunization.target":
                 type: string
                 description: >
