@@ -256,6 +256,7 @@ class TestProcessRow(unittest.TestCase):
         imms_fhir_resource = process_row(TargetDiseaseElements.RSV, Allowed_Operations, legacy_tpp_row)
         # validate if the response with expected result
         self.assertDictEqual(imms_fhir_resource["fhir_json"], expected_successful_result_tpp)
+        self.assertEqual(legacy_tpp_row["UNIQUE_ID_URI"], "https://tpp-uk.com/Id/ve/vacc")
 
     def test_process_row_successfully_uplifts_legacy_emis_uri(self):
         """
@@ -272,6 +273,7 @@ class TestProcessRow(unittest.TestCase):
         imms_fhir_resource = process_row(TargetDiseaseElements.RSV, Allowed_Operations, legacy_emis_row)
         # validate if the response with expected result
         self.assertDictEqual(imms_fhir_resource["fhir_json"], expected_successful_result_emis)
+        self.assertEqual(legacy_emis_row["UNIQUE_ID_URI"], "https://emishealth.com/identifiers/vacc")
 
 
 if __name__ == "__main__":
