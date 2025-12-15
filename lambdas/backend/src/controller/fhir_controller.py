@@ -36,6 +36,7 @@ from repository.fhir_repository import ImmunizationRepository, create_table
 from service.fhir_service import FhirService, get_service_url
 
 IMMUNIZATION_ENV = os.getenv("IMMUNIZATION_ENV")
+IMMUNIZATION_BASE_PATH = os.getenv("IMMUNIZATION_BASE_PATH")
 
 
 def make_controller(
@@ -51,7 +52,7 @@ def make_controller(
 
 class FhirController:
     _IMMUNIZATION_ID_PATTERN = r"^[A-Za-z0-9\-.]{1,64}$"
-    _API_SERVICE_URL = get_service_url()
+    _API_SERVICE_URL = get_service_url(IMMUNIZATION_ENV, IMMUNIZATION_BASE_PATH)
 
     def __init__(
         self,

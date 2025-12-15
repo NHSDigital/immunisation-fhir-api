@@ -22,7 +22,7 @@ from common.models.fhir_immunization import ImmunizationValidator
 from common.models.immunization_record_metadata import ImmunizationRecordMetadata
 from models.errors import UnauthorizedVaxError
 from repository.fhir_repository import ImmunizationRepository
-from service.fhir_service import FhirService, get_service_url
+from service.fhir_service import FhirService
 from test_common.testing_utils.generic_utils import load_json_data
 from test_common.testing_utils.immunization_utils import (
     VALID_NHS_NUMBER,
@@ -46,41 +46,12 @@ class TestFhirServiceBase(unittest.TestCase):
         self.mock_redis_getter = self.redis_getter_patcher.start()
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
+        self.imms_env_patcher = patch("service.fhir_service.IMMUNIZATION_ENV", "internal-dev")
+        self.imms_env_patcher.start()
 
     def tearDown(self):
         super().tearDown()
         patch.stopall()
-
-
-class TestServiceUrl(unittest.TestCase):
-    def setUp(self):
-        self.logger_info_patcher = patch("logging.Logger.info")
-        self.mock_logger_info = self.logger_info_patcher.start()
-
-    def tearDown(self):
-        patch.stopall()
-
-    def test_get_service_url(self):
-        """it should create service url"""
-        env = "int"
-        base_path = "immunisation-fhir-api/FHIR/R4"
-        url = get_service_url(env, base_path)
-        self.assertEqual(url, f"https://{env}.api.service.nhs.uk/{base_path}")
-        # default should be internal-dev
-        env = "it-does-not-exist"
-        base_path = "immunisation-fhir-api/FHIR/R4"
-        url = get_service_url(env, base_path)
-        self.assertEqual(url, f"https://internal-dev.api.service.nhs.uk/{base_path}")
-        # prod should not have a subdomain
-        env = "prod"
-        base_path = "immunisation-fhir-api/FHIR/R4"
-        url = get_service_url(env, base_path)
-        self.assertEqual(url, f"https://api.service.nhs.uk/{base_path}")
-        # any other env should fall back to internal-dev (like pr-xx or per-user)
-        env = "pr-42"
-        base_path = "immunisation-fhir-api/FHIR/R4"
-        url = get_service_url(env, base_path)
-        self.assertEqual(url, f"https://internal-dev.api.service.nhs.uk/{base_path}")
 
 
 class TestGetImmunization(TestFhirServiceBase):

@@ -2,7 +2,6 @@ import copy
 import datetime
 import logging
 import os
-import urllib.parse
 import uuid
 from typing import Any, Optional, cast
 from uuid import uuid4
@@ -43,11 +42,10 @@ from common.models.utils.validation_utils import (
     validate_identifiers_match,
     validate_resource_versions_match,
 )
-from controller.constants import IMMUNIZATION_TARGET_LEGACY_KEY_NAME, ImmunizationSearchParameterName
-from controller.parameter_parser import PATIENT_IDENTIFIER_SYSTEM
 from filter import Filter
 from models.errors import UnauthorizedVaxError
 from repository.fhir_repository import ImmunizationRepository
+from service.search_url_helper import create_url_for_bundle_link, get_service_url
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger()
@@ -57,24 +55,6 @@ IMMUNIZATION_ENV = os.getenv("IMMUNIZATION_ENV")
 
 AUTHORISER = Authoriser()
 IMMUNIZATION_VALIDATOR = ImmunizationValidator()
-
-
-def get_service_url(
-    service_env: str = IMMUNIZATION_ENV,
-    service_base_path: str = IMMUNIZATION_BASE_PATH,
-) -> str:
-    if not service_base_path:
-        service_base_path = "immunisation-fhir-api/FHIR/R4"
-
-    non_prod = ["internal-dev", "int", "sandbox"]
-    if service_env in non_prod:
-        subdomain = f"{service_env}."
-    elif service_env == "prod":
-        subdomain = ""
-    else:
-        subdomain = "internal-dev."
-
-    return f"https://{subdomain}api.service.nhs.uk/{service_base_path}"
 
 
 class FhirService:
@@ -98,7 +78,7 @@ class FhirService:
         """
         Get an Immunization by its ID. Returns a FHIR Bundle containing the search results.
         """
-        base_url = f"{get_service_url()}/Immunization"
+        base_url = f"{get_service_url(IMMUNIZATION_ENV, IMMUNIZATION_BASE_PATH)}/Immunization"
         resource, resource_metadata = self.immunization_repo.get_immunization_by_identifier(identifier)
 
         if not resource:
@@ -251,7 +231,7 @@ class FhirService:
             BundleEntry(
                 resource=Immunization.parse_obj(imms),
                 search=BundleEntrySearch(mode="match"),
-                fullUrl=f"{get_service_url()}/Immunization/{imms['id']}",
+                fullUrl=f"{get_service_url(IMMUNIZATION_ENV, IMMUNIZATION_BASE_PATH)}/Immunization/{imms['id']}",
             )
             for imms in processed_resources
         ]
@@ -288,7 +268,15 @@ class FhirService:
             link=[
                 BundleLink(
                     relation="self",
-                    url=self.create_url_for_bundle_link(permitted_vacc_types, nhs_number, date_from, date_to, include),
+                    url=create_url_for_bundle_link(
+                        permitted_vacc_types,
+                        nhs_number,
+                        date_from,
+                        date_to,
+                        include,
+                        IMMUNIZATION_ENV,
+                        IMMUNIZATION_BASE_PATH,
+                    ),
                 )
             ],
             total=len(processed_resources),
@@ -408,29 +396,3 @@ class FhirService:
             new_patient["id"] = new_patient["identifier"][0].get("value")
 
         return new_patient
-
-    @staticmethod
-    def create_url_for_bundle_link(
-        immunization_targets: set[str],
-        patient_nhs_number: str,
-        date_from: Optional[datetime.date],
-        date_to: Optional[datetime.date],
-        include: Optional[str],
-    ) -> str:
-        """Creates url for the searchset Bundle Link."""
-        params = {
-            # Temporarily maintaining this for backwards compatibility with imms history, but we should remove it
-            IMMUNIZATION_TARGET_LEGACY_KEY_NAME: ",".join(immunization_targets),
-            ImmunizationSearchParameterName.IMMUNIZATION_TARGET: ",".join(immunization_targets),
-            ImmunizationSearchParameterName.PATIENT_IDENTIFIER: f"{PATIENT_IDENTIFIER_SYSTEM}|{patient_nhs_number}",
-        }
-
-        if date_from:
-            params[ImmunizationSearchParameterName.DATE_FROM] = date_from.isoformat()
-        if date_to:
-            params[ImmunizationSearchParameterName.DATE_TO] = date_to.isoformat()
-        if include:
-            params[ImmunizationSearchParameterName.INCLUDE] = include
-
-        query = urllib.parse.urlencode(params)
-        return f"{get_service_url()}/Immunization?{query}"
