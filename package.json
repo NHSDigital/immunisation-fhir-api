@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "OAS (Swagger v3) API Definition for Template API",
   "scripts": {
-    "lint": "redocly lint --skip-rule=security-defined --skip-rule=no-invalid-media-type-examples specification/immunisation-fhir-api.yaml",
+    "lint": "redocly lint --skip-rule=security-defined specification/immunisation-fhir-api.yaml",
     "format": "prettier --write .",
     "format-check": "prettier --check .",
     "publish": "redocly bundle specification/immunisation-fhir-api.yaml --remove-unused-components --ext json -o build/immunisation-fhir-api.json",
@@ -26,6 +26,6 @@
       "poetry -P quality_checks run ruff format"
     ],
     "*.tf": "terraform fmt",
-    "immunisation-fhir-api.{yaml,json}": "redocly lint --skip-rule=security-defined --skip-rule=no-invalid-media-type-examples"
+    "immunisation-fhir-api.{yaml,json}": "redocly lint --skip-rule=security-defined"
   }
 }
