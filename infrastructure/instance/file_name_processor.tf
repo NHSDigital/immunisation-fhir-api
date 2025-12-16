@@ -11,12 +11,6 @@ locals {
   dps_bucket_arn_for_extended_attribute = [
     "arn:aws:s3:::${local.dps_bucket_name_for_extended_attribute}/*"
   ]
-
-  dps_kms_key_alias = (
-    var.environment == "prod"
-    ? "nhsd-dspp-core-prod-extended-attributes-gdp-key"
-    : "nhsd-dspp-core-ref-extended-attributes-gdp-key"
-  )
 }
 
 
@@ -277,7 +271,7 @@ resource "aws_iam_policy" "filenameprocessor_dps_extended_attribute_kms_policy" 
         Resource = "arn:aws:kms:eu-west-2:${var.dspp_core_account_id}:key/*",
         "Condition" = {
           "ForAnyValue:StringEquals" = {
-            "kms:ResourceAliases" = "alias/${local.dps_kms_key_alias}"
+            "kms:ResourceAliases" = "alias/${var.dps_kms_key_alias}"
           }
         }
       }
