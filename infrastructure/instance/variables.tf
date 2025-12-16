@@ -10,6 +10,12 @@ variable "csoc_account_id" {
   default = "693466633220"
 }
 
+variable "dspp_kms_key_alias" {
+  description = "Alias name of the DPS KMS key allowed for SSE-KMS encryption"
+  type        = string
+  default     = "nhsd-dspp-core-ref-extended-attributes-gdp-key"
+}
+
 variable "create_mesh_processor" {
   default = false
 }
