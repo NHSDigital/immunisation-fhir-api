@@ -145,7 +145,7 @@ For more information about building sandbox APIs see the [API Producer Zone conf
 
 ### Testing the sandbox
 
-The sandbox can be tested locally with `make run`. This will spin up a mock Prism web server at http://0.0.0.0:9000/.
+The sandbox can be tested locally by changing to the `/sandbox` folder in a terminal and running `make run`. This will spin up a mock Prism web server at http://0.0.0.0:9000/.
 
 From a separate terminal, test each endpoint as follows:
 
