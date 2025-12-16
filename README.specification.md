@@ -149,7 +149,7 @@ The sandbox can be tested locally with `make run`. This will spin up a mock Pris
 
 From a separate terminal, test each endpoint as follows:
 
-- Copy the appropriate `curl` command. These can be retrieved using the Swagger editor; expand the required endpoint, select 'Try it out', and then 'Execute'. The `curl` command to use will appear in the Curl window.
+- Copy the appropriate `curl` command. These can be retrieved by opening the `specification/immunisation-fhir-api.yaml` file in the Swagger editor; expand the required endpoint, select 'Try it out', and then 'Execute'. The `curl` command to use will appear in the Curl window.
 
 - Replace
   https://sandbox.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/ with http://0.0.0.0:9000/
