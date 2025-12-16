@@ -11,6 +11,12 @@ locals {
   dps_bucket_arn_for_extended_attribute = [
     "arn:aws:s3:::${local.dps_bucket_name_for_extended_attribute}/*"
   ]
+
+  dps_kms_key_alias = (
+    var.environment == "prod"
+    ? "nhsd-dspp-core-prod-extended-attributes-gdp-key"
+    : "nhsd-dspp-core-ref-extended-attributes-gdp-key"
+  )
 }
 
 
@@ -268,7 +274,12 @@ resource "aws_iam_policy" "filenameprocessor_dps_extended_attribute_kms_policy" 
           "kms:GenerateDataKey",
           "kms:DescribeKey"
         ],
-        Resource = "arn:aws:kms:eu-west-2:${var.dspp_core_account_id}:key/*"
+        Resource = "arn:aws:kms:eu-west-2:${var.dspp_core_account_id}:key/*",
+        "Condition" = {
+          "ForAnyValue:StringLike" = {
+            "kms:ResourceAliases" = "alias/${local.dps_kms_key_alias}"
+          }
+        }
       }
     ]
   })
@@ -283,7 +294,7 @@ resource "aws_iam_role_policy_attachment" "filenameprocessor_lambda_exec_policy_
 #Attach the dps kms policy to the Lambda role
 resource "aws_iam_role_policy_attachment" "filenameprocessor_lambda_dps_kms_ea_policy_attachment" {
   role       = aws_iam_role.filenameprocessor_lambda_exec_role.name
-  policy_arn = aws_iam_policy.filenameprocessor_dps_extended_attribute_kms_policy
+  policy_arn = aws_iam_policy.filenameprocessor_dps_extended_attribute_kms_policy.arn
 }
 
 # Attach the SQS policy to the Lambda role
