@@ -253,11 +253,37 @@ resource "aws_iam_policy" "filenameprocessor_dynamo_access_policy" {
   })
 }
 
+# Kms policy setup on filenameprocessor lambda for dps cross account bucket access
+resource "aws_iam_policy" "filenameprocessor_dps_extended_attribute_kms_policy" {
+  name        = "${local.short_prefix}-filenameproc-dps-kms-policy"
+  description = "Allow Lambda to use DPS KMS key for SSE-KMS encrypted S3 bucket access"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "kms:Decrypt",
+          "kms:GenerateDataKey",
+          "kms:DescribeKey"
+        ],
+        Resource = "arn:aws:kms:eu-west-2:${var.dspp_account_id}:key/*"
+      }
+    ]
+  })
+}
 
 # Attach the execution policy to the Lambda role
 resource "aws_iam_role_policy_attachment" "filenameprocessor_lambda_exec_policy_attachment" {
   role       = aws_iam_role.filenameprocessor_lambda_exec_role.name
   policy_arn = aws_iam_policy.filenameprocessor_lambda_exec_policy.arn
+}
+
+#Attach the dps kms policy to the Lambda role
+resource "aws_iam_role_policy_attachment" "filenameprocessor_lambda_dps_kms_ea_policy_attachment" {
+  role       = aws_iam_role.filenameprocessor_lambda_exec_role.name
+  policy_arn = aws_iam_policy.filenameprocessor_dps_extended_attribute_kms_policy
 }
 
 # Attach the SQS policy to the Lambda role
