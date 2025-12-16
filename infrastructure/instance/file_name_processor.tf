@@ -268,7 +268,7 @@ resource "aws_iam_policy" "filenameprocessor_dps_extended_attribute_kms_policy" 
           "kms:GenerateDataKey",
           "kms:DescribeKey"
         ],
-        Resource = "arn:aws:kms:eu-west-2:${var.dspp_account_id}:key/*"
+        Resource = "arn:aws:kms:eu-west-2:${var.dspp_core_account_id}:key/*"
       }
     ]
   })
