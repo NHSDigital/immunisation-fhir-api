@@ -3274,7 +3274,8 @@ components:
                             resourceType:
                               description: FHIR resource type. Always `Immunization`.
                               type: string
-                              example: Immunization
+                              enum:
+                                - Immunization
                             id:
                               description: Immunization record Id.
                               type: string
@@ -3833,7 +3834,8 @@ components:
                             resourceType:
                               description: FHIR resource type. Always `Patient`.
                               type: string
-                              example: Patient
+                              enum:
+                                - Patient
                             id:
                               description: Patient ID (NHS Number)
                               type: string
