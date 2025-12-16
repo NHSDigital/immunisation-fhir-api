@@ -510,7 +510,8 @@ paths:
                           resourceType:
                             type: string
                             description: FHIR resource type. Always `Practitioner`.
-                            example: Practitioner
+                            enum:
+                              - Practitioner
                           id:
                             type: string
                             description: Logical id of this artifact
@@ -536,7 +537,8 @@ paths:
                           resourceType:
                             type: string
                             description: FHIR resource type. Always `Patient`.
-                            example: Patient
+                            enum:
+                              - Patient
                           id:
                             type: string
                             description: Logical id of this artifact
