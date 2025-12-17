@@ -54,13 +54,13 @@ resource "aws_cloudwatch_log_metric_filter" "max_memory_used_metric" {
 resource "aws_cloudwatch_log_metric_filter" "fhir_api_error_logs" {
   count = var.error_alarm_notifications_enabled ? 1 : 0
 
-  name           = "${local.short_prefix}_${var.function_name}-ErrorLogsFilter"
+  name           = "${var.short_prefix}_${var.function_name}-ErrorLogsFilter"
   pattern        = "{ $.operation_outcome.status = \"500\" || $.operation_outcome.status = \"403\" }"
   log_group_name = module.lambda_function_container_image.lambda_cloudwatch_log_group_name
 
   metric_transformation {
-    name      = "${local.short_prefix}_${var.function_name}-ApiErrorLogs"
-    namespace = "${local.short_prefix}-_${var.function_name}-Lambda"
+    name      = "${var.short_prefix}_${var.function_name}-ApiErrorLogs"
+    namespace = "${var.short_prefix}_${var.function_name}-Lambda"
     value     = "1"
   }
 }
@@ -68,11 +68,11 @@ resource "aws_cloudwatch_log_metric_filter" "fhir_api_error_logs" {
 resource "aws_cloudwatch_metric_alarm" "fhir_api_error_alarm" {
   count = var.error_alarm_notifications_enabled ? 1 : 0
 
-  alarm_name          = "${local.short_prefix}_${var.function_name}-lambda-error"
+  alarm_name          = "${var.short_prefix}_${var.function_name}-lambda-error"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = 1
-  metric_name         = "${local.short_prefix}_${var.function_name}-ErrorLogs"
-  namespace           = "${local.short_prefix}_${var.function_name}-Lambda"
+  metric_name         = "${var.short_prefix}_${var.function_name}-ErrorLogs"
+  namespace           = "${var.short_prefix}_${var.function_name}-Lambda"
   period              = 120
   statistic           = "Sum"
   threshold           = 1

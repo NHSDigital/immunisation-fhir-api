@@ -59,6 +59,10 @@ data "aws_iam_policy_document" "imms_policy_document" {
   ]
 }
 
+data "aws_sns_topic" "fhir_api_errors" {
+  name = "${var.environment}-fhir-api-errors"
+}
+
 data "aws_iam_policy_document" "imms_data_quality_s3_doc" {
   source_policy_documents = [
     templatefile("${local.policy_path}/s3_data_quality_access.json", {
@@ -77,14 +81,16 @@ module "imms_event_endpoint_lambdas" {
   source = "./modules/lambda"
   count  = length(local.imms_endpoints)
 
-  prefix                 = local.prefix
-  short_prefix           = local.short_prefix
-  function_name          = local.imms_endpoints[count.index]
-  image_uri              = module.docker_image.image_uri
-  policy_json            = data.aws_iam_policy_document.imms_policy_document.json
-  environment_variables  = local.imms_lambda_env_vars
-  vpc_subnet_ids         = local.private_subnet_ids
-  vpc_security_group_ids = [data.aws_security_group.existing_securitygroup.id]
+  prefix                            = local.prefix
+  short_prefix                      = local.short_prefix
+  function_name                     = local.imms_endpoints[count.index]
+  image_uri                         = module.docker_image.image_uri
+  policy_json                       = data.aws_iam_policy_document.imms_policy_document.json
+  environment_variables             = local.imms_lambda_env_vars
+  vpc_subnet_ids                    = local.private_subnet_ids
+  vpc_security_group_ids            = [data.aws_security_group.existing_securitygroup.id]
+  aws_sns_topic                     = data.aws_sns_topic.fhir_api_errors.arn
+  error_alarm_notifications_enabled = var.error_alarm_notifications_enabled
 }
 
 
