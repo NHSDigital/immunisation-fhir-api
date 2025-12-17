@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 from botocore.exceptions import ClientError
 
 import delta
-from common.fhir_to_flat_json.mappings import ActionFlag, EventName, Operation
+from common.models.fhir_converter.mappings import ActionFlag, EventName, Operation
 from delta import (
     handler,
     process_record,

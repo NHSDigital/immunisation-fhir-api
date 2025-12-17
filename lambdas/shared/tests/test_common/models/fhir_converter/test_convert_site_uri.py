@@ -2,24 +2,16 @@ import copy
 import json
 import unittest
 
-from common.fhir_to_flat_json.converter import Converter
-from common.fhir_to_flat_json.mappings import ConversionFieldName
-from test_common.fhir_to_flat_json.sample_values import ValuesForTests
+from common.models.fhir_converter.converter import Converter
+from common.models.fhir_converter.mappings import ConversionFieldName
+from test_common.models.fhir_converter.sample_values import ValuesForTests
 
 
-class TestSiteCodeToFlatJson(unittest.TestCase):
+class TestSiteUriToFlatJson(unittest.TestCase):
     def setUp(self):
         self.request_json_data = copy.deepcopy(ValuesForTests.json_data)
 
-    def test_site_code_not_exists(self):
-        self.request_json_data["performer"] = None
-        self._run_site_code_test("")
-
-    def test_site_code_actor_empty(self):
-        self.request_json_data["performer"] = [{"actor": {}}]
-        self._run_site_code_test("")
-
-    def test_site_code_single_performer(self):
+    def test_site_uri_single_performer(self):
         """Test case where only one performer instance exists"""
         self.request_json_data["performer"] = [
             {
@@ -33,8 +25,8 @@ class TestSiteCodeToFlatJson(unittest.TestCase):
             },
             {"actor": {"reference": "#Pract1"}},
         ]
-        expected_site_code = "B0C4P"
-        self._run_site_code_test(expected_site_code)
+        expected_site_uri = "https://fhir.nhs.uk/Id/ods-organization-code"
+        self._run_site_uri_test(expected_site_uri)
 
     def test_site_code_performer_type_organization_only(self):
         """Test case where performer has type=organization and system=https://fhir.nhs.uk/Id/ods-organization-code with more than one instance"""
@@ -42,7 +34,7 @@ class TestSiteCodeToFlatJson(unittest.TestCase):
             {
                 "actor": {
                     "identifier": {
-                        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                        "system": "https://fhir.nhs.uk/Id/ods-organization-codes",
                         "value": "code1",
                     },
                 }
@@ -60,15 +52,15 @@ class TestSiteCodeToFlatJson(unittest.TestCase):
                 "actor": {
                     "type": "Organization",
                     "identifier": {
-                        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                        "system": "https://fhir.nhs.uk/Id/ods-nhs-code",
                         "value": "code3",
                     },
                 }
             },
             {"actor": {"reference": "#Pract1"}},
         ]
-        expected_site_code = "code2"
-        self._run_site_code_test(expected_site_code)
+        expected_site_uri = "https://fhir.nhs.uk/Id/ods-organization-code"
+        self._run_site_uri_test(expected_site_uri)
 
     def test_site_code_performer_type_organization(self):
         """Test case where performer has type=organization but no NHS system"""
@@ -101,48 +93,8 @@ class TestSiteCodeToFlatJson(unittest.TestCase):
             },
             {"actor": {"reference": "#Pract1"}},
         ]
-        expected_site_code = "code2"
-        self._run_site_code_test(expected_site_code)
-
-    def test_site_code_performer_type_without_oraganisation(self):
-        """Test case where performer has no type=organization key value pair"""
-        self.request_json_data["performer"] = [
-            {
-                "actor": {
-                    "identifier": {
-                        "system": "https://fhir.nhs.uk/Id/ods-nhs-code",
-                        "value": "code2",
-                    },
-                }
-            },
-            {
-                "actor": {
-                    "identifier": {
-                        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
-                        "value": "code1",
-                    },
-                }
-            },
-            {
-                "actor": {
-                    "identifier": {
-                        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
-                        "value": "code4",
-                    },
-                }
-            },
-            {
-                "actor": {
-                    "identifier": {
-                        "system": "https://fhir.nhs.uk/Id/ods-nhss-code",
-                        "value": "code3",
-                    },
-                }
-            },
-            {"actor": {"reference": "#Pract1"}},
-        ]
-        expected_site_code = "code1"
-        self._run_site_code_test(expected_site_code)
+        expected_site_uri = "https://fhir.nhs.uk/Id/ods-nhs-code"
+        self._run_site_uri_test(expected_site_uri)
 
     def test_site_code_fallback_to_first_performer(self):
         """Test case where no performers match specific criteria, fallback to first instance"""
@@ -165,11 +117,11 @@ class TestSiteCodeToFlatJson(unittest.TestCase):
             },
             {"actor": {"reference": "#Pract1"}},
         ]
-        expected_site_code = "code1"
-        self._run_site_code_test(expected_site_code)
+        expected_site_uri = "https://fhir.nhs.uk/Id/ods-nhs-code"
+        self._run_site_uri_test(expected_site_uri)
 
-    def _run_site_code_test(self, expected_site_code):
+    def _run_site_uri_test(self, expected_site_code):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(self.request_json_data))
         flat_json = self.converter.run_conversion()
-        self.assertEqual(flat_json.get(ConversionFieldName.SITE_CODE), expected_site_code)
+        self.assertEqual(flat_json.get(ConversionFieldName.SITE_CODE_TYPE_URI), expected_site_code)

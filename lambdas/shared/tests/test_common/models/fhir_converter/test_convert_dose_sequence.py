@@ -2,9 +2,9 @@ import copy
 import json
 import unittest
 
-from common.fhir_to_flat_json.converter import Converter
-from common.fhir_to_flat_json.mappings import ConversionFieldName
-from test_common.fhir_to_flat_json.sample_values import ValuesForTests
+from common.models.fhir_converter.converter import Converter
+from common.models.fhir_converter.mappings import ConversionFieldName
+from test_common.models.fhir_converter.sample_values import ValuesForTests
 
 
 class TestDoseSequenceToFlatJson(unittest.TestCase):

@@ -1,7 +1,7 @@
 import unittest
 from datetime import datetime, timezone
 
-from common.fhir_to_flat_json.extractor import Extractor
+from common.models.fhir_converter.extractor import Extractor
 
 
 class TestIsCurrentPeriod(unittest.TestCase):

@@ -6,7 +6,7 @@ from unittest.mock import patch
 from boto3 import resource as boto3_resource
 from moto import mock_aws
 
-from common.fhir_to_flat_json.mappings import ActionFlag, EventName, Operation
+from common.models.fhir_converter.mappings import ActionFlag, EventName, Operation
 from utils import ValuesForTests
 
 MOCK_ENV_VARS = {

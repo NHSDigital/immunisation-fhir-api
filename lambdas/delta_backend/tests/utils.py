@@ -3,7 +3,7 @@ import uuid
 from decimal import Decimal
 from typing import List
 
-from common.fhir_to_flat_json.mappings import EventName, Operation
+from common.models.fhir_converter.mappings import EventName, Operation
 
 
 class RecordConfig:

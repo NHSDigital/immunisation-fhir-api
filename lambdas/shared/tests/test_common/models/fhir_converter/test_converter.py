@@ -2,8 +2,8 @@ import json
 import unittest
 from copy import deepcopy
 
-from common.fhir_to_flat_json.converter import Converter
-from test_common.fhir_to_flat_json.sample_values import ErrorValuesForTests, ValuesForTests
+from common.models.fhir_converter.converter import Converter
+from test_common.models.fhir_converter.sample_values import ErrorValuesForTests, ValuesForTests
 
 
 class TestConverter(unittest.TestCase):

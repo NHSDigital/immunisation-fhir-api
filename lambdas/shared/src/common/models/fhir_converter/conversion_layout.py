@@ -1,5 +1,5 @@
-from common.fhir_to_flat_json.extractor import Extractor
-from common.fhir_to_flat_json.mappings import ConversionFieldName
+from common.models.fhir_converter.extractor import Extractor
+from common.models.fhir_converter.mappings import ConversionFieldName
 
 
 class ConversionField:
