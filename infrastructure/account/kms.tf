@@ -222,6 +222,6 @@ resource "aws_kms_alias" "batch_processor_errors_sns_encryption_key" {
 }
 
 resource "aws_kms_alias" "fhir_api_errors_sns_encryption_key" {
-  name          = "alias/${var.environment}-batch-processor-errors-imms-sns-encryption"
+  name          = "alias/${var.environment}-fhir-api-errors-imms-sns-encryption"
   target_key_id = aws_kms_key.error_alerts_sns_encryption_key.key_id
 }

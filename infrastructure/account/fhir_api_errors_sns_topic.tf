@@ -1,6 +1,6 @@
 resource "aws_sns_topic" "fhir_api_errors" {
   name              = "${var.environment}-fhir-api-errors"
-  kms_master_key_id = aws_kms_key.fhir_api_errors_sns_encryption_key.arn
+  kms_master_key_id = aws_kms_key.error_alerts_sns_encryption_key.arn
 }
 
 resource "aws_sns_topic_policy" "fhir_api_errors_topic_policy" {

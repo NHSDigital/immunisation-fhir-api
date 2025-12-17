@@ -1,6 +1,6 @@
 resource "aws_sns_topic" "batch_processor_errors" {
   name              = "${var.environment}-batch-processor-errors"
-  kms_master_key_id = aws_kms_key.batch_processor_errors_sns_encryption_key.arn
+  kms_master_key_id = aws_kms_key.error_alerts_sns_encryption_key.arn
 }
 
 resource "aws_sns_topic_policy" "batch_processor_errors_topic_policy" {
