@@ -46,7 +46,37 @@ resource "aws_cloudwatch_log_metric_filter" "max_memory_used_metric" {
 
   metric_transformation {
     name      = "max-memory-used"
-    namespace = "${var.short_prefix}_${var.function_name}"
+    namespace = var.short_prefix
     value     = "$18"
   }
+}
+
+resource "aws_cloudwatch_log_metric_filter" "fhir_api_error_logs" {
+  count = var.error_alarm_notifications_enabled ? 1 : 0
+
+  name           = "${local.short_prefix}_${var.function_name}-ErrorLogsFilter"
+  pattern        = "%\\[ERROR\\]%"
+  log_group_name = aws_cloudwatch_log_group.api_access_log.name
+
+  metric_transformation {
+    name      = "${local.short_prefix}_${var.function_name}-ApiErrorLogs"
+    namespace = "${local.short_prefix}-_${var.function_name}-Lambda"
+    value     = "1"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "fhir_api_error_alarm" {
+  count = var.error_alarm_notifications_enabled ? 1 : 0
+
+  alarm_name          = "${local.short_prefix}_${var.function_name}-lambda-error"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = "${local.short_prefix}_${var.function_name}-ErrorLogs"
+  namespace           = "${local.short_prefix}_${var.function_name}-Lambda"
+  period              = 120
+  statistic           = "Sum"
+  threshold           = 1
+  alarm_description   = "This sets off an alarm for any error logs found in fhir api Lambda function"
+  alarm_actions       = [data.aws_sns_topic.fhir_api_errors.arn]
+  treat_missing_data  = "notBreaching"
 }
