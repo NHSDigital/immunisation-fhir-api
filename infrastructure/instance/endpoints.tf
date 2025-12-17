@@ -15,6 +15,7 @@ module "get_status" {
   function_name = "get_status"
   image_uri     = module.docker_image.image_uri
   policy_json   = data.aws_iam_policy_document.logs_policy_document.json
+  aws_sns_topic = data.aws_sns_topic.fhir_api_errors.arn
 }
 
 locals {

@@ -10,6 +10,16 @@ variable "function_name" {
   type = string
 }
 
+variable "aws_sns_topic" {
+  description = "SNS topic ARN for CloudWatch alarm notifications"
+  type        = string
+  default     = null
+}
+variable "error_alarm_notifications_enabled" {
+  description = "useful switching error alerting between environment"
+  type        = string
+}
+
 variable "image_uri" {
   type = string
 }

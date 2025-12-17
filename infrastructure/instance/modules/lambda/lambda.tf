@@ -55,8 +55,8 @@ resource "aws_cloudwatch_log_metric_filter" "fhir_api_error_logs" {
   count = var.error_alarm_notifications_enabled ? 1 : 0
 
   name           = "${local.short_prefix}_${var.function_name}-ErrorLogsFilter"
-  pattern        = "%\\[ERROR\\]%"
-  log_group_name = aws_cloudwatch_log_group.api_access_log.name
+  pattern        = "{ $.operation_outcome.status = \"500\" || $.operation_outcome.status = \"403\" }"
+  log_group_name = module.lambda_function_container_image.lambda_cloudwatch_log_group_name
 
   metric_transformation {
     name      = "${local.short_prefix}_${var.function_name}-ApiErrorLogs"
@@ -77,6 +77,6 @@ resource "aws_cloudwatch_metric_alarm" "fhir_api_error_alarm" {
   statistic           = "Sum"
   threshold           = 1
   alarm_description   = "This sets off an alarm for any error logs found in fhir api Lambda function"
-  alarm_actions       = [data.aws_sns_topic.fhir_api_errors.arn]
+  alarm_actions       = var.aws_sns_topic != null ? [var.aws_sns_topic] : []
   treat_missing_data  = "notBreaching"
 }
