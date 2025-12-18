@@ -6,7 +6,6 @@ NOTE: The expected file format for incoming files from the data sources bucket i
 (ODS code has multiple lengths)
 """
 
-import argparse
 from uuid import uuid4
 
 from audit_table import upsert_audit_table
@@ -338,18 +337,3 @@ def lambda_handler(event: dict, context) -> None:  # pylint: disable=unused-argu
         handle_record(record)
 
     logger.info("Filename processor lambda task completed")
-
-
-def run_local():
-    parser = argparse.ArgumentParser("file_name_processor")
-    parser.add_argument("--bucket", required=True, help="Bucket name.", type=str)
-    parser.add_argument("--key", required=True, help="Object key.", type=str)
-    args = parser.parse_args()
-
-    event = {"Records": [{"s3": {"bucket": {"name": args.bucket}, "object": {"key": args.key}}}]}
-    print(event)
-    print(lambda_handler(event=event, context={}))
-
-
-if __name__ == "__main__":
-    run_local()
