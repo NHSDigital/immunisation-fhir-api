@@ -9,12 +9,14 @@ data "aws_iam_policy_document" "logs_policy_document" {
   source_policy_documents = [templatefile("${local.policy_path}/log.json", {})]
 }
 module "get_status" {
-  source        = "./modules/lambda"
-  prefix        = local.prefix
-  short_prefix  = local.short_prefix
-  function_name = "get_status"
-  image_uri     = module.docker_image.image_uri
-  policy_json   = data.aws_iam_policy_document.logs_policy_document.json
+  source                            = "./modules/lambda"
+  prefix                            = local.prefix
+  short_prefix                      = local.short_prefix
+  function_name                     = "get_status"
+  image_uri                         = module.docker_image.image_uri
+  policy_json                       = data.aws_iam_policy_document.logs_policy_document.json
+  error_alarm_notifications_enabled = var.error_alarm_notifications_enabled
+  environment                       = var.environment
 }
 
 locals {
@@ -75,14 +77,16 @@ module "imms_event_endpoint_lambdas" {
   source = "./modules/lambda"
   count  = length(local.imms_endpoints)
 
-  prefix                 = local.prefix
-  short_prefix           = local.short_prefix
-  function_name          = local.imms_endpoints[count.index]
-  image_uri              = module.docker_image.image_uri
-  policy_json            = data.aws_iam_policy_document.imms_policy_document.json
-  environment_variables  = local.imms_lambda_env_vars
-  vpc_subnet_ids         = local.private_subnet_ids
-  vpc_security_group_ids = [data.aws_security_group.existing_securitygroup.id]
+  prefix                            = local.prefix
+  short_prefix                      = local.short_prefix
+  function_name                     = local.imms_endpoints[count.index]
+  image_uri                         = module.docker_image.image_uri
+  policy_json                       = data.aws_iam_policy_document.imms_policy_document.json
+  environment_variables             = local.imms_lambda_env_vars
+  vpc_subnet_ids                    = local.private_subnet_ids
+  vpc_security_group_ids            = [data.aws_security_group.existing_securitygroup.id]
+  error_alarm_notifications_enabled = var.error_alarm_notifications_enabled
+  environment                       = var.environment
 }
 
 
