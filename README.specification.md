@@ -143,6 +143,39 @@ See the APM confluence for more information on how the [\_ping](https://nhsd-con
 This folder contains a template for a sandbox API. This example is a NodeJs application running in Docker. The application handles a few simple endpoints such as: /\_ping, /health, /\_status, /hello and some logging logic.
 For more information about building sandbox APIs see the [API Producer Zone confluence](https://nhsd-confluence.digital.nhs.uk/display/APM/Setting+up+your+API+sandbox).
 
+### Testing the sandbox
+
+The sandbox can be tested locally by changing to the `/sandbox` folder in a terminal and running `make run`. This will spin up a mock Prism web server at http://0.0.0.0:9000/.
+
+From a separate terminal, test each endpoint as follows:
+
+- Copy the appropriate `curl` command. These can be retrieved by opening the `specification/immunisation-fhir-api.yaml` file in the Swagger editor; expand the required endpoint, select 'Try it out', and then 'Execute'. The `curl` command to use will appear in the Curl window.
+
+- Replace
+  https://sandbox.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/ with http://0.0.0.0:9000/
+
+- Add the -i option in order to see the response headers.
+
+Examples:
+
+- GET Search:
+
+curl -i -X 'GET' \  
+ 'http://0.0.0.0:9000/Immunization?patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C9000000009&-immunization.target=3IN1&-date.from=1900-01-01&-date.to=9999-12-31&_include=Immunization%3Apatient' \  
+ -H 'accept: application/fhir+json' \  
+ -H 'X-Correlation-ID: 60E0B220-8136-4CA5-AE46-1D97EF59D068' \  
+ -H 'X-Request-ID: 60E0B220-8136-4CA5-AE46-1D97EF59D068'
+
+- POST Search:
+
+curl -i -X 'POST' \  
+ 'http://0.0.0.0:9000/Immunization/_search' \  
+ -H 'accept: application/fhir+json' \  
+ -H 'X-Correlation-ID: 60E0B220-8136-4CA5-AE46-1D97EF59D068' \  
+ -H 'X-Request-ID: 60E0B220-8136-4CA5-AE46-1D97EF59D068' \  
+ -H 'Content-Type: application/x-www-form-urlencoded' \  
+ -d 'patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C9000000009&-immunization.target=3IN1&-date.from=1900-01-01&-date.to=9999-12-31&\_include=Immunization%3Apatient'
+
 #### `utilities/scripts`:
 
 Contains useful scripts that are used throughout the project, for example in Makefile and Github workflows
