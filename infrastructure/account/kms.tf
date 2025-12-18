@@ -179,7 +179,7 @@ resource "aws_kms_alias" "id_sync_sqs_encryption" {
   target_key_id = aws_kms_key.id_sync_sqs_encryption.key_id
 }
 
-resource "aws_kms_key" "batch_processor_errors_sns_encryption_key" {
+resource "aws_kms_key" "error_alerts_sns_encryption_key" {
   description             = "KMS key for encrypting the batch processor errors SNS Topic messages"
   deletion_window_in_days = 7
   enable_key_rotation     = true
@@ -218,5 +218,10 @@ resource "aws_kms_key" "batch_processor_errors_sns_encryption_key" {
 
 resource "aws_kms_alias" "batch_processor_errors_sns_encryption_key" {
   name          = "alias/${var.environment}-batch-processor-errors-imms-sns-encryption"
-  target_key_id = aws_kms_key.batch_processor_errors_sns_encryption_key.key_id
+  target_key_id = aws_kms_key.error_alerts_sns_encryption_key.key_id
+}
+
+resource "aws_kms_alias" "fhir_api_errors_sns_encryption_key" {
+  name          = "alias/${var.environment}-fhir-api-errors-imms-sns-encryption"
+  target_key_id = aws_kms_key.error_alerts_sns_encryption_key.key_id
 }

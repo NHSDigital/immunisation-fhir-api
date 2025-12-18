@@ -38,6 +38,10 @@ ERROR_TYPE_TO_STATUS_CODE_MAP = {
     Exception: 500,
 }
 
+# Filename timestamp constants
+VALID_TIMESTAMP_LENGTH = 17
+VALID_TIMEZONE_OFFSETS = {"00", "01"}
+
 
 class FileStatus(StrEnum):
     """File status constants"""
