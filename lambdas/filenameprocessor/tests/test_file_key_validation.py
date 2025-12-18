@@ -58,6 +58,7 @@ class TestFileKeyValidation(TestCase):
             ("20200101T24345600", False),  # Invalid hours
             ("20200101T12605600", False),  # Invalid minutes
             ("20200101T12346000", False),  # Invalid seconds
+            ("20200101T12345609", False),  # Invalid timezone offset
             ("2020010112345600", False),  # Invalid missing the 'T'
             ("20200101T12345", False),  # Invalid string too short
         ]
