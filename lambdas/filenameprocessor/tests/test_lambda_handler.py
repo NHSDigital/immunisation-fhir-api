@@ -1,7 +1,6 @@
 """Tests for lambda_handler"""
 
 import json
-import sys
 from contextlib import ExitStack
 from copy import deepcopy
 from json import loads as json_loads
@@ -778,37 +777,3 @@ class TestUnexpectedBucket(TestCase):
             self.assertIn("Unable to process file", args[0])
             self.assertIn(invalid_file_key, args)
             self.assertIn("unknown-bucket", args)
-
-
-class TestMainEntryPoint(TestCase):
-    def test_run_local_constructs_event_and_calls_lambda_handler(self):
-        test_args = [
-            "file_name_processor.py",
-            "--bucket",
-            "test-bucket",
-            "--key",
-            "some/path/file.csv",
-        ]
-
-        expected_event = {
-            "Records": [
-                {
-                    "s3": {
-                        "bucket": {"name": "test-bucket"},
-                        "object": {"key": "some/path/file.csv"},
-                    }
-                }
-            ]
-        }
-
-        with (
-            patch.object(sys, "argv", test_args),
-            patch("file_name_processor.lambda_handler") as mock_lambda_handler,
-            patch("file_name_processor.print") as mock_print,
-        ):
-            import file_name_processor
-
-            file_name_processor.run_local()
-
-            mock_lambda_handler.assert_called_once_with(event=expected_event, context={})
-            mock_print.assert_called()
