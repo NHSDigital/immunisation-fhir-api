@@ -10,8 +10,8 @@ from botocore.exceptions import ClientError
 from common.aws_dynamodb import get_dynamodb_table
 from common.clients import STREAM_NAME, get_sqs_client, logger
 from common.log_firehose import send_log_to_firehose
-from converter import Converter
-from mappings import ActionFlag, EventName, Operation
+from common.models.fhir_converter.converter import Converter
+from common.models.fhir_converter.mappings import ActionFlag, EventName, Operation
 
 failure_queue_url = os.environ["AWS_SQS_QUEUE_URL"]
 delta_table_name = os.environ["DELTA_TABLE_NAME"]
