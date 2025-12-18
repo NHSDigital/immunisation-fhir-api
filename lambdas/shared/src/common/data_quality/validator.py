@@ -1,0 +1,2 @@
+class DataQualityValidator:
+    pass
