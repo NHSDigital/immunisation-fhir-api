@@ -80,7 +80,7 @@ resource "aws_cloudwatch_metric_alarm" "fhir_api_error_alarm" {
   period              = 120
   statistic           = "Sum"
   threshold           = 1
-  alarm_description   = "This sets off an alarm for any error logs found in fhir api Lambda function"
+  alarm_description   = "Triggers an alarm when 500 or 403 error responses are logged by the FHIR API Lambda function."
   alarm_actions       = [data.aws_sns_topic.fhir_api_errors.arn]
   treat_missing_data  = "notBreaching"
 }
