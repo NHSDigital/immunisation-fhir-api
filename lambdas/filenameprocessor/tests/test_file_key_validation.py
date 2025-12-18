@@ -45,18 +45,20 @@ class TestFileKeyValidation(TestCase):
         """Tests that is_valid_datetime returns True for valid datetimes, and false otherwise"""
         # Test case tuples are structured as (date_time_string, expected_result)
         test_cases = [
-            ("20200101T12345600", True),  # Valid datetime string with timezone
-            ("20200101T123456", True),  # Valid datetime string without timezone
+            ("20200101T12345600", True),  # Valid datetime string with timezone offset "00" GMT
+            ("20200101T12345601", True),  # Valid datetime string with timezone offset "01" BST
+            ("20200101T123456", False),  # Invalid datetime string without timezone
             (
                 "20200101T123456extracharacters",
-                True,
-            ),  # Valid datetime string with additional characters
+                False,
+            ),  # Invalid datetime string with additional characters
             ("20201301T12345600", False),  # Invalid month
             ("20200100T12345600", False),  # Invalid day
             ("20200230T12345600", False),  # Invalid combination of month and day
             ("20200101T24345600", False),  # Invalid hours
             ("20200101T12605600", False),  # Invalid minutes
             ("20200101T12346000", False),  # Invalid seconds
+            ("20200101T12345609", False),  # Invalid timezone offset
             ("2020010112345600", False),  # Invalid missing the 'T'
             ("20200101T12345", False),  # Invalid string too short
         ]
@@ -124,7 +126,7 @@ class TestFileKeyValidation(TestCase):
             ),
             # Valid extended attributes file key with different organization code
             (
-                "Vaccination_Extended_Attributes_v1_5_YGM41_20221231T23595999.csv",
+                "Vaccination_Extended_Attributes_v1_5_YGM41_20221231T23595900.csv",
                 "YGM41",
             ),
         ]
