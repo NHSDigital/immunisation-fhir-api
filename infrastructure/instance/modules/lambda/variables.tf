@@ -10,13 +10,8 @@ variable "function_name" {
   type = string
 }
 
-variable "aws_sns_topic" {
-  description = "SNS topic ARN for CloudWatch alarm notifications"
-  type        = string
-  default     = null
-}
 variable "error_alarm_notifications_enabled" {
-  description = "useful switching error alerting between environment"
+  description = "Switch to enable error alarm notifications to Slack"
   type        = string
 }
 
@@ -41,4 +36,9 @@ variable "vpc_security_group_ids" {
 variable "vpc_subnet_ids" {
   type    = list(string)
   default = null
+}
+
+variable "environment" {
+  description = "The deployment environment (e.g., dev, int, internal-qa, prod)"
+  type        = string
 }
