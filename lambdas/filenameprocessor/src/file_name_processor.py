@@ -264,7 +264,6 @@ def handle_extended_attributes_file(
             FileStatus.PROCESSING,
         )
 
-        # TODO: agree the prefix with DPS
         dest_file_key = f"{DPS_DESTINATION_PREFIX}/{file_key}"
         copy_file_to_external_bucket(
             bucket_name,
