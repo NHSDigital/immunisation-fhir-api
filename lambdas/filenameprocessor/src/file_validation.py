@@ -3,7 +3,14 @@
 from datetime import datetime
 from re import match
 
-from constants import EXTENDED_ATTRIBUTES_FILE_PREFIX, EXTENDED_ATTRIBUTES_VACC_TYPE, VALID_EA_VERSIONS, VALID_VERSIONS
+from constants import (
+    EXTENDED_ATTRIBUTES_FILE_PREFIX,
+    EXTENDED_ATTRIBUTES_VACC_TYPE,
+    VALID_EA_VERSIONS,
+    VALID_TIMESTAMP_LENGTH,
+    VALID_TIMEZONE_OFFSETS,
+    VALID_VERSIONS,
+)
 from elasticache import (
     get_supplier_system_from_cache,
     get_valid_vaccine_types_from_cache,
@@ -20,18 +27,30 @@ def is_file_in_directory_root(file_key: str) -> bool:
 
 def is_valid_datetime(timestamp: str) -> bool:
     """
-    Returns a bool to indicate whether the timestamp is a valid datetime in the format 'YYYYmmddTHHMMSSzz'
-    where 'zz' is a two digit number indicating the timezone
+    Returns a bool to indicate whether the file timestamp matches the expected NHS file submission format:
+    - YYYY = Year
+    - MM = Month (01-12)
+    - DD = Date (01-31)
+    - T = fixed value of “T”
+    - hh = Hours (00-23)
+    - mm = Minutes (00-59)
+    - ss = Seconds (00-59)
+    - time zone offset = 00 for GMT, 01 for BST
+
+    e.g. 20220514T10081501
     """
     # Check that datetime (excluding timezone) is a valid datetime in the expected format.
-    if len(timestamp) < 15:
+    if len(timestamp) != VALID_TIMESTAMP_LENGTH:
         return False
 
-    # Note that any digits after the seconds (i.e. from the 16th character onwards, usually expected to represent
-    # timezone), do not need to be validated
     try:
         datetime.strptime(timestamp[:15], "%Y%m%dT%H%M%S")
     except ValueError:
+        return False
+
+    time_zone_offset = timestamp[-2:]
+
+    if time_zone_offset not in VALID_TIMEZONE_OFFSETS:
         return False
 
     return True
