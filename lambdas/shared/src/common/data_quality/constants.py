@@ -2,7 +2,7 @@ import datetime
 import decimal
 
 ALLOWED_DOSE_AMOUNTS = {
-    # are acceptable:
+    # The below are all present in the existing data, but we should check which ones are acceptable:
     decimal.Decimal("0"),
     decimal.Decimal("0.1"),
     decimal.Decimal("0.2"),
