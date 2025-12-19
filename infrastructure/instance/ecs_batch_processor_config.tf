@@ -397,6 +397,6 @@ resource "aws_cloudwatch_metric_alarm" "record_processor_task_error_alarm" {
   statistic           = "Sum"
   threshold           = 1
   alarm_description   = "This sets off an alarm for any error logs found in the record processor ECS task"
-  alarm_actions       = [data.aws_sns_topic.batch_processor_errors.arn]
+  alarm_actions       = [data.aws_sns_topic.imms_system_alert_errors.arn]
   treat_missing_data  = "notBreaching"
 }
