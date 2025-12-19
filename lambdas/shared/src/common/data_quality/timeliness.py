@@ -17,4 +17,4 @@ def parse_csv_datetime(d: str) -> datetime.datetime:
         case 15:
             return datetime.datetime.strptime(d, "%Y%m%dT%H%M%S").replace(tzinfo=datetime.timezone.utc)
         case _:
-            raise ValueError("Unhandled datetime format")
+            raise ValueError("Invalid datetime format provided")

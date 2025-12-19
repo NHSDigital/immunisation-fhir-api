@@ -19,9 +19,6 @@ class TestDataQualityChecker(unittest.TestCase):
         self.batch_dq_checker = DataQualityChecker(completeness_checker, is_batch_csv=True)
         self.fhir_json_dq_checker = DataQualityChecker(completeness_checker, is_batch_csv=False)
 
-    def test_something(self):
-        self.assertEqual(True, True)  # add assertion here
-
     def test_check_validity_returns_empty_list_when_data_is_valid(self):
         validation_result = self.batch_dq_checker._check_validity(VALID_BATCH_IMMUNISATION)
 
