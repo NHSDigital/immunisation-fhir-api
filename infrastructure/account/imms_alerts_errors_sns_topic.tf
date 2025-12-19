@@ -1,10 +1,10 @@
-resource "aws_sns_topic" "batch_processor_errors" {
-  name              = "${var.environment}-batch-processor-errors"
+resource "aws_sns_topic" "imms_system_alert_errors" {
+  name              = "${var.environment}-imms-system-alert-errors"
   kms_master_key_id = aws_kms_key.error_alerts_sns_encryption_key.arn
 }
 
-resource "aws_sns_topic_policy" "batch_processor_errors_topic_policy" {
-  arn = aws_sns_topic.batch_processor_errors.arn
+resource "aws_sns_topic_policy" "imms_system_alert_errors_topic_policy" {
+  arn = aws_sns_topic.imms_system_alert_errors.arn
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -15,7 +15,7 @@ resource "aws_sns_topic_policy" "batch_processor_errors_topic_policy" {
           Service = "cloudwatch.amazonaws.com"
         },
         Action   = "SNS:Publish",
-        Resource = aws_sns_topic.batch_processor_errors.arn
+        Resource = aws_sns_topic.imms_system_alert_errors.arn
       }
     ]
   })

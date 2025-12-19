@@ -216,8 +216,8 @@ resource "aws_kms_key" "error_alerts_sns_encryption_key" {
   })
 }
 
-resource "aws_kms_alias" "batch_processor_errors_sns_encryption_key" {
-  name          = "alias/${var.environment}-batch-processor-errors-imms-sns-encryption"
+resource "aws_kms_alias" "imms_system_alert_errors_sns_encryption_key" {
+  name          = "alias/${var.environment}-imms-alert-errors-sns-encryption"
   target_key_id = aws_kms_key.error_alerts_sns_encryption_key.key_id
 }
 
