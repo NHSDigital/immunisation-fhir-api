@@ -2,7 +2,7 @@ import unittest
 from copy import deepcopy
 
 from common.data_quality.completeness import DataQualityCompletenessChecker, MissingFields
-from test_common.data_quality.sample_values import batch_immunisation
+from test_common.data_quality.sample_values import VALID_BATCH_IMMUNISATION
 
 
 class TestDataQualityCompletenessChecker(unittest.TestCase):
@@ -11,16 +11,16 @@ class TestDataQualityCompletenessChecker(unittest.TestCase):
         self.DataQualityCompletenessChecker = DataQualityCompletenessChecker()
 
     def test_check_completeness_no_missing_fields(self):
-        complete_immunisation = deepcopy(batch_immunisation)
+        complete_immunisation = deepcopy(VALID_BATCH_IMMUNISATION)
 
         expected_missing_fields = MissingFields(required_fields=[], mandatory_fields=[], optional_fields=[])
 
-        actual_missing_fields = self.DataQualityCompletenessChecker.check_completeness(complete_immunisation)
+        actual_missing_fields = self.DataQualityCompletenessChecker.run_checks(complete_immunisation)
 
         self.assertEqual(expected_missing_fields, actual_missing_fields)
 
     def test_check_completeness_empty_strings(self):
-        incomplete_immunisation = deepcopy(batch_immunisation)
+        incomplete_immunisation = deepcopy(VALID_BATCH_IMMUNISATION)
         incomplete_immunisation["NHS_NUMBER"] = ""  # required
         incomplete_immunisation["PERSON_FORENAME"] = ""  # mandatory
         incomplete_immunisation["PERFORMING_PROFESSIONAL_FORENAME"] = ""  # optional
@@ -31,12 +31,12 @@ class TestDataQualityCompletenessChecker(unittest.TestCase):
             optional_fields=["PERFORMING_PROFESSIONAL_FORENAME"],
         )
 
-        actual_missing_fields = self.DataQualityCompletenessChecker.check_completeness(incomplete_immunisation)
+        actual_missing_fields = self.DataQualityCompletenessChecker.run_checks(incomplete_immunisation)
 
         self.assertEqual(expected_missing_fields, actual_missing_fields)
 
     def test_check_completeness_missing(self):
-        incomplete_immunisation = deepcopy(batch_immunisation)
+        incomplete_immunisation = deepcopy(VALID_BATCH_IMMUNISATION)
         incomplete_immunisation.pop("NHS_NUMBER")  # required
         incomplete_immunisation.pop("PERSON_FORENAME")  # mandatory
         incomplete_immunisation.pop("PERFORMING_PROFESSIONAL_FORENAME")  # optional
@@ -47,12 +47,12 @@ class TestDataQualityCompletenessChecker(unittest.TestCase):
             optional_fields=["PERFORMING_PROFESSIONAL_FORENAME"],
         )
 
-        actual_missing_fields = self.DataQualityCompletenessChecker.check_completeness(incomplete_immunisation)
+        actual_missing_fields = self.DataQualityCompletenessChecker.run_checks(incomplete_immunisation)
 
         self.assertEqual(expected_missing_fields, actual_missing_fields)
 
     def test_check_completeness_multiple_missing(self):
-        incomplete_immunisation = deepcopy(batch_immunisation)
+        incomplete_immunisation = deepcopy(VALID_BATCH_IMMUNISATION)
         incomplete_immunisation.pop("NHS_NUMBER")  # required
         incomplete_immunisation.pop("VACCINATION_PROCEDURE_TERM")  # required
         incomplete_immunisation.pop("PERSON_FORENAME")  # mandatory
@@ -66,6 +66,6 @@ class TestDataQualityCompletenessChecker(unittest.TestCase):
             optional_fields=["PERFORMING_PROFESSIONAL_FORENAME", "PERFORMING_PROFESSIONAL_SURNAME"],
         )
 
-        actual_missing_fields = self.DataQualityCompletenessChecker.check_completeness(incomplete_immunisation)
+        actual_missing_fields = self.DataQualityCompletenessChecker.run_checks(incomplete_immunisation)
 
         self.assertEqual(expected_missing_fields, actual_missing_fields)

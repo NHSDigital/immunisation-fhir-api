@@ -17,27 +17,26 @@ class DataQualityChecker:
 
     def __init__(
         self,
+        completeness_checker: DataQualityCompletenessChecker,
         is_batch_csv: bool,
     ):
+        self.completeness_checker = completeness_checker
         self.is_batch_csv = is_batch_csv
 
     def run_checks(self, immunisation: dict) -> DataQualityOutput:
-        fhir_converter = Converter(fhir_data=immunisation)
-        completeness_checker = DataQualityCompletenessChecker()
         data_quality_validator = DataQualityValidator()
 
         if not self.is_batch_csv:
-            immunisation = fhir_converter.run_conversion()
+            immunisation = Converter(fhir_data=immunisation).run_conversion()
 
         return DataQualityOutput(
-            missing_fields=self._check_completeness(immunisation, completeness_checker),
+            missing_fields=self._check_completeness(immunisation),
             invalid_fields=self._check_validity(immunisation, data_quality_validator),
             timeliness=self._check_timeliness(immunisation),
         )
 
-    @staticmethod
-    def _check_completeness(immunisation: dict, completeness_checker: DataQualityCompletenessChecker) -> MissingFields:
-        return completeness_checker.check_completeness(immunisation)
+    def _check_completeness(self, immunisation: dict) -> MissingFields:
+        return self.completeness_checker.run_checks(immunisation)
 
     @staticmethod
     def _check_validity(immunisation: dict, data_quality_validator: DataQualityValidator) -> list[str]:

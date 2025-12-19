@@ -50,7 +50,7 @@ class MissingFields:
 
 
 class DataQualityCompletenessChecker:
-    def check_completeness(self, immunisation: dict) -> MissingFields:
+    def run_checks(self, immunisation: dict) -> MissingFields:
         return MissingFields(
             required_fields=self._get_missing_fields(immunisation, required_fields),
             mandatory_fields=self._get_missing_fields(immunisation, mandatory_fields),

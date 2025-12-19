@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-immunisation = {
+VALID_FHIR_IMMUNISATION = {
     "resourceType": "Immunization",
     "contained": [
         {
@@ -132,7 +132,7 @@ immunisation = {
     ],
 }
 
-batch_immunisation = {
+VALID_BATCH_IMMUNISATION = {
     "NHS_NUMBER": "9000000009",
     "PERSON_FORENAME": "Sam",
     "PERSON_SURNAME": "Trailor",
