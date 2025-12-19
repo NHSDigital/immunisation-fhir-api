@@ -178,3 +178,34 @@ resource "aws_cloudwatch_log_group" "delta_lambda" {
   name              = "/aws/lambda/${local.short_prefix}-${local.function_name}"
   retention_in_days = 30
 }
+
+
+resource "aws_cloudwatch_log_metric_filter" "delta_error_logs" {
+  count = var.error_alarm_notifications_enabled ? 1 : 0
+
+  name           = "${local.short_prefix}-DeltaErrorLogsFilter"
+  pattern        = "%\\[ERROR\\]%"
+  log_group_name = aws_cloudwatch_log_group.delta_lambda.name
+
+  metric_transformation {
+    name      = "${local.short_prefix}-DeltaErrorLogs"
+    namespace = "${local.short_prefix}-DeltaLambda"
+    value     = "1"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "delta_error_alarm" {
+  count = var.error_alarm_notifications_enabled ? 1 : 0
+
+  alarm_name          = "${local.short_prefix}-delta-lambda-error"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = "${local.short_prefix}-DeltaErrorLogs"
+  namespace           = "${local.short_prefix}-DeltaLambda"
+  period              = 120
+  statistic           = "Sum"
+  threshold           = 1
+  alarm_description   = "This sets off an alarm for any error logs found in the delta Lambda function"
+  alarm_actions       = [data.aws_sns_topic.batch_processor_errors.arn]
+  treat_missing_data  = "notBreaching"
+}
