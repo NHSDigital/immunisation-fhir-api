@@ -30,6 +30,7 @@ class TestDataQualityChecker(unittest.TestCase):
         self.assertEqual([], result.invalid_fields)
         self.assertEqual(4, result.timeliness.recorded_timeliness_days)
         self.assertEqual(785550, result.timeliness.ingested_timeliness_seconds)
+        self.assertEqual("2024-05-20T14:12:30.000Z", result.validation_datetime)
 
     def test_check_validity_returns_empty_list_when_data_is_valid(self):
         validation_result = self.batch_dq_checker._check_validity(VALID_BATCH_IMMUNISATION)
