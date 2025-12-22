@@ -128,6 +128,16 @@ class TestErrors(unittest.TestCase):
         self.assertEqual(issue.get("code"), errors.Code.exception)
         self.assertEqual(issue.get("diagnostics"), f"{test_message}\n{test_response}")
 
+    def test_errors_api_validation_error(self):
+        """Test base ApiValidationError class cannot be used"""
+        with self.assertRaises(errors.ApiValidationError) as initial_error:
+            raise errors.ApiValidationError()
+
+        with self.assertRaises(NotImplementedError) as not_implemented_error:
+            initial_error.exception.to_operation_outcome()
+
+        self.assertEqual(str(not_implemented_error.exception), "Improper usage: base class")
+
     def test_errors_custom_validation_error(self):
         """Test correct operation of CustomValidationError"""
         test_message = "test_message"
