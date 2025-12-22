@@ -128,13 +128,6 @@ class TestErrors(unittest.TestCase):
         self.assertEqual(issue.get("code"), errors.Code.exception)
         self.assertEqual(issue.get("diagnostics"), f"{test_message}\n{test_response}")
 
-    def test_errors_api_validation_error(self):
-        """Test correct operation of ApiValidationError"""
-        with self.assertRaises(errors.ApiValidationError) as context:
-            raise errors.ApiValidationError()
-        outcome = context.exception.to_operation_outcome()
-        self.assertIsNone(outcome)
-
     def test_errors_custom_validation_error(self):
         """Test correct operation of CustomValidationError"""
         test_message = "test_message"

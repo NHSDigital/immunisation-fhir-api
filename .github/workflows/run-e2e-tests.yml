@@ -59,6 +59,8 @@ permissions:
   contents: read
 
 jobs:
+  permissions:
+    contents: read
   wait-for-deployment:
     runs-on: ubuntu-latest
     environment: ${{ inputs.apigee_environment }}
@@ -109,6 +111,9 @@ jobs:
           fi
 
   e2e-tests:
+    permissions:
+      id-token: write
+      contents: read
     runs-on: ubuntu-latest
     needs: [wait-for-deployment]
     environment: ${{ inputs.apigee_environment }}
@@ -202,6 +207,9 @@ jobs:
         run: poetry run python -m unittest
 
   batch-e2e-tests:
+    permissions:
+      id-token: write
+      contents: read
     needs: [wait-for-deployment, e2e-tests]
     # Only actually depend on wait-for-deployment, but run after e2e-tests
     if: ${{ !cancelled() && needs.wait-for-deployment.result == 'success' && needs.wait-for-deployment.outputs.RUN_BATCH_E2E_TESTS == 'true' }}

@@ -48,14 +48,13 @@ env: # Sonarcloud - do not allow direct usage of untrusted data
   ENVIRONMENT: ${{ inputs.environment }}
   SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
 
-permissions:
-  id-token: write
-  contents: read
-
 run-name: Deploy Backend - ${{ inputs.environment }} ${{ inputs.sub_environment }}
 
 jobs:
   terraform-plan:
+    permissions:
+      id-token: write
+      contents: read
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.environment }}
@@ -89,6 +88,9 @@ jobs:
           path: infrastructure/instance/tfplan
 
   terraform-apply:
+    permissions:
+      id-token: write
+      contents: read
     needs: terraform-plan
     runs-on: ubuntu-latest
     environment:
