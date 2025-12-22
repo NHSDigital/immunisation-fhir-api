@@ -41,7 +41,7 @@ def parse_csv_datetime(d: str) -> datetime.datetime:
 
 def get_recorded_date_from_immunisation(immunization: dict) -> Optional[datetime.date]:
     try:
-        parsed_recorded_date = parse_csv_date(immunization.get("RECORDED_DATE"))
+        parsed_recorded_date = parse_csv_date(immunization.get("RECORDED_DATE", ""))
     except ValueError:
         # Completeness and validity checks will catch these issues separately
         return None
@@ -51,7 +51,7 @@ def get_recorded_date_from_immunisation(immunization: dict) -> Optional[datetime
 
 def get_occurrence_datetime_from_immunisation(immunization: dict) -> Optional[datetime.datetime]:
     try:
-        parsed_recorded_date = parse_csv_datetime(immunization.get("DATE_AND_TIME"))
+        parsed_recorded_date = parse_csv_datetime(immunization.get("DATE_AND_TIME", ""))
     except ValueError:
         # Completeness and validity checks will catch these issues separately
         return None
