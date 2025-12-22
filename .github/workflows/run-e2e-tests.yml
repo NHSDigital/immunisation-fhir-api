@@ -55,9 +55,9 @@ env:
   SOURCE_COMMIT_ID: ${{ github.sha }}
 
 jobs:
-  permissions:
-    contents: read
   wait-for-deployment:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     environment: ${{ inputs.apigee_environment }}
     outputs:
