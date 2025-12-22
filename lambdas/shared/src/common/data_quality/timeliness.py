@@ -43,7 +43,7 @@ def get_recorded_date_from_immunisation(immunization: dict) -> Optional[datetime
     try:
         parsed_recorded_date = parse_csv_date(immunization.get("RECORDED_DATE", ""))
     except ValueError:
-        # Completeness and validity checks will catch these issues separately
+        # Completeness and validity checks will catch these issues separately. Just return None here.
         return None
 
     return parsed_recorded_date
@@ -53,14 +53,14 @@ def get_occurrence_datetime_from_immunisation(immunization: dict) -> Optional[da
     try:
         parsed_recorded_date = parse_csv_datetime(immunization.get("DATE_AND_TIME", ""))
     except ValueError:
-        # Completeness and validity checks will catch these issues separately
+        # Completeness and validity checks will catch these issues separately. Just return None here.
         return None
 
     return parsed_recorded_date
 
 
 def get_recorded_timeliness_days(immunisation: dict) -> Optional[int]:
-    """Gets the time delta in days between the recorded date and occurrence date. Returns None is either of the fields
+    """Gets the time delta in days between the recorded date and occurrence date. Returns None if either of the fields
     are not provided or are invalid dates."""
     recorded_date = get_recorded_date_from_immunisation(immunisation)
     occurrence_date_time = get_occurrence_datetime_from_immunisation(immunisation)
