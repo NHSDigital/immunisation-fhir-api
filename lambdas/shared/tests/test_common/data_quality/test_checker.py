@@ -3,9 +3,8 @@ import datetime
 import unittest
 from unittest.mock import patch
 
-from common.data_quality.checker import DataQualityChecker
-from common.data_quality.completeness import DataQualityCompletenessChecker
-from test_common.data_quality.sample_values import VALID_BATCH_IMMUNISATION
+from common.data_quality.checker import DataQualityChecker, DataQualityOutput
+from test_common.data_quality.sample_values import VALID_BATCH_IMMUNISATION, VALID_FHIR_IMMUNISATION
 
 
 class TestDataQualityChecker(unittest.TestCase):
@@ -15,9 +14,23 @@ class TestDataQualityChecker(unittest.TestCase):
         self.mock_date_today = date_today_patcher.start()
         self.mock_date_today.date.today.return_value = datetime.date(2024, 5, 20)
 
-        completeness_checker = DataQualityCompletenessChecker()
-        self.batch_dq_checker = DataQualityChecker(completeness_checker, is_batch_csv=True)
-        self.fhir_json_dq_checker = DataQualityChecker(completeness_checker, is_batch_csv=False)
+        # Fix datetime.now
+        self.mock_fixed_datetime = datetime.datetime(2024, 5, 20, 14, 12, 30, 123, tzinfo=datetime.timezone.utc)
+        datetime_now_patcher = patch("common.data_quality.checker.datetime", wraps=datetime.datetime)
+        self.mock_datetime_now = datetime_now_patcher.start()
+        self.mock_datetime_now.now.return_value = self.mock_fixed_datetime
+
+        self.batch_dq_checker = DataQualityChecker(is_batch_csv=True)
+        self.fhir_json_dq_checker = DataQualityChecker(is_batch_csv=False)
+
+    def assert_successful_result(self, result: DataQualityOutput) -> None:
+        self.assertEqual([], result.missing_fields.optional_fields)
+        self.assertEqual([], result.missing_fields.mandatory_fields)
+        self.assertEqual([], result.missing_fields.required_fields)
+        self.assertEqual([], result.invalid_fields)
+        self.assertEqual(4, result.timeliness.recorded_timeliness_days)
+        self.assertEqual(785550, result.timeliness.ingested_timeliness_seconds)
+        self.assertEqual("2024-05-20T14:12:30.000Z", result.validation_datetime)
 
     def test_check_validity_returns_empty_list_when_data_is_valid(self):
         validation_result = self.batch_dq_checker._check_validity(VALID_BATCH_IMMUNISATION)
@@ -76,3 +89,77 @@ class TestDataQualityChecker(unittest.TestCase):
         self.assertEqual(
             ["NHS_NUMBER", "PERSON_POSTCODE", "EXPIRY_DATE", "DOSE_AMOUNT", "INDICATION_CODE"], validation_result
         )
+
+    def test_check_timeliness_calculates_the_timeliness_diffs(self):
+        timeliness_output = self.batch_dq_checker._check_timeliness(VALID_BATCH_IMMUNISATION, self.mock_fixed_datetime)
+
+        self.assertEqual(4, timeliness_output.recorded_timeliness_days)
+        self.assertEqual(785550, timeliness_output.ingested_timeliness_seconds)
+
+    def test_check_timeliness_returns_none_for_recorded_timeliness_when_relevant_field_invalid(self):
+        invalid_batch_imms_payload = copy.deepcopy(VALID_BATCH_IMMUNISATION)
+        invalid_batch_imms_payload["RECORDED_DATE"] = ""
+
+        timeliness_output = self.batch_dq_checker._check_timeliness(invalid_batch_imms_payload, self.mock_fixed_datetime)
+
+        self.assertIsNone(timeliness_output.recorded_timeliness_days)
+        self.assertEqual(785550, timeliness_output.ingested_timeliness_seconds)
+
+    def test_check_timeliness_returns_none_for_both_when_date_and_time_field_invalid(self):
+        invalid_batch_imms_payload = copy.deepcopy(VALID_BATCH_IMMUNISATION)
+        invalid_batch_imms_payload["DATE_AND_TIME"] = "20245"
+
+        timeliness_output = self.batch_dq_checker._check_timeliness(invalid_batch_imms_payload, self.mock_fixed_datetime)
+
+        self.assertIsNone(timeliness_output.recorded_timeliness_days)
+        self.assertIsNone(timeliness_output.ingested_timeliness_seconds)
+
+    def test_run_checks_returns_correct_output_for_valid_data_for_csv_payload(self):
+        result = self.batch_dq_checker.run_checks(VALID_BATCH_IMMUNISATION)
+        self.assert_successful_result(result)
+
+    def test_run_checks_returns_correct_output_for_valid_data_for_fhir_payload(self):
+        result = self.fhir_json_dq_checker.run_checks(VALID_FHIR_IMMUNISATION)
+        self.assert_successful_result(result)
+
+    def test_run_checks_returns_correct_output_for_invalid_data_for_csv_payload(self):
+        invalid_batch_imms_payload = copy.deepcopy(VALID_BATCH_IMMUNISATION)
+        invalid_batch_imms_payload["NHS_NUMBER"] = "12345678901"
+        invalid_batch_imms_payload["RECORDED_DATE"] = "20240137"
+        invalid_batch_imms_payload["PERSON_DOB"] = ""
+        invalid_batch_imms_payload["DOSE_AMOUNT"] = "6.789"
+        invalid_batch_imms_payload["BATCH_NUMBER"] = ""
+
+        result = self.batch_dq_checker.run_checks(invalid_batch_imms_payload)
+
+        self.assertEqual([], result.missing_fields.optional_fields)
+        self.assertEqual(["PERSON_DOB"], result.missing_fields.mandatory_fields)
+        self.assertEqual(["BATCH_NUMBER"], result.missing_fields.required_fields)
+
+        # Fields which are subject to validation and are also empty will appear in both the completeness and validity
+        # checks e.g. PERSON_DOB
+        self.assertEqual(["NHS_NUMBER", "PERSON_DOB", "DOSE_AMOUNT"], result.invalid_fields)
+        self.assertIsNone(result.timeliness.recorded_timeliness_days)
+        self.assertEqual(785550, result.timeliness.ingested_timeliness_seconds)
+
+    def test_run_checks_returns_correct_output_for_invalid_data_for_fhir_payload(self):
+        invalid_fhir_imms_payload = copy.deepcopy(VALID_FHIR_IMMUNISATION)
+        invalid_fhir_imms_payload["contained"][1]["identifier"][0]["value"] = "12345678901"
+        invalid_fhir_imms_payload["recorded"] = "2024-01-37"
+        del invalid_fhir_imms_payload["contained"][1]["birthDate"]
+        invalid_fhir_imms_payload["doseQuantity"]["value"] = "6.789"
+        invalid_fhir_imms_payload["lotNumber"] = ""
+
+        result = self.fhir_json_dq_checker.run_checks(invalid_fhir_imms_payload)
+
+        self.assertEqual([], result.missing_fields.optional_fields)
+        # Worth noting that due to the use of the fhir converter, invalid dates will be mapped to an empty string hence
+        # will also show up here where they would not in batch validation
+        self.assertEqual(["PERSON_DOB", "RECORDED_DATE"], result.missing_fields.mandatory_fields)
+        self.assertEqual(["BATCH_NUMBER"], result.missing_fields.required_fields)
+
+        # Fields which are subject to validation and are also empty will appear in both the completeness and validity
+        # checks e.g. PERSON_DOB
+        self.assertEqual(["NHS_NUMBER", "PERSON_DOB", "DOSE_AMOUNT"], result.invalid_fields)
+        self.assertIsNone(result.timeliness.recorded_timeliness_days)
+        self.assertEqual(785550, result.timeliness.ingested_timeliness_seconds)

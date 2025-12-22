@@ -64,8 +64,8 @@ VALID_FHIR_IMMUNISATION = {
         ]
     },
     "patient": {"reference": "#Pat1"},
-    "occurrenceDateTime": "2021-02-07T13:28:17+00:00",
-    "recorded": "2021-02-07T13:28:17+00:00",
+    "occurrenceDateTime": "2024-05-11T12:00:00+00:00",
+    "recorded": "2024-05-15",
     "primarySource": True,
     "manufacturer": {"display": "AstraZeneca Ltd"},
     "location": {
@@ -76,7 +76,7 @@ VALID_FHIR_IMMUNISATION = {
         },
     },
     "lotNumber": "4120Z001",
-    "expirationDate": "2021-07-02",
+    "expirationDate": "2024-12-02",
     "site": {
         "coding": [
             {
@@ -99,7 +99,7 @@ VALID_FHIR_IMMUNISATION = {
         "value": str(Decimal(0.5)),
         "unit": "milliliter",
         "system": "http://snomed.info/sct",
-        "code": "ml",
+        "code": "258773002",
     },
     "performer": [
         {"actor": {"reference": "#Pract1"}},
@@ -147,7 +147,7 @@ VALID_BATCH_IMMUNISATION = {
     "ACTION_FLAG": "UPDATE",
     "PERFORMING_PROFESSIONAL_FORENAME": "ALICE",
     "PERFORMING_PROFESSIONAL_SURNAME": "SMITH",
-    "RECORDED_DATE": "20250306",
+    "RECORDED_DATE": "20240515",
     "PRIMARY_SOURCE": "True",
     "VACCINATION_PROCEDURE_CODE": "1324681000000101",
     "VACCINATION_PROCEDURE_TERM": "Procedure Term",
