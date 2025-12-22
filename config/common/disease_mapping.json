@@ -17,6 +17,65 @@
     ]
   },
   {
+    "vacc_type": "4IN1",
+    "diseases": [
+      {
+        "code": "398102009",
+        "term": "Acute poliomyelitis"
+      },
+      {
+        "code": "397430003",
+        "term": "Diphtheria caused by Corynebacterium diphtheriae"
+      },
+      {
+        "code": "27836007",
+        "term": "Pertussis"
+      },
+      {
+        "code": "76902006",
+        "term": "Tetanus"
+      }
+    ]
+  },
+  {
+    "vacc_type": "6IN1",
+    "diseases": [
+      {
+        "code": "398102009",
+        "term": "Acute poliomyelitis"
+      },
+      {
+        "code": "397430003",
+        "term": "Diphtheria caused by Corynebacterium diphtheriae"
+      },
+      {
+        "code": "709410003",
+        "term": "Haemophilus influenzae type b infection"
+      },
+      {
+        "code": "27836007",
+        "term": "Pertussis"
+      },
+      {
+        "code": "76902006",
+        "term": "Tetanus"
+      },
+      {
+        "code": "66071002",
+        "term": "Type B viral hepatitis"
+      }
+    ]
+  },
+  {
+    "vacc_type": "BCG",
+    "diseases": [
+      {
+        "code": "56717001",
+        "term": "Tuberculosis"
+      }
+    ]
+  },
+  {
     "vacc_type": "COVID",
     "diseases": [
       {
@@ -35,6 +94,24 @@
     ]
   },
   {
+    "vacc_type": "HEPB",
+    "diseases": [
+      {
+        "code": "66071002",
+        "term": "Type B viral hepatitis"
+      }
+    ]
+  },
+  {
+    "vacc_type": "HIB",
+    "diseases": [
+      {
+        "code": "709410003",
+        "term": "Haemophilus influenzae type b infection"
+      }
+    ]
+  },
+  {
     "vacc_type": "HPV",
     "diseases": [
       {
@@ -49,6 +126,15 @@
       {
         "code": "23511006",
         "term": "Meningococcal infectious disease"
+      }
+    ]
+  },
+  {
+    "vacc_type": "MENB",
+    "diseases": [
+      {
+        "code": "1354584007",
+        "term": "Meningococcal infectious disease caused by Neisseria meningitidis serogroup B"
       }
     ]
   },
@@ -105,6 +191,15 @@
       {
         "code": "27836007",
         "term": "Pertussis"
+      }
+    ]
+  },
+  {
+    "vacc_type": "ROTAVIRUS",
+    "diseases": [
+      {
+        "code": "186150001",
+        "term": "Enteritis caused by rotavirus"
       }
     ]
   },
