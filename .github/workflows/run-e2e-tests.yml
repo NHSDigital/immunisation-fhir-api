@@ -54,10 +54,6 @@ env:
   STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}
   SOURCE_COMMIT_ID: ${{ github.sha }}
 
-permissions:
-  id-token: write
-  contents: read
-
 jobs:
   permissions:
     contents: read
