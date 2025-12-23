@@ -11,7 +11,7 @@ from common.data_quality.completeness import MissingFields
 
 @dataclass
 class DataQualityReport:
-    data_quality_report_id: uuid.UUID
+    data_quality_report_id: str
     validationDate: str
     completeness: MissingFields
     validity: list[str]
@@ -30,12 +30,12 @@ class DataQualityReporter:
     def generate_and_send_report(self, immunisation: dict) -> None:
         """Formats and sends a data quality report to the S3 bucket."""
         dq_output = self.dq_checker.run_checks(immunisation)
-        event_id = uuid.uuid4()
-        file_key = f"{event_id}.json"
+        dq_report_id = str(uuid.uuid4())
+        file_key = f"{dq_report_id}.json"
 
         # Build report
         dq_report = DataQualityReport(
-            data_quality_report_id=event_id,
+            data_quality_report_id=dq_report_id,
             validationDate=dq_output.validation_datetime,
             completeness=dq_output.missing_fields,
             validity=dq_output.invalid_fields,
@@ -51,9 +51,9 @@ class DataQualityReporter:
         except ClientError as error:
             # We only log the error here because we want the data quality checks to have minimal impact on the API's
             # functionality. This should only happen in the case of AWS infrastructure issues.
-            logger.error("error whilst sending data quality for report id: %s with error: %s", file_key, str(error))
+            logger.error("error whilst sending data quality for report id: %s with error: %s", dq_report_id, str(error))
             return None
 
-        logger.info("data quality report sent successfully for report id: %s", file_key)
+        logger.info("data quality report sent successfully for report id: %s", dq_report_id)
 
         return None
