@@ -166,7 +166,7 @@ def parse_search_params(search_params_in_req: dict[str, list[str]]) -> dict[str,
     """Ensures the search params provided in the event do not contain duplicated keys. Will split the parameters
     provided by comma separators. Raises a ParameterExceptionError for duplicated keys. Existing business logic stipulated
     that the API only accepts comma separated values rather than multi-value."""
-    if any([len(values) > 1 for _, values in search_params_in_req.items()]):
+    if any(len(values) > 1 for _, values in search_params_in_req.items()):
         raise ParameterExceptionError(DUPLICATED_PARAMETERS_ERROR_MESSAGE)
 
     parsed_params = {}
