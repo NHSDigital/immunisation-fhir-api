@@ -253,6 +253,36 @@ resource "aws_cloudwatch_log_group" "redis_sync_log_group" {
   retention_in_days = 30
 }
 
+resource "aws_cloudwatch_log_metric_filter" "redis_sync_error_logs" {
+  count = var.error_alarm_notifications_enabled ? 1 : 0
+
+  name           = "${local.short_prefix}-RedisSyncErrorLogsFilter"
+  pattern        = "%\\[ERROR\\]%"
+  log_group_name = aws_cloudwatch_log_group.redis_sync_log_group.name
+
+  metric_transformation {
+    name      = "${local.short_prefix}-RedisSyncErrorLogs"
+    namespace = "${local.short_prefix}-RedisSyncLambda"
+    value     = "1"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "redis_sync_error_alarm" {
+  count = var.error_alarm_notifications_enabled ? 1 : 0
+
+  alarm_name          = "${local.short_prefix}-id-sync-lambda-error"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = "${local.short_prefix}-RedisSyncErrorLogs"
+  namespace           = "${local.short_prefix}-RedisSyncLambda"
+  period              = 120
+  statistic           = "Sum"
+  threshold           = 1
+  alarm_description   = "This sets off an alarm for any error logs found in the redis sync Lambda function"
+  alarm_actions       = [data.aws_sns_topic.imms_system_alert_errors.arn]
+  treat_missing_data  = "notBreaching"
+}
+
 # S3 Bucket notification to trigger Lambda function for config bucket
 resource "aws_s3_bucket_notification" "config_lambda_notification" {
 
