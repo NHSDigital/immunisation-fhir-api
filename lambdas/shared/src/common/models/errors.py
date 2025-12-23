@@ -67,7 +67,7 @@ class ResourceFoundError(RuntimeError):
 
 class ApiValidationError(RuntimeError):
     def to_operation_outcome(self) -> dict:
-        pass
+        raise NotImplementedError("Improper usage: base class")
 
 
 @dataclass
