@@ -29,9 +29,7 @@ jobs:
         run: pip install semver
 
       - name: Set SPEC_VERSION env var
-        run: echo ::set-env name=SPEC_VERSION::$(python utilities/scripts/calculate_version.py)
-        env:
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+        run: echo "SPEC_VERSION=$(python utilities/scripts/calculate_version.py)" >> $GITHUB_ENV
 
       - name: Create release (master only)
         id: create-release

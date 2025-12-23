@@ -32,6 +32,9 @@ publish: clean
 	cp build/immunisation-fhir-api.json sandbox/
 	cp -r specification sandbox/specification
 
+make serve: publish
+	npm run serve
+
 #Creates a minified OAS spec in JSON for sending to APIM
 oas: publish
 	mkdir -p oas
