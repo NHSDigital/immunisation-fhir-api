@@ -278,7 +278,7 @@ resource "aws_cloudwatch_metric_alarm" "redis_sync_error_alarm" {
   period              = 120
   statistic           = "Sum"
   threshold           = 1
-  alarm_description   = "This sets off an alarm for any error logs found in the redis sync (permission authentication) Lambda function"
+  alarm_description   = "This sets off an alarm for any error logs found in the redis sync Lambda function"
   alarm_actions       = [data.aws_sns_topic.imms_system_alert_errors.arn]
   treat_missing_data  = "notBreaching"
 }
