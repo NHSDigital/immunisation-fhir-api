@@ -55,12 +55,13 @@ There are `make` commands that alias some of this functionality:
 
 - `lint` -- Lints the spec and code
 - `publish` -- Outputs the specification as a **single** JSON file into the `build/` directory
+- `serve` -- Serves a preview of the API document locally
 
 ### Modifying the OAS file
 
 Note that the master OAS file is now the **YAML** version, as it is far easier to maintain than the JSON.
 
-To review your modifications, use Swagger Editor (https://editor.swagger.io).
+To review your modifications, use Swagger Editor (https://editor.swagger.io). Or, alternatively, use the `make serve` command.
 
 ### Update the OAS file to the public website
 

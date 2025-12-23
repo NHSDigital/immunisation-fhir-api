@@ -4,8 +4,8 @@
     <Set>
         <Headers>
             <Header name="Access-Control-Allow-Origin">{request.header.origin}</Header>
-            <Header name="Access-Control-Allow-Headers">origin, x-requested-with, accept, content-type, nhsd-session-urid, X-Request-Id, X-Correlation-Id, Location</Header>
-            <Header name="Access-Control-Expose-Headers">origin, x-requested-with, accept, content-type, nhsd-session-urid, X-Request-Id, X-Correlation-Id, Location</Header>
+            <Header name="Access-Control-Allow-Headers">origin, x-requested-with, accept, content-type, e-tag, nhsd-session-urid, X-Request-Id, X-Correlation-Id, Location</Header>
+            <Header name="Access-Control-Expose-Headers">origin, x-requested-with, accept, content-type, e-tag, nhsd-session-urid, X-Request-Id, X-Correlation-Id, Location</Header>
             <Header name="Access-Control-Max-Age">3628800</Header>
             <Header name="Access-Control-Allow-Methods">GET, PUT, POST, DELETE</Header>
         </Headers>
