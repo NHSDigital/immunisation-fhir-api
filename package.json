@@ -8,7 +8,8 @@
     "format-check": "prettier --check .",
     "publish": "redocly bundle specification/immunisation-fhir-api.yaml --remove-unused-components --ext json -o build/immunisation-fhir-api.json",
     "check-licenses": "node_modules/.bin/license-checker --failOn GPL --failOn LGPL",
-    "prepare": "husky"
+    "prepare": "husky",
+    "serve": "redocly preview --project-dir ./build"
   },
   "author": "NHS Digital",
   "license": "MIT",

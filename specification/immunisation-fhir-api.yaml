@@ -2207,26 +2207,22 @@ paths:
       description: >
         ## Overview
 
-        This interaction allows you to add a new updated record of a vaccination
-        event. Update replaces the full immunization resource, so you must
-        provide all data fields, not just the change (Patch is not currently
-        supported). You may obtain all the current data for the vaccination
-        event using the read interaction, which will also return an eTag for the
-        version. 
+        The Update Immunization endpoint allows you to update or reinstate a vaccination event.
 
+        - You must provide the full FHIR immunization in the request body. (Patch is not currently
+        supported, so it is not possible to just provide the updated fields.)
 
-        You may use update to re-instate a deleted record, but our update
-        interaction does not support creating a new vaccination event where one
-        does not currently exist. 
+        - You may need to first retrieve the existing vaccination record using the GET endpoint, which
+        will also return an E-Tag header for the resource version. When performing an update, the E-Tag
+        header must match the current resource version for the resource you are updating.
 
+        - The `id` and `identifier` in the request body and the `id` in the path parameters must match
+        the existing record for an update to succeed.
 
-        You must not change the identifier when updating a vaccination event.
-        The identifier is used as a primary identifier by downstream systems.  
+        - You may also use this endpoint to reinstate a deleted record.
 
-
-        You must be authorised for update interaction and the disease type
-        associated with the vaccination event in order to update the record. 
-
+        - Finally, you must be authorised for the update interaction and the vaccination type of the
+        existing record in order for the update to succeed.
 
         ## Sandbox testing        
 
@@ -4610,6 +4606,7 @@ components:
                 description: >
                   Specific procedures, disorders, diseases, infections or
                   organisms.
+                example: FLU
                 enum:
                   - 3IN1
                   - COVID
@@ -4714,6 +4711,7 @@ components:
       required: true
       schema:
         type: string
+        example: FLU
         enum:
           - 3IN1
           - COVID
