@@ -3994,14 +3994,11 @@ components:
         ---------------------------------------------
         |--------------------------------------------------------------------------------------|
 
-        | 400         | Bad Request               | Invalid resourceType in body
-        |
+        | 400         | Bad Request               | Invalid resourceType in body |
 
-        | 400         | Bad Request               | Invalid resourceType within
-        contained |
+        | 400         | Bad Request               | Invalid resourceType within contained |
 
         | 400         | Bad Request               | Invalid status value | 
-
 
         | 400         | Bad Request               | Invalid value for a datetime
         (string) field e.g. occurrenceDateTime.<br>Note : The error format will
@@ -4010,32 +4007,25 @@ components:
 
         | 400         | Bad Request               | Invalid value for a string
         field e.g. postalCode<br>Note : The error format will remain same for
-        any string field; only the field location will change under diagnostics.
-        |
+        any string field; only the field location will change under diagnostics. |
 
         | 400         | Bad Request               | Invalid value for an integer
         field e.g. doseNumberPositiveInt<br>Note : The error format will remain
         same for any integer field; only the field location will change under
         diagnostics. |
 
-        | 400         | Bad Request               | Invalid top level element
-        e.g. test  |
+        | 400         | Bad Request               | Invalid top level element e.g. test  |
 
         | 400         | Bad Request               | Missing mandatory field e.g.
-        contained<br>Note : The error format will remain same for any mandatory
-        field; only the field name will change under diagnostics. | 
+        contained<br>Note : The error format will remain same for any mandatory field; only the field name will change under diagnostics. | 
 
-        | 401         | Unauthorized               | Authorization is required
-        for the interaction that was attempted |
+        | 401         | Unauthorized               | Authorization is required for the interaction that was attempted |
 
-        | 403         | Forbidden               | The sender does not have
-        permissions to access this resource  |
+        | 403         | Forbidden               | The sender does not have permissions to access this resource  |
 
-        | 403         | Forbidden               | The sender does not have
-        permission for the specific operation or vaccine type  |
+        | 403         | Forbidden               | The sender does not have permission for the specific operation or vaccine type  |
 
-        | 422         | Unprocessable Entity               | Duplicate
-        Identifier value  |
+        | 422         | Unprocessable Entity               | Duplicate Identifier value  |
       content:
         application/fhir+json:
           schema:
@@ -4063,38 +4053,28 @@ components:
         error codes, which could be returned in the event of a fault.
 
 
-        | HTTP status | Error code                 | Description    
+        | HTTP status | Error code       | Description |   
         |
 
         | ----------- | -------------------------- |
         ---------------------------------------------
         |--------------------------------------------------------------------------------------|
 
-        | 400         | Bad Request               | Search parameter 
-        immunization.target is either missing or not in the expected format. | 
+        | 400         | Bad Request      | Search parameter immunization.target is either missing or not in the expected format. | 
 
+        | 400         | Bad Request      | Search parameterpatient.identifier is either missing or not in the expected format. | 
 
-        | 400         | Bad Request               | Search parameter
-        patient.identifier is either missing or not in the expected format. | 
+        | 400         | Bad Request      | Invalid value for patient.identifier | 
 
+        | 400         | Bad Request      | Invalid date.to/date.from format |
 
-        | 400         | Bad Request               | Invalid value for
-        patient.identifier | 
+        | 400         | Bad Request      | Invalid value for "-immunization.target" |
 
-        | 400         | Bad Request               | Invalid date.to/date.from
-        format |
+        | 401         | Unauthorized     | Authorization is required for the interaction that was attempted |
 
-        | 400         | Bad Request               | Invalid value for
-        "-immunization.target" |
+        | 403         | Forbidden        | The sender does not have permissions to access this resource  |
 
-        | 401         | Unauthorized               | Authorization is required
-        for the interaction that was attempted |
-
-        | 403         | Forbidden               | The sender does not have
-        permissions to access this resource  |
-
-        | 403         | Forbidden               | The sender does not have
-        permission for the specific operation or vaccine type  |
+        | 403         | Forbidden        | The sender does not have permission for the specific operation or vaccine type  |
       content:
         application/fhir+json:
           schema:
@@ -4122,28 +4102,22 @@ components:
         error codes, which could be returned in the event of a fault.
 
 
-        | HTTP status | Error code                 | Description  
+        | HTTP status | Error code              | Description  |
         |
 
         | ----------- | -------------------------- |
         ---------------------------------------------
         |--------------------------------------------------------------------------------------|
 
-        | 400         | Bad Request               | Missing immunization event
-        identifier (id) |
+        | 400         | Bad Request             | Missing immunization event identifier (id) |
 
-        | 401         | Unauthorized               | Authorization is required
-        for the interaction that was attempted |
+        | 401         | Unauthorized            | Authorization is required for the interaction that was attempted |
 
-        | 403         | Forbidden               | The sender does not have
-        permissions to access this resource  |
+        | 403         | Forbidden               | The sender does not have permissions to access this resource  |
 
-        | 403         | Forbidden               | The sender does not have
-        permission for the specific operation or vaccine type  |
+        | 403         | Forbidden               | The sender does not have permission for the specific operation or vaccine type  |
 
-
-        | 404         | Not Found               | Unrecognized immunization
-        event identifier (id) |
+        | 404         | Not Found               | Unrecognized immunization event identifier (id) |
       content:
         application/fhir+json:
           schema:
@@ -4171,48 +4145,37 @@ components:
         error codes, which could be returned in the event of a fault.
 
 
-        | HTTP status | Error code                 | Description | Example     
+        | HTTP status | Error code          | Description | 
         |
 
         | ----------- | -------------------------- |
         ---------------------------------------------
         |--------------------------------------------------------------------------------------|
 
-        | 400         | Bad Request               | All validation errors &
-        mandatory field errors from the Record scenario |  All validation errors
+        | 400         | Bad Request         | All validation errors & mandatory field errors from the Record scenario |  All validation errors
         & mandatory field errors from POST /Immunization |
 
-        | 400         | Bad Request               | Missing id in request
-        parameter |
+        | 400         | Bad Request         | Missing id in request parameter |
 
-        | 400         | Bad Request               | Missing id parameter in
-        request body<br>or<br>mismatch between id provided within request body
-        and request parameter |
+        | 400         | Bad Request         | Missing id parameter in request body<br>or<br>mismatch between id provided within request body and request parameter |
 
-        | 400         | Bad Request               | Mismatch between identifier
+        | 400         | Bad Request         | Mismatch between identifier
         value and stored event |
 
-        | 400         | Bad Request               | Missing E-Tag (version)
-        header |
+        | 400         | Bad Request         | Missing E-Tag (version)header |
 
-        | 400         | Bad Request               | Wrong version number passed
-        in E-Tag header<br>e.g. passing version no. > 1 in case of first-time
-        update |
+        | 400         | Bad Request         | Wrong version number passed in E-Tag header<br>e.g. passing version no. > 1 in case of first-time update |
 
-        | 400         | Bad Request               | Empty value for E-Tag header
+        | 400         | Bad Request         | Empty value for E-Tag header
         |
 
-        | 400         | Bad Request               | E-Tag value <= current
-        stored value |
+        | 400         | Bad Request         | E-Tag value <= current stored value |
 
-        | 401         | Unauthorized               | Authorization is required
-        for the interaction that was attempted |
+        | 401         | Unauthorized        | Authorization is required for the interaction that was attempted |
 
-        | 403         | Forbidden               | The sender does not have
-        permissions to access this resource  |
+        | 403         | Forbidden               | The sender does not have permissions to access this resource  |
 
-        | 403         | Forbidden               | The sender does not have
-        permission for the specific operation or vaccine type  |
+        | 403         | Forbidden               | The sender does not have permission for the specific operation or vaccine type  |
 
         | 404         | Not Found               | Provided id not available |
 
@@ -4252,19 +4215,13 @@ components:
 
         | 400         | Bad Request               | Missing or invalid id | 
 
-        | 401         | Unauthorized               | Authorization is required
-        for the interaction that was attempted | 
+        | 401         | Unauthorized               | Authorization is required for the interaction that was attempted | 
 
+        | 403         | Forbidden               | The sender does not have permissions to access this resource  |
 
-        | 403         | Forbidden               | The sender does not have
-        permissions to access this resource  |
+        | 403         | Forbidden               | The sender does not have permission for the specific operation or vaccine type  |
 
-
-        | 403         | Forbidden               | The sender does not have
-        permission for the specific operation or vaccine type  |
-
-        | 404         | Not Found               | Non existing id in query
-        parameter<br>or<br>Trying to deleted an already deleted record |
+        | 404         | Not Found               | Non existing id in query parameter<br>or<br>Trying to deleted an already deleted record |
 
       content:
         application/fhir+json:
