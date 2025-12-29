@@ -3,7 +3,7 @@ import json
 import os
 import unittest
 from copy import deepcopy
-from unittest.mock import Mock, create_autospec, patch
+from unittest.mock import ANY, Mock, create_autospec, patch
 
 from fhir.resources.R4B.bundle import BundleLink
 from fhir.resources.R4B.identifier import Identifier
@@ -11,6 +11,7 @@ from fhir.resources.R4B.immunization import Immunization
 
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
+from common.data_quality.reporter import DataQualityReporter
 from common.models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
@@ -46,8 +47,8 @@ class TestFhirServiceBase(unittest.TestCase):
         self.mock_redis_getter = self.redis_getter_patcher.start()
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
-        self.imms_env_patcher = patch("service.fhir_service.IMMUNIZATION_ENV", "internal-dev")
-        self.imms_env_patcher.start()
+        imms_env_patcher = patch("service.fhir_service.IMMUNIZATION_ENV", "internal-dev")
+        imms_env_patcher.start()
 
     def tearDown(self):
         super().tearDown()
@@ -60,9 +61,10 @@ class TestGetImmunization(TestFhirServiceBase):
     def setUp(self):
         super().setUp()
         self.authoriser = create_autospec(Authoriser)
+        self.data_quality_reporter = create_autospec(DataQualityReporter)
         self.imms_repo = create_autospec(ImmunizationRepository)
         self.validator = create_autospec(ImmunizationValidator)
-        self.fhir_service = FhirService(self.imms_repo, self.authoriser, self.validator)
+        self.fhir_service = FhirService(self.imms_repo, self.authoriser, self.data_quality_reporter, self.validator)
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
 
@@ -181,8 +183,9 @@ class TestGetImmunizationByIdentifier(TestFhirServiceBase):
         super().setUp()
         self.authoriser = create_autospec(Authoriser)
         self.imms_repo = create_autospec(ImmunizationRepository)
+        self.data_quality_reporter = create_autospec(DataQualityReporter)
         self.validator = create_autospec(ImmunizationValidator)
-        self.fhir_service = FhirService(self.imms_repo, self.authoriser, self.validator)
+        self.fhir_service = FhirService(self.imms_repo, self.authoriser, self.data_quality_reporter, self.validator)
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
 
@@ -297,12 +300,14 @@ class TestCreateImmunization(TestFhirServiceBase):
     def setUp(self):
         super().setUp()
         self.authoriser = create_autospec(Authoriser)
+        self.data_quality_reporter = create_autospec(DataQualityReporter)
         self.imms_repo = create_autospec(ImmunizationRepository)
         self.validator = create_autospec(ImmunizationValidator)
-        self.fhir_service = FhirService(self.imms_repo, self.authoriser, self.validator)
+        self.fhir_service = FhirService(self.imms_repo, self.authoriser, self.data_quality_reporter, self.validator)
         self.pre_validate_fhir_service = FhirService(
             self.imms_repo,
             self.authoriser,
+            self.data_quality_reporter,
             ImmunizationValidator(add_post_validators=False),
         )
 
@@ -322,12 +327,55 @@ class TestCreateImmunization(TestFhirServiceBase):
 
         # Then
         self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.CREATE, {"COVID"})
+        self.data_quality_reporter.generate_and_send_report.assert_called_once_with(req_imms)
         self.imms_repo.check_immunization_identifier_exists.assert_called_once_with(
             "https://supplierABC/identifiers/vacc", "ACME-vacc123456"
         )
         self.imms_repo.create_immunization.assert_called_once_with(Immunization.parse_obj(req_imms), "Test")
 
         self.validator.validate.assert_called_once_with(req_imms)
+        self.assertEqual(self._MOCK_NEW_UUID, created_id)
+
+    @patch("common.data_quality.reporter.get_s3_client")
+    @patch("common.data_quality.reporter.uuid.uuid4", return_value="2a99d9fd-50b4-44f6-9c17-3f0c81cf9ce8")
+    def test_create_immunization_submits_data_quality_report(self, _, mock_s3_client):
+        """it should create a data quality report when a new immunisation is payload is submitted - case with two
+        DQ warnings for DOSE_UNIT_CODE"""
+        self.mock_redis.hget.return_value = "COVID"
+        self.mock_redis_getter.return_value = self.mock_redis
+        self.authoriser.authorise.return_value = True
+        self.imms_repo.check_immunization_identifier_exists.return_value = False
+        self.imms_repo.create_immunization.return_value = self._MOCK_NEW_UUID
+
+        dq_reporter = DataQualityReporter(is_batch_csv=False, bucket="test-dq-bucket-name")
+        fhir_service_with_dq = FhirService(self.imms_repo, self.authoriser, dq_reporter, self.validator)
+
+        nhs_number = VALID_NHS_NUMBER
+        req_imms = create_covid_immunization_dict_no_id(nhs_number)
+
+        # When
+        created_id = fhir_service_with_dq.create_immunization(req_imms, "Test")
+
+        # Then
+        mock_s3_client.assert_called_once()
+        mock_s3_client().put_object.assert_called_once_with(
+            Bucket="test-dq-bucket-name",
+            Key="2a99d9fd-50b4-44f6-9c17-3f0c81cf9ce8.json",
+            Body=ANY,
+            ContentType="application/json",
+        )
+        _, kwargs = mock_s3_client().put_object.call_args_list[0]
+        self.assertEqual(
+            json.loads(kwargs["Body"]),
+            {
+                "data_quality_report_id": "2a99d9fd-50b4-44f6-9c17-3f0c81cf9ce8",
+                "validation_date": ANY,
+                "completeness": {"mandatory_fields": [], "optional_fields": [], "required_fields": ["DOSE_UNIT_CODE"]},
+                "validity": ["DOSE_UNIT_CODE"],
+                "timeliness_ingested_seconds": ANY,
+                "timeliness_recorded_days": 0,
+            },
+        )
         self.assertEqual(self._MOCK_NEW_UUID, created_id)
 
     def test_create_immunization_with_id_throws_error(self):
@@ -370,7 +418,7 @@ class TestCreateImmunization(TestFhirServiceBase):
             + ".code - ['bad-code'] is not a valid combination of disease codes for this service"
         )
 
-        fhir_service = FhirService(self.imms_repo)
+        fhir_service = FhirService(self.imms_repo, self.authoriser, self.data_quality_reporter)
 
         with self.assertRaises(CustomValidationError) as error:
             fhir_service.create_immunization(bad_target_disease_imms, "Test")
@@ -388,7 +436,7 @@ class TestCreateImmunization(TestFhirServiceBase):
         del bad_patient_name_imms["contained"][1]["name"][0]["given"]
         bad_patient_name_msg = "contained[?(@.resourceType=='Patient')].name[0].given is a mandatory field"
 
-        fhir_service = FhirService(self.imms_repo)
+        fhir_service = FhirService(self.imms_repo, self.authoriser, self.data_quality_reporter)
 
         with self.assertRaises(CustomValidationError) as error:
             fhir_service.create_immunization(bad_patient_name_imms, "Test")
@@ -464,8 +512,9 @@ class TestUpdateImmunization(TestFhirServiceBase):
     def setUp(self):
         super().setUp()
         self.authoriser = create_autospec(Authoriser)
+        self.data_quality_reporter = create_autospec(DataQualityReporter)
         self.imms_repo = create_autospec(ImmunizationRepository)
-        self.fhir_service = FhirService(self.imms_repo, self.authoriser)
+        self.fhir_service = FhirService(self.imms_repo, self.authoriser, self.data_quality_reporter)
         self.mock_redis.hget.return_value = "COVID"
         self.mock_redis_getter.return_value = self.mock_redis
 
@@ -494,6 +543,7 @@ class TestUpdateImmunization(TestFhirServiceBase):
 
         # Then
         self.assertEqual(updated_version, 2)
+        self.data_quality_reporter.generate_and_send_report.assert_called_once_with(updated_immunisation)
         self.imms_repo.get_immunization_resource_and_metadata_by_id.assert_called_once_with(
             imms_id, include_deleted=True
         )
@@ -501,6 +551,65 @@ class TestUpdateImmunization(TestFhirServiceBase):
             imms_id, updated_immunisation, existing_resource_meta, "Test"
         )
         self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.UPDATE, {"COVID"})
+
+    @patch("common.data_quality.reporter.get_s3_client")
+    @patch("common.data_quality.reporter.uuid.uuid4", return_value="2a99d9fd-50b4-44f6-9c17-3f0c81cf9ce8")
+    def test_update_immunization_submits_data_quality_report(self, _, mock_s3_client):
+        """it should create a data quality report for every submitted immunization update - case where there are no
+        warnings in the report"""
+        imms_id = "an-id"
+        millilitres_snomed_code = "258773002"
+        snomed_coding_system = "http://snomed.info/sct"
+        original_immunisation = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER)
+
+        # Could fix in future. Example payload passes validation but coding is incorrect
+        original_immunisation["doseQuantity"]["code"] = millilitres_snomed_code
+        original_immunisation["doseQuantity"]["system"] = snomed_coding_system
+        identifier = Identifier(
+            system=original_immunisation["identifier"][0]["system"],
+            value=original_immunisation["identifier"][0]["value"],
+        )
+        updated_immunisation = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER, "2021-02-07T13:28:00+00:00")
+        updated_immunisation["doseQuantity"]["code"] = millilitres_snomed_code
+        updated_immunisation["doseQuantity"]["system"] = snomed_coding_system
+        existing_resource_meta = ImmunizationRecordMetadata(
+            identifier=identifier, resource_version=1, is_deleted=False, is_reinstated=False
+        )
+
+        self.imms_repo.get_immunization_resource_and_metadata_by_id.return_value = (
+            original_immunisation,
+            existing_resource_meta,
+        )
+        self.imms_repo.update_immunization.return_value = 2
+        self.authoriser.authorise.return_value = True
+
+        dq_reporter = DataQualityReporter(is_batch_csv=False, bucket="test-dq-bucket-name")
+        fhir_service_with_dq = FhirService(self.imms_repo, self.authoriser, dq_reporter)
+
+        # When
+        updated_version = fhir_service_with_dq.update_immunization(imms_id, updated_immunisation, "Test", 1)
+
+        # Then
+        mock_s3_client.assert_called_once()
+        mock_s3_client().put_object.assert_called_once_with(
+            Bucket="test-dq-bucket-name",
+            Key="2a99d9fd-50b4-44f6-9c17-3f0c81cf9ce8.json",
+            Body=ANY,
+            ContentType="application/json",
+        )
+        _, kwargs = mock_s3_client().put_object.call_args_list[0]
+        self.assertEqual(
+            json.loads(kwargs["Body"]),
+            {
+                "data_quality_report_id": "2a99d9fd-50b4-44f6-9c17-3f0c81cf9ce8",
+                "validation_date": ANY,
+                "completeness": {"mandatory_fields": [], "optional_fields": [], "required_fields": []},
+                "validity": [],
+                "timeliness_ingested_seconds": ANY,
+                "timeliness_recorded_days": 0,
+            },
+        )
+        self.assertEqual(updated_version, 2)
 
     def test_update_immunization_raises_validation_exception_when_nhs_number_invalid(self):
         """it should raise a CustomValidationError when the patient's NHS number in the payload is invalid"""
@@ -633,9 +742,10 @@ class TestDeleteImmunization(TestFhirServiceBase):
     def setUp(self):
         super().setUp()
         self.authoriser = create_autospec(Authoriser)
+        self.data_quality_reporter = create_autospec(DataQualityReporter)
         self.imms_repo = create_autospec(ImmunizationRepository)
         self.validator = create_autospec(ImmunizationValidator)
-        self.fhir_service = FhirService(self.imms_repo, self.authoriser, self.validator)
+        self.fhir_service = FhirService(self.imms_repo, self.authoriser, self.data_quality_reporter, self.validator)
 
     def test_delete_immunization(self):
         """it should delete Immunization record"""

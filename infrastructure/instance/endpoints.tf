@@ -25,9 +25,10 @@ locals {
   ]
   imms_table_name = aws_dynamodb_table.events-dynamodb-table.name
   imms_lambda_env_vars = {
-    "DYNAMODB_TABLE_NAME"    = local.imms_table_name,
-    "IMMUNIZATION_ENV"       = local.resource_scope,
-    "IMMUNIZATION_BASE_PATH" = strcontains(var.sub_environment, "pr-") ? "immunisation-fhir-api/FHIR/R4-${var.sub_environment}" : "immunisation-fhir-api/FHIR/R4"
+    "DATA_QUALITY_BUCKET_NAME" = aws_s3_bucket.data_quality_reports_bucket.id,
+    "DYNAMODB_TABLE_NAME"      = local.imms_table_name,
+    "IMMUNIZATION_ENV"         = local.resource_scope,
+    "IMMUNIZATION_BASE_PATH"   = strcontains(var.sub_environment, "pr-") ? "immunisation-fhir-api/FHIR/R4-${var.sub_environment}" : "immunisation-fhir-api/FHIR/R4"
     # except for prod and ref, any other env uses PDS int environment
     "PDS_ENV"              = var.pds_environment
     "SPLUNK_FIREHOSE_NAME" = module.splunk.firehose_stream_name
