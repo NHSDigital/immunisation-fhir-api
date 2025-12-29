@@ -264,7 +264,7 @@ resource "aws_cloudwatch_log_metric_filter" "mesh_processor_error_logs" {
 
   name           = "${local.short_prefix}-MeshProcessorErrorLogsFilter"
   pattern        = "%\\[ERROR\\]%"
-  log_group_name = aws_cloudwatch_log_group.mesh_file_converter_log_group.name
+  log_group_name = aws_cloudwatch_log_group.mesh_file_converter_log_group[0].name
 
   metric_transformation {
     name      = "${local.short_prefix}-MeshProcessorErrorLogs"
