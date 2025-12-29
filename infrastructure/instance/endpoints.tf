@@ -25,7 +25,7 @@ locals {
   ]
   imms_table_name = aws_dynamodb_table.events-dynamodb-table.name
   imms_lambda_env_vars = {
-    "DATA_QUALITY_BUCKET_NAME" = aws_s3_bucket.data_quality_reports_bucket.id,
+    "DATA_QUALITY_BUCKET_NAME" = aws_s3_bucket.data_quality_reports_bucket.bucket,
     "DYNAMODB_TABLE_NAME"      = local.imms_table_name,
     "IMMUNIZATION_ENV"         = local.resource_scope,
     "IMMUNIZATION_BASE_PATH"   = strcontains(var.sub_environment, "pr-") ? "immunisation-fhir-api/FHIR/R4-${var.sub_environment}" : "immunisation-fhir-api/FHIR/R4"

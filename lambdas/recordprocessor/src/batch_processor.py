@@ -11,8 +11,10 @@ from audit_table import update_audit_table_status
 from common.aws_s3_utils import move_file
 from common.batch.eof_utils import make_batch_eof_message
 from common.clients import logger
+from common.data_quality.reporter import DataQualityReporter
 from constants import (
     ARCHIVE_DIR_NAME,
+    DATA_QUALITY_BUCKET_NAME,
     PROCESSING_DIR_NAME,
     SOURCE_BUCKET_NAME,
     FileNotProcessedReason,
@@ -122,8 +124,10 @@ def process_rows(
     """
     Processes each row in the csv_reader starting from start_row.
     """
+    data_quality_reporter = DataQualityReporter(is_batch_csv=True, bucket=DATA_QUALITY_BUCKET_NAME)
     row_count = 0
     start_row = total_rows_processed_count
+
     try:
         for row in csv_reader:
             row_count += 1
@@ -135,6 +139,10 @@ def process_rows(
                     logger.info(f"Process: {total_rows_processed_count + 1}")
                 if start_row > 0 and row_count <= start_row + 10:
                     logger.info(f"Restarted Process (log up to first 10): {total_rows_processed_count + 1}")
+
+                # Submit data quality report
+                data_quality_reporter.generate_and_send_report(row)
+
                 # Process the row to obtain the details needed for the message_body and ack file
                 details_from_processing = process_row(target_disease, allowed_operations, row)
                 # Create the message body for sending
