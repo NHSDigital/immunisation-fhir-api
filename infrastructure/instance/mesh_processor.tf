@@ -260,7 +260,7 @@ resource "aws_cloudwatch_log_group" "mesh_file_converter_log_group" {
 }
 
 resource "aws_cloudwatch_log_metric_filter" "mesh_processor_error_logs" {
-  count = var.error_alarm_notifications_enabled ? 1 : 0
+  count = var.create_mesh_processor && var.error_alarm_notifications_enabled ? 1 : 0
 
   name           = "${local.short_prefix}-MeshProcessorErrorLogsFilter"
   pattern        = "%\\[ERROR\\]%"
@@ -274,7 +274,7 @@ resource "aws_cloudwatch_log_metric_filter" "mesh_processor_error_logs" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "mesh_processor_error_alarm" {
-  count = var.error_alarm_notifications_enabled ? 1 : 0
+  count = var.create_mesh_processor && var.error_alarm_notifications_enabled ? 1 : 0
 
   alarm_name          = "${local.short_prefix}-mesh-processor-lambda-error"
   comparison_operator = "GreaterThanOrEqualToThreshold"
