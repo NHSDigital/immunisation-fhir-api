@@ -7,7 +7,6 @@ from test_common.data_quality.sample_values import VALID_BATCH_IMMUNISATION
 
 class TestDataQualityCompletenessChecker(unittest.TestCase):
     def setUp(self):
-        super().setUp()
         self.DataQualityCompletenessChecker = DataQualityCompletenessChecker()
 
     def test_check_completeness_no_missing_fields(self):

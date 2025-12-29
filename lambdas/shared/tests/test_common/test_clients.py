@@ -34,6 +34,9 @@ class TestClients(unittest.TestCase):
         self.mock_logger_instance = MagicMock()
         self.mock_getLogger.return_value = self.mock_logger_instance
 
+        # Ensure singleton value is initialised to None to ensure these tests are isolated
+        common.clients.global_s3_client = None
+
     def tearDown(self):
         self.getenv_patch.stop()
         self.logging_patch.stop()
