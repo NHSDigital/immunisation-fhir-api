@@ -12,7 +12,7 @@ from common.data_quality.completeness import MissingFields
 @dataclass
 class DataQualityReport:
     data_quality_report_id: str
-    validationDate: str
+    validation_date: str
     completeness: MissingFields
     validity: list[str]
     timeliness_recorded_days: int
@@ -33,27 +33,25 @@ class DataQualityReporter:
         dq_report_id = str(uuid.uuid4())
         file_key = f"{dq_report_id}.json"
 
-        # Build report
         dq_report = DataQualityReport(
             data_quality_report_id=dq_report_id,
-            validationDate=dq_output.validation_datetime,
+            validation_date=dq_output.validation_datetime,
             completeness=dq_output.missing_fields,
             validity=dq_output.invalid_fields,
             timeliness_recorded_days=dq_output.timeliness.recorded_timeliness_days,
             timeliness_ingested_seconds=dq_output.timeliness.ingested_timeliness_seconds,
         )
 
-        # Send to S3 bucket
         try:
+            # Do we need to consider adding a date to the file key? Depends on if it is useful for DQ team
             self.s3_client.put_object(
                 Bucket=self.bucket, Key=file_key, Body=json.dumps(asdict(dq_report)), ContentType="application/json"
             )
         except ClientError as error:
-            # We only log the error here because we want the data quality checks to have minimal impact on the API's
-            # functionality. This should only happen in the case of AWS infrastructure issues.
-            logger.error("error whilst sending data quality for report id: %s with error: %s", dq_report_id, str(error))
+            # We log but suppress the error as DQ is a non-critical part of the system vs. API functionality. This would
+            # only occur in the rare event of infrastructure issues.
+            logger.error("Error sending data quality report with ID: %s. Error: %s", dq_report_id, str(error))
             return None
 
-        logger.info("data quality report sent successfully for report id: %s", dq_report_id)
-
+        logger.info("Data quality report sent successfully with ID: %s", dq_report_id)
         return None
