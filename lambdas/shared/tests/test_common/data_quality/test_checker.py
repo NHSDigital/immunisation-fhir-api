@@ -9,16 +9,20 @@ from test_common.data_quality.sample_values import VALID_BATCH_IMMUNISATION, VAL
 
 class TestDataQualityChecker(unittest.TestCase):
     def setUp(self):
-        # Fix date.today() for all validation tests
-        date_today_patcher = patch("common.data_quality.models.immunization_batch_row_model.datetime", wraps=datetime)
-        self.mock_date_today = date_today_patcher.start()
-        self.mock_date_today.date.today.return_value = datetime.date(2024, 5, 20)
-
-        # Fix datetime.now
         self.mock_fixed_datetime = datetime.datetime(2024, 5, 20, 14, 12, 30, 123, tzinfo=datetime.timezone.utc)
-        datetime_now_patcher = patch("common.data_quality.checker.datetime", wraps=datetime.datetime)
-        self.mock_datetime_now = datetime_now_patcher.start()
-        self.mock_datetime_now.now.return_value = self.mock_fixed_datetime
+
+        # Fix date.today() and datetime.now() for the validation model
+        validator_datetime_patcher = patch(
+            "common.data_quality.models.immunization_batch_row_model.datetime", wraps=datetime
+        )
+        mock_validator_datetime = validator_datetime_patcher.start()
+        mock_validator_datetime.date.today.return_value = datetime.date(2024, 5, 20)
+        mock_validator_datetime.datetime.now.return_value = self.mock_fixed_datetime
+
+        # Fix datetime.now in the top level checker
+        dq_checker_datetime_patcher = patch("common.data_quality.checker.datetime", wraps=datetime.datetime)
+        mock_dq_checker_datetime = dq_checker_datetime_patcher.start()
+        mock_dq_checker_datetime.now.return_value = self.mock_fixed_datetime
 
         self.batch_dq_checker = DataQualityChecker(is_batch_csv=True)
         self.fhir_json_dq_checker = DataQualityChecker(is_batch_csv=False)
@@ -48,7 +52,7 @@ class TestDataQualityChecker(unittest.TestCase):
             ("DATE_AND_TIME", "17000511T120000"),  # Prior to min accepted past date
             ("DATE_AND_TIME", "20241511T120000"),  # Invalid datetime
             ("DATE_AND_TIME", "20241511T120"),  # Invalid datetime
-            ("DATE_AND_TIME", "20240520T120001"),  # Past dates only
+            ("DATE_AND_TIME", "20240520T150001"),  # Past datetime only
             ("PERSON_POSTCODE", "AAA12 3B"),
             ("EXPIRY_DATE", "18990101"),  # Prior to min accepted past date
             ("EXPIRY_DATE", "20240137"),  # Invalid date

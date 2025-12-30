@@ -28,6 +28,7 @@ class TestProcessorEdgeCases(unittest.TestCase):
         self.mock_set_audit_table_ingestion_start_time = create_patch(
             "file_level_validation.set_audit_table_ingestion_start_time"
         )
+        create_patch("batch_processor.DataQualityReporter")
 
     def tearDown(self):
         patch.stopall()
