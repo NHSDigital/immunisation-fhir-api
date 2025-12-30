@@ -258,3 +258,33 @@ resource "aws_cloudwatch_log_group" "mesh_file_converter_log_group" {
   name              = "/aws/lambda/${local.short_prefix}-mesh_processor_lambda"
   retention_in_days = 30
 }
+
+resource "aws_cloudwatch_log_metric_filter" "mesh_processor_error_logs" {
+  count = var.create_mesh_processor && var.error_alarm_notifications_enabled ? 1 : 0
+
+  name           = "${local.short_prefix}-MeshProcessorErrorLogsFilter"
+  pattern        = "%\\[ERROR\\]%"
+  log_group_name = aws_cloudwatch_log_group.mesh_file_converter_log_group[0].name
+
+  metric_transformation {
+    name      = "${local.short_prefix}-MeshProcessorErrorLogs"
+    namespace = "${local.short_prefix}-MeshProcessorLambda"
+    value     = "1"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "mesh_processor_error_alarm" {
+  count = var.create_mesh_processor && var.error_alarm_notifications_enabled ? 1 : 0
+
+  alarm_name          = "${local.short_prefix}-mesh-processor-lambda-error"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = "${local.short_prefix}-MeshProcessorErrorLogs"
+  namespace           = "${local.short_prefix}-MeshProcessorLambda"
+  period              = 120
+  statistic           = "Sum"
+  threshold           = 1
+  alarm_description   = "This sets off an alarm for any error logs found in the mesh processor Lambda function"
+  alarm_actions       = [data.aws_sns_topic.imms_system_alert_errors.arn]
+  treat_missing_data  = "notBreaching"
+}

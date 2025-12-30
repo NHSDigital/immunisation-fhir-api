@@ -50,3 +50,37 @@ resource "aws_cloudwatch_log_metric_filter" "max_memory_used_metric" {
     value     = "$18"
   }
 }
+
+resource "aws_cloudwatch_log_metric_filter" "fhir_api_error_logs" {
+  count = var.error_alarm_notifications_enabled ? 1 : 0
+
+  name           = "${var.short_prefix}_${var.function_name}-ErrorLogsFilter"
+  pattern        = "{ $.operation_outcome.status = \"500\" || $.operation_outcome.status = \"403\" }"
+  log_group_name = module.lambda_function_container_image.lambda_cloudwatch_log_group_name
+
+  metric_transformation {
+    name      = "${var.short_prefix}_${var.function_name}-ApiErrorLogs"
+    namespace = "${var.short_prefix}_${var.function_name}-Lambda"
+    value     = "1"
+  }
+}
+
+data "aws_sns_topic" "fhir_api_errors" {
+  name = "${var.environment}-fhir-api-errors"
+}
+
+resource "aws_cloudwatch_metric_alarm" "fhir_api_error_alarm" {
+  count = var.error_alarm_notifications_enabled ? 1 : 0
+
+  alarm_name          = "${var.short_prefix}_${var.function_name}-lambda-error"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = "${var.short_prefix}_${var.function_name}-ApiErrorLogs"
+  namespace           = "${var.short_prefix}_${var.function_name}-Lambda"
+  period              = 120
+  statistic           = "Sum"
+  threshold           = 1
+  alarm_description   = "Triggers an alarm when 500 or 403 error responses are logged by the FHIR API Lambda function."
+  alarm_actions       = [data.aws_sns_topic.fhir_api_errors.arn]
+  treat_missing_data  = "notBreaching"
+}

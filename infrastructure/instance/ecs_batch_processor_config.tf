@@ -372,7 +372,7 @@ resource "aws_cloudwatch_log_group" "pipe_log_group" {
 }
 
 resource "aws_cloudwatch_log_metric_filter" "record_processor_task_error_logs" {
-  count = var.batch_error_notifications_enabled ? 1 : 0
+  count = var.error_alarm_notifications_enabled ? 1 : 0
 
   name           = "${local.short_prefix}-RecordProcessorTaskErrorLogsFilter"
   pattern        = "%ERROR:%"
@@ -386,7 +386,7 @@ resource "aws_cloudwatch_log_metric_filter" "record_processor_task_error_logs" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "record_processor_task_error_alarm" {
-  count = var.batch_error_notifications_enabled ? 1 : 0
+  count = var.error_alarm_notifications_enabled ? 1 : 0
 
   alarm_name          = "${local.short_prefix}-record-processor-task-error"
   comparison_operator = "GreaterThanOrEqualToThreshold"
@@ -397,6 +397,6 @@ resource "aws_cloudwatch_metric_alarm" "record_processor_task_error_alarm" {
   statistic           = "Sum"
   threshold           = 1
   alarm_description   = "This sets off an alarm for any error logs found in the record processor ECS task"
-  alarm_actions       = [data.aws_sns_topic.batch_processor_errors.arn]
+  alarm_actions       = [data.aws_sns_topic.imms_system_alert_errors.arn]
   treat_missing_data  = "notBreaching"
 }
