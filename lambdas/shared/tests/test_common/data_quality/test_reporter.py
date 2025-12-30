@@ -15,17 +15,18 @@ from test_common.data_quality.sample_values import VALID_BATCH_IMMUNISATION, VAL
 @mock_aws
 class TestDataQualityReporter(unittest.TestCase):
     def setUp(self):
-        # Fix date.today() in validator model
-        date_today_patcher = patch("common.data_quality.models.immunization_batch_row_model.datetime", wraps=datetime)
-        mock_date_today = date_today_patcher.start()
-        mock_date_today.date.today.return_value = datetime.date(2024, 5, 20)
+        fixed_datetime_now = datetime.datetime(2024, 5, 20, 14, 12, 30, 123, tzinfo=datetime.timezone.utc)
+
+        # Fix date.today() and datetime.now() in validator model
+        validator_dt_patcher = patch("common.data_quality.models.immunization_batch_row_model.datetime", wraps=datetime)
+        mock_validator_dt = validator_dt_patcher.start()
+        mock_validator_dt.date.today.return_value = datetime.date(2024, 5, 20)
+        mock_validator_dt.datetime.now.return_value = fixed_datetime_now
 
         # Fix datetime.now() in dq checker to fix the report datetime
-        datetime_now_patcher = patch("common.data_quality.checker.datetime", wraps=datetime.datetime)
-        mock_datetime_now = datetime_now_patcher.start()
-        mock_datetime_now.now.return_value = datetime.datetime(
-            2024, 5, 20, 14, 12, 30, 123, tzinfo=datetime.timezone.utc
-        )
+        checker_dt_patcher = patch("common.data_quality.checker.datetime", wraps=datetime.datetime)
+        mock_checker_dt = checker_dt_patcher.start()
+        mock_checker_dt.now.return_value = fixed_datetime_now
 
         # Fix generated UUID
         self.example_uuid = uuid.UUID("fa711f35-c08b-48c8-b498-3b151e686ddf")
