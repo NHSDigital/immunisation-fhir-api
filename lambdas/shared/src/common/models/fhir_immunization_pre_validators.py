@@ -239,7 +239,9 @@ class PreValidators:
             practitioner_references = [x for x in performer_internal_references if x == "#" + practitioner_id]
 
             if len(practitioner_references) == 0:
-                raise ValueError(f"contained Practitioner resource id '{practitioner_id}' must be referenced from performer")
+                raise ValueError(
+                    f"contained Practitioner resource id '{practitioner_id}' must be referenced from performer"
+                )
             elif len(practitioner_references) > 1:
                 raise ValueError(
                     f"contained Practitioner resource id '{practitioner_id}' must only be referenced once from performer"
