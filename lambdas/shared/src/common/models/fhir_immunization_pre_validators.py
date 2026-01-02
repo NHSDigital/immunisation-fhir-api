@@ -18,7 +18,7 @@ from common.models.utils.pre_validator_utils import PreValidation
 class PreValidators:
     """
     Validators which run prior to the FHIR validators and check that, where values exist, they
-    meet the NHS custom requirements. Note: that validation of the existence of a value (i.e. it
+    meet the NHS custom requirements. Note that validation of the existence of a value (i.e. it
     exists if mandatory, or doesn't exist if is not applicable) is done by the post validator except for a few key
     elements, the existence of which is explicitly checked as part of pre-validation.
     """
