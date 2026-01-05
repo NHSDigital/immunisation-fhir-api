@@ -118,10 +118,10 @@ class FhirService:
         return Immunization.parse_obj(resource), str(immunization_metadata.resource_version)
 
     def create_immunization(self, immunization: dict, supplier_system: str) -> Id:
+        self.data_quality_reporter.generate_and_send_report(immunization)
+
         if immunization.get("id") is not None:
             raise CustomValidationError("id field must not be present for CREATE operation")
-
-        self.data_quality_reporter.generate_and_send_report(immunization)
 
         try:
             self.validator.validate(immunization)
