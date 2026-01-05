@@ -4007,10 +4007,10 @@ components:
         |--------------------------------------------------------------------------------------|
 
         | 400         | INVALID      | Invalid payload provided e.g. invalid JSON. Refer to the 
-        `diagnostics` section for details. |
+        `diagnostics` section in the response for details. |
 
         | 400         | INVARIANT    | The FHIR Resource provided contained data validation errors.
-        Refer to the diagnostics section for details concerning the field and condition that failed. |
+        Refer to the `diagnostics` section in the response for details concerning the field(s) and condition(s) that failed. |
 
         | 401         | UNAUTHORIZED | Authorization is required for the interaction that was attempted. |
 
@@ -4036,15 +4036,8 @@ components:
         ---------------------------------------------
         |--------------------------------------------------------------------------------------|
 
-        | 400         | INVALID          | Search parameter immunization.target is either missing or not in the expected format. | 
-
-        | 400         | INVALID          | Search parameter patient.identifier is either missing or not in the expected format. | 
-
-        | 400         | INVALID          | Invalid value for patient.identifier | 
-
-        | 400         | INVALID          | Invalid date.to/date.from format |
-
-        | 400         | INVALID          | Invalid value for "-immunization.target" |
+        | 400         | INVALID          | Invalid request parameter(s) provided e.g. required parameter missing or invalid NHS Number in search.
+        Refer to the `diagnostics` section in the response for details concerning the parameter(s) and condition(s) that failed.|
 
         | 401         | UNAUTHORIZED     | Authorization is required for the interaction that was attempted |
 
