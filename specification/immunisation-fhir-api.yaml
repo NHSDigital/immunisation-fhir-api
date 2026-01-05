@@ -1291,7 +1291,7 @@ paths:
                             coronavirus 2 (disorder)
                   doseNumberPositiveInt: 1
       responses:
-        "201":
+        201:
           description: Create Immunization operation successful
           headers:
             Location:
@@ -1302,6 +1302,8 @@ paths:
               $ref: "#/components/headers/RequestID"
         4XX:
           $ref: "#/components/responses/4XX-imms-create"
+        500:
+          $ref: "#/components/responses/500-all-endpoints"
     get:
       summary: Search for a patient's immunisation records (GET)
       operationId: searchImmunizationGet
@@ -1364,10 +1366,12 @@ paths:
         - $ref: "#/components/parameters/DateTo"
         - $ref: "#/components/parameters/Include"
       responses:
-        "200":
+        200:
           $ref: "#/components/responses/200-imms-search"
         4XX:
           $ref: "#/components/responses/4XX-imms-search"
+        500:
+          $ref: "#/components/responses/500-all-endpoints"
   /Immunization/_search:
     post:
       summary: Search for a patient's immunisation records (POST)
@@ -1420,10 +1424,12 @@ paths:
       requestBody:
         $ref: "#/components/requestBodies/SearchImmunizationPost"
       responses:
-        "200":
+        200:
           $ref: "#/components/responses/200-imms-search"
         4XX:
           $ref: "#/components/responses/4XX-imms-search"
+        500:
+          $ref: "#/components/responses/500-all-endpoints"
 
   "/Immunization/{id}":
     get:
@@ -1483,7 +1489,7 @@ paths:
         - $ref: "#/components/parameters/RequestID"
         - $ref: "#/components/parameters/Id"
       responses:
-        "200":
+        200:
           description: Read Immunization operation successful
           headers:
             CorrelationID:
@@ -2201,6 +2207,8 @@ paths:
                     doseNumberPositiveInt: 1
         4XX:
           $ref: "#/components/responses/4XX-imms-read"
+        500:
+          $ref: "#/components/responses/500-all-endpoints"
     put:
       summary: Update a record of vaccination
       operationId: updateImmunization
@@ -3129,7 +3137,7 @@ paths:
                             coronavirus 2 (disorder)
                   doseNumberPositiveInt: 1
       responses:
-        "200":
+        200:
           description: Update Immunization operation successful
           headers:
             CorrelationID:
@@ -3138,6 +3146,8 @@ paths:
               $ref: "#/components/headers/RequestID"
         4XX:
           $ref: "#/components/responses/4XX-imms-update"
+        500:
+          $ref: "#/components/responses/500-all-endpoints"
     delete:
       summary: Mark a record of vaccination as being entered in error
       operationId: deleteImmunization
@@ -3185,10 +3195,12 @@ paths:
         - $ref: "#/components/parameters/RequestID"
         - $ref: "#/components/parameters/Id"
       responses:
-        "204":
+        204:
           description: Delete Immunization operation successful
         4XX:
           $ref: "#/components/responses/4XX-imms-delete"
+        500:
+          $ref: "#/components/responses/500-all-endpoints"
 components:
   responses:
     200-imms-search:
@@ -3994,59 +4006,23 @@ components:
         ---------------------------------------------
         |--------------------------------------------------------------------------------------|
 
-        | 400         | Bad Request               | Invalid resourceType in body |
+        | 400         | INVALID      | Invalid payload provided e.g. invalid JSON. Refer to the 
+        `diagnostics` section in the response for details. |
 
-        | 400         | Bad Request               | Invalid resourceType within contained |
+        | 400         | INVARIANT    | The FHIR Resource provided contained data validation errors.
+        Refer to the `diagnostics` section in the response for details concerning the field(s) and condition(s) that failed. |
 
-        | 400         | Bad Request               | Invalid status value | 
+        | 401         | UNAUTHORIZED | Authorization is required for the interaction that was attempted. |
 
-        | 400         | Bad Request               | Invalid value for a datetime
-        (string) field e.g. occurrenceDateTime.<br>Note : The error format will
-        remain same for any datetime (string) field; only the field name will
-        change under diagnostics. |
+        | 403         | FORBIDDEN    | The sender does not have permissions to access this resource.  |
 
-        | 400         | Bad Request               | Invalid value for a string
-        field e.g. postalCode<br>Note : The error format will remain same for
-        any string field; only the field location will change under diagnostics. |
+        | 403         | FORBIDDEN    | The sender does not have permission for the specific operation or vaccine type.  |
 
-        | 400         | Bad Request               | Invalid value for an integer
-        field e.g. doseNumberPositiveInt<br>Note : The error format will remain
-        same for any integer field; only the field location will change under
-        diagnostics. |
-
-        | 400         | Bad Request               | Invalid top level element e.g. test  |
-
-        | 400         | Bad Request               | Missing mandatory field e.g.
-        contained<br>Note : The error format will remain same for any mandatory field; only the field name will change under diagnostics. | 
-
-        | 401         | Unauthorized               | Authorization is required for the interaction that was attempted |
-
-        | 403         | Forbidden               | The sender does not have permissions to access this resource  |
-
-        | 403         | Forbidden               | The sender does not have permission for the specific operation or vaccine type  |
-
-        | 422         | Unprocessable Entity               | Duplicate Identifier value  |
+        | 422         | DUPLICATE    | An Immunization already exists with the identifier provided.  |
       content:
         application/fhir+json:
           schema:
             $ref: "#/components/schemas/OperationOutcome"
-          example:
-            resourceType: OperationOutcome
-            id: a5abca2a-4eda-41da-b2cc-95d48c6b791d
-            meta:
-              profile:
-                - >-
-                  https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome
-            issue:
-              - severity: error
-                code: expired
-                details:
-                  coding:
-                    - system: "https://fhir.nhs.uk/Codesystem/http-error-codes"
-                      code: SEND_UNAUTHORIZED
-                diagnostics: >-
-                  The sender has not provided a token or it has expired or is
-                  otherwise invalid.
     4XX-imms-search:
       description: >
         Below are examples of potential HTTP status codes and their associated
@@ -4060,42 +4036,18 @@ components:
         ---------------------------------------------
         |--------------------------------------------------------------------------------------|
 
-        | 400         | Bad Request      | Search parameter immunization.target is either missing or not in the expected format. | 
+        | 400         | INVALID          | Invalid request parameter(s) provided e.g. required parameter missing or invalid NHS Number in search.
+        Refer to the `diagnostics` section in the response for details concerning the parameter(s) and condition(s) that failed.|
 
-        | 400         | Bad Request      | Search parameterpatient.identifier is either missing or not in the expected format. | 
+        | 401         | UNAUTHORIZED     | Authorization is required for the interaction that was attempted |
 
-        | 400         | Bad Request      | Invalid value for patient.identifier | 
+        | 403         | FORBIDDEN        | The sender does not have permissions to access this resource  |
 
-        | 400         | Bad Request      | Invalid date.to/date.from format |
-
-        | 400         | Bad Request      | Invalid value for "-immunization.target" |
-
-        | 401         | Unauthorized     | Authorization is required for the interaction that was attempted |
-
-        | 403         | Forbidden        | The sender does not have permissions to access this resource  |
-
-        | 403         | Forbidden        | The sender does not have permission for the specific operation or vaccine type  |
+        | 403         | FORBIDDEN        | The sender does not have permission for the specific operation or vaccine type  |
       content:
         application/fhir+json:
           schema:
             $ref: "#/components/schemas/OperationOutcome"
-          example:
-            resourceType: OperationOutcome
-            id: a5abca2a-4eda-41da-b2cc-95d48c6b791d
-            meta:
-              profile:
-                - >-
-                  https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome
-            issue:
-              - severity: error
-                code: expired
-                details:
-                  coding:
-                    - system: "https://fhir.nhs.uk/Codesystem/http-error-codes"
-                      code: SEND_UNAUTHORIZED
-                diagnostics: >-
-                  The sender has not provided a token or it has expired or is
-                  otherwise invalid.
     4XX-imms-read:
       description: >
         Below are examples of potential HTTP status codes and their associated
@@ -4109,36 +4061,19 @@ components:
         ---------------------------------------------
         |--------------------------------------------------------------------------------------|
 
-        | 400         | Bad Request             | Missing immunization event identifier (id) |
+        | 400         | INVALID                 | Missing immunization event identifier (id) or id is not in a valid format |
 
-        | 401         | Unauthorized            | Authorization is required for the interaction that was attempted |
+        | 401         | UNAUTHORIZED            | Authorization is required for the interaction that was attempted |
 
-        | 403         | Forbidden               | The sender does not have permissions to access this resource  |
+        | 403         | FORBIDDEN               | The sender does not have permissions to access this resource  |
 
-        | 403         | Forbidden               | The sender does not have permission for the specific operation or vaccine type  |
+        | 403         | FORBIDDEN               | The sender does not have permission for the specific operation or vaccine type  |
 
-        | 404         | Not Found               | Unrecognized immunization event identifier (id) |
+        | 404         | NOT-FOUND               | Immunization event identifier (id) could not be found |
       content:
         application/fhir+json:
           schema:
             $ref: "#/components/schemas/OperationOutcome"
-          example:
-            resourceType: OperationOutcome
-            id: a5abca2a-4eda-41da-b2cc-95d48c6b791d
-            meta:
-              profile:
-                - >-
-                  https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome
-            issue:
-              - severity: error
-                code: expired
-                details:
-                  coding:
-                    - system: "https://fhir.nhs.uk/Codesystem/http-error-codes"
-                      code: SEND_UNAUTHORIZED
-                diagnostics: >-
-                  The sender has not provided a token or it has expired or is
-                  otherwise invalid.
     4XX-imms-update:
       description: >
         Below are examples of potential HTTP status codes and their associated
@@ -4152,54 +4087,33 @@ components:
         ---------------------------------------------
         |--------------------------------------------------------------------------------------|
 
-        | 400         | Bad Request         | All validation errors & mandatory field errors from the Record scenario |  All validation errors
+        | 400         | INVARIANT    | All validation errors & mandatory field errors from the Record scenario |  All validation errors
         & mandatory field errors from POST /Immunization |
 
-        | 400         | Bad Request         | Missing id in request parameter |
+        | 400         | INVALID      | Missing id in request parameter |
 
-        | 400         | Bad Request         | Missing id parameter in request body<br>or<br>mismatch between id provided within request body and request parameter |
+        | 400         | INVARIANT    | Missing id parameter in request body<br>or<br>mismatch between id provided within request body and request parameter |
 
-        | 400         | Bad Request         | Mismatch between identifier
-        value and stored event |
+        | 400         | INVARIANT    | Mismatch between identifier value and stored event |
 
-        | 400         | Bad Request         | Missing E-Tag (version)header |
+        | 400         | INVARIANT    | Missing E-Tag (version)header |
 
-        | 400         | Bad Request         | Wrong version number passed in E-Tag header<br>e.g. passing version no. > 1 in case of first-time update |
+        | 400         | INVARIANT    | Empty value for E-Tag header |
 
-        | 400         | Bad Request         | Empty value for E-Tag header
-        |
+        | 400         | INVARIANT    | E-Tag value <= current stored value |
 
-        | 400         | Bad Request         | E-Tag value <= current stored value |
+        | 401         | UNAUTHORIZED | Authorization is required for the interaction that was attempted |
 
-        | 401         | Unauthorized        | Authorization is required for the interaction that was attempted |
+        | 403         | FORBIDDEN    | The sender does not have permissions to access this resource  |
 
-        | 403         | Forbidden               | The sender does not have permissions to access this resource  |
+        | 403         | FORBIDDEN    | The sender does not have permission for the specific operation or vaccine type  |
 
-        | 403         | Forbidden               | The sender does not have permission for the specific operation or vaccine type  |
-
-        | 404         | Not Found               | Provided id not available |
+        | 404         | NOT-FOUND    | Immunization event identifier (id) could not be found |
 
       content:
         application/fhir+json:
           schema:
             $ref: "#/components/schemas/OperationOutcome"
-          example:
-            resourceType: OperationOutcome
-            id: a5abca2a-4eda-41da-b2cc-95d48c6b791d
-            meta:
-              profile:
-                - >-
-                  https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome
-            issue:
-              - severity: error
-                code: expired
-                details:
-                  coding:
-                    - system: "https://fhir.nhs.uk/Codesystem/http-error-codes"
-                      code: SEND_UNAUTHORIZED
-                diagnostics: >-
-                  The sender has not provided a token or it has expired or is
-                  otherwise invalid.
     4XX-imms-delete:
       description: >
         Below are examples of potential HTTP status codes and their associated
@@ -4213,16 +4127,22 @@ components:
         ---------------------------------------------
         |--------------------------------------------------------------------------------------|
 
-        | 400         | Bad Request               | Missing or invalid id | 
+        | 400         | INVALID                 | Missing or invalid id | 
 
-        | 401         | Unauthorized               | Authorization is required for the interaction that was attempted | 
+        | 401         | UNAUTHORIZED            | Authorization is required for the interaction that was attempted | 
 
-        | 403         | Forbidden               | The sender does not have permissions to access this resource  |
+        | 403         | FORBIDDEN               | The sender does not have permissions to access this resource  |
 
-        | 403         | Forbidden               | The sender does not have permission for the specific operation or vaccine type  |
+        | 403         | FORBIDDEN               | The sender does not have permission for the specific operation or vaccine type  |
 
-        | 404         | Not Found               | Non existing id in query parameter<br>or<br>Trying to deleted an already deleted record |
+        | 404         | NOT-FOUND               | Non existing id in query parameter<br>or<br>Trying to deleted an already deleted record |
 
+      content:
+        application/fhir+json:
+          schema:
+            $ref: "#/components/schemas/OperationOutcome"
+    500-all-endpoints:
+      description: The 500 server error OperationOutcome response.
       content:
         application/fhir+json:
           schema:
@@ -4236,14 +4156,12 @@ components:
                   https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome
             issue:
               - severity: error
-                code: expired
+                code: exception
                 details:
                   coding:
                     - system: "https://fhir.nhs.uk/Codesystem/http-error-codes"
-                      code: SEND_UNAUTHORIZED
-                diagnostics: >-
-                  The sender has not provided a token or it has expired or is
-                  otherwise invalid.
+                      code: EXCEPTION
+                diagnostics: Unable to process request. Issue may be transient.
   headers:
     CorrelationID:
       required: false
@@ -4476,367 +4394,6 @@ components:
         type: integer
         example: 1
   schemas:
-    OperationOutcome:
-      type: object
-      properties:
-        text:
-          $ref: "#/components/schemas/Narrative"
-        contained:
-          type: array
-          items:
-            description: >-
-              These resources do not have an independent existence apart from
-              the resource that contains them - they cannot be identified
-              independently, and nor can they have their own independent
-              transaction scope.
-            type: object
-            discriminator:
-              propertyName: resourceType
-            properties:
-              resourceType:
-                type: string
-                example: OperationOutcome
-              id:
-                type: string
-                pattern: '[A-Za-z0-9\-\.]{1,64}'
-                description: >-
-                  The logical id of the resource, as used in the URL for the
-                  resource. Once assigned, this value never changes.
-              meta:
-                $ref: "#/components/schemas/Meta"
-              issue:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    severity:
-                      type: string
-                    code:
-                      type: string
-                    details:
-                      type: object
-                      properties:
-                        coding:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              system:
-                                type: string
-                              code:
-                                type: string
-                    diagnostics:
-                      type: string
-            required:
-              - resourceType
-        extension:
-          type: array
-          items:
-            $ref: "#/components/schemas/Extension"
-        modifierExtension:
-          type: array
-          items:
-            $ref: "#/components/schemas/Extension"
-        issue:
-          type: array
-          items:
-            $ref: "#/components/schemas/OperationOutcome_Issue"
-          minItems: 1
-      required:
-        - issue
-      example:
-        resourceType: OperationOutcome
-        meta:
-          versionId: BnpJOa5-Sb
-          lastUpdated: "2021-04-12T14:34:36.061-05:00"
-          source: BCL3d5NERb
-          profile:
-            - xSempdez3Y
-          security:
-            - system: tczS7uP8XL
-              version: IXKbCw05qO
-              code: NvDP1hL64Y
-              display: _r1z5oJld1
-              userSelected: true
-          tag:
-            - system: 2qqXHsE1Mx
-              version: lybFyQ1tBj
-              code: Q9w075fYd3
-              display: Nm2QqbYibP
-              userSelected: true
-            - code: ibm/complete-mock
-        implicitRules: l8KHk6qOt4
-        language: en-US
-        text:
-          status: additional
-          div: '<div xmlns="http://www.w3.org/1999/xhtml"></div>'
-        issue:
-          - severity: warning
-            code: business-rule
-            details:
-              coding:
-                - system: eQgFofRHmJ
-                  version: T524HDk5Za
-                  code: tC_7iQg31j
-                  display: s0bLc4W5KE
-                  userSelected: true
-              text: BfBVppHmsh
-            diagnostics: EcvPDGbK0q
-            location:
-              - GK5ihTmfe6
-            expression:
-              - Uidx_swV4Z
-    OperationOutcome_Issue:
-      allOf:
-        - $ref: "#/components/schemas/BackboneElement"
-        - type: object
-          properties:
-            severity:
-              type: string
-              pattern: '[^\s]+(\s[^\s]+)*'
-              description: >-
-                Indicates whether the issue indicates a variation from
-                successful processing.
-            code:
-              type: string
-              pattern: '[^\s]+(\s[^\s]+)*'
-              description: >-
-                Describes the type of the issue. The system that creates an
-                OperationOutcome SHALL choose the most applicable code from the
-                IssueType value set, and may additional provide its own code for
-                the error in the details element.
-            details:
-              $ref: "#/components/schemas/CodeableConcept"
-            diagnostics:
-              type: string
-              pattern: '[ \r\n\t\S]+'
-              description: Additional diagnostic information about the issue.
-            location:
-              type: array
-              items:
-                type: string
-                pattern: '[ \r\n\t\S]+'
-                description: >-
-                  This element is deprecated because it is XML specific. It is
-                  replaced by issue.expression, which is format independent, and
-                  simpler to parse. 
-
-
-                  For resource issues, this will be a simple XPath limited to
-                  element names, repetition indicators and the default child
-                  accessor that identifies one of the elements in the resource
-                  that caused this issue to be raised.  For HTTP errors, will be
-                  "http." + the parameter name.
-            expression:
-              type: array
-              items:
-                type: string
-                pattern: '[ \r\n\t\S]+'
-                description: >-
-                  A [simple subset of FHIRPath](fhirpath.html#simple) limited to
-                  element names, repetition indicators and the default child
-                  accessor that identifies one of the elements in the resource
-                  that caused this issue to be raised.
-          required:
-            - severity
-            - code
-    Element:
-      type: object
-      properties:
-        id:
-          type: string
-          pattern: '[A-Za-z0-9\-\.]{1,64}'
-          description: >-
-            Unique id for the element within a resource (for internal
-            references). This may be any string value that does not contain
-            spaces.
-        extension:
-          type: array
-          items:
-            $ref: "#/components/schemas/Extension"
-          example:
-            - url: "http://example.com"
-              valueString: text value
-    BackboneElement:
-      type: object
-      properties:
-        id:
-          type: string
-          pattern: '[A-Za-z0-9\-\.]{1,64}'
-          description: >-
-            Unique id for the element within a resource (for internal
-            references). This may be any string value that does not contain
-            spaces.
-        extension:
-          type: array
-          items:
-            $ref: "#/components/schemas/Extension"
-        modifierExtension:
-          type: array
-          items:
-            $ref: "#/components/schemas/Extension"
-    Address:
-      allOf:
-        - $ref: "#/components/schemas/Element"
-        - type: object
-          properties:
-            use:
-              type: string
-              pattern: '[^\s]+(\s[^\s]+)*'
-              description: The purpose of this address.
-            type:
-              type: string
-              pattern: '[^\s]+(\s[^\s]+)*'
-              description: >-
-                Distinguishes between physical addresses (those you can visit)
-                and mailing addresses (e.g. PO Boxes and care-of addresses).
-                Most addresses are both.
-            text:
-              type: string
-              pattern: '[ \r\n\t\S]+'
-              description: >-
-                Specifies the entire address as it should be displayed e.g. on a
-                postal label. This may be provided instead of or as well as the
-                specific parts.
-            line:
-              type: array
-              items:
-                type: string
-                pattern: '[ \r\n\t\S]+'
-                description: >-
-                  This component contains the house number, apartment number,
-                  street name, street direction,  P.O. Box number, delivery
-                  hints, and similar address information.
-            city:
-              type: string
-              pattern: '[ \r\n\t\S]+'
-              description: >-
-                The name of the city, town, suburb, village or other community
-                or delivery center.
-            district:
-              type: string
-              pattern: '[ \r\n\t\S]+'
-              description: The name of the administrative area (county).
-            state:
-              type: string
-              pattern: '[ \r\n\t\S]+'
-              description: >-
-                Sub-unit of a country with limited sovereignty in a federally
-                organized country. A code may be used if codes are in common use
-                (e.g. US 2 letter state codes).
-            postalCode:
-              type: string
-              pattern: '[ \r\n\t\S]+'
-              description: >-
-                A postal code designating a region defined by the postal
-                service.
-            country:
-              type: string
-              pattern: '[ \r\n\t\S]+'
-              description: Country - a nation as commonly understood or generally accepted.
-            period:
-              $ref: "#/components/schemas/Period"
-    Age:
-      allOf:
-        - $ref: "#/components/schemas/Quantity"
-        - type: object
-          properties: {}
-    Annotation:
-      allOf:
-        - $ref: "#/components/schemas/Element"
-        - type: object
-          properties:
-            authorReference:
-              $ref: "#/components/schemas/Reference"
-            authorString:
-              type: string
-              pattern: '[ \r\n\t\S]+'
-              description: The individual responsible for making the annotation.
-            time:
-              type: string
-              pattern: >-
-                ([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|3[0-1])(T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00)))?)?)?
-              description: Indicates when this particular annotation was made.
-            text:
-              type: string
-              pattern: '[ \r\n\t\S]+'
-              description: The text of the annotation in markdown format.
-          required:
-            - text
-    Attachment:
-      allOf:
-        - $ref: "#/components/schemas/Element"
-        - type: object
-          properties:
-            contentType:
-              type: string
-              pattern: '[^\s]+(\s[^\s]+)*'
-              description: >-
-                Identifies the type of the data in the attachment and allows a
-                method to be chosen to interpret or render the data. Includes
-                mime type parameters such as charset where appropriate.
-            language:
-              type: string
-              pattern: '[^\s]+(\s[^\s]+)*'
-              description: >-
-                The human language of the content. The value can be any valid
-                value according to BCP 47.
-            data:
-              type: string
-              pattern: '(\s*([0-9a-zA-Z\+/=]){4}\s*)+'
-              description: >-
-                The actual data of the attachment - a sequence of bytes, base64
-                encoded.
-            url:
-              type: string
-              pattern: \S*
-              description: A location where the data can be accessed.
-            size:
-              type: integer
-              format: int32
-              description: >-
-                The number of bytes of data that make up this attachment (before
-                base64 encoding, if that is done).
-            hash:
-              type: string
-              pattern: '(\s*([0-9a-zA-Z\+/=]){4}\s*)+'
-              description: >-
-                The calculated hash of the data using SHA-1. Represented using
-                base64.
-            title:
-              type: string
-              pattern: '[ \r\n\t\S]+'
-              description: A label or set of text to display in place of the data.
-            creation:
-              type: string
-              pattern: >-
-                ([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|3[0-1])(T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00)))?)?)?
-              description: The date that the attachment was first created.
-    CodeableConcept:
-      type: object
-      properties:
-        id:
-          type: string
-          pattern: '[A-Za-z0-9\-\.]{1,64}'
-          description: >-
-            Unique id for the element within a resource (for internal
-            references). This may be any string value that does not contain
-            spaces.
-        extension:
-          type: array
-          items:
-            $ref: "#/components/schemas/Extension"
-        coding:
-          type: array
-          items:
-            $ref: "#/components/schemas/Coding"
-        text:
-          type: string
-          pattern: '[ \r\n\t\S]+'
-          description: >-
-            A human language representation of the concept as
-            seen/selected/uttered by the user who entered the data and/or which
-            represents the intended meaning of the user.
     Coding:
       type: object
       properties:
@@ -4874,807 +4431,125 @@ components:
           description: >-
             Indicates that this coding was chosen by a user directly - e.g. off
             a pick list of available items (codes or displays).
-    ContactPoint:
-      allOf:
-        - $ref: "#/components/schemas/Element"
-        - type: object
-          properties:
-            system:
-              type: string
-              pattern: '[^\s]+(\s[^\s]+)*'
-              description: >-
-                Telecommunications form for contact point - what communications
-                system is required to make use of the contact.
-            value:
-              type: string
-              pattern: '[ \r\n\t\S]+'
-              description: >-
-                The actual contact point details, in a form that is meaningful
-                to the designated communication system (i.e. phone number or
-                email address).
-            use:
-              type: string
-              pattern: '[^\s]+(\s[^\s]+)*'
-              description: Identifies the purpose for the contact point.
-            rank:
-              type: integer
-              format: int32
-              description: >-
-                Specifies a preferred order in which to use a set of contacts.
-                ContactPoints with lower rank values are more preferred than
-                those with higher rank values.
-            period:
-              $ref: "#/components/schemas/Period"
-    Count:
-      allOf:
-        - $ref: "#/components/schemas/Quantity"
-        - type: object
-          properties: {}
-    Distance:
-      allOf:
-        - $ref: "#/components/schemas/Quantity"
-        - type: object
-          properties: {}
-    Duration:
-      allOf:
-        - $ref: "#/components/schemas/Quantity"
-        - type: object
-          properties: {}
-    HumanName:
-      allOf:
-        - $ref: "#/components/schemas/Element"
-        - type: object
-          properties:
-            use:
-              type: string
-              pattern: '[^\s]+(\s[^\s]+)*'
-              description: Identifies the purpose for this name.
-            text:
-              type: string
-              pattern: '[ \r\n\t\S]+'
-              description: >-
-                Specifies the entire name as it should be displayed e.g. on an
-                application UI. This may be provided instead of or as well as
-                the specific parts.
-            family:
-              type: string
-              pattern: '[ \r\n\t\S]+'
-              description: >-
-                The part of a name that links to the genealogy. In some cultures
-                (e.g. Eritrea) the family name of a son is the first name of his
-                father.
-            given:
-              type: array
-              items:
-                type: string
-                pattern: '[ \r\n\t\S]+'
-                description: Given name.
-            prefix:
-              type: array
-              items:
-                type: string
-                pattern: '[ \r\n\t\S]+'
-                description: >-
-                  Part of the name that is acquired as a title due to academic,
-                  legal, employment or nobility status, etc. and that appears at
-                  the start of the name.
-            suffix:
-              type: array
-              items:
-                type: string
-                pattern: '[ \r\n\t\S]+'
-                description: >-
-                  Part of the name that is acquired as a title due to academic,
-                  legal, employment or nobility status, etc. and that appears at
-                  the end of the name.
-            period:
-              $ref: "#/components/schemas/Period"
-    Identifier:
+    OperationOutcome:
       type: object
+      description: >
+        Outcome of an operation that does not result in a resource or bundle being
+        returned, for example an error or an async/batch submission.
+
+        There are a number of possible error codes that can be returned along with a
+        more detailed description in the `diagnostics` field.
       properties:
+        resourceType:
+          type: string
+          description: FHIR Resource Type.
+          enum:
+            - OperationOutcome
+          example: OperationOutcome
         id:
           type: string
-          pattern: '[A-Za-z0-9\-\.]{1,64}'
-          description: >-
-            Unique id for the element within a resource (for internal
-            references). This may be any string value that does not contain
-            spaces.
-        extension:
-          type: array
-          items:
-            $ref: "#/components/schemas/Extension"
-        use:
-          type: string
-          pattern: '[^\s]+(\s[^\s]+)*'
-          description: The purpose of this identifier.
-        type:
-          $ref: "#/components/schemas/CodeableConcept"
-        system:
-          type: string
-          pattern: \S*
-          description: >-
-            Establishes the namespace for the value - that is, a URL that
-            describes a set values that are unique.
-        value:
-          type: string
-          pattern: '[ \r\n\t\S]+'
-          description: >-
-            The portion of the identifier typically relevant to the user and
-            which is unique within the context of the system.
-        period:
-          $ref: "#/components/schemas/Period"
-        assigner:
-          $ref: "#/components/schemas/Reference"
-    Money:
-      allOf:
-        - $ref: "#/components/schemas/Element"
-        - type: object
+          description: The unique id of the OperationOutcome resource.
+          example: fe43295e-6847-4a85-8681-32f3dacb40be
+        meta:
+          type: object
+          description: Metadata about the OperationOutcome resource.
           properties:
-            value:
-              type: number
-              description: Numerical value (with implicit precision).
-            currency:
-              type: string
-              pattern: '[^\s]+(\s[^\s]+)*'
-              description: ISO 4217 Currency Code.
-    Period:
-      allOf:
-        - $ref: "#/components/schemas/Element"
-        - type: object
-          properties:
-            start:
-              type: string
-              pattern: >-
-                ([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|3[0-1])(T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00)))?)?)?
-              description: The start of the period. The boundary is inclusive.
-            end:
-              type: string
-              pattern: >-
-                ([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|3[0-1])(T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00)))?)?)?
-              description: >-
-                The end of the period. If the end of the period is missing, it
-                means no end was known or planned at the time the instance was
-                created. The start may be in the past, and the end date in the
-                future, which means that period is expected/planned to end at
-                that time.
-    Quantity:
-      allOf:
-        - $ref: "#/components/schemas/Element"
-        - type: object
-          properties:
-            value:
-              type: number
-              description: >-
-                The value of the measured amount. The value includes an implicit
-                precision in the presentation of the value.
-            comparator:
-              type: string
-              pattern: '[^\s]+(\s[^\s]+)*'
-              description: >-
-                How the value should be understood and represented - whether the
-                actual value is greater or less than the stated value due to
-                measurement issues; e.g. if the comparator is "<" , then the
-                real value is < stated value.
-            unit:
-              type: string
-              pattern: '[ \r\n\t\S]+'
-              description: A human-readable form of the unit.
-            system:
-              type: string
-              pattern: \S*
-              description: >-
-                The identification of the system that provides the coded form of
-                the unit.
-            code:
-              type: string
-              pattern: '[^\s]+(\s[^\s]+)*'
-              description: >-
-                A computer processable form of the unit in some unit
-                representation system.
-    Range:
-      allOf:
-        - $ref: "#/components/schemas/Element"
-        - type: object
-          properties:
-            low:
-              $ref: "#/components/schemas/SimpleQuantity"
-            high:
-              $ref: "#/components/schemas/SimpleQuantity"
-    Ratio:
-      allOf:
-        - $ref: "#/components/schemas/Element"
-        - type: object
-          properties:
-            numerator:
-              $ref: "#/components/schemas/Quantity"
-            denominator:
-              $ref: "#/components/schemas/Quantity"
-    Reference:
-      type: object
-      properties:
-        id:
-          type: string
-          pattern: '[A-Za-z0-9\-\.]{1,64}'
-          description: >-
-            Unique id for the element within a resource (for internal
-            references). This may be any string value that does not contain
-            spaces.
-        extension:
-          type: array
-          items:
-            $ref: "#/components/schemas/Extension"
-        reference:
-          type: string
-          pattern: '[ \r\n\t\S]+'
-          description: >-
-            A reference to a location at which the other resource is found. The
-            reference may be a relative reference, in which case it is relative
-            to the service base URL, or an absolute URL that resolves to the
-            location where the resource is found. The reference may be version
-            specific or not. If the reference is not to a FHIR RESTful server,
-            then it should be assumed to be version specific. Internal fragment
-            references (start with '#') refer to contained resources.
-        type:
-          type: string
-          pattern: \S*
-          description: >-
-            The expected type of the target of the reference. If both
-            Reference.type and Reference.reference are populated and
-            Reference.reference is a FHIR URL, both SHALL be consistent.
-
-
-            The type is the Canonical URL of Resource Definition that is the
-            type this reference refers to. References are URLs that are relative
-            to http://hl7.org/fhir/StructureDefinition/ e.g. "Patient" is a
-            reference to http://hl7.org/fhir/StructureDefinition/Patient.
-            Absolute URLs are only allowed for logical models (and can only be
-            used in references in logical models, not resources).
-        identifier:
-          $ref: "#/components/schemas/Identifier"
-        display:
-          type: string
-          pattern: '[ \r\n\t\S]+'
-          description: >-
-            Plain text narrative that identifies the resource in addition to the
-            resource reference.
-    SampledData:
-      allOf:
-        - $ref: "#/components/schemas/Element"
-        - type: object
-          properties:
-            origin:
-              $ref: "#/components/schemas/SimpleQuantity"
-            period:
-              type: number
-              description: >-
-                The length of time between sampling times, measured in
-                milliseconds.
-            factor:
-              type: number
-              description: >-
-                A correction factor that is applied to the sampled data points
-                before they are added to the origin.
-            lowerLimit:
-              type: number
-              description: >-
-                The lower limit of detection of the measured points. This is
-                needed if any of the data points have the value "L" (lower than
-                detection limit).
-            upperLimit:
-              type: number
-              description: >-
-                The upper limit of detection of the measured points. This is
-                needed if any of the data points have the value "U" (higher than
-                detection limit).
-            dimensions:
-              type: integer
-              format: int32
-              description: >-
-                The number of sample points at each time point. If this value is
-                greater than one, then the dimensions will be interlaced - all
-                the sample points for a point in time will be recorded at once.
-            data:
-              type: string
-              pattern: '[ \r\n\t\S]+'
-              description: >-
-                A series of data points which are decimal values separated by a
-                single space (character u20). The special values "E" (error),
-                "L" (below detection limit) and "U" (above detection limit) can
-                also be used in place of a decimal value.
-          required:
-            - origin
-            - period
-            - dimensions
-    SimpleQuantity:
-      allOf:
-        - $ref: "#/components/schemas/Quantity"
-        - type: object
-          properties: {}
-    Signature:
-      allOf:
-        - $ref: "#/components/schemas/Element"
-        - type: object
-          properties:
-            type:
-              type: array
-              items:
-                $ref: "#/components/schemas/Coding"
-              minItems: 1
-            when:
-              type: string
-              pattern: >-
-                ([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))
-              description: When the digital signature was signed.
-            who:
-              $ref: "#/components/schemas/Reference"
-            onBehalfOf:
-              $ref: "#/components/schemas/Reference"
-            targetFormat:
-              type: string
-              pattern: '[^\s]+(\s[^\s]+)*'
-              description: >-
-                A mime type that indicates the technical format of the target
-                resources signed by the signature.
-            sigFormat:
-              type: string
-              pattern: '[^\s]+(\s[^\s]+)*'
-              description: >-
-                A mime type that indicates the technical format of the
-                signature. Important mime types are application/signature+xml
-                for X ML DigSig, application/jose for JWS, and image/* for a
-                graphical image of a signature, etc.
-            data:
-              type: string
-              pattern: '(\s*([0-9a-zA-Z\+/=]){4}\s*)+'
-              description: >-
-                The base64 encoding of the Signature content. When signature is
-                not recorded electronically this element would be empty.
-          required:
-            - type
-            - when
-            - who
-    Timing:
-      allOf:
-        - $ref: "#/components/schemas/BackboneElement"
-        - type: object
-          properties:
-            event:
-              type: array
-              items:
-                type: string
-                pattern: >-
-                  ([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|3[0-1])(T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00)))?)?)?
-                description: Identifies specific times when the event occurs.
-            repeat:
-              $ref: "#/components/schemas/Timing_Repeat"
-            code:
-              $ref: "#/components/schemas/CodeableConcept"
-    Timing_Repeat:
-      allOf:
-        - $ref: "#/components/schemas/BackboneElement"
-        - type: object
-          properties:
-            boundsDuration:
-              $ref: "#/components/schemas/Duration"
-            boundsRange:
-              $ref: "#/components/schemas/Range"
-            boundsPeriod:
-              $ref: "#/components/schemas/Period"
-            count:
-              type: integer
-              format: int32
-              description: >-
-                A total count of the desired number of repetitions across the
-                duration of the entire timing specification. If countMax is
-                present, this element indicates the lower bound of the allowed
-                range of count values.
-            countMax:
-              type: integer
-              format: int32
-              description: >-
-                If present, indicates that the count is a range - so to perform
-                the action between [count] and [countMax] times.
-            duration:
-              type: number
-              description: >-
-                How long this thing happens for when it happens. If durationMax
-                is present, this element indicates the lower bound of the
-                allowed range of the duration.
-            durationMax:
-              type: number
-              description: >-
-                If present, indicates that the duration is a range - so to
-                perform the action between [duration] and [durationMax] time
-                length.
-            durationUnit:
-              type: string
-              pattern: '[^\s]+(\s[^\s]+)*'
-              description: "The units of time for the duration, in UCUM units."
-            frequency:
-              type: integer
-              format: int32
-              description: >-
-                The number of times to repeat the action within the specified
-                period. If frequencyMax is present, this element indicates the
-                lower bound of the allowed range of the frequency.
-            frequencyMax:
-              type: integer
-              format: int32
-              description: >-
-                If present, indicates that the frequency is a range - so to
-                repeat between [frequency] and [frequencyMax] times within the
-                period or period range.
-            period:
-              type: number
-              description: >-
-                Indicates the duration of time over which repetitions are to
-                occur; e.g. to express "3 times per day", 3 would be the
-                frequency and "1 day" would be the period. If periodMax is
-                present, this element indicates the lower bound of the allowed
-                range of the period length.
-            periodMax:
-              type: number
-              description: >-
-                If present, indicates that the period is a range from [period]
-                to [periodMax], allowing expressing concepts such as "do this
-                once every 3-5 days.
-            periodUnit:
-              type: string
-              pattern: '[^\s]+(\s[^\s]+)*'
-              description: The units of time for the period in UCUM units.
-            dayOfWeek:
-              type: array
-              items:
-                type: string
-                pattern: '[^\s]+(\s[^\s]+)*'
-                description: >-
-                  If one or more days of week is provided, then the action
-                  happens only on the specified day(s).
-            timeOfDay:
-              type: array
-              items:
-                type: string
-                pattern: '([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?'
-                description: Specified time of day for action to take place.
-            when:
-              type: array
-              items:
-                type: string
-                pattern: '[^\s]+(\s[^\s]+)*'
-                description: >-
-                  An approximate time period during the day, potentially linked
-                  to an event of daily living that indicates when the action
-                  should occur.
-            offset:
-              type: integer
-              format: int32
-              description: >-
-                The number of minutes from the event. If the event code does not
-                indicate whether the minutes is before or after the event, then
-                the offset is assumed to be after the event.
-    ContactDetail:
-      allOf:
-        - $ref: "#/components/schemas/Element"
-        - type: object
-          properties:
-            name:
-              type: string
-              pattern: '[ \r\n\t\S]+'
-              description: The name of an individual to contact.
-            telecom:
-              type: array
-              items:
-                $ref: "#/components/schemas/ContactPoint"
-    RelatedArtifact:
-      allOf:
-        - $ref: "#/components/schemas/Element"
-        - type: object
-          properties:
-            type:
-              type: string
-              pattern: '[^\s]+(\s[^\s]+)*'
-              description: The type of relationship to the related artifact.
-            label:
-              type: string
-              pattern: '[ \r\n\t\S]+'
-              description: >-
-                A short label that can be used to reference the citation from
-                elsewhere in the containing artifact, such as a footnote index.
-            display:
-              type: string
-              pattern: '[ \r\n\t\S]+'
-              description: >-
-                A brief description of the document or knowledge resource being
-                referenced, suitable for display to a consumer.
-            citation:
-              type: string
-              pattern: '[ \r\n\t\S]+'
-              description: >-
-                A bibliographic citation for the related artifact. This text
-                SHOULD be formatted according to an accepted citation format.
-            url:
-              type: string
-              pattern: \S*
-              description: >-
-                A url for the artifact that can be followed to access the actual
-                content.
-            document:
-              $ref: "#/components/schemas/Attachment"
-            resource:
-              type: string
-              pattern: \S*
-              description: >-
-                The related resource, such as a library, value set, profile, or
-                other knowledge resource.
-          required:
-            - type
-    UsageContext:
-      allOf:
-        - $ref: "#/components/schemas/Element"
-        - type: object
-          properties:
-            code:
-              $ref: "#/components/schemas/Coding"
-            valueCodeableConcept:
-              $ref: "#/components/schemas/CodeableConcept"
-            valueQuantity:
-              $ref: "#/components/schemas/Quantity"
-            valueRange:
-              $ref: "#/components/schemas/Range"
-            valueReference:
-              $ref: "#/components/schemas/Reference"
-          required:
-            - code
-    Meta:
-      allOf:
-        - $ref: "#/components/schemas/Element"
-        - type: object
-          properties:
-            versionId:
-              type: string
-              pattern: '[A-Za-z0-9\-\.]{1,64}'
-              description: >-
-                The version specific identifier, as it appears in the version
-                portion of the URL. This value changes when the resource is
-                created, updated, or deleted.
-            lastUpdated:
-              type: string
-              pattern: >-
-                ([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))
-              description: When the resource last changed - e.g. when the version changed.
-            source:
-              type: string
-              pattern: \S*
-              description: >-
-                A uri that identifies the source system of the resource. This
-                provides a minimal amount of [Provenance](provenance.html#)
-                information that can be used to track or differentiate the
-                source of information in the resource. The source may identify
-                another FHIR server, document, message, database, etc.
             profile:
               type: array
+              description: The profile(s) the resource claims to conform to.
               items:
                 type: string
-                pattern: \S*
-                description: >-
-                  A list of profiles (references to
-                  [StructureDefinition](structuredefinition.html#) resources)
-                  that this resource claims to conform to. The URL is a
-                  reference to
-                  [StructureDefinition.url](structuredefinition-definitions.html#StructureDefinition.url).
-            security:
-              type: array
-              items:
-                $ref: "#/components/schemas/Coding"
-            tag:
-              type: array
-              items:
-                $ref: "#/components/schemas/Coding"
-          required:
-            - versionId
-    Narrative:
-      allOf:
-        - $ref: "#/components/schemas/Element"
-        - type: object
-          properties:
-            status:
-              type: string
-              pattern: '[^\s]+(\s[^\s]+)*'
-              description: >-
-                The status of the narrative - whether it's entirely generated
-                (from just the defined data or the extensions too), or whether a
-                human authored it and it may contain additional data.
-            div:
-              type: string
-              description: "The actual narrative content, a stripped down version of XHTML."
-          required:
-            - status
-            - div
-    Extension:
-      type: object
-      properties:
-        id:
-          type: string
-          pattern: '[A-Za-z0-9\-\.]{1,64}'
-          description: >-
-            Unique id for the element within a resource (for internal
-            references). This may be any string value that does not contain
-            spaces.
-        extension:
+                example: https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome
+        issue:
           type: array
+          description: >
+            List of issues that occurred. Note: currently the behaviour when there are multiple
+            data validation errors is to include a single item with all errors listed in the
+            `diagnostics` section.
+          minItems: 1
           items:
-            $ref: "#/components/schemas/Extension"
-        url:
-          type: string
-          pattern: \S*
-          description: >-
-            Source of the definition for the extension code - a logical name or
-            a URL.
-        valueBase64Binary:
-          type: string
-          pattern: '(\s*([0-9a-zA-Z\+/=]){4}\s*)+'
-          description: >-
-            Value of extension - must be one of a constrained set of the data
-            types (see [Extensibility](extensibility.html) for a list).
-        valueBoolean:
-          type: boolean
-          description: >-
-            Value of extension - must be one of a constrained set of the data
-            types (see [Extensibility](extensibility.html) for a list).
-        valueCanonical:
-          type: string
-          pattern: \S*
-          description: >-
-            Value of extension - must be one of a constrained set of the data
-            types (see [Extensibility](extensibility.html) for a list).
-        valueCode:
-          type: string
-          pattern: '[^\s]+(\s[^\s]+)*'
-          description: >-
-            Value of extension - must be one of a constrained set of the data
-            types (see [Extensibility](extensibility.html) for a list).
-        valueDate:
-          type: string
-          pattern: >-
-            ([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|3[0-1]))?)?
-          description: >-
-            Value of extension - must be one of a constrained set of the data
-            types (see [Extensibility](extensibility.html) for a list).
-        valueDateTime:
-          type: string
-          pattern: >-
-            ([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|3[0-1])(T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00)))?)?)?
-          description: >-
-            Value of extension - must be one of a constrained set of the data
-            types (see [Extensibility](extensibility.html) for a list).
-        valueDecimal:
-          type: number
-          description: >-
-            Value of extension - must be one of a constrained set of the data
-            types (see [Extensibility](extensibility.html) for a list).
-        valueId:
-          type: string
-          pattern: '[A-Za-z0-9\-\.]{1,64}'
-          description: >-
-            Value of extension - must be one of a constrained set of the data
-            types (see [Extensibility](extensibility.html) for a list).
-        valueInstant:
-          type: string
-          pattern: >-
-            ([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))
-          description: >-
-            Value of extension - must be one of a constrained set of the data
-            types (see [Extensibility](extensibility.html) for a list).
-        valueInteger:
-          type: integer
-          format: int32
-          description: >-
-            Value of extension - must be one of a constrained set of the data
-            types (see [Extensibility](extensibility.html) for a list).
-        valueMarkdown:
-          type: string
-          pattern: '[ \r\n\t\S]+'
-          description: >-
-            Value of extension - must be one of a constrained set of the data
-            types (see [Extensibility](extensibility.html) for a list).
-        valueOid:
-          type: string
-          pattern: 'urn:oid:[0-2](\.(0|[1-9][0-9]*))+'
-          description: >-
-            Value of extension - must be one of a constrained set of the data
-            types (see [Extensibility](extensibility.html) for a list).
-        valuePositiveInt:
-          type: integer
-          format: int32
-          description: >-
-            Value of extension - must be one of a constrained set of the data
-            types (see [Extensibility](extensibility.html) for a list).
-        valueString:
-          type: string
-          pattern: '[ \r\n\t\S]+'
-          description: >-
-            Value of extension - must be one of a constrained set of the data
-            types (see [Extensibility](extensibility.html) for a list).
-        valueTime:
-          type: string
-          pattern: '([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?'
-          description: >-
-            Value of extension - must be one of a constrained set of the data
-            types (see [Extensibility](extensibility.html) for a list).
-        valueUnsignedInt:
-          type: integer
-          format: int32
-          description: >-
-            Value of extension - must be one of a constrained set of the data
-            types (see [Extensibility](extensibility.html) for a list).
-        valueUri:
-          type: string
-          pattern: \S*
-          description: >-
-            Value of extension - must be one of a constrained set of the data
-            types (see [Extensibility](extensibility.html) for a list).
-        valueUrl:
-          type: string
-          pattern: \S*
-          description: >-
-            Value of extension - must be one of a constrained set of the data
-            types (see [Extensibility](extensibility.html) for a list).
-        valueUuid:
-          type: string
-          pattern: >-
-            urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
-          description: >-
-            Value of extension - must be one of a constrained set of the data
-            types (see [Extensibility](extensibility.html) for a list).
-        valueAddress:
-          $ref: "#/components/schemas/Address"
-        valueAge:
-          $ref: "#/components/schemas/Age"
-        valueAnnotation:
-          $ref: "#/components/schemas/Annotation"
-        valueAttachment:
-          $ref: "#/components/schemas/Attachment"
-        valueCodeableConcept:
-          $ref: "#/components/schemas/CodeableConcept"
-        valueCoding:
-          $ref: "#/components/schemas/Coding"
-        valueContactPoint:
-          $ref: "#/components/schemas/ContactPoint"
-        valueCount:
-          $ref: "#/components/schemas/Count"
-        valueDistance:
-          $ref: "#/components/schemas/Distance"
-        valueDuration:
-          $ref: "#/components/schemas/Duration"
-        valueHumanName:
-          $ref: "#/components/schemas/HumanName"
-        valueIdentifier:
-          $ref: "#/components/schemas/Identifier"
-        valueMoney:
-          $ref: "#/components/schemas/Money"
-        valuePeriod:
-          $ref: "#/components/schemas/Period"
-        valueQuantity:
-          $ref: "#/components/schemas/Quantity"
-        valueRange:
-          $ref: "#/components/schemas/Range"
-        valueRatio:
-          $ref: "#/components/schemas/Ratio"
-        valueReference:
-          $ref: "#/components/schemas/Reference"
-        valueSampledData:
-          $ref: "#/components/schemas/SampledData"
-        valueSignature:
-          $ref: "#/components/schemas/Signature"
-        valueTiming:
-          $ref: "#/components/schemas/Timing"
-        valueContactDetail:
-          $ref: "#/components/schemas/ContactDetail"
-        valueRelatedArtifact:
-          $ref: "#/components/schemas/RelatedArtifact"
-        valueUsageContext:
-          $ref: "#/components/schemas/UsageContext"
-        valueMeta:
-          $ref: "#/components/schemas/Meta"
-      required:
-        - url
+            type: object
+            required:
+              - severity
+              - code
+            properties:
+              severity:
+                type: string
+                enum:
+                  - fatal
+                  - error
+                  - warning
+                  - information
+                description: Severity of the error.
+                example: error
+              code:
+                type: string
+                description: FHIR error code.
+                example: not-found
+                enum:
+                  - invalid
+                  - structure
+                  - required
+                  - value
+                  - invariant
+                  - security
+                  - login
+                  - unknown
+                  - expired
+                  - forbidden
+                  - suppressed
+                  - processing
+                  - not-supported
+                  - duplicate
+                  - multiple-matches
+                  - not-found
+                  - deleted
+                  - too-long
+                  - code-invalid
+                  - extension
+                  - too-costly
+                  - business-rule
+                  - conflict
+                  - transient
+                  - lock-error
+                  - no-store
+                  - exception
+                  - timeout
+                  - incomplete
+                  - throttled
+                  - informational
+              details:
+                type: object
+                description: Additional details about the error.
+                properties:
+                  coding:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        system:
+                          type: string
+                          description: URI of the coding system specification.
+                          example: "https://fhir.nhs.uk/Codesystem/http-error-codes"
+                        version:
+                          type: string
+                          description: Version of the coding system in use.
+                          example: "1"
+                        code:
+                          type: string
+                          description: Symbol in syntax defined by the system.
+                          example: NOT_FOUND
+                        display:
+                          type: string
+                          description: Representation defined by the system.
+                          example: The server was unable to find the specified resource.
+              diagnostics:
+                type: string
+                description: >-
+                  Additional diagnostic information about the issue. This information is subject to
+                  change.
+                example: Invalid value - 2019-01 in field 'birthDate'
+              expression:
+                type: string
+                description: FHIRPath of element(s) related to the error.
+                example: Patient.name.given
