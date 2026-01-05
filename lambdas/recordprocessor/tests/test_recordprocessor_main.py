@@ -126,7 +126,6 @@ class TestRecordProcessor(unittest.TestCase):
         for report in dq_reports:
             content = s3_client.get_object(Bucket=BucketNames.DATA_QUALITY, Key=report.get("Key"))
             dq_report_dict = json.loads(content["Body"].read().decode("utf-8"))
-            self.maxDiff = None
 
             self.assertEqual(
                 dq_report_dict,
