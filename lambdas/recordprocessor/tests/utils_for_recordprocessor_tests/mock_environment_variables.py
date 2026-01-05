@@ -7,6 +7,7 @@ class BucketNames:
     """Class containing bucket names for use in tests"""
 
     SOURCE = "immunisation-batch-internal-dev-data-sources"
+    DATA_QUALITY = "immunisation-data-quality-test-bucket-name"
     DESTINATION = "immunisation-batch-internal-dev-data-destinations"
     MOCK_FIREHOSE = "mock-firehose-bucket"
 
@@ -36,6 +37,7 @@ MOCK_ENVIRONMENT_DICT = {
     "LOCAL_ACCOUNT_ID": "123456789012",
     "SOURCE_BUCKET_NAME": BucketNames.SOURCE,
     "ACK_BUCKET_NAME": BucketNames.DESTINATION,
+    "DATA_QUALITY_BUCKET_NAME": BucketNames.DATA_QUALITY,
     "SHORT_QUEUE_PREFIX": "imms-batch-internal-dev",
     "SPLUNK_FIREHOSE_NAME": Firehose.STREAM_NAME,
     "KINESIS_STREAM_NAME": Kinesis.STREAM_NAME,

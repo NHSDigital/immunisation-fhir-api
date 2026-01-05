@@ -21,6 +21,7 @@ from fhir.resources.R4B.operationoutcome import OperationOutcome
 
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
+from common.data_quality.reporter import DataQualityReporter
 from common.models.constants import Constants
 from common.models.errors import (
     Code,
@@ -52,8 +53,10 @@ logger = logging.getLogger()
 
 IMMUNIZATION_BASE_PATH = os.getenv("IMMUNIZATION_BASE_PATH")
 IMMUNIZATION_ENV = os.getenv("IMMUNIZATION_ENV")
+DATA_QUALITY_BUCKET_NAME = os.getenv("DATA_QUALITY_BUCKET_NAME")
 
 AUTHORISER = Authoriser()
+DATA_QUALITY_REPORTER = DataQualityReporter(is_batch_csv=False, bucket=DATA_QUALITY_BUCKET_NAME)
 IMMUNIZATION_VALIDATOR = ImmunizationValidator()
 
 
@@ -66,9 +69,11 @@ class FhirService:
         self,
         imms_repo: ImmunizationRepository,
         authoriser: Authoriser = AUTHORISER,
+        data_quality_reporter: DataQualityReporter = DATA_QUALITY_REPORTER,
         validator: ImmunizationValidator = IMMUNIZATION_VALIDATOR,
     ):
         self.authoriser = authoriser
+        self.data_quality_reporter = data_quality_reporter
         self.immunization_repo = imms_repo
         self.validator = validator
 
@@ -113,6 +118,8 @@ class FhirService:
         return Immunization.parse_obj(resource), str(immunization_metadata.resource_version)
 
     def create_immunization(self, immunization: dict, supplier_system: str) -> Id:
+        self.data_quality_reporter.generate_and_send_report(immunization)
+
         if immunization.get("id") is not None:
             raise CustomValidationError("id field must not be present for CREATE operation")
 
@@ -138,6 +145,8 @@ class FhirService:
         return self.immunization_repo.create_immunization(immunization_fhir_entity, supplier_system)
 
     def update_immunization(self, imms_id: str, immunization: dict, supplier_system: str, resource_version: int) -> int:
+        self.data_quality_reporter.generate_and_send_report(immunization)
+
         try:
             self.validator.validate(immunization)
         except (ValueError, MandatoryError) as error:

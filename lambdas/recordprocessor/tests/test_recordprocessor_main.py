@@ -5,7 +5,7 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from json import JSONDecodeError
-from unittest.mock import Mock, patch
+from unittest.mock import ANY, Mock, patch
 
 from boto3 import client as boto3_client
 from moto import mock_dynamodb, mock_firehose, mock_kinesis, mock_s3
@@ -118,6 +118,27 @@ class TestRecordProcessor(unittest.TestCase):
         response = s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=file_key)
         return response["Body"].read().decode("utf-8")
 
+    def make_data_quality_assertions(self, expected_number_of_files: int) -> None:
+        """Asserts that the expected data quality reports were submitted"""
+        dq_reports = s3_client.list_objects_v2(Bucket=BucketNames.DATA_QUALITY).get("Contents", [])
+        self.assertEqual(len(dq_reports), expected_number_of_files)
+
+        for report in dq_reports:
+            content = s3_client.get_object(Bucket=BucketNames.DATA_QUALITY, Key=report.get("Key"))
+            dq_report_dict = json.loads(content["Body"].read().decode("utf-8"))
+
+            self.assertEqual(
+                dq_report_dict,
+                {
+                    "data_quality_report_id": ANY,
+                    "validation_date": ANY,
+                    "completeness": {"mandatory_fields": [], "optional_fields": [], "required_fields": []},
+                    "validity": [],
+                    "timeliness_ingested_seconds": ANY,
+                    "timeliness_recorded_days": ANY,
+                },
+            )
+
     def make_eof_message_assertion(self, file_details: FileDetails, actual_msg: str, total_records: int) -> None:
         self.assertDictEqual(
             {
@@ -216,7 +237,7 @@ class TestRecordProcessor(unittest.TestCase):
 
         main(test_file.event_full_permissions)
 
-        # Assertion case tuples are stuctured as
+        # Assertion case tuples are structured as
         # (test_name, index, expected_kinesis_data_ignoring_fhir_json,expect_success)
         assertion_cases = [
             (
@@ -249,6 +270,7 @@ class TestRecordProcessor(unittest.TestCase):
         ]
         self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=True)
         self.make_kinesis_assertions(assertion_cases)
+        self.make_data_quality_assertions(len(assertion_cases))
         assert_audit_table_entry(test_file, FileStatus.PREPROCESSED, row_count=3)
 
     def test_e2e_partial_permissions(self):

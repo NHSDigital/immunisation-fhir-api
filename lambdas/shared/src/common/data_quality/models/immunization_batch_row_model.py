@@ -29,7 +29,7 @@ class ImmunizationBatchRowModel(BaseModel):
 
     NHS_NUMBER: NhsNumber
     PERSON_DOB: BatchCsvDate
-    DATE_AND_TIME: BatchCsvDate
+    DATE_AND_TIME: datetime.datetime
     PERSON_POSTCODE: PersonPostcode
     EXPIRY_DATE: ExpiryDate  # TODO - check with DQ team. Should these checks be relative to the occurrence datetime?
     DOSE_AMOUNT: decimal.Decimal  # TODO - check with DQ team. Actual values vary a lot from proposed enum.
@@ -42,10 +42,26 @@ class ImmunizationBatchRowModel(BaseModel):
     def parse_csv_date(cls, value: str) -> datetime.date:
         return parse_csv_date(value)
 
-    @validator("PERSON_DOB", "DATE_AND_TIME")
-    def ensure_past_date(cls, value: datetime.date) -> datetime.date:
+    @validator("PERSON_DOB")
+    def is_past_date(cls, value: datetime.date) -> datetime.date:
         if value >= datetime.date.today():
             raise ValueError("Date must be in the past")
+
+        return value
+
+    @validator("DATE_AND_TIME")
+    def is_past_datetime(cls, value: datetime.datetime) -> datetime.datetime:
+        if value >= datetime.datetime.now(datetime.timezone.utc):
+            raise ValueError("Datetime must be in the past")
+
+        return value
+
+    @validator("DATE_AND_TIME")
+    def is_on_or_after_min_date(cls, value: datetime.datetime) -> datetime.date:
+        """Checks that the given datetime is on a date on or after the minimum accepted date. Note: we have to do this
+        manually in Pydantic 1 as it only supports condate, so we cannot use built in ge, le comparators."""
+        if value.date() < MIN_ACCEPTED_PAST_DATE:
+            raise ValueError("Datetime is before the minimum accepted date")
 
         return value
 

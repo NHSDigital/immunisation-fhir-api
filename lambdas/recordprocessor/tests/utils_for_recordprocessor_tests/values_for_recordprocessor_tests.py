@@ -85,8 +85,8 @@ class MockFileRows:
         '"1303503001"|"Administration of vaccine product containing only Human orthopneumovirus antigen (procedure)"|'
         '1|"42605811000001109"|"Abrysvo vaccine powder and solvent for solution for injection 0.5ml vials (Pfizer Ltd) '
         '(product)"|"Pfizer"|"RSVTEST"|"20241231"|"368208006"|"Left upper arm structure (body structure)"|'
-        '"78421000"|"Intramuscular route (qualifier value)"|"0.5"|"258773002"|"Milliliter (qualifier value)"|"Test"|'
-        '"J82067"|"https://fhir.nhs.uk/Id/ods-organization-code"'
+        '"78421000"|"Intramuscular route (qualifier value)"|"0.5"|"258773002"|"Milliliter (qualifier value)"'
+        '|"443684005"|"J82067"|"https://fhir.nhs.uk/Id/ods-organization-code"'
     )
 
     UPDATE = (
@@ -98,7 +98,7 @@ class MockFileRows:
         '"Comirnaty 0.3ml dose concentrate for dispersion for injection multidose vials (Pfizer/BioNTech) '
         '(product)"|"Pfizer/BioNTech"|"COVIDBATCH"|"20250101"|"368208007"|"Right upper arm structure (body structure)"|'
         '"385219009"|"Intramuscular route (qualifier value)"|'
-        '"0.3"|"258773002"|"Milliliter (qualifier value)"|"Routine"|'
+        '"0.3"|"258773002"|"Milliliter (qualifier value)"|"443684005"|'
         '"J82068"|"https://fhir.nhs.uk/Id/ods-organization-code"'
     )
 
@@ -111,7 +111,7 @@ class MockFileRows:
         '"Comirnaty 0.3ml dose concentrate for dispersion for injection multidose vials (Pfizer/BioNTech) '
         '(product)"|"Pfizer/BioNTech"|"COVIDBATCH"|"20250101"|"368208007"|"Right upper arm structure (body structure)"|'
         '"385219009"|"Intramuscular route (qualifier value)"|'
-        '"0.3"|"258773002"|"Milliliter (qualifier value)"|"Routine"|'
+        '"0.3"|"258773002"|"Milliliter (qualifier value)"|"443684005"|'
         '"J82068"|"https://fhir.nhs.uk/Id/ods-organization-code"'
     )
 

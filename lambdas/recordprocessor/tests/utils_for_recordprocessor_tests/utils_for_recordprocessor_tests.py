@@ -62,6 +62,7 @@ class GenericSetUp:
         if s3_client:
             for bucket_name in [
                 BucketNames.SOURCE,
+                BucketNames.DATA_QUALITY,
                 BucketNames.DESTINATION,
                 BucketNames.MOCK_FIREHOSE,
             ]:
@@ -104,7 +105,7 @@ class GenericTearDown:
         dynamo_db_client=None,
     ):
         if s3_client:
-            for bucket_name in [BucketNames.SOURCE, BucketNames.DESTINATION]:
+            for bucket_name in [BucketNames.SOURCE, BucketNames.DATA_QUALITY, BucketNames.DESTINATION]:
                 for obj in s3_client.list_objects_v2(Bucket=bucket_name).get("Contents", []):
                     s3_client.delete_object(Bucket=bucket_name, Key=obj["Key"])
                 s3_client.delete_bucket(Bucket=bucket_name)
