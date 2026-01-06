@@ -929,21 +929,6 @@ class TestForwardLambdaHandler(TestCase):
 
         self.mock_logger_error.assert_called_with("Error processing event: %s", ANY)
 
-    def clear_test_tables(self):
-        """Clear DynamoDB table after each test."""
-        scan = self.table.scan()
-        items = scan.get("Items", [])
-        while items:
-            for item in items:
-                self.table.delete_item(Key={"PK": item["PK"]})
-            scan = self.table.scan()
-            items = scan.get("Items", [])
-
-    def teardown(self):
-        """Deletes mock dynamodb resource"""
-        self.table.delete()
-        self.dynamodb_resource = None
-
 
 if __name__ == "__main__":
     unittest.main()
