@@ -230,7 +230,7 @@ class PreValidators:
         practitioner_id = str(practitioner[0]["id"])
 
         # Ensure that there are no internal references other than to the contained practitioner
-        if any(1 for x in performer_internal_references if x != "#" + practitioner_id):
+        if any(x != "#" + practitioner_id for x in performer_internal_references):
             raise ValueError(
                 "performer must not contain any internal references other than"
                 + " to the contained Practitioner resource"
