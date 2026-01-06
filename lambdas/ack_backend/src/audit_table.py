@@ -1,8 +1,9 @@
 """Add the filename to the audit table and check for duplicates."""
 
 from common.clients import dynamodb_client, logger
+from common.models.batch_constants import AuditTableKeys, FileStatus
 from common.models.errors import UnhandledAuditTableError
-from constants import AUDIT_TABLE_NAME, AuditTableKeys, FileStatus
+from constants import AUDIT_TABLE_NAME
 
 CONDITION_EXPRESSION = "attribute_exists(message_id)"
 

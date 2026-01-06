@@ -31,16 +31,19 @@ class AuditTableKeys(StrEnum):  #
     TIMESTAMP = "timestamp"
     EXPIRES_AT = "expires_at"
     INGESTION_START_TIME = "ingestion_start_time"
+    INGESTION_END_TIME = "ingestion_end_time"
+    RECORDS_SUCCEEDED = "records_succeeded"
+    RECORDS_FAILED = "records_failed"
     ERROR_DETAILS = "error_details"
 
 
-class Operation(StrEnum):  # TODO: shared but needs work
+class Operation(StrEnum):
     CREATE = "CREATE"
     UPDATE = "UPDATE"
     DELETE = "DELETE"
 
 
-class Permission(StrEnum):  # TODO: shared but needs work
+class Permission(StrEnum):
     CREATE = "C"
     UPDATE = "U"
     DELETE = "D"
