@@ -225,27 +225,26 @@ class PreValidators:
                 raise ValueError(
                     "performer must not contain internal references when there is no contained Practitioner resource"
                 )
-        else:
-            practitioner_id = str(practitioner[0]["id"])
+            return None
 
-            # Ensure that there are no internal references other than to the contained practitioner
-            if sum(1 for x in performer_internal_references if x != "#" + practitioner_id) != 0:
-                raise ValueError(
-                    "performer must not contain any internal references other than"
-                    + " to the contained Practitioner resource"
-                )
+        practitioner_id = str(practitioner[0]["id"])
 
-            # Separate out the references to the contained practitioner and ensure that there is exactly one such reference
-            practitioner_references = [x for x in performer_internal_references if x == "#" + practitioner_id]
+        # Ensure that there are no internal references other than to the contained practitioner
+        if any(1 for x in performer_internal_references if x != "#" + practitioner_id):
+            raise ValueError(
+                "performer must not contain any internal references other than"
+                + " to the contained Practitioner resource"
+            )
 
-            if len(practitioner_references) == 0:
-                raise ValueError(
-                    f"contained Practitioner resource id '{practitioner_id}' must be referenced from performer"
-                )
-            elif len(practitioner_references) > 1:
-                raise ValueError(
-                    f"contained Practitioner resource id '{practitioner_id}' must only be referenced once from performer"
-                )
+        # Separate out the references to the contained practitioner and ensure that there is exactly one such reference
+        practitioner_references = [x for x in performer_internal_references if x == "#" + practitioner_id]
+
+        if len(practitioner_references) == 0:
+            raise ValueError(f"contained Practitioner resource id '{practitioner_id}' must be referenced from performer")
+        elif len(practitioner_references) > 1:
+            raise ValueError(
+                f"contained Practitioner resource id '{practitioner_id}' must only be referenced once from performer"
+            )
 
     def pre_validate_patient_identifier_extension(self, values: dict) -> None:
         """
