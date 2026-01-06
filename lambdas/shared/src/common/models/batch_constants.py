@@ -6,6 +6,7 @@ class FileStatus(StrEnum):
 
     QUEUED = "Queued"
     PROCESSING = "Processing"
+    PREPROCESSED = "Preprocessed"
     PROCESSED = "Processed"
     NOT_PROCESSED = "Not processed"
     FAILED = "Failed"
@@ -14,6 +15,7 @@ class FileStatus(StrEnum):
 class FileNotProcessedReason(StrEnum):
     """Reasons why a file was not processed"""
 
+    DUPLICATE = "Duplicate"
     EMPTY = "Empty file"
     UNAUTHORISED = "Unauthorised"
 
