@@ -1,7 +1,7 @@
 """Functions for fetching supplier permissions"""
 
 from common.clients import logger
-from constants import Operation
+from common.models.batch_constants import Permission
 from elasticache import get_supplier_permissions_from_cache, get_supplier_system_from_cache
 from models.errors import VaccineTypePermissionsError
 
@@ -27,17 +27,17 @@ def validate_permissions_for_extended_attributes_files(vaccine_type: str, ods_co
     Checks that the supplier has COVID vaccine type and its CUD permissions.
     Raises an exception if the supplier does not have at least one permission for the vaccine type.
     """
-    allowed_operations = {
-        Operation.CREATE,
-        Operation.UPDATE,
-        Operation.DELETE,
+    allowed_permissions = {
+        Permission.CREATE,
+        Permission.UPDATE,
+        Permission.DELETE,
     }
     supplier = get_supplier_system_from_cache(ods_code)
     supplier_permissions = get_supplier_permissions_from_cache(supplier)
     cached_operations = [
         permission.split(".")[1] for permission in supplier_permissions if permission.split(".")[0] == vaccine_type
     ]
-    if not (cached_operations and allowed_operations.issubset(set(cached_operations[0]))):
+    if not (cached_operations and allowed_permissions.issubset(set(cached_operations[0]))):
         error_message = f"Initial file validation failed: {supplier} does not have permissions for {vaccine_type}"
         logger.error(error_message)
         raise VaccineTypePermissionsError(error_message)

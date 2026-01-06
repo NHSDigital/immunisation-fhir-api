@@ -36,12 +36,10 @@ from utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from batch_processor import main
+    from common.models.batch_constants import AuditTableKeys, FileNotProcessedReason, FileStatus
     from constants import (
         AUDIT_TABLE_NAME,
-        AuditTableKeys,
         Diagnostics,
-        FileNotProcessedReason,
-        FileStatus,
     )
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)

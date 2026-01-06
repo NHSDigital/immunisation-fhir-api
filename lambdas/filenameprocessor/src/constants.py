@@ -39,9 +39,3 @@ ERROR_TYPE_TO_STATUS_CODE_MAP = {
 # Filename timestamp constants
 VALID_TIMESTAMP_LENGTH = 17
 VALID_TIMEZONE_OFFSETS = {"00", "01"}
-
-
-class Operation(str):  # TODO: shared but needs work
-    CREATE = "C"
-    UPDATE = "U"
-    DELETE = "D"

@@ -2,8 +2,8 @@
 
 import json
 
+from common.models.constants import Urls
 from common.redis_client import get_redis_client
-from constants import Urls
 
 
 def map_target_disease(vaccine: str) -> list:

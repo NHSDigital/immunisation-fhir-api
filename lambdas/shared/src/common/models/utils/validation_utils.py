@@ -26,7 +26,7 @@ def get_target_disease_codes(immunization: dict):
     # For each item in the target disease list, extract the snomed code
     for i, element in enumerate(target_disease):
         try:
-            code = [x["code"] for x in element["coding"] if x.get("system") == Urls.snomed][0]
+            code = [x["code"] for x in element["coding"] if x.get("system") == Urls.SNOMED][0]
         except (KeyError, IndexError) as error:
             raise MandatoryError(
                 f"protocolApplied[0].targetDisease[{i}].coding[?(@.system=='http://snomed.info/sct')].code"
@@ -55,7 +55,7 @@ def convert_disease_codes_to_vaccine_type(
 
     if not vaccine_type:
         raise ValueError(
-            f"Validation errors: protocolApplied[0].targetDisease[*].coding[?(@.system=='{Urls.snomed}')].code"
+            f"Validation errors: protocolApplied[0].targetDisease[*].coding[?(@.system=='{Urls.SNOMED}')].code"
             f" - {disease_codes_input} is not a valid combination of disease codes for this service"
         )
     return vaccine_type

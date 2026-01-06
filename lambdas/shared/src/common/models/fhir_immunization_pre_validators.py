@@ -591,7 +591,7 @@ class PreValidators:
         (legacy CSV field name: VACCINATION_PROCEDURE_CODE) exists, then it is a non-empty string
         """
         url = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-" + "VaccinationProcedure"
-        system = Urls.snomed
+        system = Urls.SNOMED
         field_type = "code"
         field_location = generate_field_location_for_extension(url, system, field_type)
         try:
@@ -608,7 +608,7 @@ class PreValidators:
         (legacy CSV field name: VACCINATION_PROCEDURE_TERM) exists, then it is a non-empty string
         """
         url = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-" + "VaccinationProcedure"
-        system = Urls.snomed
+        system = Urls.SNOMED
         field_type = "display"
         field_location = generate_field_location_for_extension(url, system, field_type)
         try:
@@ -624,7 +624,7 @@ class PreValidators:
         (legacy CSV field name: VACCINATION_SITUATION_CODE) exists, then it is a non-empty string
         """
         url = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationSituation"
-        system = Urls.snomed
+        system = Urls.SNOMED
         field_type = "code"
         field_location = generate_field_location_for_extension(url, system, field_type)
         try:
@@ -640,7 +640,7 @@ class PreValidators:
         (legacy CSV field name: VACCINATION_SITUATION_TERM) exists, then it is a non-empty string
         """
         url = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationSituation"
-        system = Urls.snomed
+        system = Urls.SNOMED
         field_type = "display"
         field_location = generate_field_location_for_extension(url, system, field_type)
         try:
@@ -705,9 +705,9 @@ class PreValidators:
                 field_location = f"protocolApplied[0].targetDisease[{i}].coding"
                 try:
                     coding = values["protocolApplied"][0]["targetDisease"][i]["coding"]
-                    if sum(1 for x in coding if x.get("system") == Urls.snomed) != 1:
+                    if sum(1 for x in coding if x.get("system") == Urls.SNOMED) != 1:
                         raise ValueError(
-                            f"{field_location} must contain exactly one element with a system of {Urls.snomed}"
+                            f"{field_location} must contain exactly one element with a system of {Urls.SNOMED}"
                         )
                 except KeyError:
                     pass
@@ -719,7 +719,7 @@ class PreValidators:
         Pre-validate that, if protocolApplied[0].targetDisease[{i}].coding[?(@.system=='http://snomed.info/sct')].code
         exists, then it is a non-empty string
         """
-        url = Urls.snomed
+        url = Urls.SNOMED
         try:
             for i in range(len(values["protocolApplied"][0]["targetDisease"])):
                 field_location = f"protocolApplied[0].targetDisease[{i}].coding[?(@.system=='{url}')].code"
@@ -778,7 +778,7 @@ class PreValidators:
         Pre-validate that, if site.coding[?(@.system=='http://snomed.info/sct')].code
         (legacy CSV field name: SITE_OF_VACCINATION_CODE) exists, then it is a non-empty string
         """
-        url = Urls.snomed
+        url = Urls.SNOMED
         field_location = f"site.coding[?(@.system=='{url}')].code"
         try:
             site_coding_code = [x for x in values["site"]["coding"] if x.get("system") == url][0]["code"]
@@ -791,7 +791,7 @@ class PreValidators:
         Pre-validate that, if site.coding[?(@.system=='http://snomed.info/sct')].display
         (legacy CSV field name: SITE_OF_VACCINATION_TERM) exists, then it is a non-empty string
         """
-        url = Urls.snomed
+        url = Urls.SNOMED
         field_location = f"site.coding[?(@.system=='{url}')].display"
         try:
             field_value = [x for x in values["site"]["coding"] if x.get("system") == url][0]["display"]
@@ -812,7 +812,7 @@ class PreValidators:
         Pre-validate that, if route.coding[?(@.system=='http://snomed.info/sct')].code
         (legacy CSV field name: ROUTE_OF_VACCINATION_CODE) exists, then it is a non-empty string
         """
-        url = Urls.snomed
+        url = Urls.SNOMED
         field_location = f"route.coding[?(@.system=='{url}')].code"
         try:
             field_value = [x for x in values["route"]["coding"] if x.get("system") == url][0]["code"]
@@ -825,7 +825,7 @@ class PreValidators:
         Pre-validate that, if route.coding[?(@.system=='http://snomed.info/sct')].display
         (legacy CSV field name: ROUTE_OF_VACCINATION_TERM) exists, then it is a non-empty string
         """
-        url = Urls.snomed
+        url = Urls.SNOMED
         field_location = f"route.coding[?(@.system=='{url}')].display"
         try:
             field_value = [x for x in values["route"]["coding"] if x.get("system") == url][0]["display"]
@@ -968,7 +968,7 @@ class PreValidators:
         NOTE: vaccineCode is a mandatory FHIR field. A value of None will be rejected by the
         FHIR model before pre-validators are run.
         """
-        url = Urls.snomed
+        url = Urls.SNOMED
         field_location = f"vaccineCode.coding[?(@.system=='{url}')].code"
         try:
             field_value = [x for x in values["vaccineCode"]["coding"] if x.get("system") == url][0]["code"]
@@ -982,7 +982,7 @@ class PreValidators:
         Pre-validate that, if vaccineCode.coding[?(@.system=='http://snomed.info/sct')].display
         (legacy CSV field : VACCINE_PRODUCT_TERM) exists, then it is a non-empty string
         """
-        url = Urls.snomed
+        url = Urls.SNOMED
         field_location = f"vaccineCode.coding[?(@.system=='{url}')].display"
         try:
             field_value = [x for x in values["vaccineCode"]["coding"] if x.get("system") == url][0]["display"]

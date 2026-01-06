@@ -26,7 +26,28 @@ class AuditTableKeys(StrEnum):  #
     FILENAME = "filename"
     MESSAGE_ID = "message_id"
     QUEUE_NAME = "queue_name"
+    RECORD_COUNT = "record_count"
     STATUS = "status"
     TIMESTAMP = "timestamp"
     EXPIRES_AT = "expires_at"
+    INGESTION_START_TIME = "ingestion_start_time"
     ERROR_DETAILS = "error_details"
+
+
+class Operation(StrEnum):  # TODO: shared but needs work
+    CREATE = "CREATE"
+    UPDATE = "UPDATE"
+    DELETE = "DELETE"
+
+
+class Permission(StrEnum):  # TODO: shared but needs work
+    CREATE = "C"
+    UPDATE = "U"
+    DELETE = "D"
+
+
+permission_to_operation_map = {
+    Permission.CREATE: Operation.CREATE,
+    Permission.UPDATE: Operation.UPDATE,
+    Permission.DELETE: Operation.DELETE,
+}
