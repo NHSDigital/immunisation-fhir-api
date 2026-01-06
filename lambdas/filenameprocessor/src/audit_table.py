@@ -3,8 +3,9 @@
 from typing import Optional
 
 from common.clients import dynamodb_client, logger
+from common.models.batch_constants import AuditTableKeys
 from common.models.errors import UnhandledAuditTableError
-from constants import AUDIT_TABLE_NAME, AuditTableKeys
+from constants import AUDIT_TABLE_NAME
 
 
 def upsert_audit_table(

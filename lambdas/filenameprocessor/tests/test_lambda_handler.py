@@ -34,11 +34,10 @@ from utils_for_tests.values_for_tests import (
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from common.clients import REGION_NAME
+    from common.models.batch_constants import AuditTableKeys, FileStatus
     from constants import (
         AUDIT_TABLE_NAME,
         EXTENDED_ATTRIBUTES_VACC_TYPE,
-        AuditTableKeys,
-        FileStatus,
     )
     from file_name_processor import handle_record, lambda_handler
 

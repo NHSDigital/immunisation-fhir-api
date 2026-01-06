@@ -1,11 +1,11 @@
 import json
 
-from common.models.constants import SUPPLIER_PERMISSIONS_HASH_KEY
-from common.redis_client import get_redis_client
-from constants import (
-    ODS_CODE_TO_SUPPLIER_SYSTEM_HASH_KEY,
+from common.models.constants import (
+    SUPPLIER_PERMISSIONS_HASH_KEY,
     VACCINE_TYPE_TO_DISEASES_HASH_KEY,
 )
+from common.redis_client import get_redis_client
+from constants import ODS_CODE_TO_SUPPLIER_SYSTEM_HASH_KEY
 
 
 def get_supplier_permissions_from_cache(supplier_system: str) -> list[str]:

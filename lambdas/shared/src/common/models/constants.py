@@ -53,8 +53,6 @@ class Constants:
     # https://digital.nhs.uk/developer/api-catalogue/personal-demographics-service-fhir#post-/Patient
     PERSON_NAME_ELEMENT_MAX_LENGTH = 35
 
-    SUPPLIER_PERMISSIONS_KEY = "supplier_permissions"
-    VACCINE_TYPE_TO_DISEASES_HASH_KEY = "vacc_to_diseases"
     DISEASES_TO_VACCINE_TYPE_HASH_KEY = "diseases_to_vacc"
 
     COMPLETED_STATUS = "completed"
@@ -78,3 +76,4 @@ class Urls:
 
 
 SUPPLIER_PERMISSIONS_HASH_KEY = "supplier_permissions"
+VACCINE_TYPE_TO_DISEASES_HASH_KEY = "vacc_to_diseases"
