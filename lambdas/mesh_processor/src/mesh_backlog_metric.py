@@ -4,12 +4,12 @@ import boto3
 
 from common.clients import logger
 
-cloudwatch = boto3.client("cloudwatch")
-METRIC_NAMESPACE = os.getenv("METRIC_NAMESPACE")
+METRIC_NAMESPACE = os.getenv("METRIC_NAMESPACE", "Custom/MESH")
 
 
 def publish_mesh_backlog_metric(metric_name: str, value: float, bucket: str) -> None:
     try:
+        cloudwatch = boto3.client("cloudwatch")
         cloudwatch.put_metric_data(
             Namespace=METRIC_NAMESPACE,
             MetricData=[
