@@ -886,7 +886,7 @@ class TestForwardLambdaHandler(TestCase):
         self.table.put_item(
             Item={
                 "PK": "Immunization#4d2ac1eb-080f-4e54-9598-f2d53334681c",
-                "PatientPK": "Patient#9732928395",  # 9177036360",
+                "PatientPK": "Patient#9732928395",
                 "PatientSK": "RSV#4d2ac1eb-080f-4e54-9598-f2d53334681c",
                 "IdentifierPK": "https://www.ravs.england.nhs.uk/#RSV_002",
                 "Version": 1,
