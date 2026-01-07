@@ -5,7 +5,7 @@ from io import BytesIO, StringIO
 
 from batch_file_created_event import BatchFileCreatedEvent
 from common.clients import get_s3_client
-from constants import ACK_BUCKET_NAME, SOURCE_BUCKET_NAME
+from common.models.batch_constants import ACK_BUCKET_NAME, SOURCE_BUCKET_NAME
 
 
 class BatchFileRepository:

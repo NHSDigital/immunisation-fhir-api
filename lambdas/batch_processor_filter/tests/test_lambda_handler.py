@@ -22,10 +22,9 @@ from testing_utils import (
 
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from common.clients import REGION_NAME
-    from common.models.batch_constants import AuditTableKeys, FileStatus
+    from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys, FileStatus
     from constants import (
         AUDIT_TABLE_FILENAME_GSI,
-        AUDIT_TABLE_NAME,
         AUDIT_TABLE_QUEUE_NAME_GSI,
         SPLUNK_FIREHOSE_STREAM_NAME,
     )

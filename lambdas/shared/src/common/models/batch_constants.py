@@ -1,4 +1,9 @@
+import os
 from enum import StrEnum
+
+ACK_BUCKET_NAME = os.getenv("ACK_BUCKET_NAME")  # TODO: shared
+AUDIT_TABLE_NAME = os.getenv("AUDIT_TABLE_NAME")
+SOURCE_BUCKET_NAME = os.getenv("SOURCE_BUCKET_NAME")
 
 
 class FileStatus(StrEnum):
