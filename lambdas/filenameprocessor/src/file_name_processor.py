@@ -15,7 +15,7 @@ from common.aws_s3_utils import (
 )
 from common.clients import STREAM_NAME, get_s3_client, logger
 from common.log_decorator import logging_decorator
-from common.models.batch_constants import FileNotProcessedReason, FileStatus
+from common.models.batch_constants import SOURCE_BUCKET_NAME, FileNotProcessedReason, FileStatus
 from common.models.errors import UnhandledAuditTableError
 from constants import (
     DPS_DESTINATION_BUCKET_NAME,
@@ -25,7 +25,6 @@ from constants import (
     EXPECTED_SOURCE_BUCKET_ACCOUNT,
     EXTENDED_ATTRIBUTES_ARCHIVE_PREFIX,
     EXTENDED_ATTRIBUTES_FILE_PREFIX,
-    SOURCE_BUCKET_NAME,
 )
 from file_validation import is_file_in_directory_root, validate_batch_file_key, validate_extended_attributes_file_key
 from make_and_upload_ack_file import make_and_upload_the_ack_file
