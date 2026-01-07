@@ -863,10 +863,21 @@ class TestForwardLambdaHandler(TestCase):
         expected_values = test_case[0]["expected_values"]
         assert expected_values.items() <= call_data.items()
 
-    @patch("forwarding_batch_lambda.create_table")
-    def test_forward_lambda_handler_exception_handler(self, mock_create_table):
-        """Test exception handling in main lambda handler loop"""
+    @patch("forwarding_batch_lambda.sqs_client.send_message")
+    def test_forward_lambda_handler_exception_handler(self, mock_send_message):
+        """Test exception handling when sqs_client fails"""
         # Arrange
+        table_item = copy.deepcopy(ForwarderValues.EXPECTED_TABLE_ITEM)
+        table_item.update(
+            {
+                "PK": "Immunization#4d2ac1eb-080f-4e54-9598-f2d53334681c",
+                "IdentifierPK": "https://www.ravs.england.nhs.uk/#RSV_002",
+                "PatientSK": "RSV#4d2ac1eb-080f-4e54-9598-f2d53334681c",
+                "Operation": "DELETE",
+            }
+        )
+
+        # Ensure there is at least one failure, so that sqs_client is called
         test_cases = [
             {
                 "name": "Row 1: Create Success",
@@ -882,15 +893,42 @@ class TestForwardLambdaHandler(TestCase):
                     **ForwarderValues.EXPECTED_VALUES,
                 },
             },
+            {
+                "name": "Row 2: Duplication Error: Create failure ",
+                "input": self.generate_input(row_id=2, operation_requested="CREATE", include_fhir_json=True),
+                "expected_keys": ForwarderValues.EXPECTED_KEYS_DIAGNOSTICS,
+                "expected_values": {
+                    "row_id": "row-2",
+                    "diagnostics": create_diagnostics_dictionary(
+                        IdentifierDuplicationError("https://www.ravs.england.nhs.uk/#RSV_002")
+                    ),
+                },
+                "is_failure": True,
+            },
         ]
 
-        mock_create_table.side_effect = Exception("Unknown Exception")
+        self.table.put_item(
+            Item={
+                "PK": "Immunization#4d2ac1eb-080f-4e54-9598-f2d53334681c",
+                "PatientPK": "Patient#9732928395",  # 9177036360",
+                "PatientSK": "RSV#4d2ac1eb-080f-4e54-9598-f2d53334681c",
+                "IdentifierPK": "https://www.ravs.england.nhs.uk/#RSV_002",
+                "Version": 1,
+            }
+        )
+        mock_send_message.reset_mock()
+        mock_send_message.side_effect = Exception("Unknown Exception in SQS client")
 
         event = self.generate_event(test_cases)
 
-        # Act & Assert
-        forward_lambda_handler(event, {})
+        self.mock_redis.hget.return_value = "RSV"
+        self.mock_redis_getter.return_value = self.mock_redis
 
+        # Act & Assert
+        with self.assertRaises(Exception) as context:
+            forward_lambda_handler(event, {})
+
+        self.assertIn("Unknown Exception in SQS client", str(context.exception))
         self.mock_logger_error.assert_called_with("Error processing event: %s", ANY)
 
 
