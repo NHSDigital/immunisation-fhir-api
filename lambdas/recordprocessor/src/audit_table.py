@@ -4,9 +4,8 @@ import time
 from typing import Optional
 
 from common.clients import dynamodb_client, logger
-from common.models.batch_constants import AuditTableKeys
+from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys
 from common.models.errors import UnhandledAuditTableError
-from constants import AUDIT_TABLE_NAME
 
 
 def update_audit_table_status(

@@ -1,11 +1,5 @@
 """Constants for recordprocessor"""
 
-import os
-
-SOURCE_BUCKET_NAME = os.getenv("SOURCE_BUCKET_NAME")
-ACK_BUCKET_NAME = os.getenv("ACK_BUCKET_NAME")
-AUDIT_TABLE_NAME = os.getenv("AUDIT_TABLE_NAME")
-
 ARCHIVE_DIR_NAME = "archive"
 PROCESSING_DIR_NAME = "processing"
 

@@ -36,11 +36,8 @@ from utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from batch_processor import main
-    from common.models.batch_constants import AuditTableKeys, FileNotProcessedReason, FileStatus
-    from constants import (
-        AUDIT_TABLE_NAME,
-        Diagnostics,
-    )
+    from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys, FileNotProcessedReason, FileStatus
+    from constants import Diagnostics
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
 kinesis_client = boto3_client("kinesis", region_name=REGION_NAME)

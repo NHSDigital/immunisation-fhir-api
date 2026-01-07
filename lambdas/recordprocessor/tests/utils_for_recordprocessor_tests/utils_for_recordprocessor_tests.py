@@ -23,10 +23,7 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from csv import DictReader
 
     from common.clients import REGION_NAME
-    from common.models.batch_constants import AuditTableKeys
-    from constants import (
-        AUDIT_TABLE_NAME,
-    )
+    from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys
 
 dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
 
