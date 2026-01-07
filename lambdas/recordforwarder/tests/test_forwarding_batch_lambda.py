@@ -916,7 +916,7 @@ class TestForwardLambdaHandler(TestCase):
                 "Version": 1,
             }
         )
-        mock_send_message.reset_mock()
+
         mock_send_message.side_effect = Exception("Unknown Exception in SQS client")
 
         event = self.generate_event(test_cases)
