@@ -118,10 +118,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         """Ensure that sqs_client exceptions do not cause the lambda handler itself to raise an exception"""
 
         # Arrange
-        self.mock_sqs_client.send_message.side_effect = [
-            None,
-            Exception("SQS error"),
-        ]
+        self.mock_sqs_client.send_message.side_effect = Exception("SQS error")
         event = {"invalid_format": True}
 
         # Act
