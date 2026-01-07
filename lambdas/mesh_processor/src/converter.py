@@ -4,6 +4,7 @@ from typing import BinaryIO
 from smart_open import open
 
 from common.clients import get_s3_client, logger
+from mesh_backlog_metric import publish_mesh_backlog_metric
 
 EXPECTED_BUCKET_OWNER_ACCOUNT = os.getenv("ACCOUNT_ID")
 DESTINATION_BUCKET_NAME = os.getenv("DESTINATION_BUCKET_NAME")
@@ -119,6 +120,8 @@ def process_record(record: dict) -> None:
     file_key = record["s3"]["object"]["key"]
     logger.info(f"Processing {file_key}")
 
+    publish_mesh_backlog_metric("MeshObjectsIn", 1, bucket=bucket_name)
+
     s3_client = get_s3_client()
     response = s3_client.head_object(
         Bucket=bucket_name,
@@ -148,6 +151,7 @@ def process_record(record: dict) -> None:
     move_file(bucket_name, file_key, bucket_name, f"archive/{file_key}")
 
     logger.info(f"Archived {file_key}")
+    publish_mesh_backlog_metric("MeshObjectsIn", 1, bucket=bucket_name)
 
 
 def lambda_handler(event: dict, _context: dict) -> dict:
