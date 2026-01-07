@@ -2,7 +2,7 @@ import decimal
 import json
 import os
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 from botocore.exceptions import ClientError
 
@@ -113,6 +113,25 @@ class DeltaHandlerTestCase(unittest.TestCase):
             self.assertEqual(put_item_data["Operation"], Operation.CREATE)
             self.assertEqual(put_item_data["SupplierSystem"], supplier)
             self.mock_sqs_client.send_message.assert_not_called()
+
+    def test_handler_exception(self):
+        """Ensure that sqs_client exceptions do not cause the lambda handler itself to raise an exception"""
+
+        # Arrange
+        self.mock_sqs_client.send_message.side_effect = Exception("SQS error")
+        event = {"invalid_format": True}
+
+        # Act
+        result = handler(event, None)
+
+        # Assert
+        self.assertFalse(result)
+        self.mock_logger_exception.assert_has_calls(
+            [
+                call("Delta Lambda failure: Incorrect invocation of Lambda"),
+                call("Error sending record to DLQ"),
+            ]
+        )
 
     def test_handler_overall_failure(self):
         # Arrange

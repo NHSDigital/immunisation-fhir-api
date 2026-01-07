@@ -232,7 +232,6 @@ def handler(event, _context):
             "diagnostics": "Delta Lambda failure: Incorrect invocation of Lambda",
         }
         logger.exception(operation_outcome["diagnostics"])
-        send_message(event)  # Send failed records to DLQ
         log_data = {"function_name": "delta_sync", "operation_outcome": operation_outcome}
         send_log_to_firehose(STREAM_NAME, log_data)
 
