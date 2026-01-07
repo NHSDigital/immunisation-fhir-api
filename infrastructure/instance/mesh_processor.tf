@@ -166,7 +166,7 @@ resource "aws_iam_policy" "mesh_processor_lambda_exec_policy" {
         Resource = "*"
         Condition = {
           StringEquals = {
-            "cloudwatch:namespace" = "Custom/MESH/${local.short_prefix}"
+            "cloudwatch:namespace" = "${local.short_prefix}-MeshProcessorObjectCount"
           }
         }
       }
@@ -231,7 +231,7 @@ resource "aws_lambda_function" "mesh_file_converter_lambda" {
     variables = {
       ACCOUNT_ID              = var.immunisation_account_id
       DESTINATION_BUCKET_NAME = aws_s3_bucket.batch_data_source_bucket.bucket
-      METRIC_NAMESPACE        = "Custom/MESH/${local.short_prefix}"
+      METRIC_NAMESPACE        = "${local.short_prefix}-MeshProcessorObjectCount"
     }
   }
 }
@@ -303,8 +303,8 @@ resource "aws_cloudwatch_metric_alarm" "mesh_processor_error_alarm" {
 resource "aws_cloudwatch_metric_alarm" "mesh_s3_backlog" {
   count = var.create_mesh_processor && var.error_alarm_notifications_enabled ? 1 : 0
 
-  alarm_name          = "${local.short_prefix}-mesh-backlog"
-  alarm_description   = "This sets off an alarm when the MESH backlog exceeds the defined threshold"
+  alarm_name          = "${local.short_prefix}-mesh-processor-object-count"
+  alarm_description   = "Triggers when the number of inbound objects received from upstream exceeds the number of successfully processed objects in the mesh processor."
   comparison_operator = "GreaterThanThreshold"
   threshold           = 25
   evaluation_periods  = 3
@@ -315,7 +315,7 @@ resource "aws_cloudwatch_metric_alarm" "mesh_s3_backlog" {
     id          = "in"
     return_data = false
     metric {
-      namespace   = "Custom/MESH"
+      namespace   = "${local.short_prefix}-MeshProcessorObjectCount"
       metric_name = "MeshObjectsIn"
       stat        = "Sum"
       period      = 300
@@ -329,7 +329,7 @@ resource "aws_cloudwatch_metric_alarm" "mesh_s3_backlog" {
     id          = "out"
     return_data = false
     metric {
-      namespace   = "Custom/MESH"
+      namespace   = "${local.short_prefix}-MeshProcessorObjectCount"
       metric_name = "MeshObjectsOut"
       stat        = "Sum"
       period      = 300

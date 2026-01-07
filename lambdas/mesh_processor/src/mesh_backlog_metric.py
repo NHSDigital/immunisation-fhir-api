@@ -4,7 +4,7 @@ import boto3
 
 from common.clients import logger
 
-METRIC_NAMESPACE = os.getenv("METRIC_NAMESPACE", "Custom/MESH")
+METRIC_NAMESPACE = os.getenv("METRIC_NAMESPACE")
 
 
 def publish_mesh_backlog_metric(metric_name: str, value: float, bucket: str) -> None:
