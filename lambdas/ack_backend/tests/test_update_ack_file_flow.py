@@ -5,6 +5,7 @@ import boto3
 from moto import mock_aws
 
 import update_ack_file
+from utils.mock_environment_variables import BucketNames
 
 
 @mock_aws
@@ -12,16 +13,13 @@ class TestUpdateAckFileFlow(unittest.TestCase):
     def setUp(self):
         self.s3_client = boto3.client("s3", region_name="eu-west-2")
 
-        self.ack_bucket_name = "my-ack-bucket"
-        self.source_bucket_name = "my-source-bucket"
-        self.ack_bucket_patcher = patch("update_ack_file.get_ack_bucket_name", return_value=self.ack_bucket_name)
-        self.mock_get_ack_bucket_name = self.ack_bucket_patcher.start()
+        self.ack_bucket_name = BucketNames.DESTINATION
+        self.source_bucket_name = BucketNames.SOURCE
+        self.ack_bucket_patcher = patch("update_ack_file.ACK_BUCKET_NAME", BucketNames.DESTINATION)
+        self.ack_bucket_patcher.start()
 
-        self.source_bucket_patcher = patch(
-            "update_ack_file.get_source_bucket_name",
-            return_value=self.source_bucket_name,
-        )
-        self.mock_get_source_bucket_name = self.source_bucket_patcher.start()
+        self.source_bucket_patcher = patch("update_ack_file.SOURCE_BUCKET_NAME", BucketNames.SOURCE)
+        self.source_bucket_patcher.start()
 
         self.s3_client.create_bucket(
             Bucket=self.ack_bucket_name,

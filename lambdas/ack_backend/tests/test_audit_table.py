@@ -2,9 +2,8 @@ import unittest
 from unittest.mock import call, patch
 
 import audit_table
-from common.models.batch_constants import AuditTableKeys, FileStatus
+from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys, FileStatus
 from common.models.errors import UnhandledAuditTableError
-from constants import AUDIT_TABLE_NAME
 
 
 class TestAuditTable(unittest.TestCase):
