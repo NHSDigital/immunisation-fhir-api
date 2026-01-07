@@ -159,6 +159,16 @@ resource "aws_iam_policy" "mesh_processor_lambda_exec_policy" {
           data.aws_s3_bucket.mesh[0].arn,
           "${data.aws_s3_bucket.mesh[0].arn}/*"
         ]
+      },
+      {
+        Effect   = "Allow"
+        Action   = "cloudwatch:PutMetricData"
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "cloudwatch:namespace" = "Custom/MESH/${local.short_prefix}"
+          }
+        }
       }
     ]
   })
@@ -221,6 +231,7 @@ resource "aws_lambda_function" "mesh_file_converter_lambda" {
     variables = {
       ACCOUNT_ID              = var.immunisation_account_id
       DESTINATION_BUCKET_NAME = aws_s3_bucket.batch_data_source_bucket.bucket
+      METRIC_NAMESPACE        = "Custom/MESH/${local.short_prefix}"
     }
   }
 }
@@ -287,4 +298,53 @@ resource "aws_cloudwatch_metric_alarm" "mesh_processor_error_alarm" {
   alarm_description   = "This sets off an alarm for any error logs found in the mesh processor Lambda function"
   alarm_actions       = [data.aws_sns_topic.imms_system_alert_errors.arn]
   treat_missing_data  = "notBreaching"
+}
+
+resource "aws_cloudwatch_metric_alarm" "mesh_s3_backlog" {
+  count = var.create_mesh_processor && var.error_alarm_notifications_enabled ? 1 : 0
+
+  alarm_name          = "${local.short_prefix}-mesh-backlog"
+  alarm_description   = "This sets off an alarm when the MESH backlog exceeds the defined threshold"
+  comparison_operator = "GreaterThanThreshold"
+  threshold           = 25
+  evaluation_periods  = 3
+  datapoints_to_alarm = 3
+  treat_missing_data  = "notBreaching"
+
+  metric_query {
+    id          = "in"
+    return_data = false
+    metric {
+      namespace   = "Custom/MESH"
+      metric_name = "MeshObjectsIn"
+      stat        = "Sum"
+      period      = 300
+      dimensions = {
+        Bucket = data.aws_s3_bucket.mesh[0].bucket
+      }
+    }
+  }
+
+  metric_query {
+    id          = "out"
+    return_data = false
+    metric {
+      namespace   = "Custom/MESH"
+      metric_name = "MeshObjectsOut"
+      stat        = "Sum"
+      period      = 300
+      dimensions = {
+        Bucket = data.aws_s3_bucket.mesh[0].bucket
+      }
+    }
+  }
+
+  metric_query {
+    id          = "backlog"
+    expression  = "in - out"
+    label       = "MeshBacklog"
+    return_data = true
+  }
+
+  alarm_actions = [data.aws_sns_topic.imms_system_alert_errors.arn]
 }
