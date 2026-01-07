@@ -19,7 +19,7 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
 
     from common.clients import REGION_NAME
     from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys, FileStatus
-    from common.models.constants import SUPPLIER_PERMISSIONS_HASH_KEY
+    from common.models.constants import RedisHashKeys
     from constants import ODS_CODE_TO_SUPPLIER_SYSTEM_HASH_KEY
 
 MOCK_ODS_CODE_TO_SUPPLIER = {"YGM41": "EMIS", "X8E5B": "RAVS"}
@@ -59,7 +59,7 @@ def create_mock_hget(
     def mock_hget(key, field):
         if key == ODS_CODE_TO_SUPPLIER_SYSTEM_HASH_KEY:
             return mock_ods_code_to_supplier.get(field)
-        if key == SUPPLIER_PERMISSIONS_HASH_KEY:
+        if key == RedisHashKeys.SUPPLIER_PERMISSIONS_HASH_KEY:
             return mock_supplier_permissions.get(field)
         return None
 

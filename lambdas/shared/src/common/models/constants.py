@@ -53,9 +53,6 @@ class Constants:
     # https://digital.nhs.uk/developer/api-catalogue/personal-demographics-service-fhir#post-/Patient
     PERSON_NAME_ELEMENT_MAX_LENGTH = 35
 
-    VACCINE_TYPE_TO_DISEASES_HASH_KEY = "vacc_to_diseases"
-    DISEASES_TO_VACCINE_TYPE_HASH_KEY = "diseases_to_vacc"
-
     COMPLETED_STATUS = "completed"
     REINSTATED_RECORD_STATUS = "reinstated"
 
@@ -77,5 +74,9 @@ class Urls:
     NULL_FLAVOUR_CODES = "http://terminology.hl7.org/CodeSystem/v3-NullFlavor"  # NOSONAR(S5332)
 
 
-SUPPLIER_PERMISSIONS_HASH_KEY = "supplier_permissions"
-VACCINE_TYPE_TO_DISEASES_HASH_KEY = "vacc_to_diseases"
+class RedisHashKeys:
+    """Redis hash keys"""
+
+    DISEASES_TO_VACCINE_TYPE_HASH_KEY = "diseases_to_vacc"
+    SUPPLIER_PERMISSIONS_HASH_KEY = "supplier_permissions"
+    VACCINE_TYPE_TO_DISEASES_HASH_KEY = "vacc_to_diseases"

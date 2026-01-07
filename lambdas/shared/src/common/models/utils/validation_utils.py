@@ -2,7 +2,7 @@
 
 from fhir.resources.R4B.identifier import Identifier
 
-from common.models.constants import Constants, Urls
+from common.models.constants import RedisHashKeys, Urls
 from common.models.errors import InconsistentIdentifierError, InconsistentResourceVersionError, MandatoryError
 from common.models.field_names import FieldNames
 from common.models.obtain_field_value import ObtainFieldValue
@@ -51,7 +51,7 @@ def convert_disease_codes_to_vaccine_type(
     otherwise raises a value error
     """
     key = ":".join(sorted(disease_codes_input))
-    vaccine_type = get_redis_client().hget(Constants.DISEASES_TO_VACCINE_TYPE_HASH_KEY, key)
+    vaccine_type = get_redis_client().hget(RedisHashKeys.DISEASES_TO_VACCINE_TYPE_HASH_KEY, key)
 
     if not vaccine_type:
         raise ValueError(

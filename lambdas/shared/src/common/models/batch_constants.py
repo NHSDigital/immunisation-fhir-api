@@ -48,14 +48,14 @@ class Operation(StrEnum):
     DELETE = "DELETE"
 
 
-class Permission(StrEnum):
+class OperationShortCode(StrEnum):
     CREATE = "C"
     UPDATE = "U"
     DELETE = "D"
 
 
 permission_to_operation_map = {
-    Permission.CREATE: Operation.CREATE,
-    Permission.UPDATE: Operation.UPDATE,
-    Permission.DELETE: Operation.DELETE,
+    OperationShortCode.CREATE: Operation.CREATE,
+    OperationShortCode.UPDATE: Operation.UPDATE,
+    OperationShortCode.DELETE: Operation.DELETE,
 }
