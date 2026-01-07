@@ -137,20 +137,16 @@ def forward_lambda_handler(event, _):
             )
             logger.error("Error processing message: %s", error)
 
-    try:
-        # Send to SQS
-        for filename_key, events in filename_to_events_mapper.get_map().items():
-            sqs_message_body = json.dumps(events)
-            logger.info(f"total message length:{len(sqs_message_body)}")
+    # Send to SQS
+    for filename_key, events in filename_to_events_mapper.get_map().items():
+        sqs_message_body = json.dumps(events)
+        logger.info(f"total message length:{len(sqs_message_body)}")
 
-            sqs_client.send_message(
-                QueueUrl=QUEUE_URL,
-                MessageBody=sqs_message_body,
-                MessageGroupId=filename_key,
-            )
-    except Exception as error:  # pylint: disable = broad-exception-caught
-        logger.error("Error processing event: %s", error)
-        raise
+        sqs_client.send_message(
+            QueueUrl=QUEUE_URL,
+            MessageBody=sqs_message_body,
+            MessageGroupId=filename_key,
+        )
 
 
 if __name__ == "__main__":

@@ -929,7 +929,6 @@ class TestForwardLambdaHandler(TestCase):
             forward_lambda_handler(event, {})
 
         self.assertIn("Unknown Exception in SQS client", str(context.exception))
-        self.mock_logger_error.assert_called_with("Error processing event: %s", ANY)
 
 
 if __name__ == "__main__":
