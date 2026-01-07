@@ -15,10 +15,10 @@ class TestUpdateAckFileFlow(unittest.TestCase):
 
         self.ack_bucket_name = BucketNames.DESTINATION
         self.source_bucket_name = BucketNames.SOURCE
-        self.ack_bucket_patcher = patch("update_ack_file.ACK_BUCKET_NAME", BucketNames.DESTINATION)
+        self.ack_bucket_patcher = patch("update_ack_file.ACK_BUCKET_NAME", self.ack_bucket_name)
         self.ack_bucket_patcher.start()
 
-        self.source_bucket_patcher = patch("update_ack_file.SOURCE_BUCKET_NAME", BucketNames.SOURCE)
+        self.source_bucket_patcher = patch("update_ack_file.SOURCE_BUCKET_NAME", self.source_bucket_name)
         self.source_bucket_patcher.start()
 
         self.s3_client.create_bucket(

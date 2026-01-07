@@ -25,7 +25,7 @@ class FileNotProcessedReason(StrEnum):
     UNAUTHORISED = "Unauthorised"
 
 
-class AuditTableKeys(StrEnum):  #
+class AuditTableKeys(StrEnum):
     """Audit table keys"""
 
     FILENAME = "filename"
