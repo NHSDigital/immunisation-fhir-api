@@ -2,13 +2,13 @@
 
 import json
 
-from common.models.constants import Urls
+from common.models.constants import RedisHashKeys, Urls
 from common.redis_client import get_redis_client
 
 
 def map_target_disease(vaccine: str) -> list:
     """Returns the target disease element for the given vaccine type using the vaccine_disease_mapping"""
-    diseases_str = get_redis_client().hget("vacc_to_diseases", vaccine)
+    diseases_str = get_redis_client().hget(RedisHashKeys.VACCINE_TYPE_TO_DISEASES_HASH_KEY, vaccine)
     diseases = json.loads(diseases_str) if diseases_str else []
     return [
         {
