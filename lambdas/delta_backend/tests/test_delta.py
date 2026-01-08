@@ -2,7 +2,7 @@ import decimal
 import json
 import os
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 from botocore.exceptions import ClientError
 
@@ -10,13 +10,13 @@ import delta
 from delta import (
     handler,
     process_record,
-    send_message,
+    send_record_to_dlq,
 )
 from mappings import ActionFlag, EventName, Operation
 from utils_for_converter_tests import RecordConfig, ValuesForTests
 
-TEST_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123456789012/test-queue"
-os.environ["AWS_SQS_QUEUE_URL"] = TEST_QUEUE_URL
+TEST_DEAD_LETTER_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123456789012/test-queue"
+os.environ["AWS_SQS_QUEUE_URL"] = TEST_DEAD_LETTER_QUEUE_URL
 os.environ["DELTA_TABLE_NAME"] = "my_delta_table"
 os.environ["DELTA_TTL_DAYS"] = "14"
 os.environ["SOURCE"] = "my_source"
@@ -52,27 +52,23 @@ class DeltaHandlerTestCase(unittest.TestCase):
         self.mock_delta_table = self.delta_table_patcher.start()
 
     def tearDown(self):
-        self.logger_exception_patcher.stop()
-        self.logger_warning_patcher.stop()
-        self.logger_error_patcher.stop()
-        self.logger_info_patcher.stop()
-        self.mock_send_log_to_firehose.stop()
-        self.sqs_client_patcher.stop()
-        self.delta_table_patcher.stop()
+        patch.stopall()
 
-    def test_send_message_success(self):
+    def test_send_record_to_dlq_success(self):
         # Arrange
         self.mock_sqs_client.send_message.return_value = {"MessageId": "123"}
         record = {"key": "value"}
-        sqs_queue_url = "test-queue-url"
 
         # Act
-        send_message(record, sqs_queue_url)
+        send_record_to_dlq(record)
 
         # Assert
-        self.mock_sqs_client.send_message.assert_called_once_with(QueueUrl=sqs_queue_url, MessageBody=json.dumps(record))
+        self.mock_sqs_client.send_message.assert_called_once_with(
+            QueueUrl=TEST_DEAD_LETTER_QUEUE_URL, MessageBody=json.dumps(record)
+        )
+        self.mock_logger_info.assert_called_with("Record saved successfully to the DLQ")
 
-    def test_send_message_client_error(self):
+    def test_send_record_to_dlq_client_error(self):
         # Arrange
         record = {"key": "value"}
 
@@ -81,7 +77,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         self.mock_sqs_client.send_message.side_effect = ClientError(error_response, "SendMessage")
 
         # Act
-        send_message(record, "test-queue-url")
+        send_record_to_dlq(record)
 
         # Assert
         self.mock_logger_exception.assert_called_once_with("Error sending record to DLQ")
@@ -114,16 +110,37 @@ class DeltaHandlerTestCase(unittest.TestCase):
             self.assertEqual(put_item_data["SupplierSystem"], supplier)
             self.mock_sqs_client.send_message.assert_not_called()
 
-    def test_handler_overall_failure(self):
+    def test_handler_exception(self):
+        """Ensure that sqs_client exceptions do not cause the lambda handler itself to raise an exception"""
         # Arrange
-        event = {"invalid_format": True}
+        self.mock_sqs_client.send_message.side_effect = Exception("SQS error")
+        self.mock_delta_table.put_item.return_value = FAIL_RESPONSE
+        event = ValuesForTests.get_event()
 
         # Act
         result = handler(event, None)
 
         # Assert
-        self.assertFalse(result)
-        self.mock_sqs_client.send_message.assert_called_with(QueueUrl=TEST_QUEUE_URL, MessageBody=json.dumps(event))
+        self.assertTrue(result)
+        self.mock_logger_exception.assert_has_calls(
+            [
+                call("Error sending record to DLQ"),
+            ]
+        )
+
+    def test_handler_raises_exception_if_called_with_unexpected_event(self):
+        """Tests that when the Lambda is invoked with an unexpected event format i.e. no "Records" key, then an
+        exception will be raised. The DDB Stream configuration will then ensure that the event is forwarded to the DLQ.
+        Note: this would only ever happen if we misconfigured the Lambda or tested manually with a bad event."""
+        # Arrange
+        event = {"invalid_format": True}
+
+        # Act
+        with self.assertRaises(KeyError):
+            handler(event, None)
+
+        # Assert
+        self.mock_sqs_client.send_message.assert_not_called()
 
     def test_handler_processing_failure(self):
         # Arrange
@@ -134,8 +151,10 @@ class DeltaHandlerTestCase(unittest.TestCase):
         result = handler(event, None)
 
         # Assert
-        self.assertFalse(result)
-        self.mock_sqs_client.send_message.assert_called_with(QueueUrl=TEST_QUEUE_URL, MessageBody=json.dumps(event))
+        self.assertTrue(result)
+        self.mock_sqs_client.send_message.assert_called_with(
+            QueueUrl=TEST_DEAD_LETTER_QUEUE_URL, MessageBody=json.dumps(event["Records"][0])
+        )
 
     def test_handler_success_update(self):
         # Arrange
@@ -410,10 +429,11 @@ class DeltaHandlerTestCase(unittest.TestCase):
         result = handler(event, None)
 
         # Assert
-        self.assertFalse(result)
+        self.assertTrue(result)
         self.assertEqual(self.mock_delta_table.put_item.call_count, 3)
         self.assertEqual(self.mock_send_log_to_firehose.call_count, 3)
         self.assertEqual(self.mock_logger_error.call_count, 1)
+        self.assertEqual(self.mock_sqs_client.send_message.call_count, 1)
 
     def test_single_exception_in_multi(self):
         # Arrange
@@ -435,7 +455,8 @@ class DeltaHandlerTestCase(unittest.TestCase):
         result = handler(event, None)
 
         # Assert
-        self.assertFalse(result)
+        self.assertTrue(result)
+        self.assertEqual(self.mock_sqs_client.send_message.call_count, 1)
         self.assertEqual(self.mock_delta_table.put_item.call_count, len(records_config))
         self.assertEqual(self.mock_send_log_to_firehose.call_count, len(records_config))
 
@@ -478,12 +499,9 @@ class DeltaHandlerTestCase(unittest.TestCase):
         self.assertTrue(result)
         self.assertEqual(mock_process_record.call_count, len(event["Records"]))
 
-    # TODO depedency injection needed here
     @patch("delta.process_record")
     @patch("delta.send_log_to_firehose")
     def test_handler_sends_all_to_firehose(self, mock_send_log_to_firehose, mock_process_record):
-        # Arrange
-
         # event with 3 records
         event = {"Records": [{"a": "record1"}, {"a": "record2"}, {"a": "record3"}]}
         return_ok = (True, {})
@@ -495,10 +513,12 @@ class DeltaHandlerTestCase(unittest.TestCase):
         result = handler(event, {})
 
         # Assert
-        self.assertFalse(result)
+        self.assertTrue(result)
         self.assertEqual(mock_process_record.call_count, len(event["Records"]))
         # check that all records were sent to firehose
         self.assertEqual(mock_send_log_to_firehose.call_count, len(event["Records"]))
+        # Only send the failed record to SQS DLQ
+        self.assertEqual(self.mock_sqs_client.send_message.call_count, 1)
 
 
 class DeltaRecordProcessorTestCase(unittest.TestCase):
@@ -657,40 +677,4 @@ class TestGetDeltaTable(unittest.TestCase):
         mock_get_dynamodb_table.side_effect = Exception("fail")
         table = delta.get_delta_table()
         self.assertIsNone(table)
-        self.mock_logger_error.assert_called()
-
-
-class TestSendMessage(unittest.TestCase):
-    def setUp(self):
-        self.get_sqs_client_patcher = patch("delta.get_sqs_client")
-        self.mock_get_sqs_client = self.get_sqs_client_patcher.start()
-        self.mock_sqs_client = MagicMock()
-        self.mock_get_sqs_client.return_value = self.mock_sqs_client
-
-        self.logger_info_patcher = patch("logging.Logger.info")
-        self.mock_logger_info = self.logger_info_patcher.start()
-        self.logger_error_patcher = patch("logging.Logger.error")
-        self.mock_logger_error = self.logger_error_patcher.start()
-
-    def tearDown(self):
-        self.get_sqs_client_patcher.stop()
-        self.logger_info_patcher.stop()
-        self.logger_error_patcher.stop()
-
-    def test_send_message_success(self):
-        record = {"a": "bbb"}
-        self.mock_sqs_client.send_message.return_value = {"MessageId": "123"}
-
-        delta.send_message(record)
-
-        self.mock_sqs_client.send_message.assert_called_once()
-        self.mock_logger_info.assert_any_call("Record saved successfully to the DLQ")
-        self.mock_logger_error.assert_not_called()
-
-    def test_send_message_client_error(self):
-        record = {"a": "bbb"}
-        self.mock_sqs_client.send_message.side_effect = Exception("SQS error")
-
-        delta.send_message(record, "test-queue-url")
-
         self.mock_logger_error.assert_called()

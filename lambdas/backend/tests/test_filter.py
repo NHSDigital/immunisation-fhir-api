@@ -109,7 +109,7 @@ class TestFilter(unittest.TestCase):
         # Prepare the input data
         input_imms = load_json_data("completed_covid_immunization_event.json")
         # Change the input data's organization_identifier_system to be something other than the ods url
-        input_imms["performer"][1]["actor"]["identifier"]["system"] = Urls.urn_school_number
+        input_imms["performer"][1]["actor"]["identifier"]["system"] = Urls.URN_SCHOOL_NUMBER
         # Add organization_display to the input data (note that whilst this field is not one of the expected fields,
         # the validator does not prevent it from being included on a create or update, so the possiblity of it
         # existing must be handled)

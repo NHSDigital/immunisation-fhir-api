@@ -1,14 +1,5 @@
 """Constants for recordprocessor"""
 
-import os
-from enum import StrEnum
-
-# Once Python projects are moved to /lambdas consider consolidating constants common to batch in
-# /shared/src/common/constants/batch_constants.py (VED-881)
-SOURCE_BUCKET_NAME = os.getenv("SOURCE_BUCKET_NAME")
-ACK_BUCKET_NAME = os.getenv("ACK_BUCKET_NAME")
-AUDIT_TABLE_NAME = os.getenv("AUDIT_TABLE_NAME")
-
 ARCHIVE_DIR_NAME = "archive"
 PROCESSING_DIR_NAME = "processing"
 
@@ -55,37 +46,6 @@ EMIS_V2_SUPPLIER_IDENTIFIER_SYSTEM = "YGJ"
 EMIS_V5_SUPPLIER_IDENTIFIER_SYSTEM = "https://emishealth.com/identifiers/vacc"
 
 
-class FileStatus:
-    """File status constants"""
-
-    QUEUED = "Queued"
-    PROCESSING = "Processing"
-    PREPROCESSED = "Preprocessed"  # All entries in file converted to FHIR and forwarded to Kinesis
-    PROCESSED = "Processed"  # All entries processed and ack file created
-    NOT_PROCESSED = "Not processed"
-    FAILED = "Failed"
-
-
-class FileNotProcessedReason(StrEnum):
-    """Reasons why a file was not processed"""
-
-    UNAUTHORISED = "Unauthorised"
-    EMPTY = "Empty file"
-
-
-class AuditTableKeys:
-    """Audit table keys"""
-
-    FILENAME = "filename"
-    MESSAGE_ID = "message_id"
-    QUEUE_NAME = "queue_name"
-    RECORD_COUNT = "record_count"
-    STATUS = "status"
-    TIMESTAMP = "timestamp"
-    INGESTION_START_TIME = "ingestion_start_time"
-    ERROR_DETAILS = "error_details"
-
-
 class Diagnostics:
     """Diagnostics messages"""
 
@@ -95,31 +55,3 @@ class Diagnostics:
     UNABLE_TO_OBTAIN_IMMS_ID = "Unable to obtain imms event id"
     UNABLE_TO_OBTAIN_VERSION = "Unable to obtain current imms event version"
     INVALID_CONVERSION = "Unable to convert row to FHIR Immunization Resource JSON format"
-
-
-class Urls:
-    """Urls"""
-
-    SNOMED = "http://snomed.info/sct"  # NOSONAR(S5332)
-    NHS_NUMBER = "https://fhir.nhs.uk/Id/nhs-number"
-    NULL_FLAVOUR_CODES = "http://terminology.hl7.org/CodeSystem/v3-NullFlavor"  # NOSONAR(S5332)
-    VACCINATION_PROCEDURE = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure"
-
-
-class Operation(StrEnum):
-    CREATE = "CREATE"
-    UPDATE = "UPDATE"
-    DELETE = "DELETE"
-
-
-class Permission(StrEnum):
-    CREATE = "C"
-    UPDATE = "U"
-    DELETE = "D"
-
-
-permission_to_operation_map = {
-    Permission.CREATE: Operation.CREATE,
-    Permission.UPDATE: Operation.UPDATE,
-    Permission.DELETE: Operation.DELETE,
-}

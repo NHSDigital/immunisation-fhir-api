@@ -4,7 +4,7 @@ import json
 
 from authorisation.api_operation_code import ApiOperationCode
 from common.clients import logger
-from common.models.constants import SUPPLIER_PERMISSIONS_HASH_KEY
+from common.models.constants import RedisHashKeys
 from common.redis_client import get_redis_client
 
 
@@ -33,7 +33,7 @@ class Authoriser:
         return expanded_permissions
 
     def _get_supplier_permissions(self, supplier_system: str) -> dict[str, list[ApiOperationCode]]:
-        raw_permissions_data = get_redis_client().hget(SUPPLIER_PERMISSIONS_HASH_KEY, supplier_system)
+        raw_permissions_data = get_redis_client().hget(RedisHashKeys.SUPPLIER_PERMISSIONS_HASH_KEY, supplier_system)
         permissions_data = json.loads(raw_permissions_data) if raw_permissions_data else []
 
         return self._expand_permissions(permissions_data)

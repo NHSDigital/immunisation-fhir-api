@@ -9,7 +9,7 @@ from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
 )
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
-    from constants import Urls
+    from common.models.constants import Urls
     from utils_for_fhir_conversion import Add, Convert, Generate, _is_not_empty
 
 
