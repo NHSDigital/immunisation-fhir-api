@@ -300,6 +300,9 @@ resource "aws_cloudwatch_metric_alarm" "mesh_processor_no_lambda_invocation_alar
   statistic   = "Sum"
   period      = 300
 
+  evaluation_periods  = 1
+  datapoints_to_alarm = 1
+
   comparison_operator = "LessThanThreshold"
   threshold           = 1
   treat_missing_data  = "breaching"
