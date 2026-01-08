@@ -2,7 +2,8 @@
 
 from typing import Callable, Dict, List
 
-from constants import Operation, Urls
+from common.models.batch_constants import Operation
+from common.models.constants import Urls
 from utils_for_fhir_conversion import Add, Convert, Generate, _is_not_empty
 
 ImmunizationDecorator = Callable[[Dict, Dict[str, str]], None]

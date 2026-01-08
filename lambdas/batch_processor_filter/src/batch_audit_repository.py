@@ -1,12 +1,10 @@
 from boto3.dynamodb.conditions import Key
 
 from common.aws_dynamodb import get_dynamodb_table
+from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys, FileStatus
 from constants import (
     AUDIT_TABLE_FILENAME_GSI,
-    AUDIT_TABLE_NAME,
     AUDIT_TABLE_QUEUE_NAME_GSI,
-    AuditTableKeys,
-    FileStatus,
 )
 
 

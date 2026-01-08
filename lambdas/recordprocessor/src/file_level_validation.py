@@ -9,16 +9,14 @@ from csv import DictReader
 from audit_table import set_audit_table_ingestion_start_time, update_audit_table_status
 from common.aws_s3_utils import move_file
 from common.clients import logger
-from constants import (
-    ARCHIVE_DIR_NAME,
-    EXPECTED_CSV_HEADERS,
-    PROCESSING_DIR_NAME,
+from common.models.batch_constants import (
     SOURCE_BUCKET_NAME,
     FileNotProcessedReason,
     FileStatus,
-    Permission,
+    OperationShortCode,
     permission_to_operation_map,
 )
+from constants import ARCHIVE_DIR_NAME, EXPECTED_CSV_HEADERS, PROCESSING_DIR_NAME
 from logging_decorator import file_level_validation_logging_decorator
 from make_and_upload_ack_file import make_and_upload_ack_file
 from models.errors import InvalidHeaders, NoOperationPermissions
@@ -46,10 +44,10 @@ def get_permitted_operations(supplier: str, vaccine_type: str, allowed_permissio
 
     # Extract permissions letters to get map key from the allowed vaccine type
     permissions_for_vaccine_type = {
-        Permission(permission)
+        OperationShortCode(permission)
         for permission_str in permission_strs_for_vaccine_type
         for permission in permission_str.split(".")[1].upper()
-        if permission in list(Permission)
+        if permission in list(OperationShortCode)
     }
 
     # Map Permission key to action flag

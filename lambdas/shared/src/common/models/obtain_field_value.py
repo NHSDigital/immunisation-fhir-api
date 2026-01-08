@@ -27,7 +27,7 @@ class ObtainFieldValue:
         """Obtains patient_identifier_value value"""
         contained_patient = get_contained_patient(imms)
         contained_patient_identifier = [
-            x for x in contained_patient.get("identifier") if x.get("system") == Urls.nhs_number
+            x for x in contained_patient.get("identifier") if x.get("system") == Urls.NHS_NUMBER
         ][0]
         return contained_patient_identifier["value"]
 
@@ -134,7 +134,7 @@ class ObtainFieldValue:
     @staticmethod
     def vaccination_procedure_code(imms: dict):
         """Obtains vaccination_procedure_code value"""
-        return get_generic_extension_value(imms, Urls.vaccination_procedure, Urls.snomed, "code")
+        return get_generic_extension_value(imms, Urls.VACCINATION_PROCEDURE, Urls.SNOMED, "code")
 
     # @staticmethod
     # def vaccination_procedure_display(imms: dict):
