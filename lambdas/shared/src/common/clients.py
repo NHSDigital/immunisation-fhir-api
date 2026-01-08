@@ -74,8 +74,15 @@ def get_dynamodb_resource():
     return global_dynamodb_resource
 
 
-kinesis_client = boto3_client(
-    "kinesis",
-    region_name=REGION_NAME,
-    config=Config(retries={"max_attempts": 3, "mode": "standard"}),
-)
+global_kinesis_client = None
+
+
+def get_kinesis_client():
+    global global_kinesis_client
+    if global_kinesis_client is None:
+        global_kinesis_client = boto3_client(
+            "kinesis",
+            region_name=REGION_NAME,
+            config=Config(retries={"max_attempts": 3, "mode": "standard"}),
+        )
+    return global_kinesis_client
