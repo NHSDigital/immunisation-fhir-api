@@ -29,7 +29,7 @@ def create_reference_to_patient_resource(patient_full_url: str, patient: dict) -
     Returns a reference to the given patient which includes the patient nhs number identifier (system and value fields
     only) and a reference to patient full url. "Type" field is set to "Patient".
     """
-    patient_nhs_number_identifier = [x for x in patient["identifier"] if x.get("system") == Urls.nhs_number][0]
+    patient_nhs_number_identifier = [x for x in patient["identifier"] if x.get("system") == Urls.NHS_NUMBER][0]
 
     return {
         "reference": patient_full_url,
@@ -67,9 +67,9 @@ def replace_organization_values(imms: dict) -> dict:
             identifier = performer["actor"].get("identifier", {})
             if identifier.get("value") is not None:
                 identifier["value"] = "N2N9I"
-                identifier["system"] = Urls.ods_organization_code
+                identifier["system"] = Urls.ODS_ORGANIZATION_CODE
             if identifier.get("system") is not None:
-                identifier["system"] = Urls.ods_organization_code
+                identifier["system"] = Urls.ODS_ORGANIZATION_CODE
 
             # Ensure only 'system' and 'value' remain in identifier
             keys = {"system", "value"}

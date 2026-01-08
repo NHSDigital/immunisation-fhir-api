@@ -45,6 +45,9 @@ class TestLoggingDecorators(unittest.TestCase):
             Body=mock_source_file_with_100_rows.getvalue(),
         )
 
+        self.ack_bucket_patcher = patch("update_ack_file.ACK_BUCKET_NAME", BucketNames.DESTINATION)
+        self.ack_bucket_patcher.start()
+
     def tearDown(self):
         GenericTearDown(self.s3_client)
 

@@ -11,13 +11,8 @@ from audit_table import update_audit_table_status
 from common.aws_s3_utils import move_file
 from common.batch.eof_utils import make_batch_eof_message
 from common.clients import logger
-from constants import (
-    ARCHIVE_DIR_NAME,
-    PROCESSING_DIR_NAME,
-    SOURCE_BUCKET_NAME,
-    FileNotProcessedReason,
-    FileStatus,
-)
+from common.models.batch_constants import SOURCE_BUCKET_NAME, FileNotProcessedReason, FileStatus
+from constants import ARCHIVE_DIR_NAME, PROCESSING_DIR_NAME
 from file_level_validation import file_is_empty, file_level_validation
 from mappings import map_target_disease
 from process_row import process_row

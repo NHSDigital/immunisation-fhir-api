@@ -11,7 +11,7 @@ from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests impo
 )
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
-    from constants import Urls
+    from common.models.constants import Urls
 
 
 VALID_NHS_NUMBER = "1345678940"

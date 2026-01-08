@@ -4,7 +4,7 @@ from csv import writer
 from io import BytesIO, StringIO
 
 from common.clients import get_s3_client
-from constants import ACK_BUCKET_NAME
+from common.models.batch_constants import ACK_BUCKET_NAME
 
 
 def make_ack_data(
