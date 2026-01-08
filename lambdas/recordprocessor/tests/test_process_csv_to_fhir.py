@@ -25,7 +25,7 @@ from utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from batch_processor import process_csv_to_fhir
-    from constants import AUDIT_TABLE_NAME, FileStatus
+    from common.models.batch_constants import AUDIT_TABLE_NAME, FileStatus
 
 dynamodb_client = boto3.client("dynamodb", region_name=REGION_NAME)
 s3_client = boto3.client("s3", region_name=REGION_NAME)

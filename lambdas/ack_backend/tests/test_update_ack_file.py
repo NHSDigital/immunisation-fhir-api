@@ -57,6 +57,9 @@ class TestUpdateAckFile(unittest.TestCase):
         self.logger_patcher = patch("update_ack_file.logger")
         self.mock_logger = self.logger_patcher.start()
 
+        self.ack_bucket_patcher = patch("update_ack_file.ACK_BUCKET_NAME", BucketNames.DESTINATION)
+        self.ack_bucket_patcher.start()
+
     def tearDown(self) -> None:
         GenericTearDown(self.s3_client)
 

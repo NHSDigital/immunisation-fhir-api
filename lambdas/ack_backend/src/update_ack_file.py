@@ -12,14 +12,13 @@ from audit_table import (
 )
 from common.aws_s3_utils import move_file
 from common.clients import get_s3_client, logger
+from common.models.batch_constants import ACK_BUCKET_NAME, SOURCE_BUCKET_NAME
 from constants import (
     ACK_HEADERS,
     BATCH_FILE_ARCHIVE_DIR,
     BATCH_FILE_PROCESSING_DIR,
     COMPLETED_ACK_DIR,
     TEMP_ACK_DIR,
-    get_ack_bucket_name,
-    get_source_bucket_name,
 )
 from logging_decorators import complete_batch_file_process_logging_decorator
 
@@ -71,10 +70,8 @@ def complete_batch_file_process(
     the audit table status"""
     ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.csv')}"
 
-    move_file(get_ack_bucket_name(), f"{TEMP_ACK_DIR}/{ack_filename}", f"{COMPLETED_ACK_DIR}/{ack_filename}")
-    move_file(
-        get_source_bucket_name(), f"{BATCH_FILE_PROCESSING_DIR}/{file_key}", f"{BATCH_FILE_ARCHIVE_DIR}/{file_key}"
-    )
+    move_file(ACK_BUCKET_NAME, f"{TEMP_ACK_DIR}/{ack_filename}", f"{COMPLETED_ACK_DIR}/{ack_filename}")
+    move_file(SOURCE_BUCKET_NAME, f"{BATCH_FILE_PROCESSING_DIR}/{file_key}", f"{BATCH_FILE_ARCHIVE_DIR}/{file_key}")
 
     total_ack_rows_processed, total_failures = get_record_count_and_failures_by_message_id(message_id)
     change_audit_table_status_to_processed(file_key, message_id)
@@ -99,7 +96,7 @@ def obtain_current_ack_content(temp_ack_file_key: str) -> StringIO:
     """Returns the current ack file content if the file exists, or else initialises the content with the ack headers."""
     try:
         # If ack file exists in S3 download the contents
-        existing_ack_file = get_s3_client().get_object(Bucket=get_ack_bucket_name(), Key=temp_ack_file_key)
+        existing_ack_file = get_s3_client().get_object(Bucket=ACK_BUCKET_NAME, Key=temp_ack_file_key)
         existing_content = existing_ack_file["Body"].read().decode("utf-8")
     except ClientError as error:
         # If ack file does not exist in S3 create a new file containing the headers only
@@ -132,7 +129,6 @@ def update_ack_file(
         accumulated_csv_content.write(cleaned_row + "\n")
 
     csv_file_like_object = BytesIO(accumulated_csv_content.getvalue().encode("utf-8"))
-    ack_bucket_name = get_ack_bucket_name()
 
-    get_s3_client().upload_fileobj(csv_file_like_object, ack_bucket_name, temp_ack_file_key)
-    logger.info("Ack file updated to %s: %s", ack_bucket_name, completed_ack_file_key)
+    get_s3_client().upload_fileobj(csv_file_like_object, ACK_BUCKET_NAME, temp_ack_file_key)
+    logger.info("Ack file updated to %s: %s", ACK_BUCKET_NAME, completed_ack_file_key)

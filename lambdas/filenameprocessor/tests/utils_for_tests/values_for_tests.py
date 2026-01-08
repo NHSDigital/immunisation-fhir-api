@@ -6,7 +6,7 @@ from unittest.mock import patch
 from utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
 
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from constants import AuditTableKeys
+    from common.models.batch_constants import AuditTableKeys
 
 
 fixed_datetime = datetime(2024, 10, 29, 12, 0, 0)

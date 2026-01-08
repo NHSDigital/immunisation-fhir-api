@@ -23,7 +23,7 @@ class FieldLocations:
     """
 
     target_disease = "protocolApplied[0].targetDisease"
-    target_disease_codes = f"protocolApplied[0].targetDisease[0].coding[?(@.system=='{Urls.snomed}')].code"
+    target_disease_codes = f"protocolApplied[0].targetDisease[0].coding[?(@.system=='{Urls.SNOMED}')].code"
     patient_identifier_value = (
         "contained[?(@.resourceType=='Patient')].identifier[0].value"  # TODO: Fix to use nhs number url lookup
     )
@@ -42,20 +42,20 @@ class FieldLocations:
     practitioner_name_family: str = field(init=False)
     recorded = "recorded"
     primary_source = "primarySource"
-    vaccination_procedure_code = generate_field_location_for_extension(Urls.vaccination_procedure, Urls.snomed, "code")
+    vaccination_procedure_code = generate_field_location_for_extension(Urls.VACCINATION_PROCEDURE, Urls.SNOMED, "code")
     vaccination_procedure_display = generate_field_location_for_extension(
-        Urls.vaccination_procedure, Urls.snomed, "display"
+        Urls.VACCINATION_PROCEDURE, Urls.SNOMED, "display"
     )
     dose_number_positive_int = "protocolApplied[0].doseNumberPositiveInt"
-    vaccine_code_coding_code = f"vaccineCode.coding[?(@.system=='{Urls.snomed}')].code"
-    vaccine_code_coding_display = f"vaccineCode.coding[?(@.system=='{Urls.snomed}')].display"
+    vaccine_code_coding_code = f"vaccineCode.coding[?(@.system=='{Urls.SNOMED}')].code"
+    vaccine_code_coding_display = f"vaccineCode.coding[?(@.system=='{Urls.SNOMED}')].display"
     manufacturer_display = "manufacturer.display"
     lot_number = "lotNumber"
     expiration_date = "expirationDate"
-    site_coding_code = f"site.coding[?(@.system=='{Urls.snomed}')].code"
-    site_coding_display = f"site.coding[?(@.system=='{Urls.snomed}')].display"
-    route_coding_code = f"route.coding[?(@.system=='{Urls.snomed}')].code"
-    route_coding_display = f"route.coding[?(@.system=='{Urls.snomed}')].display"
+    site_coding_code = f"site.coding[?(@.system=='{Urls.SNOMED}')].code"
+    site_coding_display = f"site.coding[?(@.system=='{Urls.SNOMED}')].display"
+    route_coding_code = f"route.coding[?(@.system=='{Urls.SNOMED}')].code"
+    route_coding_display = f"route.coding[?(@.system=='{Urls.SNOMED}')].display"
     dose_quantity_value = "doseQuantity.value"
     dose_quantity_code = "doseQuantity.code"
     dose_quantity_unit = "doseQuantity.unit"

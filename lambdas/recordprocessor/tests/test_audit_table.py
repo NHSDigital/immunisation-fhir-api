@@ -28,11 +28,7 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
         update_audit_table_status,
     )
     from common.clients import REGION_NAME
-    from constants import (
-        AUDIT_TABLE_NAME,
-        FileStatus,
-    )
-
+    from common.models.batch_constants import AUDIT_TABLE_NAME, FileStatus
 
 dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
 
