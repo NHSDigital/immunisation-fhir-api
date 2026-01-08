@@ -159,16 +159,6 @@ resource "aws_iam_policy" "mesh_processor_lambda_exec_policy" {
           data.aws_s3_bucket.mesh[0].arn,
           "${data.aws_s3_bucket.mesh[0].arn}/*"
         ]
-      },
-      {
-        Effect   = "Allow"
-        Action   = "cloudwatch:PutMetricData"
-        Resource = "*"
-        Condition = {
-          StringEquals = {
-            "cloudwatch:namespace" = "${local.short_prefix}-MeshProcessorObjectCount"
-          }
-        }
       }
     ]
   })
@@ -231,7 +221,6 @@ resource "aws_lambda_function" "mesh_file_converter_lambda" {
     variables = {
       ACCOUNT_ID              = var.immunisation_account_id
       DESTINATION_BUCKET_NAME = aws_s3_bucket.batch_data_source_bucket.bucket
-      METRIC_NAMESPACE        = "${local.short_prefix}-MeshProcessorObjectCount"
     }
   }
 }
@@ -303,15 +292,20 @@ resource "aws_cloudwatch_metric_alarm" "mesh_processor_error_alarm" {
 resource "aws_cloudwatch_metric_alarm" "mesh_processor_no_lambda_invocation_alarm" {
   count = var.create_mesh_processor && var.error_alarm_notifications_enabled ? 1 : 0
 
-  alarm_name          = "${var.environment}-mesh-processor-no-lambda-invocation"
-  alarm_description   = "Triggers when the MESH Processor Lambda has no invocations for the configured time window."
-  comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = 1
-  metric_name         = "Invocations"
-  namespace           = "AWS/Lambda"
-  period              = 30
-  statistic           = "Sum"
+  alarm_name        = "imms-${var.environment}-mesh-processor-no-lambda-invocation"
+  alarm_description = "Triggers when the MESH Processor Lambda has no invocations for the configured time window."
+
+  metric_name = "Invocations"
+  namespace   = "AWS/Lambda"
+  statistic   = "Sum"
+  period      = 300
+
+  comparison_operator = "LessThanThreshold"
   threshold           = 1
-  alarm_actions       = [data.aws_sns_topic.imms_system_alert_errors.arn]
-  treat_missing_data  = "notBreaching"
+  treat_missing_data  = "breaching"
+  dimensions = {
+    function_name = aws_lambda_function.mesh_file_converter_lambda[0].function_name
+  }
+
+  alarm_actions = [data.aws_sns_topic.imms_system_alert_errors.arn]
 }
