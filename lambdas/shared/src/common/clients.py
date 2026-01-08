@@ -54,8 +54,26 @@ def get_secrets_manager_client():
     return global_secrets_manager_client
 
 
-dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
-dynamodb_resource = boto3_resource("dynamodb", region_name=REGION_NAME)
+global_dynamodb_client = None
+
+
+def get_dynamodb_client():
+    global global_dynamodb_client
+    if global_dynamodb_client is None:
+        global_dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
+    return global_dynamodb_client
+
+
+global_dynamodb_resource = None
+
+
+def get_dynamodb_resource():
+    global global_dynamodb_resource
+    if global_dynamodb_resource is None:
+        global_dynamodb_resource = boto3_resource("dynamodb", region_name=REGION_NAME)
+    return global_dynamodb_resource
+
+
 kinesis_client = boto3_client(
     "kinesis",
     region_name=REGION_NAME,

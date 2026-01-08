@@ -10,7 +10,7 @@ class TestAuditTable(unittest.TestCase):
     def setUp(self):
         self.logger_patcher = patch("audit_table.logger")
         self.mock_logger = self.logger_patcher.start()
-        self.dynamodb_client_patcher = patch("audit_table.dynamodb_client")
+        self.dynamodb_client_patcher = patch("common.clients.global_dynamodb_client")
         self.mock_dynamodb_client = self.dynamodb_client_patcher.start()
 
     def tearDown(self):
