@@ -4,7 +4,7 @@ import re
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
-from constants import Urls
+from common.models.constants import Urls
 
 
 def _is_not_empty(value: any) -> bool:

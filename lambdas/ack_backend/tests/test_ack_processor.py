@@ -63,6 +63,12 @@ class TestAckProcessor(unittest.TestCase):
         self.logger_info_patcher = patch("common.log_decorator.logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
 
+        self.ack_bucket_patcher = patch("update_ack_file.ACK_BUCKET_NAME", BucketNames.DESTINATION)
+        self.ack_bucket_patcher.start()
+
+        self.source_bucket_patcher = patch("update_ack_file.SOURCE_BUCKET_NAME", BucketNames.SOURCE)
+        self.source_bucket_patcher.start()
+
     def tearDown(self) -> None:
         GenericTearDown(self.s3_client, self.firehose_client, self.dynamodb_client)
         self.mock_logger_info.stop()

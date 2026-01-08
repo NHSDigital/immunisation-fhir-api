@@ -24,7 +24,7 @@ from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests impo
 )
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
-    from constants import Urls
+    from common.models.constants import Urls
     from convert_to_fhir_imms_resource import (
         _decorate_immunization,
         _decorate_patient,

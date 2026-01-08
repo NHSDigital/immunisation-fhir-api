@@ -2,7 +2,7 @@ import datetime
 from dataclasses import dataclass
 from typing import Optional
 
-from common.models.constants import Constants
+from common.models.constants import RedisHashKeys
 from common.models.utils.generic_utils import nhs_number_mod11_check
 from common.redis_client import get_redis_client
 from controller.constants import IdentifierSearchElement, IdentifierSearchParameterName, ImmunizationSearchParameterName
@@ -81,7 +81,7 @@ def process_immunization_target(imms_params: dict[str, list[str]]) -> set[str]:
             f"Search parameter {ImmunizationSearchParameterName.IMMUNIZATION_TARGET} must have one or more values."
         )
 
-    valid_vaccine_types = get_redis_client().hkeys(Constants.VACCINE_TYPE_TO_DISEASES_HASH_KEY)
+    valid_vaccine_types = get_redis_client().hkeys(RedisHashKeys.VACCINE_TYPE_TO_DISEASES_HASH_KEY)
     if any(x not in valid_vaccine_types for x in vaccine_types):
         raise ParameterExceptionError(
             f"{ImmunizationSearchParameterName.IMMUNIZATION_TARGET} must be one or more of the following: "

@@ -2,7 +2,7 @@
 
 from fhir.resources.R4B.identifier import Identifier
 
-from common.models.constants import Constants, Urls
+from common.models.constants import RedisHashKeys, Urls
 from common.models.errors import InconsistentIdentifierError, InconsistentResourceVersionError, MandatoryError
 from common.models.field_names import FieldNames
 from common.models.obtain_field_value import ObtainFieldValue
@@ -26,7 +26,7 @@ def get_target_disease_codes(immunization: dict):
     # For each item in the target disease list, extract the snomed code
     for i, element in enumerate(target_disease):
         try:
-            code = [x["code"] for x in element["coding"] if x.get("system") == Urls.snomed][0]
+            code = [x["code"] for x in element["coding"] if x.get("system") == Urls.SNOMED][0]
         except (KeyError, IndexError) as error:
             raise MandatoryError(
                 f"protocolApplied[0].targetDisease[{i}].coding[?(@.system=='http://snomed.info/sct')].code"
@@ -51,11 +51,11 @@ def convert_disease_codes_to_vaccine_type(
     otherwise raises a value error
     """
     key = ":".join(sorted(disease_codes_input))
-    vaccine_type = get_redis_client().hget(Constants.DISEASES_TO_VACCINE_TYPE_HASH_KEY, key)
+    vaccine_type = get_redis_client().hget(RedisHashKeys.DISEASES_TO_VACCINE_TYPE_HASH_KEY, key)
 
     if not vaccine_type:
         raise ValueError(
-            f"Validation errors: protocolApplied[0].targetDisease[*].coding[?(@.system=='{Urls.snomed}')].code"
+            f"Validation errors: protocolApplied[0].targetDisease[*].coding[?(@.system=='{Urls.SNOMED}')].code"
             f" - {disease_codes_input} is not a valid combination of disease codes for this service"
         )
     return vaccine_type
