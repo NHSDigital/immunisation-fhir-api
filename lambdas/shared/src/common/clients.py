@@ -15,6 +15,12 @@ CONFIG_BUCKET_NAME = os.getenv("CONFIG_BUCKET_NAME", "variconfig-bucketable-not-
 REGION_NAME = os.getenv("AWS_REGION", "eu-west-2")
 
 global_s3_client = None
+global_sqs_client = None
+global_firehose_client = None
+global_secrets_manager_client = None
+global_dynamodb_client = None
+global_dynamodb_resource = None
+global_kinesis_client = None
 
 
 def get_s3_client():
@@ -24,17 +30,11 @@ def get_s3_client():
     return global_s3_client
 
 
-global_sqs_client = None
-
-
 def get_sqs_client():
     global global_sqs_client
     if global_sqs_client is None:
         global_sqs_client = boto3_client("sqs", region_name=REGION_NAME)
     return global_sqs_client
-
-
-global_firehose_client = None
 
 
 def get_firehose_client():
@@ -44,17 +44,11 @@ def get_firehose_client():
     return global_firehose_client
 
 
-global_secrets_manager_client = None
-
-
 def get_secrets_manager_client():
     global global_secrets_manager_client
     if global_secrets_manager_client is None:
         global_secrets_manager_client = boto3_client("secretsmanager", region_name=REGION_NAME)
     return global_secrets_manager_client
-
-
-global_dynamodb_client = None
 
 
 def get_dynamodb_client():
@@ -64,17 +58,11 @@ def get_dynamodb_client():
     return global_dynamodb_client
 
 
-global_dynamodb_resource = None
-
-
 def get_dynamodb_resource():
     global global_dynamodb_resource
     if global_dynamodb_resource is None:
         global_dynamodb_resource = boto3_resource("dynamodb", region_name=REGION_NAME)
     return global_dynamodb_resource
-
-
-global_kinesis_client = None
 
 
 def get_kinesis_client():
