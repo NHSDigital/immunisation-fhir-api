@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import Mock, patch
 
-from mesh_backlog_metric import publish_mesh_backlog_metric
+from mesh_backlog_metric import publish_mesh_object_event_metric
 
 
 class TestMeshBacklogMetric(unittest.TestCase):
@@ -11,7 +11,7 @@ class TestMeshBacklogMetric(unittest.TestCase):
         mock_boto_client.return_value = mock_cloudwatch
 
         with patch("mesh_backlog_metric.METRIC_NAMESPACE", "imms-preprod-MeshProcessorObjectCount"):
-            publish_mesh_backlog_metric("TestMetric", 5, bucket="test-bucket")
+            publish_mesh_object_event_metric("TestMetric", 5, bucket="test-bucket")
 
         mock_boto_client.assert_called_once_with("cloudwatch")
         mock_cloudwatch.put_metric_data.assert_called_once_with(
@@ -33,4 +33,4 @@ class TestMeshBacklogMetric(unittest.TestCase):
         mock_boto_client.return_value = mock_cloudwatch
 
         with patch("mesh_backlog_metric.METRIC_NAMESPACE", "imms-preprod-MeshProcessorObjectCount"):
-            publish_mesh_backlog_metric("TestMetric", 5, bucket="test-bucket")
+            publish_mesh_object_event_metric("TestMetric", 5, bucket="test-bucket")

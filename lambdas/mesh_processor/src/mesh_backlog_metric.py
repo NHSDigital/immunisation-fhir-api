@@ -7,7 +7,7 @@ from common.clients import logger
 METRIC_NAMESPACE = os.getenv("METRIC_NAMESPACE")
 
 
-def publish_mesh_backlog_metric(metric_name: str, value: float, bucket: str) -> None:
+def publish_mesh_object_event_metric(metric_name: str, object_processed: int, bucket: str) -> None:
     try:
         cloudwatch = boto3.client("cloudwatch")
         cloudwatch.put_metric_data(
@@ -17,7 +17,7 @@ def publish_mesh_backlog_metric(metric_name: str, value: float, bucket: str) -> 
                     "MetricName": metric_name,
                     "Dimensions": [{"Name": "Bucket", "Value": bucket}],
                     "Unit": "Count",
-                    "Value": value,
+                    "Value": object_processed,
                 }
             ],
         )
