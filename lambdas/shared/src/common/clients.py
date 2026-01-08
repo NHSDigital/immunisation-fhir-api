@@ -44,7 +44,16 @@ def get_firehose_client():
     return global_firehose_client
 
 
-secrets_manager_client = boto3_client("secretsmanager", region_name=REGION_NAME)
+global_secrets_manager_client = None
+
+
+def get_secrets_manager_client():
+    global global_secrets_manager_client
+    if global_secrets_manager_client is None:
+        global_secrets_manager_client = boto3_client("secretsmanager", region_name=REGION_NAME)
+    return global_secrets_manager_client
+
+
 dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
 dynamodb_resource = boto3_resource("dynamodb", region_name=REGION_NAME)
 kinesis_client = boto3_client(
