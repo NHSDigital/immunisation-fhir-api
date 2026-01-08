@@ -48,10 +48,14 @@ class Constants:
 
     ALLOWED_CONTAINED_RESOURCES = {"Practitioner", "Patient"}
 
-    # As per Personal Demographics Service FHIR API, the maximum length of a given name element or surname is 35 chars.
-    # Given name is a list with a maximum 5 elements. For more info see:
+    # As per Personal Demographics Service (PDS) FHIR API, the maximum length of a family name is 35 characters:
     # https://digital.nhs.uk/developer/api-catalogue/personal-demographics-service-fhir#post-/Patient
-    PERSON_NAME_ELEMENT_MAX_LENGTH = 35
+    FAMILY_NAME_MAX_LENGTH = 35
+
+    # VED-980 The PDS constraint is that the given name list entry has a maximum of 5 entries and each item may be a
+    # maximum of 35 characters. Due to batch limitations, all entries are concatenated into one string. Therefore, the
+    # Imms FHIR API team agreed to use a more lenient figure given the nature of data flows we handle
+    GIVEN_NAME_ELEMENT_MAX_LENGTH = 180
 
     COMPLETED_STATUS = "completed"
     REINSTATED_RECORD_STATUS = "reinstated"
