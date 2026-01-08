@@ -10,7 +10,7 @@ class TestLogFirehose(unittest.TestCase):
         self.test_stream = "test-stream"
         self.logger_exception_patcher = patch("common.log_firehose.logger.exception")
         self.mock_logger_exception = self.logger_exception_patcher.start()
-        self.firehose_client_patcher = patch("common.log_firehose.firehose_client")
+        self.firehose_client_patcher = patch("common.clients.global_firehose_client")
         self.mock_firehose_client = self.firehose_client_patcher.start()
 
     def tearDown(self):

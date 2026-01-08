@@ -10,7 +10,7 @@ class TestLoggingDecorators(unittest.TestCase):
         # Patch logger and firehose_client
         self.logger_patcher = patch("common.log_decorator.logger")
         self.mock_logger = self.logger_patcher.start()
-        self.firehose_patcher = patch("common.log_firehose.firehose_client")
+        self.firehose_patcher = patch("common.clients.global_firehose_client")
         self.mock_firehose = self.firehose_patcher.start()
 
         self.source_bucket_patcher = patch("update_ack_file.SOURCE_BUCKET_NAME", BucketNames.SOURCE)

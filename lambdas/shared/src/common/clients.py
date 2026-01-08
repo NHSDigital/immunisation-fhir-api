@@ -34,7 +34,16 @@ def get_sqs_client():
     return global_sqs_client
 
 
-firehose_client = boto3_client("firehose", region_name=REGION_NAME)
+global_firehose_client = None
+
+
+def get_firehose_client():
+    global global_firehose_client
+    if global_firehose_client is None:
+        global_firehose_client = boto3_client("firehose", region_name=REGION_NAME)
+    return global_firehose_client
+
+
 secrets_manager_client = boto3_client("secretsmanager", region_name=REGION_NAME)
 dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
 dynamodb_resource = boto3_resource("dynamodb", region_name=REGION_NAME)
