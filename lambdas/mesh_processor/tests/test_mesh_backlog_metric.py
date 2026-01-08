@@ -34,3 +34,15 @@ class TestMeshBacklogMetric(unittest.TestCase):
 
         with patch("mesh_backlog_metric.METRIC_NAMESPACE", "imms-preprod-MeshProcessorObjectCount"):
             publish_mesh_object_event_metric("TestMetric", 5, bucket="test-bucket")
+
+    @patch("mesh_backlog_metric.boto3.client")
+    @patch("mesh_backlog_metric.logger")
+    def test_publish_mesh_metric_logs_exception_on_failure(self, mock_logger, mock_boto_client):
+        mock_cloudwatch = Mock()
+        mock_cloudwatch.put_metric_data.side_effect = Exception("error")
+        mock_boto_client.return_value = mock_cloudwatch
+
+        with patch("mesh_backlog_metric.METRIC_NAMESPACE", "imms-preprod-MeshProcessorObjectCount"):
+            publish_mesh_object_event_metric("TestMetric", 5, bucket="test-bucket")
+
+        mock_logger.exception.assert_called_once_with("Failed to publish CloudWatch metric")
