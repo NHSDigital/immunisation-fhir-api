@@ -4,16 +4,10 @@ from typing import BinaryIO
 from smart_open import open
 
 from common.clients import get_s3_client, logger
-from constants import (
-    INBOUND_MESH_OBJECT_METRIC,
-    OBJECT_PROCESSED_EVENT_COUNT,
-    OUTBOUND_MESH_OBJECT_METRIC,
-    UNEXPECTED_EOF_ERROR,
-)
-from mesh_backlog_metric import publish_mesh_object_event_metric
 
 EXPECTED_BUCKET_OWNER_ACCOUNT = os.getenv("ACCOUNT_ID")
 DESTINATION_BUCKET_NAME = os.getenv("DESTINATION_BUCKET_NAME")
+UNEXPECTED_EOF_ERROR = "Unexpected EOF"
 
 
 def parse_headers(headers_str: str) -> dict[str, str]:
@@ -125,9 +119,6 @@ def process_record(record: dict) -> None:
     file_key = record["s3"]["object"]["key"]
     logger.info(f"Processing {file_key}")
 
-    # For every mesh inbound object from upstream, publish a metric with a count of 1
-    publish_mesh_object_event_metric(INBOUND_MESH_OBJECT_METRIC, OBJECT_PROCESSED_EVENT_COUNT, bucket=bucket_name)
-
     s3_client = get_s3_client()
     response = s3_client.head_object(
         Bucket=bucket_name,
@@ -157,9 +148,6 @@ def process_record(record: dict) -> None:
     move_file(bucket_name, file_key, bucket_name, f"archive/{file_key}")
 
     logger.info(f"Archived {file_key}")
-
-    # For every outbound object leaving the mesh processor bucket, publish a metric with a count of 1
-    publish_mesh_object_event_metric(OUTBOUND_MESH_OBJECT_METRIC, OBJECT_PROCESSED_EVENT_COUNT, bucket=bucket_name)
 
 
 def lambda_handler(event: dict, _context: dict) -> dict:

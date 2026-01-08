@@ -300,51 +300,18 @@ resource "aws_cloudwatch_metric_alarm" "mesh_processor_error_alarm" {
   treat_missing_data  = "notBreaching"
 }
 
-resource "aws_cloudwatch_metric_alarm" "mesh_s3_backlog" {
+resource "aws_cloudwatch_metric_alarm" "mesh_processor_no_lambda_invocation_alarm" {
   count = var.create_mesh_processor && var.error_alarm_notifications_enabled ? 1 : 0
 
-  alarm_name          = "${local.short_prefix}-mesh-processor-object-count"
-  alarm_description   = "Triggers when the number of inbound objects received from upstream exceeds the number of successfully processed objects in the mesh processor."
-  comparison_operator = "GreaterThanThreshold"
-  threshold           = 25
-  evaluation_periods  = 3
-  datapoints_to_alarm = 3
+  alarm_name          = "${var.environment}-mesh-processor-no-lambda-invocation"
+  alarm_description   = "Triggers when the MESH Processor Lambda has no invocations for the configured time window."
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = "Invocations"
+  namespace           = "AWS/Lambda"
+  period              = 30
+  statistic           = "Sum"
+  threshold           = 1
+  alarm_actions       = [data.aws_sns_topic.imms_system_alert_errors.arn]
   treat_missing_data  = "notBreaching"
-
-  metric_query {
-    id          = "in"
-    return_data = false
-    metric {
-      namespace   = "${local.short_prefix}-MeshProcessorObjectCount"
-      metric_name = "MeshObjectsIn"
-      stat        = "Sum"
-      period      = 300
-      dimensions = {
-        Bucket = data.aws_s3_bucket.mesh[0].bucket
-      }
-    }
-  }
-
-  metric_query {
-    id          = "out"
-    return_data = false
-    metric {
-      namespace   = "${local.short_prefix}-MeshProcessorObjectCount"
-      metric_name = "MeshObjectsOut"
-      stat        = "Sum"
-      period      = 300
-      dimensions = {
-        Bucket = data.aws_s3_bucket.mesh[0].bucket
-      }
-    }
-  }
-
-  metric_query {
-    id          = "backlog"
-    expression  = "in - out"
-    label       = "MeshBacklog"
-    return_data = true
-  }
-
-  alarm_actions = [data.aws_sns_topic.imms_system_alert_errors.arn]
 }
