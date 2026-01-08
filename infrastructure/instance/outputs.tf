@@ -14,11 +14,7 @@ output "aws_sqs_queue_name" {
   value = aws_sqs_queue.dlq.name
 }
 
-output "aws_sns_topic_name" {
-  value = aws_sns_topic.delta_sns.name
-}
-
 output "id_sync_queue_arn" {
-  description = "The ARN of the created SQS queue"
+  description = "The ARN of the ID Sync (MNS NHS Number change) SQS queue"
   value       = aws_sqs_queue.id_sync_queue.arn
 }
