@@ -3,6 +3,8 @@ immunisation_account_id           = "664418956997"
 dspp_core_account_id              = "232116723729"
 pds_environment                   = "prod"
 error_alarm_notifications_enabled = true
+
+# mesh no invocation period metric set to 1 day (in seconds) for prod environment i.e 1 * 24 * 60 * 60
 mesh_no_invocation_period_seconds = 86400
 create_mesh_processor             = true
 has_sub_environment_scope         = false
