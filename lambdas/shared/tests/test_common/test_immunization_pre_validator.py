@@ -504,8 +504,11 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
                 "contained[?(@.resourceType=='Patient')].name[0].given must be an array of maximum length 5",
             ),
             (
-                ["Stringtoolongeruti olgkriahfyrtoiuhg"],
-                "contained[?(@.resourceType=='Patient')].name[0].given[0] must be 35 or fewer characters",
+                [
+                    "Stringtoolongtoolongtoolongtoolongt Stringtoolongtoolongtoolongtoolongt Stringtoolongtoolongtoolongto"
+                    "olongt Stringtoolongtoolongtoolongtoolongt Stringtoolongtoolongtoolongtoolongt Oops"
+                ],
+                "contained[?(@.resourceType=='Patient')].name[0].given[0] must be 180 or fewer characters",
             ),
         ]
 
@@ -546,7 +549,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
             self,
             field_location=patient_name_family_field_location(valid_json_data),
             valid_strings_to_test=["test", "Quitelongsurname", "Surnamewithjustthirtyfivecharacters"],
-            max_length=Constants.PERSON_NAME_ELEMENT_MAX_LENGTH,
+            max_length=Constants.FAMILY_NAME_MAX_LENGTH,
             invalid_length_strings_to_test=["Surnamethathasgotthirtysixcharacters"],
         )
 
