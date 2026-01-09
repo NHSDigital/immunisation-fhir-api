@@ -292,13 +292,13 @@ resource "aws_cloudwatch_metric_alarm" "mesh_processor_error_alarm" {
 resource "aws_cloudwatch_metric_alarm" "mesh_processor_no_lambda_invocation_alarm" {
   count = var.create_mesh_processor && var.error_alarm_notifications_enabled ? 1 : 0
 
-  alarm_name        = "imms-${var.environment}-mesh-processor-no-lambda-invocation"
+  alarm_name        = "imms-${local.resource_scope}-mesh-processor-no-lambda-invocation"
   alarm_description = "Triggers when the MESH Processor Lambda has no invocations for the configured time window."
 
   metric_name = "Invocations"
   namespace   = "AWS/Lambda"
   statistic   = "Sum"
-  period      = var.mesh_no_invocation_period_seconds
+  period      = var.mesh_alarm_max_no_invocation_period_seconds
 
   evaluation_periods  = 1
   comparison_operator = "LessThanThreshold"

@@ -40,10 +40,10 @@ variable "pds_environment" {
   default = "int"
 }
 
-variable "mesh_no_invocation_period_seconds" {
-  description = "The period, in seconds, over which the specified statistic is applied."
+variable "mesh_alarm_max_no_invocation_period_seconds" {
+  description = "The maximum duration the MESH Processor Lambda can go without being invoked before the no-invocation alarm is triggered."
   type        = number
-  default     = 120
+  default     = 300
 }
 
 # Remember to switch off in PR envs after testing
