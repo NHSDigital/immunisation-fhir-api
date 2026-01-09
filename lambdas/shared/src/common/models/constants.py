@@ -54,7 +54,8 @@ class Constants:
 
     # VED-980 The PDS constraint is that the given name list entry has a maximum of 5 entries and each item may be a
     # maximum of 35 characters. Due to batch limitations, all entries are concatenated into one string. Therefore, the
-    # Imms FHIR API team agreed to use a more lenient figure given the nature of data flows we handle
+    # Imms FHIR API team agreed to use a more lenient figure given the nature of data flows we handle. i.e 5 * 35 +
+    # some extra wriggle room i.e. spaces between.
     GIVEN_NAME_ELEMENT_MAX_LENGTH = 180
 
     COMPLETED_STATUS = "completed"
