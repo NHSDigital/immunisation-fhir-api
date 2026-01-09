@@ -288,3 +288,25 @@ resource "aws_cloudwatch_metric_alarm" "mesh_processor_error_alarm" {
   alarm_actions       = [data.aws_sns_topic.imms_system_alert_errors.arn]
   treat_missing_data  = "notBreaching"
 }
+
+resource "aws_cloudwatch_metric_alarm" "mesh_processor_no_lambda_invocation_alarm" {
+  count = var.create_mesh_processor && var.error_alarm_notifications_enabled ? 1 : 0
+
+  alarm_name        = "imms-${local.resource_scope}-mesh-processor-no-lambda-invocation"
+  alarm_description = "Triggers when the MESH Processor Lambda has no invocations for the configured time window."
+
+  metric_name = "Invocations"
+  namespace   = "AWS/Lambda"
+  statistic   = "Sum"
+  period      = var.mesh_no_invocation_period_seconds
+
+  evaluation_periods  = 1
+  comparison_operator = "LessThanThreshold"
+  threshold           = 1
+  treat_missing_data  = "breaching"
+  dimensions = {
+    FunctionName = aws_lambda_function.mesh_file_converter_lambda[0].function_name
+  }
+
+  alarm_actions = [data.aws_sns_topic.imms_system_alert_errors.arn]
+}
