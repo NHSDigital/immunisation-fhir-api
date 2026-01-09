@@ -40,6 +40,12 @@ variable "pds_environment" {
   default = "int"
 }
 
+variable "mesh_no_invocation_period_seconds" {
+  description = "The period, in seconds, over which the specified statistic is applied."
+  type        = number
+  default     = 120
+}
+
 # Remember to switch off in PR envs after testing
 variable "error_alarm_notifications_enabled" {
   default     = true

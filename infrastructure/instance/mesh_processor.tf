@@ -298,16 +298,14 @@ resource "aws_cloudwatch_metric_alarm" "mesh_processor_no_lambda_invocation_alar
   metric_name = "Invocations"
   namespace   = "AWS/Lambda"
   statistic   = "Sum"
-  period      = 300
+  period      = var.mesh_no_invocation_period_seconds
 
   evaluation_periods  = 1
-  datapoints_to_alarm = 1
-
   comparison_operator = "LessThanThreshold"
   threshold           = 1
   treat_missing_data  = "breaching"
   dimensions = {
-    function_name = aws_lambda_function.mesh_file_converter_lambda[0].function_name
+    FunctionName = aws_lambda_function.mesh_file_converter_lambda[0].function_name
   }
 
   alarm_actions = [data.aws_sns_topic.imms_system_alert_errors.arn]
