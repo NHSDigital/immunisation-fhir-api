@@ -125,7 +125,7 @@ data "aws_iam_policy_document" "replication_allow_destination" {
 
 resource "aws_iam_policy" "replication_allow_destination" {
   count  = var.has_sub_environment_scope ? 0 : 1
-  name   = "${local.batch_prefix}-destination"
+  name   = "allow-replication-to-${var.sub_environment}-data-sources"
   policy = data.aws_iam_policy_document.replication_allow_destination[0].json
 }
 
