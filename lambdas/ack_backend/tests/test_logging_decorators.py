@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import patch
 
 import logging_decorators
+from utils.mock_environment_variables import BucketNames
 
 
 class TestLoggingDecorators(unittest.TestCase):
@@ -11,6 +12,9 @@ class TestLoggingDecorators(unittest.TestCase):
         self.mock_logger = self.logger_patcher.start()
         self.firehose_patcher = patch("common.log_firehose.firehose_client")
         self.mock_firehose = self.firehose_patcher.start()
+
+        self.source_bucket_patcher = patch("update_ack_file.SOURCE_BUCKET_NAME", BucketNames.SOURCE)
+        self.source_bucket_patcher.start()
 
     def tearDown(self):
         self.logger_patcher.stop()

@@ -93,9 +93,6 @@ data "aws_iam_policy_document" "delta_policy_document" {
     templatefile("${local.policy_path}/dynamo_key_access.json", {
       "dynamo_encryption_key" : data.aws_kms_key.existing_dynamo_encryption_key.arn
     }),
-    templatefile("${local.policy_path}/aws_sns_topic.json", {
-      "aws_sns_topic_name" : aws_sns_topic.delta_sns.name
-    }),
     templatefile("${local.policy_path}/log_kinesis.json", {
       "kinesis_stream_name" : module.splunk.firehose_stream_name
     }),
@@ -159,7 +156,7 @@ resource "aws_lambda_event_source_mapping" "delta_trigger" {
   starting_position = "TRIM_HORIZON"
   destination_config {
     on_failure {
-      destination_arn = aws_sns_topic.delta_sns.arn
+      destination_arn = aws_sqs_queue.dlq.arn
     }
   }
   maximum_retry_attempts = 0
@@ -168,10 +165,6 @@ resource "aws_lambda_event_source_mapping" "delta_trigger" {
 
 resource "aws_sqs_queue" "dlq" {
   name = "${local.short_prefix}-${local.dlq_name}"
-}
-
-resource "aws_sns_topic" "delta_sns" {
-  name = "${local.short_prefix}-${local.sns_name}"
 }
 
 resource "aws_cloudwatch_log_group" "delta_lambda" {

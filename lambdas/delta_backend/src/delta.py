@@ -37,12 +37,9 @@ def get_delta_table():
     return delta_table
 
 
-def send_message(record, queue_url=failure_queue_url):
-    # Create a message
-    message_body = record
+def send_record_to_dlq(record: dict) -> None:
     try:
-        # Send the record to the queue
-        get_sqs_client().send_message(QueueUrl=queue_url, MessageBody=json.dumps(message_body))
+        get_sqs_client().send_message(QueueUrl=failure_queue_url, MessageBody=json.dumps(record))
         logger.info("Record saved successfully to the DLQ")
     except Exception:
         logger.exception("Error sending record to DLQ")
@@ -207,36 +204,23 @@ def process_record(record):
         return False, {"statusCode": "500", "statusDesc": "Exception", "diagnostics": e}
 
 
-def handler(event, _context):
-    overall_success = True
+def handler(event, _context) -> bool:
     logger.info("Starting Delta Handler")
-    try:
-        for record in event["Records"]:
-            datetime_str = datetime.now().isoformat()
-            start = time.time()
-            success, operation_outcome = process_record(record)
-            overall_success = overall_success and success
-            end = time.time()
-            log_data = {
-                "function_name": "delta_sync",
-                "operation_outcome": operation_outcome,
-                "date_time": datetime_str,
-                "time_taken": f"{round(end - start, 5)}s",
-            }
-            send_log_to_firehose(STREAM_NAME, log_data)
-    except Exception:
-        overall_success = False
-        operation_outcome = {
-            "statusCode": "500",
-            "statusDesc": "Exception",
-            "diagnostics": "Delta Lambda failure: Incorrect invocation of Lambda",
+
+    for record in event["Records"]:
+        record_ingestion_datetime = datetime.now().isoformat()
+        record_processing_start = time.time()
+        success, operation_outcome = process_record(record)
+        record_processing_end = time.time()
+        log_data = {
+            "function_name": "delta_sync",
+            "operation_outcome": operation_outcome,
+            "date_time": record_ingestion_datetime,
+            "time_taken": f"{round(record_processing_end - record_processing_start, 5)}s",
         }
-        logger.exception(operation_outcome["diagnostics"])
-        send_message(event)  # Send failed records to DLQ
-        log_data = {"function_name": "delta_sync", "operation_outcome": operation_outcome}
         send_log_to_firehose(STREAM_NAME, log_data)
 
-    if not overall_success:
-        send_message(event)
+        if not success:
+            send_record_to_dlq(record)
 
-    return overall_success
+    return True
