@@ -40,10 +40,6 @@ class TestClients(unittest.TestCase):
         self.boto3_client_patch.stop()
 
     def test_global_s3_client(self):
-        """Test global_s3_client is not initialized on import"""
-        self.assertEqual(common.clients.global_s3_client, None)
-
-    def test_global_s3_client_initialization(self):
         """Test global_s3_client is initialized exactly once even with multiple invocations"""
         common.clients.get_s3_client()
         self.assertNotEqual(common.clients.global_s3_client, None)
@@ -52,10 +48,6 @@ class TestClients(unittest.TestCase):
         self.assertEqual(self.mock_boto3_client.call_count, call_count)
 
     def test_global_sqs_client(self):
-        """Test global_sqs_client is not initialized on import"""
-        self.assertEqual(common.clients.global_sqs_client, None)
-
-    def test_global_sqs_client_initialization(self):
         """Test global_sqs_client is initialized exactly once even with multiple invocations"""
         common.clients.get_sqs_client()
         self.assertNotEqual(common.clients.global_sqs_client, None)
@@ -64,10 +56,6 @@ class TestClients(unittest.TestCase):
         self.assertEqual(self.mock_boto3_client.call_count, call_count)
 
     def test_global_firehose_client(self):
-        """Test global_firehose_client is not initialized on import"""
-        self.assertEqual(common.clients.global_firehose_client, None)
-
-    def test_global_firehose_client_initialization(self):
         """Test global_firehose_client is initialized exactly once even with multiple invocations"""
         common.clients.get_firehose_client()
         self.assertNotEqual(common.clients.global_firehose_client, None)
@@ -76,10 +64,6 @@ class TestClients(unittest.TestCase):
         self.assertEqual(self.mock_boto3_client.call_count, call_count)
 
     def test_global_secrets_manager_client(self):
-        """Test global_secrets_manager_client is not initialized on import"""
-        self.assertEqual(common.clients.global_secrets_manager_client, None)
-
-    def test_global_secrets_manager_client_initialization(self):
         """Test global_secrets_manager_client is initialized exactly once even with multiple invocations"""
         common.clients.get_secrets_manager_client()
         self.assertNotEqual(common.clients.global_secrets_manager_client, None)
@@ -88,10 +72,6 @@ class TestClients(unittest.TestCase):
         self.assertEqual(self.mock_boto3_client.call_count, call_count)
 
     def test_global_dynamodb_client(self):
-        """Test global_dynamodb_client is not initialized on import"""
-        self.assertEqual(common.clients.global_dynamodb_client, None)
-
-    def test_global_dynamodb_client_initialization(self):
         """Test global_dynamodb_client is initialized exactly once even with multiple invocations"""
         common.clients.get_dynamodb_client()
         self.assertNotEqual(common.clients.global_dynamodb_client, None)
@@ -100,10 +80,6 @@ class TestClients(unittest.TestCase):
         self.assertEqual(self.mock_boto3_client.call_count, call_count)
 
     def test_global_dynamodb_resource(self):
-        """Test global_dynamodb_resource is not initialized on import"""
-        self.assertEqual(common.clients.global_dynamodb_resource, None)
-
-    def test_global_dynamodb_resource_initialization(self):
         """Test global_dynamodb_resource is initialized exactly once even with multiple invocations"""
         common.clients.get_dynamodb_resource()
         self.assertNotEqual(common.clients.global_dynamodb_resource, None)
@@ -112,10 +88,6 @@ class TestClients(unittest.TestCase):
         self.assertEqual(self.mock_boto3_client.call_count, call_count)
 
     def test_global_kinesis_client(self):
-        """Test global_kinesis_client is not initialized on import"""
-        self.assertEqual(common.clients.global_kinesis_client, None)
-
-    def test_global_kinesis_client_initialization(self):
         """Test global_kinesis_client is initialized exactly once even with multiple invocations"""
         common.clients.get_kinesis_client()
         self.assertNotEqual(common.clients.global_kinesis_client, None)
