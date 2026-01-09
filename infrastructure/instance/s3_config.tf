@@ -145,8 +145,10 @@ resource "aws_s3_bucket_replication_configuration" "replication" {
     priority = strcontains(var.sub_environment, "blue") ? 0 : 1
     status   = "Enabled"
 
-    filter {
-      prefix = ""
+    filter {}
+
+    delete_marker_replication {
+      status = "Disabled"
     }
 
     destination {
@@ -174,8 +176,10 @@ resource "aws_s3_bucket_replication_configuration" "replication" {
     priority = strcontains(var.sub_environment, "blue") ? 1 : 0
     status   = "Disabled"
 
-    filter {
-      prefix = ""
+    filter {}
+
+    delete_marker_replication {
+      status = "Disabled"
     }
 
     destination {
