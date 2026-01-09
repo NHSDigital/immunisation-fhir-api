@@ -301,7 +301,8 @@ class PreValidators:
     def pre_validate_patient_name_given(self, values: dict) -> None:
         """
         Pre-validate that, if contained[?(@.resourceType=='Patient')].name[{index}].given index dynamically determined
-        (legacy CSV field name:PERSON_FORENAME) exists, then it is an array containing a single non-empty string
+        (legacy CSV field name:PERSON_FORENAME) exists, then it is an array containing a maximum of 5 items an no items
+        may exceed the GIVEN_NAME_ELEMENT_MAX_LENGTH value
         """
         field_location = patient_name_given_field_location(values)
 
@@ -312,7 +313,7 @@ class PreValidators:
                 field_location,
                 elements_are_strings=True,
                 max_length=5,
-                string_element_max_length=Constants.PERSON_NAME_ELEMENT_MAX_LENGTH,
+                string_element_max_length=Constants.GIVEN_NAME_ELEMENT_MAX_LENGTH,
             )
         except (KeyError, IndexError, AttributeError):
             pass
@@ -320,13 +321,13 @@ class PreValidators:
     def pre_validate_patient_name_family(self, values: dict) -> None:
         """
         Pre-validate that, if a contained[?(@.resourceType=='Patient')].name[{index}].family (legacy CSV field name:
-        PERSON_SURNAME) exists, index dynamically determined then it is a non-empty string of maximum length
-        35 characters
+        PERSON_SURNAME) exists, index dynamically determined then it is a non-empty string no longer than the
+        FAMILY_NAME_MAX_LENGTH value
         """
         field_location = patient_name_family_field_location(values)
         try:
             field_value, _ = patient_and_practitioner_value_and_index(values, "family", "Patient")
-            PreValidation.for_string(field_value, field_location, max_length=Constants.PERSON_NAME_ELEMENT_MAX_LENGTH)
+            PreValidation.for_string(field_value, field_location, max_length=Constants.FAMILY_NAME_MAX_LENGTH)
         except (KeyError, IndexError, AttributeError):
             pass
 
