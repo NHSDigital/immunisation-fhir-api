@@ -17,6 +17,7 @@ from common.clients import STREAM_NAME, get_s3_client, logger
 from common.log_decorator import logging_decorator
 from common.models.batch_constants import SOURCE_BUCKET_NAME, FileNotProcessedReason, FileStatus
 from common.models.errors import UnhandledAuditTableError
+from common.models.utils.ack_file_utils import make_and_upload_ack_file
 from constants import (
     DPS_DESTINATION_BUCKET_NAME,
     DPS_DESTINATION_PREFIX,
@@ -27,7 +28,6 @@ from constants import (
     EXTENDED_ATTRIBUTES_FILE_PREFIX,
 )
 from file_validation import is_file_in_directory_root, validate_batch_file_key, validate_extended_attributes_file_key
-from make_and_upload_ack_file import make_and_upload_the_ack_file
 from models.errors import (
     InvalidFileKeyError,
     UnhandledSqsError,
@@ -219,8 +219,7 @@ def handle_batch_file(
         )
 
         # Create ack file
-        message_delivered = False
-        make_and_upload_the_ack_file(message_id, file_key, message_delivered, created_at_formatted_string)
+        make_and_upload_ack_file(message_id, file_key, False, False, created_at_formatted_string)
 
         # Move file to archive
         move_file(bucket_name, file_key, f"archive/{file_key}")
