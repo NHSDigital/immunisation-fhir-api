@@ -298,7 +298,7 @@ resource "aws_cloudwatch_metric_alarm" "mesh_processor_no_lambda_invocation_alar
   metric_name = "Invocations"
   namespace   = "AWS/Lambda"
   statistic   = "Sum"
-  period      = var.mesh_alarm_max_no_invocation_period_seconds
+  period      = var.mesh_no_invocation_period_seconds
 
   evaluation_periods  = 1
   comparison_operator = "LessThanThreshold"

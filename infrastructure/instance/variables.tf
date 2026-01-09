@@ -40,7 +40,7 @@ variable "pds_environment" {
   default = "int"
 }
 
-variable "mesh_alarm_max_no_invocation_period_seconds" {
+variable "mesh_no_invocation_period_seconds" {
   description = "The maximum duration the MESH Processor Lambda can go without being invoked before the no-invocation alarm is triggered."
   type        = number
   default     = 300
