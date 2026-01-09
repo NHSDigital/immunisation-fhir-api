@@ -1,0 +1,163 @@
+name: FHIR API and Batch Automation - E2E Tests
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: "internal-qa"
+        type: choice
+        options:
+          - internal-qa
+          - int
+      testPath:
+        description: "Test to execute"
+        required: true
+        default: "APITests"
+        type: choice
+        options:
+          - APITests
+          - batchTests
+          - API&batchTests
+      testFilter:
+        description: "Tag filter for tests"
+        required: false
+        default: "functional"
+        type: choice
+        options:
+          - smoke
+          - functional
+          - Batch_File_Validation_Feature 
+
+permissions:
+  contents: write
+  id-token: write
+  checks: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'workflow_dispatch' && (inputs.environment || 'internal-qa') }}
+    env:
+      S3_ENV: ${{ github.event_name == 'workflow_dispatch' && (inputs.environment || 'internal-qa') }}
+
+    steps:
+      - name: Connect to AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: eu-west-2
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_IAM_ACCOUNT }}:role/auto-ops
+          role-session-name: github-actions
+
+      - name: Whoami
+        run: aws sts get-caller-identity
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          set -o pipefail
+          python -m venv venv
+          source venv/bin/activate
+          python -m pip install --upgrade pip 2> pip_error.log || { cat pip_error.log; exit 1; }
+          pip install -r requirements.txt 2> req_error.log || { cat req_error.log; exit 1; }
+          pip install allure-pytest 2> allure_error.log || { cat allure_error.log; exit 1; }
+          
+      - name: Run Pytest-BDD tests for ${{ github.event_name == 'workflow_dispatch' && (inputs.testPath || 'API&batchTests') }} with filter ${{ github.event_name == 'workflow_dispatch' && (inputs.testFilter || 'functional') }}
+        env: 
+          S3_env: ${{ env.S3_ENV }}
+          auth_url: https://${{ env.S3_ENV }}.api.service.nhs.uk/oauth2-mock/authorize
+          token_url: https://${{ env.S3_ENV }}.api.service.nhs.uk/oauth2-mock/token
+          baseUrl: https://${{ env.S3_ENV }}.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4
+          callback_url: 'https://oauth.pstmn.io/v1/callback'
+          Postman_Auth_client_Id: ${{ secrets.Postman_Auth_client_Id }}
+          Postman_Auth_client_Secret: ${{ secrets.Postman_Auth_client_Secret }}
+          username: ${{ secrets.username }}
+          scope: 'nhs-cis2'
+          RAVS_client_Id: ${{ secrets.RAVS_client_Id }}
+          RAVS_client_Secret: ${{ secrets.RAVS_client_Secret }}
+          MAVIS_client_Id: ${{ secrets.MAVIS_client_Id }}
+          MAVIS_client_Secret: ${{ secrets.MAVIS_client_Secret }}
+          EMIS_client_Id: ${{ secrets.OPTUM_client_Id }}
+          EMIS_client_Secret: ${{ secrets.OPTUM_client_Secret }}
+          TPP_client_Id: ${{ secrets.TPP_client_Id }}
+          TPP_client_Secret: ${{ secrets.TPP_client_Secret }}
+          SONAR_client_Id: ${{ secrets.SONAR_client_Id }}
+          SONAR_client_Secret: ${{ secrets.SONAR_client_Secret }}
+          MEDICUS_client_Id: ${{ secrets.MEDICUS_client_Id }}
+          MEDICUS_client_Secret: ${{ secrets.MEDICUS_client_Secret }}
+          aws_token_refresh: 'False'
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          TEST_PATH="${{ github.event_name == 'workflow_dispatch' && inputs.testPath || 'API&batchTests' }}"
+          TEST_FILTER="${{ github.event_name == 'workflow_dispatch' && inputs.testFilter || 'functional' }}"
+
+          if [ "$TEST_FILTER" = "Batch_File_Validation_Feature" ]; then
+            TEST_PATH="features/batchTests"
+          else
+            if [ "$TEST_PATH" = "API&batchTests" ]; then
+              TEST_PATH="features"
+            else
+              TEST_PATH="features/$TEST_PATH"
+            fi
+          fi
+          source venv/bin/activate
+          pytest "$TEST_PATH" -m "$TEST_FILTER" --junitxml=output/test-results.xml --alluredir=output/allure-results
+
+          if [ $? -ne 0 ]; then
+            echo "Pytest-BDD tests failed"
+            exit 1
+          else
+            echo "Pytest-BDD tests passed"
+          fi
+
+      - name: Publish test results to GitHub UI
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: BDD Test Summary
+          path: '**/output/test-results.xml'
+          reporter: java-junit
+          fail-on-error: false
+
+      - name: Load test report history
+        uses: actions/checkout@v3
+        if: always()
+        continue-on-error: true
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Build Allure report
+        if: always()
+        uses: simple-elf/allure-report-action@master
+        with:
+          allure_results: output/allure-results
+          gh_pages: gh-pages
+          allure_report: allure-report
+          allure_history: allure-history
+
+      - name: Publish Allure report to GitHub Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.ALLURE_GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: allure-history
+
+      - name: Add link to Allure report
+        if: always()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const url = `https://${context.repo.owner}.github.io/${context.repo.repo}/`;
+            core.summary.addHeading('Allure Report').addLink('View Report', url).write();

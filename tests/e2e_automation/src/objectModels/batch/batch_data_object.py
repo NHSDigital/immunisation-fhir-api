@@ -1,0 +1,38 @@
+from pydantic import BaseModel, Field
+from typing import Optional
+
+class BatchVaccinationRecord(BaseModel):
+    NHS_NUMBER: str
+    PERSON_FORENAME: str
+    PERSON_SURNAME: str
+    PERSON_DOB: str
+    PERSON_GENDER_CODE: str
+    PERSON_POSTCODE: str
+    DATE_AND_TIME: str
+    SITE_CODE: str
+    SITE_CODE_TYPE_URI: str
+    UNIQUE_ID: str
+    UNIQUE_ID_URI: str
+    ACTION_FLAG: str
+    PERFORMING_PROFESSIONAL_FORENAME: str
+    PERFORMING_PROFESSIONAL_SURNAME: str
+    RECORDED_DATE: str
+    PRIMARY_SOURCE: str
+    VACCINATION_PROCEDURE_CODE: str
+    VACCINATION_PROCEDURE_TERM: str
+    DOSE_SEQUENCE: str
+    VACCINE_PRODUCT_CODE: str
+    VACCINE_PRODUCT_TERM: str
+    VACCINE_MANUFACTURER: str
+    BATCH_NUMBER: str
+    EXPIRY_DATE: str
+    SITE_OF_VACCINATION_CODE: str
+    SITE_OF_VACCINATION_TERM: str
+    ROUTE_OF_VACCINATION_CODE: str
+    ROUTE_OF_VACCINATION_TERM: str
+    DOSE_AMOUNT: str
+    DOSE_UNIT_CODE: str
+    DOSE_UNIT_TERM: str
+    INDICATION_CODE: str
+    LOCATION_CODE: str
+    LOCATION_CODE_TYPE_URI: str
