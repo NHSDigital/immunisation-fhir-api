@@ -122,7 +122,7 @@ data "aws_iam_policy_document" "replication_allow_source" {
 
 resource "aws_iam_policy" "replication_allow_source" {
   count  = var.blue_green_split ? 1 : 0
-  name   = "immunisation-batch-${var.environment}-source"
+  name   = "allow-replication-from-${var.environment}-data-sources"
   policy = data.aws_iam_policy_document.replication_allow_source[0].json
 }
 
