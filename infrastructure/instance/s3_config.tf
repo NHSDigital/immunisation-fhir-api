@@ -159,6 +159,13 @@ resource "aws_s3_bucket_replication_configuration" "replication" {
           minutes = 15
         }
       }
+
+      metrics {
+        status = "Enabled"
+        event_threshold {
+          minutes = 15
+        }
+      }
     }
   }
 
@@ -178,6 +185,13 @@ resource "aws_s3_bucket_replication_configuration" "replication" {
       replication_time {
         status = "Enabled"
         time {
+          minutes = 15
+        }
+      }
+
+      metrics {
+        status = "Enabled"
+        event_threshold {
           minutes = 15
         }
       }
