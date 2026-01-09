@@ -8,15 +8,12 @@ from json import JSONDecodeError
 from typing import Optional
 
 from audit_table import update_audit_table_status
+from common.aws_s3_utils import move_file
+from common.batch.eof_utils import make_batch_eof_message
 from common.clients import logger
-from constants import (
-    ARCHIVE_DIR_NAME,
-    PROCESSING_DIR_NAME,
-    SOURCE_BUCKET_NAME,
-    FileNotProcessedReason,
-    FileStatus,
-)
-from file_level_validation import file_is_empty, file_level_validation, move_file
+from common.models.batch_constants import SOURCE_BUCKET_NAME, FileNotProcessedReason, FileStatus
+from constants import ARCHIVE_DIR_NAME, PROCESSING_DIR_NAME
+from file_level_validation import file_is_empty, file_level_validation
 from mappings import map_target_disease
 from process_row import process_row
 from send_to_kinesis import send_to_kinesis
@@ -85,8 +82,6 @@ def process_csv_to_fhir(incoming_message_body: dict) -> int:
             logger.error(f"Row Processing error: {err}")
             raise err
 
-    file_status = FileStatus.PREPROCESSED
-
     if file_is_empty(row_count):
         logger.warning("File was empty: %s. Moving file to archive directory.", file_key)
         move_file(
@@ -95,8 +90,15 @@ def process_csv_to_fhir(incoming_message_body: dict) -> int:
             f"{ARCHIVE_DIR_NAME}/{file_key}",
         )
         file_status = f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.EMPTY}"
+        update_audit_table_status(file_key, file_id, file_status, record_count=row_count)
+        return row_count
 
-    update_audit_table_status(file_key, file_id, file_status, record_count=row_count)
+    update_audit_table_status(file_key, file_id, FileStatus.PREPROCESSED, record_count=row_count)
+    batch_eof_message = make_batch_eof_message(
+        file_key, supplier, vaccine, created_at_formatted_string, file_id, row_count
+    )
+    send_to_kinesis(supplier, batch_eof_message, vaccine)
+
     return row_count
 
 
@@ -142,7 +144,6 @@ def process_rows(
                 send_to_kinesis(supplier, outgoing_message_body, vaccine)
                 total_rows_processed_count += 1
     except UnicodeDecodeError as error:  # pylint: disable=broad-exception-caught
-        logger.error("Error processing row %s: %s", row_count, error)
         return total_rows_processed_count, error
 
     return total_rows_processed_count, None

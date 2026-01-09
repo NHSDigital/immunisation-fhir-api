@@ -8,17 +8,17 @@
     "format-check": "prettier --check .",
     "publish": "redocly bundle specification/immunisation-fhir-api.yaml --remove-unused-components --ext json -o build/immunisation-fhir-api.json",
     "check-licenses": "node_modules/.bin/license-checker --failOn GPL --failOn LGPL",
-    "prepare": "husky"
+    "prepare": "husky",
+    "serve": "redocly preview --project-dir ./build"
   },
   "author": "NHS Digital",
   "license": "MIT",
   "homepage": "https://github.com/NHSDigital/immunisation-fhir-api",
   "devDependencies": {
-    "@redocly/cli": "^2.11.0",
+    "@redocly/cli": "^2.14.3",
     "husky": "^9.1.7",
-    "license-checker": "^25.0.1",
-    "lint-staged": "^16.2.6",
-    "prettier": "^3.6.2"
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.7.4"
   },
   "lint-staged": {
     "*": "prettier --ignore-unknown --write",

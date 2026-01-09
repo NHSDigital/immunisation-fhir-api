@@ -41,9 +41,7 @@ $ make install
 You can install some pre-commit hooks to ensure you can't commit invalid spec changes by accident. These are also run
 in CI, but it's useful to run them locally too.
 
-```
-$ make install-hooks
-```
+Note that this step is now done automatically in `make install` above. `make install-hooks` is no longer run.
 
 ### Environment Variables
 
@@ -56,8 +54,21 @@ Various scripts and commands rely on environment variables being set. These are 
 There are `make` commands that alias some of this functionality:
 
 - `lint` -- Lints the spec and code
-- `publish` -- Outputs the specification as a **single file** into the `build/` directory
-- `serve` -- Serves a preview of the specification in human-readable format
+- `publish` -- Outputs the specification as a **single** JSON file into the `build/` directory
+- `serve` -- Serves a preview of the API document locally
+
+### Modifying the OAS file
+
+Note that the master OAS file is now the **YAML** version, as it is far easier to maintain than the JSON.
+
+To review your modifications, use Swagger Editor (https://editor.swagger.io). Or, alternatively, use the `make serve` command.
+
+### Update the OAS file to the public website
+
+Note that this is currently a **manual** process.
+
+After modifying the OAS YAML file, run `make oas` on your local machine. This will output the specification into `oas/immunisation-fhir-api.json`. This is a **minified** JSON file suitable for sending to APIM
+for uploading to the pubic website.
 
 ### Testing
 
@@ -72,25 +83,7 @@ Each API and team is unique. We encourage you to use a `test/` folder in the roo
 
 - [**openapi-yaml-mode**](https://github.com/esc-emacs/openapi-yaml-mode) provides syntax highlighting, completion, and path help
 
-### Speccy
-
-> [Speccy](http://speccy.io/) _A handy toolkit for OpenAPI, with a linter to enforce quality rules, documentation rendering, and resolution._
-
-Speccy does the lifting for the following npm scripts:
-
-- `test` -- Lints the definition
-- `publish` -- Outputs the specification as a **single file** into the `build/` directory
-- `serve` -- Serves a preview of the specification in human-readable format
-
-(Workflow detailed in a [post](https://developerjack.com/blog/2018/maintaining-large-design-first-api-specs/) on the _developerjack_ blog.)
-
-:bulb: The `publish` command is useful when uploading to Apigee which requires the spec as a single file.
-
 ### Caveats
-
-#### Swagger UI
-
-Swagger UI unfortunately doesn't correctly render `$ref`s in examples, so use `speccy serve` instead.
 
 #### Apigee Portal
 
@@ -150,6 +143,39 @@ See the APM confluence for more information on how the [\_ping](https://nhsd-con
 
 This folder contains a template for a sandbox API. This example is a NodeJs application running in Docker. The application handles a few simple endpoints such as: /\_ping, /health, /\_status, /hello and some logging logic.
 For more information about building sandbox APIs see the [API Producer Zone confluence](https://nhsd-confluence.digital.nhs.uk/display/APM/Setting+up+your+API+sandbox).
+
+### Testing the sandbox
+
+The sandbox can be tested locally by changing to the `/sandbox` folder in a terminal and running `make run`. This will spin up a mock Prism web server at http://0.0.0.0:9000/.
+
+From a separate terminal, test each endpoint as follows:
+
+- Copy the appropriate `curl` command. These can be retrieved by opening the `specification/immunisation-fhir-api.yaml` file in the Swagger editor; expand the required endpoint, select 'Try it out', and then 'Execute'. The `curl` command to use will appear in the Curl window.
+
+- Replace
+  https://sandbox.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/ with http://0.0.0.0:9000/
+
+- Add the -i option in order to see the response headers.
+
+Examples:
+
+- GET Search:
+
+curl -i -X 'GET' \  
+ 'http://0.0.0.0:9000/Immunization?patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C9000000009&-immunization.target=3IN1&-date.from=1900-01-01&-date.to=9999-12-31&_include=Immunization%3Apatient' \  
+ -H 'accept: application/fhir+json' \  
+ -H 'X-Correlation-ID: 60E0B220-8136-4CA5-AE46-1D97EF59D068' \  
+ -H 'X-Request-ID: 60E0B220-8136-4CA5-AE46-1D97EF59D068'
+
+- POST Search:
+
+curl -i -X 'POST' \  
+ 'http://0.0.0.0:9000/Immunization/_search' \  
+ -H 'accept: application/fhir+json' \  
+ -H 'X-Correlation-ID: 60E0B220-8136-4CA5-AE46-1D97EF59D068' \  
+ -H 'X-Request-ID: 60E0B220-8136-4CA5-AE46-1D97EF59D068' \  
+ -H 'Content-Type: application/x-www-form-urlencoded' \  
+ -d 'patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C9000000009&-immunization.target=3IN1&-date.from=1900-01-01&-date.to=9999-12-31&\_include=Immunization%3Apatient'
 
 #### `utilities/scripts`:
 

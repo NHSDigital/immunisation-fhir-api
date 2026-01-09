@@ -84,9 +84,103 @@ resource "aws_s3_bucket_lifecycle_configuration" "datasources_lifecycle" {
     filter {
       prefix = "archive/"
     }
-
     expiration {
       days = 7
+    }
+  }
+
+  rule {
+    id     = "DeleteExtendedAttributesFilesAfter7Days"
+    status = "Enabled"
+
+    filter {
+      prefix = "extended-attributes-archive/"
+    }
+    expiration {
+      days = 7
+    }
+  }
+}
+
+data "aws_iam_role" "existing_replication_role" {
+  count = var.has_sub_environment_scope ? 0 : 1
+  name  = "immunisation-batch-${var.environment}-replication"
+}
+
+data "aws_iam_policy_document" "replication_allow_destination" {
+  count = var.has_sub_environment_scope ? 0 : 1
+
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "s3:ReplicateObject",
+      "s3:ReplicateDelete",
+      "s3:ReplicateTags",
+    ]
+
+    resources = ["${aws_s3_bucket.batch_data_source_bucket.arn}/*"]
+  }
+}
+
+resource "aws_iam_policy" "replication_allow_destination" {
+  count  = var.has_sub_environment_scope ? 0 : 1
+  name   = "allow-replication-to-${var.sub_environment}-data-sources"
+  policy = data.aws_iam_policy_document.replication_allow_destination[0].json
+}
+
+resource "aws_iam_role_policy_attachment" "replication_allow_destination" {
+  count      = var.has_sub_environment_scope ? 0 : 1
+  role       = data.aws_iam_role.existing_replication_role[0].name
+  policy_arn = aws_iam_policy.replication_allow_destination[0].arn
+}
+
+resource "aws_s3_bucket_replication_configuration" "replication" {
+  count  = var.has_sub_environment_scope ? 0 : 1
+  role   = data.aws_iam_role.existing_replication_role[0].arn
+  bucket = "immunisation-batch-${local.resource_scope}-data-sources"
+
+  rule {
+    id       = var.sub_environment
+    priority = strcontains(var.sub_environment, "blue") ? 0 : 1
+    status   = "Enabled"
+
+    filter {
+      prefix = ""
+    }
+
+    destination {
+      bucket        = aws_s3_bucket.batch_data_source_bucket.arn
+      storage_class = "STANDARD"
+
+      replication_time {
+        status = "Enabled"
+        time {
+          minutes = 15
+        }
+      }
+    }
+  }
+
+  rule {
+    id       = strcontains(var.sub_environment, "blue") ? replace(var.sub_environment, "blue", "green") : replace(var.sub_environment, "green", "blue")
+    priority = strcontains(var.sub_environment, "blue") ? 1 : 0
+    status   = "Disabled"
+
+    filter {
+      prefix = ""
+    }
+
+    destination {
+      bucket        = strcontains(aws_s3_bucket.batch_data_source_bucket.arn, "blue") ? replace(aws_s3_bucket.batch_data_source_bucket.arn, "blue", "green") : replace(aws_s3_bucket.batch_data_source_bucket.arn, "green", "blue")
+      storage_class = "STANDARD"
+
+      replication_time {
+        status = "Enabled"
+        time {
+          minutes = 15
+        }
+      }
     }
   }
 }

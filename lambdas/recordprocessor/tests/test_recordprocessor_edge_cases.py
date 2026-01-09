@@ -1,14 +1,17 @@
 import os
 import unittest
 from io import BytesIO
-from unittest.mock import call, patch
+from unittest.mock import Mock, call, patch
 
 from batch_processor import process_csv_to_fhir
 from utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
+    MOCK_ENVIRONMENT_DICT,
+    BucketNames,
     create_patch,
 )
 
 
+@patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
 class TestProcessorEdgeCases(unittest.TestCase):
     def setUp(self):
         self.mock_logger_info = create_patch("logging.Logger.info")
@@ -16,13 +19,15 @@ class TestProcessorEdgeCases(unittest.TestCase):
         self.mock_logger_error = create_patch("logging.Logger.error")
         self.mock_send_to_kinesis = create_patch("batch_processor.send_to_kinesis")
         self.mock_map_target_disease = create_patch("batch_processor.map_target_disease")
-        self.mock_s3_get_object = create_patch("utils_for_recordprocessor.s3_client.get_object")
-        self.mock_s3_put_object = create_patch("utils_for_recordprocessor.s3_client.put_object")
+        self.mock_get_s3_client = create_patch("utils_for_recordprocessor.get_s3_client")
         self.mock_make_and_move = create_patch("file_level_validation.make_and_upload_ack_file")
         self.mock_move_file = create_patch("file_level_validation.move_file")
         self.mock_get_permitted_operations = create_patch("file_level_validation.get_permitted_operations")
         self.mock_firehose_client = create_patch("common.log_firehose.firehose_client")
         self.mock_update_audit_table_status = create_patch("batch_processor.update_audit_table_status")
+        self.mock_set_audit_table_ingestion_start_time = create_patch(
+            "file_level_validation.set_audit_table_ingestion_start_time"
+        )
 
     def tearDown(self):
         patch.stopall()
@@ -63,7 +68,9 @@ class TestProcessorEdgeCases(unittest.TestCase):
         data = self.insert_cp1252_at_end(data, b"D\xe9cembre", 2)
         ret1 = {"Body": BytesIO(b"".join(data))}
         ret2 = {"Body": BytesIO(b"".join(data))}
-        self.mock_s3_get_object.side_effect = [ret1, ret2]
+        mock_s3 = Mock()
+        mock_s3.get_object.side_effect = [ret1, ret2]
+        self.mock_get_s3_client.return_value = mock_s3
         self.mock_map_target_disease.return_value = "some disease"
 
         message_body = {
@@ -75,15 +82,15 @@ class TestProcessorEdgeCases(unittest.TestCase):
 
         n_rows_processed = process_csv_to_fhir(message_body)
         self.assertEqual(n_rows_processed, n_rows)
-        self.assertEqual(self.mock_send_to_kinesis.call_count, n_rows)
+        self.assertEqual(self.mock_send_to_kinesis.call_count, n_rows + 1)
         # check logger.warning called for decode error
         self.mock_logger_warning.assert_called()
         warning_call_args = self.mock_logger_warning.call_args[0][0]
         self.assertTrue(warning_call_args.startswith("Encoding Error: 'utf-8' codec can't decode byte 0xe9"))
-        self.mock_s3_get_object.assert_has_calls(
+        mock_s3.get_object.assert_has_calls(
             [
-                call(Bucket=None, Key="test-filename"),
-                call(Bucket=None, Key="processing/test-filename"),
+                call(Bucket=BucketNames.SOURCE, Key="test-filename"),
+                call(Bucket=BucketNames.SOURCE, Key="processing/test-filename"),
             ]
         )
 
@@ -94,7 +101,9 @@ class TestProcessorEdgeCases(unittest.TestCase):
         data = self.expand_test_data(data, n_rows)
         ret1 = {"Body": BytesIO(b"".join(data))}
         ret2 = {"Body": BytesIO(b"".join(data))}
-        self.mock_s3_get_object.side_effect = [ret1, ret2]
+        mock_s3 = Mock()
+        mock_s3.get_object.side_effect = [ret1, ret2]
+        self.mock_get_s3_client.return_value = mock_s3
         self.mock_map_target_disease.return_value = "some disease"
 
         message_body = {
@@ -105,7 +114,7 @@ class TestProcessorEdgeCases(unittest.TestCase):
 
         n_rows_processed = process_csv_to_fhir(message_body)
         self.assertEqual(n_rows_processed, n_rows)
-        self.assertEqual(self.mock_send_to_kinesis.call_count, n_rows)
+        self.assertEqual(self.mock_send_to_kinesis.call_count, n_rows + 1)
         self.mock_logger_warning.assert_not_called()
         self.mock_logger_error.assert_not_called()
 
@@ -118,7 +127,9 @@ class TestProcessorEdgeCases(unittest.TestCase):
 
         ret1 = {"Body": BytesIO(b"".join(data))}
         ret2 = {"Body": BytesIO(b"".join(data))}
-        self.mock_s3_get_object.side_effect = [ret1, ret2]
+        mock_s3 = Mock()
+        mock_s3.get_object.side_effect = [ret1, ret2]
+        self.mock_get_s3_client.return_value = mock_s3
         self.mock_map_target_disease.return_value = "some disease"
 
         message_body = {
@@ -130,7 +141,7 @@ class TestProcessorEdgeCases(unittest.TestCase):
 
         n_rows_processed = process_csv_to_fhir(message_body)
         self.assertEqual(n_rows_processed, n_rows)
-        self.assertEqual(self.mock_send_to_kinesis.call_count, n_rows)
+        self.assertEqual(self.mock_send_to_kinesis.call_count, n_rows + 1)
         self.mock_logger_warning.assert_called()
         warning_call_args = self.mock_logger_warning.call_args[0][0]
         self.assertTrue(warning_call_args.startswith("Invalid Encoding detected"))
@@ -143,7 +154,9 @@ class TestProcessorEdgeCases(unittest.TestCase):
 
         ret1 = {"Body": BytesIO(b"".join(data))}
         ret2 = {"Body": BytesIO(b"".join(data))}
-        self.mock_s3_get_object.side_effect = [ret1, ret2]
+        mock_s3 = Mock()
+        mock_s3.get_object.side_effect = [ret1, ret2]
+        self.mock_get_s3_client.return_value = mock_s3
         self.mock_map_target_disease.return_value = "some disease"
 
         message_body = {
@@ -154,6 +167,6 @@ class TestProcessorEdgeCases(unittest.TestCase):
 
         n_rows_processed = process_csv_to_fhir(message_body)
         self.assertEqual(n_rows_processed, n_rows)
-        self.assertEqual(self.mock_send_to_kinesis.call_count, n_rows)
+        self.assertEqual(self.mock_send_to_kinesis.call_count, n_rows + 1)
         self.mock_logger_warning.assert_not_called()
         self.mock_logger_error.assert_not_called()

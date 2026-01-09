@@ -7,13 +7,15 @@ import requests
 
 from common.authentication import AppRestrictedAuth
 from common.models.errors import (
+    ResourceNotFoundError,
+    UnhandledResponseError,
+)
+from models.errors import (
     BadRequestError,
     ConflictError,
-    ResourceNotFoundError,
     ServerError,
     TokenValidationError,
     UnauthorizedError,
-    UnhandledResponseError,
 )
 
 SQS_ARN = os.getenv("SQS_ARN")

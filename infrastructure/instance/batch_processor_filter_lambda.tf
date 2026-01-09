@@ -305,7 +305,7 @@ resource "aws_lambda_event_source_mapping" "batch_file_created_sqs_to_lambda" {
 }
 
 resource "aws_cloudwatch_log_metric_filter" "batch_processor_filter_error_logs" {
-  count = var.batch_error_notifications_enabled ? 1 : 0
+  count = var.error_alarm_notifications_enabled ? 1 : 0
 
   name = "${local.short_prefix}-BatchProcessorFilterErrorLogsFilter"
   # Ignore errors with the below exception type. This is an expected error which returns items to the queue
@@ -320,7 +320,7 @@ resource "aws_cloudwatch_log_metric_filter" "batch_processor_filter_error_logs" 
 }
 
 resource "aws_cloudwatch_metric_alarm" "batch_processor_filter_error_alarm" {
-  count = var.batch_error_notifications_enabled ? 1 : 0
+  count = var.error_alarm_notifications_enabled ? 1 : 0
 
   alarm_name          = "${local.short_prefix}-batch-processor-filter-lambda-error"
   comparison_operator = "GreaterThanOrEqualToThreshold"
@@ -331,6 +331,6 @@ resource "aws_cloudwatch_metric_alarm" "batch_processor_filter_error_alarm" {
   statistic           = "Sum"
   threshold           = 1
   alarm_description   = "This sets off an alarm for any error logs found in the batch processor filter Lambda function"
-  alarm_actions       = [data.aws_sns_topic.batch_processor_errors.arn]
+  alarm_actions       = [data.aws_sns_topic.imms_system_alert_errors.arn]
   treat_missing_data  = "notBreaching"
 }

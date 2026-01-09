@@ -3,8 +3,8 @@
 from csv import writer
 from io import BytesIO, StringIO
 
-from common.clients import s3_client
-from constants import ACK_BUCKET_NAME
+from common.clients import get_s3_client
+from common.models.batch_constants import ACK_BUCKET_NAME
 
 
 def make_ack_data(
@@ -46,7 +46,7 @@ def upload_ack_file(file_key: str, ack_data: dict, created_at_formatted_string: 
     # Upload the CSV file to S3
     csv_buffer.seek(0)
     csv_bytes = BytesIO(csv_buffer.getvalue().encode("utf-8"))
-    s3_client.upload_fileobj(csv_bytes, ACK_BUCKET_NAME, ack_filename)
+    get_s3_client().upload_fileobj(csv_bytes, ACK_BUCKET_NAME, ack_filename)
 
 
 def make_and_upload_ack_file(

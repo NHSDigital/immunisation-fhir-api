@@ -27,6 +27,121 @@ with patch("os.environ", MOCK_ENVIRONMENT_DICT):
 s3_client = boto3_client("s3", region_name=REGION_NAME)
 ROW_DETAILS = MockFieldDictionaries.all_fields
 Allowed_Operations = {"CREATE", "UPDATE", "DELETE"}
+expected_successful_result = {
+    "resourceType": "Immunization",
+    "status": "completed",
+    "protocolApplied": [
+        {
+            "targetDisease": [
+                {
+                    "coding": [
+                        {
+                            "system": "http://snomed.info/sct",
+                            "code": "55735004",
+                            "display": "Respiratory syncytial virus infection (disorder)",
+                        }
+                    ]
+                }
+            ],
+            "doseNumberPositiveInt": 1,
+        }
+    ],
+    "reasonCode": [{"coding": [{"system": "http://snomed.info/sct", "code": "1037351000000105"}]}],
+    "recorded": "2024-09-04",
+    "identifier": [{"value": "RSV_002", "system": "https://www.ravs.england.nhs.uk/"}],
+    "patient": {"reference": "#Patient1"},
+    "contained": [
+        {
+            "id": "Patient1",
+            "resourceType": "Patient",
+            "birthDate": "2008-02-17",
+            "gender": "male",
+            "address": [{"postalCode": "WD25 0DZ"}],
+            "identifier": [
+                {
+                    "system": "https://fhir.nhs.uk/Id/nhs-number",
+                    "value": "9732928395",
+                }
+            ],
+            "name": [{"family": "PEEL", "given": ["PHYLIS"]}],
+        },
+        {
+            "resourceType": "Practitioner",
+            "id": "Practitioner1",
+            "name": [{"family": "O'Reilly", "given": ["Ellena"]}],
+        },
+    ],
+    "vaccineCode": {
+        "coding": [
+            {
+                "system": "http://snomed.info/sct",
+                "code": "42223111000001107",
+                "display": "Quadrivalent influenza vaccine (split virion, inactivated)",
+            }
+        ]
+    },
+    "manufacturer": {"display": "Sanofi Pasteur"},
+    "expirationDate": "2024-09-15",
+    "lotNumber": "BN92478105653",
+    "extension": [
+        {
+            "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
+            "valueCodeableConcept": {
+                "coding": [
+                    {
+                        "system": "http://snomed.info/sct",
+                        "code": "956951000000104",
+                        "display": "RSV vaccination in pregnancy (procedure)",
+                    }
+                ]
+            },
+        }
+    ],
+    "occurrenceDateTime": "2024-09-04T18:33:25+00:00",
+    "primarySource": True,
+    "site": {
+        "coding": [
+            {
+                "system": "http://snomed.info/sct",
+                "code": "368209003",
+                "display": "Right arm",
+            }
+        ]
+    },
+    "route": {
+        "coding": [
+            {
+                "system": "http://snomed.info/sct",
+                "code": "1210999013",
+                "display": "Intradermal use",
+            }
+        ]
+    },
+    "doseQuantity": {
+        "value": Decimal("0.3"),
+        "unit": "Inhalation - unit of product usage",
+        "system": "http://snomed.info/sct",
+        "code": "2622896019",
+    },
+    "performer": [
+        {
+            "actor": {
+                "type": "Organization",
+                "identifier": {
+                    "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                    "value": "RVVKC",
+                },
+            }
+        },
+        {"actor": {"reference": "#Practitioner1"}},
+    ],
+    "location": {
+        "identifier": {
+            "value": "RJC02",
+            "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+        }
+    },
+}
 
 
 @mock_s3
@@ -45,129 +160,10 @@ class TestProcessRow(unittest.TestCase):
         Test that process_row gives the expected output.
         These tests check that the row is valid and matches the expected output.
         """
-        # set the expected output from 'process_row' in case of success
-        expected_result = {
-            "resourceType": "Immunization",
-            "status": "completed",
-            "protocolApplied": [
-                {
-                    "targetDisease": [
-                        {
-                            "coding": [
-                                {
-                                    "system": "http://snomed.info/sct",
-                                    "code": "55735004",
-                                    "display": "Respiratory syncytial virus infection (disorder)",
-                                }
-                            ]
-                        }
-                    ],
-                    "doseNumberPositiveInt": 1,
-                }
-            ],
-            "reasonCode": [{"coding": [{"system": "http://snomed.info/sct", "code": "1037351000000105"}]}],
-            "recorded": "2024-09-04",
-            "identifier": [{"value": "RSV_002", "system": "https://www.ravs.england.nhs.uk/"}],
-            "patient": {"reference": "#Patient1"},
-            "contained": [
-                {
-                    "id": "Patient1",
-                    "resourceType": "Patient",
-                    "birthDate": "2008-02-17",
-                    "gender": "male",
-                    "address": [{"postalCode": "WD25 0DZ"}],
-                    "identifier": [
-                        {
-                            "system": "https://fhir.nhs.uk/Id/nhs-number",
-                            "value": "9732928395",
-                        }
-                    ],
-                    "name": [{"family": "PEEL", "given": ["PHYLIS"]}],
-                },
-                {
-                    "resourceType": "Practitioner",
-                    "id": "Practitioner1",
-                    "name": [{"family": "O'Reilly", "given": ["Ellena"]}],
-                },
-            ],
-            "vaccineCode": {
-                "coding": [
-                    {
-                        "system": "http://snomed.info/sct",
-                        "code": "42223111000001107",
-                        "display": "Quadrivalent influenza vaccine (split virion, inactivated)",
-                    }
-                ]
-            },
-            "manufacturer": {"display": "Sanofi Pasteur"},
-            "expirationDate": "2024-09-15",
-            "lotNumber": "BN92478105653",
-            "extension": [
-                {
-                    "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
-                    "valueCodeableConcept": {
-                        "coding": [
-                            {
-                                "system": "http://snomed.info/sct",
-                                "code": "956951000000104",
-                                "display": "RSV vaccination in pregnancy (procedure)",
-                            }
-                        ]
-                    },
-                }
-            ],
-            "occurrenceDateTime": "2024-09-04T18:33:25+00:00",
-            "primarySource": True,
-            "site": {
-                "coding": [
-                    {
-                        "system": "http://snomed.info/sct",
-                        "code": "368209003",
-                        "display": "Right arm",
-                    }
-                ]
-            },
-            "route": {
-                "coding": [
-                    {
-                        "system": "http://snomed.info/sct",
-                        "code": "1210999013",
-                        "display": "Intradermal use",
-                    }
-                ]
-            },
-            "doseQuantity": {
-                "value": Decimal("0.3"),
-                "unit": "Inhalation - unit of product usage",
-                "system": "http://snomed.info/sct",
-                "code": "2622896019",
-            },
-            "performer": [
-                {
-                    "actor": {
-                        "type": "Organization",
-                        "identifier": {
-                            "system": "https://fhir.nhs.uk/Id/ods-organization-code",
-                            "value": "RVVKC",
-                        },
-                    }
-                },
-                {"actor": {"reference": "#Practitioner1"}},
-            ],
-            "location": {
-                "identifier": {
-                    "value": "RJC02",
-                    "system": "https://fhir.nhs.uk/Id/ods-organization-code",
-                }
-            },
-        }
-
-        self.maxDiff = None
-
         # call 'process_row' with required details
         imms_fhir_resource = process_row(TargetDiseaseElements.RSV, Allowed_Operations, ROW_DETAILS)
         # validate if the response with expected result
-        self.assertDictEqual(imms_fhir_resource["fhir_json"], expected_result)
+        self.assertDictEqual(imms_fhir_resource["fhir_json"], expected_successful_result)
 
     def test_process_row_invalid_action_flag(self):
         """
@@ -244,6 +240,42 @@ class TestProcessRow(unittest.TestCase):
             "UNIQUE_ID or UNIQUE_ID_URI is missing",
         )
         self.assertEqual(response["diagnostics"]["statusCode"], 400)
+
+    def test_process_row_successfully_uplifts_legacy_tpp_uri(self):
+        """
+        Test that process_row gives the expected output.
+        These tests check that the row is valid and matches the expected output.
+        """
+        legacy_tpp_row = deepcopy(ROW_DETAILS)
+        legacy_tpp_row["UNIQUE_ID_URI"] = "YGA"
+
+        expected_successful_result_tpp = deepcopy(expected_successful_result)
+        expected_successful_result_tpp["identifier"][0]["system"] = "https://tpp-uk.com/Id/ve/vacc"
+
+        # call 'process_row' with required details
+        imms_fhir_resource = process_row(TargetDiseaseElements.RSV, Allowed_Operations, legacy_tpp_row)
+        # validate if the response with expected result
+        self.assertDictEqual(imms_fhir_resource["fhir_json"], expected_successful_result_tpp)
+        self.assertEqual(legacy_tpp_row["UNIQUE_ID_URI"], "https://tpp-uk.com/Id/ve/vacc")
+        self.assertEqual(imms_fhir_resource["local_id"], "RSV_002^https://tpp-uk.com/Id/ve/vacc")
+
+    def test_process_row_successfully_uplifts_legacy_emis_uri(self):
+        """
+        Test that process_row gives the expected output.
+        These tests check that the row is valid and matches the expected output.
+        """
+        legacy_emis_row = deepcopy(ROW_DETAILS)
+        legacy_emis_row["UNIQUE_ID_URI"] = "YGJ"
+
+        expected_successful_result_emis = deepcopy(expected_successful_result)
+        expected_successful_result_emis["identifier"][0]["system"] = "https://emishealth.com/identifiers/vacc"
+
+        # call 'process_row' with required details
+        imms_fhir_resource = process_row(TargetDiseaseElements.RSV, Allowed_Operations, legacy_emis_row)
+        # validate if the response with expected result
+        self.assertDictEqual(imms_fhir_resource["fhir_json"], expected_successful_result_emis)
+        self.assertEqual(legacy_emis_row["UNIQUE_ID_URI"], "https://emishealth.com/identifiers/vacc")
+        self.assertEqual(imms_fhir_resource["local_id"], "RSV_002^https://emishealth.com/identifiers/vacc")
 
 
 if __name__ == "__main__":

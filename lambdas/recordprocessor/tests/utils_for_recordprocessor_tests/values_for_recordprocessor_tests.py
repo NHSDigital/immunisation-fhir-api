@@ -9,7 +9,8 @@ from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
 )
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
-    from constants import AuditTableKeys, Urls
+    from common.models.batch_constants import AuditTableKeys
+    from common.models.constants import Urls
 
 
 REGION_NAME = "eu-west-2"

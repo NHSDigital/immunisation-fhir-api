@@ -36,13 +36,8 @@ from utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from batch_processor import main
-    from constants import (
-        AUDIT_TABLE_NAME,
-        AuditTableKeys,
-        Diagnostics,
-        FileNotProcessedReason,
-        FileStatus,
-    )
+    from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys, FileNotProcessedReason, FileStatus
+    from constants import Diagnostics
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
 kinesis_client = boto3_client("kinesis", region_name=REGION_NAME)
@@ -79,6 +74,9 @@ class TestRecordProcessor(unittest.TestCase):
         )
         mock_redis_getter.return_value = mock_redis
         self.mock_logger_info = create_patch("logging.Logger.info")
+        self.mock_set_audit_table_ingestion_start_time = create_patch(
+            "file_level_validation.set_audit_table_ingestion_start_time"
+        )
 
     def tearDown(self) -> None:
         patch.stopall()
@@ -114,6 +112,19 @@ class TestRecordProcessor(unittest.TestCase):
         """Downloads the ack file, decodes its content and returns the decoded content"""
         response = s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=file_key)
         return response["Body"].read().decode("utf-8")
+
+    def make_eof_message_assertion(self, file_details: FileDetails, actual_msg: str, total_records: int) -> None:
+        self.assertDictEqual(
+            {
+                "message": "EOF",
+                "file_key": file_details.file_key,
+                "row_id": f"{file_details.message_id}^{total_records}",
+                "supplier": file_details.supplier,
+                "vax_type": file_details.vaccine_type,
+                "created_at_formatted_string": file_details.created_at_formatted_string,
+            },
+            json.loads(actual_msg),
+        )
 
     def make_inf_ack_assertions(self, file_details: FileDetails, passed_validation: bool):
         """Asserts that the InfAck file content is as expected"""
@@ -178,6 +189,8 @@ class TestRecordProcessor(unittest.TestCase):
                     self.assertIn(key_to_ignore, kinesis_data)
                     kinesis_data.pop(key_to_ignore)
                 self.assertEqual(kinesis_data, expected_kinesis_data)
+
+        self.make_eof_message_assertion(mock_rsv_emis_file, kinesis_records[-1]["Data"], len(test_cases))
 
     def assert_object_moved_to_archive(self, file_key: str) -> None:
         """Checks that the S3 object was moved to the archive directory"""
@@ -301,12 +314,17 @@ class TestRecordProcessor(unittest.TestCase):
         main(test_file.event_create_permissions_only)
 
         kinesis_records = kinesis_client.get_records(ShardIterator=self.get_shard_iterator(), Limit=10)["Records"]
-        self.assertEqual(len(kinesis_records), 2)
-        for record in kinesis_records:
-            data_bytes = record["Data"]
+
+        # No. of records = 2 plus EoF message = 3
+        self.assertEqual(len(kinesis_records), 3)
+
+        for i in range(len(kinesis_records) - 1):
+            data_bytes = kinesis_records[i]["Data"]
             data_dict = json.loads(data_bytes)
             self.assertIn("diagnostics", data_dict)
             self.assertNotIn("fhir_json", data_dict)
+
+        self.make_eof_message_assertion(mock_rsv_emis_file, kinesis_records[-1]["Data"], 2)
         self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=True)
         assert_audit_table_entry(test_file, FileStatus.PREPROCESSED, row_count=2)
 

@@ -16,8 +16,8 @@ from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests impo
 )
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
-    from errors import InvalidHeaders, NoOperationPermissions
     from file_level_validation import get_permitted_operations, validate_content_headers
+    from models.errors import InvalidHeaders, NoOperationPermissions
 
 
 test_file = MockFileDetails.rsv_emis

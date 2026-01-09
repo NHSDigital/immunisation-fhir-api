@@ -12,12 +12,14 @@ from utils_for_tests.values_for_tests import MockFileDetails
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from common.models.errors import InvalidFileKeyError
     from file_validation import (
         is_file_in_directory_root,
         is_valid_datetime,
-        validate_file_key,
+        split_file_key,
+        validate_batch_file_key,
+        validate_extended_attributes_file_key,
     )
+    from models.errors import InvalidFileKeyError
 
 VALID_FLU_EMIS_FILE_KEY = MockFileDetails.emis_flu.file_key
 VALID_RSV_RAVS_FILE_KEY = MockFileDetails.ravs_rsv_1.file_key
@@ -43,18 +45,20 @@ class TestFileKeyValidation(TestCase):
         """Tests that is_valid_datetime returns True for valid datetimes, and false otherwise"""
         # Test case tuples are structured as (date_time_string, expected_result)
         test_cases = [
-            ("20200101T12345600", True),  # Valid datetime string with timezone
-            ("20200101T123456", True),  # Valid datetime string without timezone
+            ("20200101T12345600", True),  # Valid datetime string with timezone offset "00" GMT
+            ("20200101T12345601", True),  # Valid datetime string with timezone offset "01" BST
+            ("20200101T123456", False),  # Invalid datetime string without timezone
             (
                 "20200101T123456extracharacters",
-                True,
-            ),  # Valid datetime string with additional characters
+                False,
+            ),  # Invalid datetime string with additional characters
             ("20201301T12345600", False),  # Invalid month
             ("20200100T12345600", False),  # Invalid day
             ("20200230T12345600", False),  # Invalid combination of month and day
             ("20200101T24345600", False),  # Invalid hours
             ("20200101T12605600", False),  # Invalid minutes
             ("20200101T12346000", False),  # Invalid seconds
+            ("20200101T12345609", False),  # Invalid timezone offset
             ("2020010112345600", False),  # Invalid missing the 'T'
             ("20200101T12345", False),  # Invalid string too short
         ]
@@ -63,7 +67,7 @@ class TestFileKeyValidation(TestCase):
             with self.subTest():
                 self.assertEqual(is_valid_datetime(date_time_string), expected_result)
 
-    def test_validate_file_key(self, mock_get_redis_client):
+    def test_validate_batch_file_key(self, mock_get_redis_client):
         """Tests that file_key_validation returns True if all elements pass validation, and False otherwise"""
         # Test case tuples are structured as (file_key, expected_result)
         test_cases_for_success_scenarios = [
@@ -90,9 +94,54 @@ class TestFileKeyValidation(TestCase):
                 mock_redis.hkeys.return_value = ["FLU", "RSV"]
                 mock_get_redis_client.return_value = mock_redis
 
-                self.assertEqual(validate_file_key(file_key), expected_result)
+                self.assertEqual(validate_batch_file_key(file_key), expected_result)
                 mock_redis.hkeys.assert_called_with("vacc_to_diseases")
                 mock_redis.hget.assert_called_with("ods_code_to_supplier", ods_code)
+
+    def test_split_file_key(self, _):
+        """Tests that split_file_key splits the file key into parts correctly"""
+        test_cases = [
+            (
+                "FLU_Vaccinations_V5_YGM41_20000101T00000001.csv",
+                (["FLU", "VACCINATIONS", "V5", "YGM41", "20000101T00000001"], "CSV"),
+            ),
+            (
+                "Vaccination_Extended_Attributes_V1_5_X8E5B_20000101T00000001.csv",
+                (["VACCINATION", "EXTENDED", "ATTRIBUTES", "V1", "5", "X8E5B", "20000101T00000001"], "CSV"),
+            ),
+        ]
+
+        for file_key, expected in test_cases:
+            with self.subTest(f"SubTest for file key: {file_key}"):
+                self.assertEqual(split_file_key(file_key), expected)
+
+    def test_validate_extended_attributes_file_key(self, mock_get_redis_client):
+        """Tests that validate_extended_attributes_file_key returns organization code and COVID vaccine type if all
+        elements pass validation, and raises an exception otherwise"""
+        test_cases_for_success_scenarios = [
+            # Valid extended attributes file key
+            (
+                "Vaccination_Extended_Attributes_v1_5_X8E5B_20000101T00000001.csv",
+                "X8E5B",
+            ),
+            # Valid extended attributes file key with different organization code
+            (
+                "Vaccination_Extended_Attributes_v1_5_YGM41_20221231T23595900.csv",
+                "YGM41",
+            ),
+        ]
+
+        for file_key, expected_result in test_cases_for_success_scenarios:
+            with self.subTest(f"SubTest for file key: {file_key}"):
+                mock_redis = Mock()
+                mock_redis.hget.side_effect = create_mock_hget(MOCK_ODS_CODE_TO_SUPPLIER, {})
+                mock_redis.hkeys.return_value = ["COVID"]
+                mock_get_redis_client.return_value = mock_redis
+                _, supplier = validate_extended_attributes_file_key(file_key)
+                self.assertEqual(
+                    supplier,
+                    expected_result,
+                )
 
     def test_validate_file_key_false(self, mock_get_redis_client):
         """Tests that file_key_validation returns False if elements do not pass validation"""
@@ -169,7 +218,7 @@ class TestFileKeyValidation(TestCase):
                 mock_get_redis_client.return_value = mock_redis
 
                 with self.assertRaises(InvalidFileKeyError) as context:
-                    validate_file_key(file_key)
+                    validate_batch_file_key(file_key)
                 self.assertEqual(str(context.exception), expected_result)
                 mock_redis.hkeys.assert_called_with("vacc_to_diseases")
 
@@ -207,6 +256,6 @@ class TestFileKeyValidation(TestCase):
                 mock_get_redis_client.return_value = mock_redis
 
                 with self.assertRaises(InvalidFileKeyError) as context:
-                    validate_file_key(file_key)
+                    validate_batch_file_key(file_key)
                 self.assertEqual(str(context.exception), expected_result)
                 mock_redis.hkeys.assert_not_called()

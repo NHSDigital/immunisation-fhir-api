@@ -3,23 +3,23 @@ Functions for completing file-level validation
 (validating headers and ensuring that the supplier has permission to perform at least one of the requested operations)
 """
 
+import time
 from csv import DictReader
 
-from audit_table import update_audit_table_status
-from common.clients import logger, s3_client
-from constants import (
-    ARCHIVE_DIR_NAME,
-    EXPECTED_CSV_HEADERS,
-    PROCESSING_DIR_NAME,
+from audit_table import set_audit_table_ingestion_start_time, update_audit_table_status
+from common.aws_s3_utils import move_file
+from common.clients import logger
+from common.models.batch_constants import (
     SOURCE_BUCKET_NAME,
     FileNotProcessedReason,
     FileStatus,
-    Permission,
+    OperationShortCode,
     permission_to_operation_map,
 )
-from errors import InvalidHeaders, NoOperationPermissions
+from constants import ARCHIVE_DIR_NAME, EXPECTED_CSV_HEADERS, PROCESSING_DIR_NAME
 from logging_decorator import file_level_validation_logging_decorator
 from make_and_upload_ack_file import make_and_upload_ack_file
+from models.errors import InvalidHeaders, NoOperationPermissions
 from utils_for_recordprocessor import get_csv_content_dict_reader
 
 
@@ -44,10 +44,10 @@ def get_permitted_operations(supplier: str, vaccine_type: str, allowed_permissio
 
     # Extract permissions letters to get map key from the allowed vaccine type
     permissions_for_vaccine_type = {
-        Permission(permission)
+        OperationShortCode(permission)
         for permission_str in permission_strs_for_vaccine_type
         for permission in permission_str.split(".")[1].upper()
-        if permission in list(Permission)
+        if permission in list(OperationShortCode)
     }
 
     # Map Permission key to action flag
@@ -59,17 +59,6 @@ def get_permitted_operations(supplier: str, vaccine_type: str, allowed_permissio
         raise NoOperationPermissions(f"{supplier} does not have permissions to perform any of the requested actions.")
 
     return permitted_operations_for_vaccine_type
-
-
-def move_file(bucket_name: str, source_file_key: str, destination_file_key: str) -> None:
-    """Moves a file from one location to another within a single S3 bucket by copying and then deleting the file."""
-    s3_client.copy_object(
-        Bucket=bucket_name,
-        CopySource={"Bucket": bucket_name, "Key": source_file_key},
-        Key=destination_file_key,
-    )
-    s3_client.delete_object(Bucket=bucket_name, Key=source_file_key)
-    logger.info("File moved from %s to %s", source_file_key, destination_file_key)
 
 
 @file_level_validation_logging_decorator
@@ -106,6 +95,9 @@ def file_level_validation(incoming_message_body: dict) -> dict:
         make_and_upload_ack_file(message_id, file_key, True, True, created_at_formatted_string)
 
         move_file(SOURCE_BUCKET_NAME, file_key, f"{PROCESSING_DIR_NAME}/{file_key}")
+
+        ingestion_start_time = time.time()
+        set_audit_table_ingestion_start_time(file_key, message_id, ingestion_start_time)
 
         return {
             "message_id": message_id,

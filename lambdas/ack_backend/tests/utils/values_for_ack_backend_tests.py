@@ -139,6 +139,15 @@ class MessageDetails:
             "diagnostics": DiagnosticsDictionaries.NO_PERMISSIONS,
         }
 
+        self.eof_message = {
+            "created_at_formatted_string": self.created_at_formatted_string,
+            "file_key": self.file_key,
+            "message": "EOF",
+            "row_id": self.row_id,
+            "supplier": self.supplier,
+            "vax_type": self.vaccine_type,
+        }
+
 
 class MockMessageDetails:
     """Class containing mock message details for use in tests"""
@@ -244,6 +253,8 @@ class ValidValues:
         "vaccine_type": MOCK_MESSAGE_DETAILS.vaccine_type,
         "message_id": MOCK_MESSAGE_DETAILS.row_id,
         "row_count": 99,
+        "success_count": 97,
+        "failure_count": 2,
         "statusCode": 200,
         "message": "Record processing complete",
     }

@@ -18,13 +18,9 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from csv import DictReader
 
     from common.clients import REGION_NAME
-    from constants import (
-        AUDIT_TABLE_NAME,
-        ODS_CODE_TO_SUPPLIER_SYSTEM_HASH_KEY,
-        SUPPLIER_PERMISSIONS_HASH_KEY,
-        AuditTableKeys,
-        FileStatus,
-    )
+    from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys, FileStatus
+    from common.models.constants import RedisHashKeys
+    from constants import ODS_CODE_TO_SUPPLIER_SYSTEM_HASH_KEY
 
 MOCK_ODS_CODE_TO_SUPPLIER = {"YGM41": "EMIS", "X8E5B": "RAVS"}
 
@@ -63,7 +59,7 @@ def create_mock_hget(
     def mock_hget(key, field):
         if key == ODS_CODE_TO_SUPPLIER_SYSTEM_HASH_KEY:
             return mock_ods_code_to_supplier.get(field)
-        if key == SUPPLIER_PERMISSIONS_HASH_KEY:
+        if key == RedisHashKeys.SUPPLIER_PERMISSIONS_HASH_KEY:
             return mock_supplier_permissions.get(field)
         return None
 
@@ -91,6 +87,7 @@ class GenericSetUp:
             for bucket_name in [
                 BucketNames.SOURCE,
                 BucketNames.DESTINATION,
+                BucketNames.DPS_DESTINATION,
                 BucketNames.CONFIG,
                 BucketNames.MOCK_FIREHOSE,
             ]:
@@ -136,6 +133,7 @@ class GenericTearDown:
             for bucket_name in [
                 BucketNames.SOURCE,
                 BucketNames.DESTINATION,
+                BucketNames.DPS_DESTINATION,
                 BucketNames.CONFIG,
                 BucketNames.MOCK_FIREHOSE,
             ]:

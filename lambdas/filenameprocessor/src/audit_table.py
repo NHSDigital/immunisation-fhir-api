@@ -3,8 +3,8 @@
 from typing import Optional
 
 from common.clients import dynamodb_client, logger
+from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys
 from common.models.errors import UnhandledAuditTableError
-from constants import AUDIT_TABLE_NAME, AuditTableKeys
 
 
 def upsert_audit_table(
@@ -15,6 +15,7 @@ def upsert_audit_table(
     queue_name: str,
     file_status: str,
     error_details: Optional[str] = None,
+    condition_expression: Optional[str] = None,
 ) -> None:
     """
     Updates the audit table with the file details
@@ -33,11 +34,17 @@ def upsert_audit_table(
 
     try:
         # Add to the audit table (regardless of whether it is a duplicate)
-        dynamodb_client.put_item(
-            TableName=AUDIT_TABLE_NAME,
-            Item=audit_item,
-            ConditionExpression="attribute_not_exists(message_id)",  # Prevents accidental overwrites
-        )
+        if not condition_expression:
+            dynamodb_client.put_item(
+                TableName=AUDIT_TABLE_NAME,
+                Item=audit_item,
+            )
+        else:
+            dynamodb_client.put_item(
+                TableName=AUDIT_TABLE_NAME,
+                Item=audit_item,
+                ConditionExpression=condition_expression,
+            )
         logger.info(
             "%s file, with message id %s, successfully added to audit table",
             file_key,

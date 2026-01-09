@@ -93,9 +93,6 @@ data "aws_iam_policy_document" "delta_policy_document" {
     templatefile("${local.policy_path}/dynamo_key_access.json", {
       "dynamo_encryption_key" : data.aws_kms_key.existing_dynamo_encryption_key.arn
     }),
-    templatefile("${local.policy_path}/aws_sns_topic.json", {
-      "aws_sns_topic_name" : aws_sns_topic.delta_sns.name
-    }),
     templatefile("${local.policy_path}/log_kinesis.json", {
       "kinesis_stream_name" : module.splunk.firehose_stream_name
     }),
@@ -159,7 +156,7 @@ resource "aws_lambda_event_source_mapping" "delta_trigger" {
   starting_position = "TRIM_HORIZON"
   destination_config {
     on_failure {
-      destination_arn = aws_sns_topic.delta_sns.arn
+      destination_arn = aws_sqs_queue.dlq.arn
     }
   }
   maximum_retry_attempts = 0
@@ -170,11 +167,38 @@ resource "aws_sqs_queue" "dlq" {
   name = "${local.short_prefix}-${local.dlq_name}"
 }
 
-resource "aws_sns_topic" "delta_sns" {
-  name = "${local.short_prefix}-${local.sns_name}"
-}
-
 resource "aws_cloudwatch_log_group" "delta_lambda" {
   name              = "/aws/lambda/${local.short_prefix}-${local.function_name}"
   retention_in_days = 30
+}
+
+
+resource "aws_cloudwatch_log_metric_filter" "delta_error_logs" {
+  count = var.error_alarm_notifications_enabled ? 1 : 0
+
+  name           = "${local.short_prefix}-DeltaErrorLogsFilter"
+  pattern        = "%\\[ERROR\\]%"
+  log_group_name = aws_cloudwatch_log_group.delta_lambda.name
+
+  metric_transformation {
+    name      = "${local.short_prefix}-DeltaErrorLogs"
+    namespace = "${local.short_prefix}-DeltaLambda"
+    value     = "1"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "delta_error_alarm" {
+  count = var.error_alarm_notifications_enabled ? 1 : 0
+
+  alarm_name          = "${local.short_prefix}-delta-lambda-error"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = "${local.short_prefix}-DeltaErrorLogs"
+  namespace           = "${local.short_prefix}-DeltaLambda"
+  period              = 120
+  statistic           = "Sum"
+  threshold           = 1
+  alarm_description   = "This sets off an alarm for any error logs found in the delta Lambda function"
+  alarm_actions       = [data.aws_sns_topic.imms_system_alert_errors.arn]
+  treat_missing_data  = "notBreaching"
 }

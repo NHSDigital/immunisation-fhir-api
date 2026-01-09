@@ -49,8 +49,8 @@ extends:
           - internal_dev
         jinja_templates:
           DOMAIN_ENDPOINT: https://ref.imms.dev.vds.platform.nhs.uk
-      - environment: int
+      - environment: internal-qa
         depends_on:
           - internal_dev
         jinja_templates:
-          DOMAIN_ENDPOINT: https://int.imms.dev.vds.platform.nhs.uk
+          DOMAIN_ENDPOINT: https://internal-qa.imms.dev.vds.platform.nhs.uk

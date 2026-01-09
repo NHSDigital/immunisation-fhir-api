@@ -3,7 +3,17 @@ locals {
   filename_lambda_dir     = abspath("${path.root}/../../lambdas/filenameprocessor")
   filename_lambda_files   = fileset(local.filename_lambda_dir, "**")
   filename_lambda_dir_sha = sha1(join("", [for f in local.filename_lambda_files : filesha1("${local.filename_lambda_dir}/${f}")]))
+  dps_bucket_name_for_extended_attribute = (
+    var.environment == "prod"
+    ? "nhsd-dspp-core-prod-extended-attributes-gdp"
+    : "nhsd-dspp-core-ref-extended-attributes-gdp"
+  )
+  dps_bucket_arn_for_extended_attribute = [
+    "arn:aws:s3:::${local.dps_bucket_name_for_extended_attribute}/*"
+  ]
 }
+
+
 
 resource "aws_ecr_repository" "file_name_processor_lambda_repository" {
   image_scanning_configuration {
@@ -162,6 +172,13 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
           "firehose:PutRecordBatch"
         ],
         "Resource" : "arn:aws:firehose:*:*:deliverystream/${module.splunk.firehose_stream_name}"
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "s3:PutObject"
+        ],
+        "Resource" : local.dps_bucket_arn_for_extended_attribute
       }
     ]
   })
@@ -236,11 +253,42 @@ resource "aws_iam_policy" "filenameprocessor_dynamo_access_policy" {
   })
 }
 
+# Kms policy setup on filenameprocessor lambda for dps cross account bucket access
+resource "aws_iam_policy" "filenameprocessor_dps_extended_attribute_kms_policy" {
+  name        = "${local.short_prefix}-filenameproc-dps-kms-policy"
+  description = "Allow Lambda to use DPS KMS key for SSE-KMS encrypted S3 bucket access"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "kms:Decrypt",
+          "kms:GenerateDataKey",
+          "kms:DescribeKey"
+        ],
+        Resource = "arn:aws:kms:eu-west-2:${var.dspp_core_account_id}:key/*",
+        "Condition" = {
+          "ForAnyValue:StringEquals" = {
+            "kms:ResourceAliases" = "alias/${var.dspp_kms_key_alias}"
+          }
+        }
+      }
+    ]
+  })
+}
 
 # Attach the execution policy to the Lambda role
 resource "aws_iam_role_policy_attachment" "filenameprocessor_lambda_exec_policy_attachment" {
   role       = aws_iam_role.filenameprocessor_lambda_exec_role.name
   policy_arn = aws_iam_policy.filenameprocessor_lambda_exec_policy.arn
+}
+
+#Attach the dps kms policy to the Lambda role
+resource "aws_iam_role_policy_attachment" "filenameprocessor_lambda_dps_kms_ea_policy_attachment" {
+  role       = aws_iam_role.filenameprocessor_lambda_exec_role.name
+  policy_arn = aws_iam_policy.filenameprocessor_dps_extended_attribute_kms_policy.arn
 }
 
 # Attach the SQS policy to the Lambda role
@@ -277,8 +325,11 @@ resource "aws_lambda_function" "file_processor_lambda" {
 
   environment {
     variables = {
+      ACCOUNT_ID           = var.immunisation_account_id
+      DPS_ACCOUNT_ID       = var.dspp_core_account_id
       SOURCE_BUCKET_NAME   = aws_s3_bucket.batch_data_source_bucket.bucket
       ACK_BUCKET_NAME      = aws_s3_bucket.batch_data_destination_bucket.bucket
+      DPS_BUCKET_NAME      = local.dps_bucket_name_for_extended_attribute
       QUEUE_URL            = aws_sqs_queue.batch_file_created.url
       REDIS_HOST           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
       REDIS_PORT           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
@@ -325,7 +376,7 @@ resource "aws_cloudwatch_log_group" "file_name_processor_log_group" {
 }
 
 resource "aws_cloudwatch_log_metric_filter" "file_name_processor_error_logs" {
-  count = var.batch_error_notifications_enabled ? 1 : 0
+  count = var.error_alarm_notifications_enabled ? 1 : 0
 
   name           = "${local.short_prefix}-FilenameProcessorErrorLogsFilter"
   pattern        = "%\\[ERROR\\]%"
@@ -339,7 +390,7 @@ resource "aws_cloudwatch_log_metric_filter" "file_name_processor_error_logs" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "file_name_processor_error_alarm" {
-  count = var.batch_error_notifications_enabled ? 1 : 0
+  count = var.error_alarm_notifications_enabled ? 1 : 0
 
   alarm_name          = "${local.short_prefix}-file-name-processor-lambda-error"
   comparison_operator = "GreaterThanOrEqualToThreshold"
@@ -350,6 +401,6 @@ resource "aws_cloudwatch_metric_alarm" "file_name_processor_error_alarm" {
   statistic           = "Sum"
   threshold           = 1
   alarm_description   = "This sets off an alarm for any error logs found in the file name processor Lambda function"
-  alarm_actions       = [data.aws_sns_topic.batch_processor_errors.arn]
+  alarm_actions       = [data.aws_sns_topic.imms_system_alert_errors.arn]
   treat_missing_data  = "notBreaching"
 }

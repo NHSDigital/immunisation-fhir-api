@@ -1,18 +1,13 @@
-import logging
 import os
 from typing import BinaryIO
 
-import boto3
 from smart_open import open
+
+from common.clients import get_s3_client, logger
 
 EXPECTED_BUCKET_OWNER_ACCOUNT = os.getenv("ACCOUNT_ID")
 DESTINATION_BUCKET_NAME = os.getenv("DESTINATION_BUCKET_NAME")
 UNEXPECTED_EOF_ERROR = "Unexpected EOF"
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger()
-
-s3_client = boto3.client("s3")
 
 
 def parse_headers(headers_str: str) -> dict[str, str]:
@@ -74,6 +69,7 @@ def stream_part_body(input_file: BinaryIO, boundary: bytes, output_file: BinaryI
 
 
 def move_file(source_bucket: str, source_key: str, destination_bucket: str, destination_key: str) -> None:
+    s3_client = get_s3_client()
     s3_client.copy_object(
         CopySource={"Bucket": source_bucket, "Key": source_key},
         Bucket=destination_bucket,
@@ -89,6 +85,7 @@ def move_file(source_bucket: str, source_key: str, destination_bucket: str, dest
 
 
 def transfer_multipart_content(bucket_name: str, file_key: str, boundary: bytes, filename: str) -> None:
+    s3_client = get_s3_client()
     with open(f"s3://{bucket_name}/{file_key}", "rb", transport_params={"client": s3_client}) as input_file:
         read_until_part_start(input_file, boundary)
 
@@ -122,6 +119,7 @@ def process_record(record: dict) -> None:
     file_key = record["s3"]["object"]["key"]
     logger.info(f"Processing {file_key}")
 
+    s3_client = get_s3_client()
     response = s3_client.head_object(
         Bucket=bucket_name,
         Key=file_key,

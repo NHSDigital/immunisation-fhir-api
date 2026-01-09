@@ -11,7 +11,6 @@ from io import StringIO
 import pandas as pd
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
-
 from clients import (
     ack_metadata_queue_url,
     audit_table,
@@ -21,6 +20,8 @@ from clients import (
     s3_client,
     sqs_client,
 )
+from errors import AckFileNotFoundError, DynamoDBMismatchError
+
 from constants import (
     ACK_BUCKET,
     ACK_PREFIX,
@@ -33,7 +34,6 @@ from constants import (
     ActionFlag,
     environment,
 )
-from errors import AckFileNotFoundError, DynamoDBMismatchError
 
 
 def upload_file_to_s3(file_name, bucket, prefix):
@@ -307,14 +307,16 @@ def fetch_pk_and_operation_from_dynamodb(identifier_pk):
         return "ERROR"
 
 
-def validate_row_count(desc, source_file_name, ack_file_name):
+def validate_row_count(desc: str, source_file_name: str, ack_file_name: str, is_failure_scenario: bool) -> None:
     """
     Compare the row count of a file in one S3 bucket with a file in another S3 bucket.
     Raises:
         AssertionError: If the row counts do not match.
     """
-    source_file_row_count = fetch_row_count(SOURCE_BUCKET, f"archive/{source_file_name}")
+    # The BUS Ack will only add failed rows to the final file.
+    source_file_row_count = fetch_row_count(SOURCE_BUCKET, f"archive/{source_file_name}") if is_failure_scenario else 1
     ack_file_row_count = fetch_row_count(ACK_BUCKET, ack_file_name)
+
     assert source_file_row_count == ack_file_row_count, (
         f"{desc}. Row count mismatch: Input ({source_file_row_count}) vs Ack ({ack_file_row_count})"
     )

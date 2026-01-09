@@ -17,9 +17,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
 
-      - uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903
+      - uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f
         with:
           node-version: "23.11.0"
           cache: "npm"
@@ -38,12 +38,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
 
       - name: Install poetry
         run: pip install poetry==2.1.4
 
-      - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
+      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548
         with:
           python-version: 3.11
           cache: "poetry"
@@ -65,7 +65,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
 
       - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
         with:
@@ -79,12 +79,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
 
       - name: Install poetry
         run: pip install poetry==2.1.4
 
-      - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
+      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548
         with:
           python-version: 3.11
           cache: "poetry"
@@ -97,39 +97,16 @@ jobs:
           aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
           aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
 
-      - name: Run unittest with recordprocessor-coverage
-        working-directory: lambdas/recordprocessor
-        id: recordprocessor
-        env:
-          PYTHONPATH: ${{ env.LAMBDA_PATH }}/recordprocessor/src:${{ env.LAMBDA_PATH }}/recordprocessor/tests:${{ env.SHARED_PATH }}/src
-        continue-on-error: true
-        run: |
-          poetry install
-          poetry run coverage run --source=src -m unittest discover || echo "recordprocessor tests failed" >> ../../failed_tests.txt
-          poetry run coverage xml -o ../../recordprocessor-coverage.xml
-
-        # This step is redundant - all of these tests will be run in the backend step below
-      - name: Run unittest with recordforwarder-coverage
-        working-directory: backend
-        id: recordforwarder
-        env:
-          PYTHONPATH: ${{ github.workspace }}/backend/src:${{ github.workspace }}/backend/tests
-        continue-on-error: true
-        run: |
-          poetry install
-          poetry run coverage run --source=src -m unittest discover -p "*batch*.py" || echo "recordforwarder tests failed" >> ../failed_tests.txt
-          poetry run coverage xml -o ../recordforwarder-coverage.xml
-
       - name: Run unittest with coverage-fhir-api
-        working-directory: backend
+        working-directory: lambdas/backend
         env:
-          PYTHONPATH: ${{ github.workspace }}/backend/src:${{ github.workspace }}/backend/tests
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/backend/src:${{ env.LAMBDA_PATH }}/backend/tests:${{ env.SHARED_PATH }}/src:${{ env.SHARED_PATH }}/tests
         id: fhirapi
         continue-on-error: true
         run: |
           poetry install
-          poetry run coverage run --source=src -m unittest discover || echo "fhir-api tests failed" >> ../failed_tests.txt
-          poetry run coverage xml -o ../backend-coverage.xml
+          poetry run coverage run --source=src -m unittest discover || echo "fhir-api tests failed" >> ../../failed_tests.txt
+          poetry run coverage xml -o ../../backend-coverage.xml
 
       - name: Run unittest with coverage-ack-lambda
         working-directory: lambdas/ack_backend
@@ -189,6 +166,8 @@ jobs:
       - name: Run unittest with coverage-mesh-processor
         working-directory: lambdas/mesh_processor
         id: meshprocessor
+        env:
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/mesh_processor/src:${{ env.LAMBDA_PATH }}/mesh_processor/tests:${{ env.SHARED_PATH }}/src
         continue-on-error: true
         run: |
           poetry install
@@ -206,6 +185,28 @@ jobs:
           poetry run coverage run --source=src -m unittest discover || echo "mns_subscription tests failed" >> ../../failed_tests.txt
           poetry run coverage report -m
           poetry run coverage xml -o ../../mns_subscription-coverage.xml
+
+      - name: Run unittest with recordforwarder-coverage
+        working-directory: lambdas/recordforwarder
+        id: recordforwarder
+        env:
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/recordforwarder/src:${{ env.LAMBDA_PATH }}/recordforwarder/tests:${{ env.SHARED_PATH }}/src:${{ env.SHARED_PATH }}/tests
+        continue-on-error: true
+        run: |
+          poetry install
+          poetry run coverage run --source=src -m unittest discover || echo "recordforwarder tests failed" >> ../../failed_tests.txt
+          poetry run coverage xml -o ../../recordforwarder-coverage.xml
+
+      - name: Run unittest with recordprocessor-coverage
+        working-directory: lambdas/recordprocessor
+        id: recordprocessor
+        env:
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/recordprocessor/src:${{ env.LAMBDA_PATH }}/recordprocessor/tests:${{ env.SHARED_PATH }}/src
+        continue-on-error: true
+        run: |
+          poetry install
+          poetry run coverage run --source=src -m unittest discover || echo "recordprocessor tests failed" >> ../../failed_tests.txt
+          poetry run coverage xml -o ../../recordprocessor-coverage.xml
 
       - name: Run unittest with redis_sync
         working-directory: lambdas/redis_sync
@@ -246,7 +247,7 @@ jobs:
           fi
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602
+        uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

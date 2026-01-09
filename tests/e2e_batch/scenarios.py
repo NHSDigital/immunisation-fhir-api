@@ -3,9 +3,10 @@ import uuid
 from datetime import datetime, timezone
 
 import pandas as pd
+from clients import logger
+from errors import DynamoDBMismatchError
 from vax_suppliers import OdsVax, TestPair
 
-from clients import logger
 from constants import (
     ACK_BUCKET,
     RAVS_URI,
@@ -15,7 +16,6 @@ from constants import (
     Operation,
     OperationOutcome,
 )
-from errors import DynamoDBMismatchError
 from utils import (
     aws_cleanup,
     create_row,
@@ -42,6 +42,7 @@ class TestCase:
     def __init__(self, scenario: dict):
         self.name: str = scenario.get("name", "Unnamed Test Case")
         self.description: str = scenario.get("description", "")
+        self.is_failure_scenario = scenario.get("is_failure_scenario", False)
         self.ods_vax: OdsVax = scenario.get("ods_vax")
         self.actions: list[TestAction] = scenario.get("actions", [])
         self.ods = self.ods_vax.ods_code
@@ -199,7 +200,7 @@ scenarios = {
         {
             "name": "Failed Update",
             "description": "Failed Update - resource does not exist",
-            "ods_vax": TestPair.V0V8L_3IN1_CRUDS,
+            "ods_vax": TestPair.V0V8L_HPV_CUD,
             "actions": [
                 TestAction(
                     ActionFlag.UPDATE,
@@ -207,6 +208,7 @@ scenarios = {
                     expected_operation_outcome=OperationOutcome.IMMS_NOT_FOUND,
                 )
             ],
+            "is_failure_scenario": True,
             "operation_outcome": ActionFlag.NONE,
         },
         {
@@ -220,6 +222,7 @@ scenarios = {
                     expected_operation_outcome=OperationOutcome.IMMS_NOT_FOUND,
                 )
             ],
+            "is_failure_scenario": True,
             "operation_outcome": ActionFlag.NONE,
         },
         {

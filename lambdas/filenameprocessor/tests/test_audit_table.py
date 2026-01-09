@@ -18,8 +18,8 @@ from utils_for_tests.values_for_tests import FileDetails, MockFileDetails
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from audit_table import upsert_audit_table
     from common.clients import REGION_NAME
+    from common.models.batch_constants import AUDIT_TABLE_NAME, FileStatus
     from common.models.errors import UnhandledAuditTableError
-    from constants import AUDIT_TABLE_NAME, FileStatus
 
 dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
 
@@ -73,6 +73,7 @@ class TestAuditTable(TestCase):
             queue_name=ravs_rsv_test_file.queue_name,
             file_status=FileStatus.PROCESSED,
             expiry_timestamp=ravs_rsv_test_file.expires_at,
+            condition_expression="attribute_not_exists(message_id)",
         )
 
         assert_audit_table_entry(ravs_rsv_test_file, FileStatus.PROCESSED)
@@ -85,4 +86,32 @@ class TestAuditTable(TestCase):
                 queue_name=ravs_rsv_test_file.queue_name,
                 file_status=FileStatus.PROCESSED,
                 expiry_timestamp=ravs_rsv_test_file.expires_at,
+                condition_expression="attribute_not_exists(message_id)",
             )
+
+    def test_upsert_audit_table_with_duplicate_message_id_no_condition(self):
+        """Test that attempting to create an entry with a message_id that already exists causes no exception
+        if the condition_expression is not set"""
+        ravs_rsv_test_file = FileDetails("RAVS", "RSV", "YGM41", file_number=1)
+
+        upsert_audit_table(
+            message_id=ravs_rsv_test_file.message_id,
+            file_key=ravs_rsv_test_file.file_key,
+            created_at_formatted_str=ravs_rsv_test_file.created_at_formatted_string,
+            queue_name=ravs_rsv_test_file.queue_name,
+            file_status=FileStatus.PROCESSING,
+            expiry_timestamp=ravs_rsv_test_file.expires_at,
+        )
+
+        assert_audit_table_entry(ravs_rsv_test_file, FileStatus.PROCESSING)
+
+        upsert_audit_table(
+            message_id=ravs_rsv_test_file.message_id,
+            file_key=ravs_rsv_test_file.file_key,
+            created_at_formatted_str=ravs_rsv_test_file.created_at_formatted_string,
+            queue_name=ravs_rsv_test_file.queue_name,
+            file_status=FileStatus.PROCESSED,
+            expiry_timestamp=ravs_rsv_test_file.expires_at,
+        )
+
+        assert_audit_table_entry(ravs_rsv_test_file, FileStatus.PROCESSED)

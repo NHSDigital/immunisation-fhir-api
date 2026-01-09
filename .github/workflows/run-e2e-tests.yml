@@ -30,6 +30,7 @@ on:
           - internal-dev
           - internal-dev-sandbox
           - sandbox
+          - internal-qa
           - int
           - ref
           - prod
@@ -53,12 +54,10 @@ env:
   STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}
   SOURCE_COMMIT_ID: ${{ github.sha }}
 
-permissions:
-  id-token: write
-  contents: read
-
 jobs:
   wait-for-deployment:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     environment: ${{ inputs.apigee_environment }}
     outputs:
@@ -108,6 +107,9 @@ jobs:
           fi
 
   e2e-tests:
+    permissions:
+      id-token: write
+      contents: read
     runs-on: ubuntu-latest
     needs: [wait-for-deployment]
     environment: ${{ inputs.apigee_environment }}
@@ -115,11 +117,11 @@ jobs:
       APIGEE_USERNAME: ${{ vars.APIGEE_USERNAME }}
       TF_OUTPUTS_REQUIRED: ${{ vars.RUN_FULL_E2E_TESTS == 'true' || vars.RUN_PROXY_E2E_TESTS == 'true' }}
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
 
       - name: Connect to AWS
         if: ${{ env.TF_OUTPUTS_REQUIRED == 'true' }}
-        uses: aws-actions/configure-aws-credentials@00943011d9042930efac3dcd3a170e4273319bc8
+        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708
         with:
           aws-region: eu-west-2
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
@@ -153,7 +155,7 @@ jobs:
       - name: Install poetry
         run: pip install poetry==2.1.4
 
-      - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
+      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548
         with:
           python-version: 3.11
           cache: "poetry"
@@ -201,16 +203,19 @@ jobs:
         run: poetry run python -m unittest
 
   batch-e2e-tests:
+    permissions:
+      id-token: write
+      contents: read
     needs: [wait-for-deployment, e2e-tests]
     # Only actually depend on wait-for-deployment, but run after e2e-tests
     if: ${{ !cancelled() && needs.wait-for-deployment.result == 'success' && needs.wait-for-deployment.outputs.RUN_BATCH_E2E_TESTS == 'true' }}
     runs-on: ubuntu-latest
     environment: ${{ inputs.apigee_environment }}
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
 
       - name: Connect to AWS
-        uses: aws-actions/configure-aws-credentials@00943011d9042930efac3dcd3a170e4273319bc8
+        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708
         with:
           aws-region: eu-west-2
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
@@ -219,7 +224,7 @@ jobs:
       - name: Install poetry
         run: pip install poetry==2.1.4
 
-      - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
+      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548
         with:
           python-version: 3.11
           cache: "poetry"

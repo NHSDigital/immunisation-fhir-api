@@ -6,7 +6,7 @@ from unittest.mock import patch
 from utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
 
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from constants import AuditTableKeys
+    from common.models.batch_constants import AuditTableKeys
 
 
 fixed_datetime = datetime(2024, 10, 29, 12, 0, 0)
@@ -27,10 +27,17 @@ class FileDetails:
     vaccine type.
     """
 
-    def __init__(self, supplier: str, vaccine_type: str, ods_code: str, file_number: int = 1):
-        self.vaccine_type = vaccine_type.upper()
-        self.ods_code = ods_code.upper()
-        self.supplier = supplier.upper()
+    def __init__(
+        self,
+        supplier: str = "RAVS",
+        vaccine_type: str = None,
+        ods_code: str = None,
+        file_number: int = 1,
+        organization_code: str = None,
+    ):
+        self.vaccine_type = vaccine_type.upper() if vaccine_type else None
+        self.ods_code = ods_code.upper() if ods_code else "X8E5B"
+        self.supplier = supplier.upper() if supplier else None
         self.queue_name = f"{self.supplier}_{self.vaccine_type}"
 
         self.created_at_formatted_string = f"200{file_number}0101T00000000"
@@ -39,7 +46,14 @@ class FileDetails:
         self.name = f"{self.vaccine_type}/ {self.supplier} file"
 
         file_date_and_time_string = f"20000101T0000000{file_number}"
-        self.file_key = f"{vaccine_type}_Vaccinations_v5_{ods_code}_{file_date_and_time_string}.csv"
+        extended_attributes_prefix = "Vaccination_Extended_Attributes"
+        if vaccine_type.startswith(extended_attributes_prefix):
+            file_key = f"{extended_attributes_prefix}_v1_5_{organization_code}_{file_date_and_time_string}.csv"
+        else:
+            file_key = f"{vaccine_type}_Vaccinations_v5_{ods_code}_{file_date_and_time_string}.csv"
+
+        self.file_key = file_key
+
         self.ack_file_key = f"ack/{self.file_key[:-4]}_InfAck_{self.created_at_formatted_string}.csv"
 
         self.permissions_list = [f"{self.vaccine_type}_FULL"]
@@ -78,6 +92,9 @@ class MockFileDetails:
     emis_flu = FileDetails("EMIS", "FLU", "YGM41")
     emis_rsv = FileDetails("EMIS", "RSV", "YGM41")
     ravs_flu = FileDetails("RAVS", "FLU", "X8E5B")
+    extended_attributes_file = FileDetails(
+        vaccine_type="Vaccination_Extended_Attributes", file_number=1, organization_code="X8E5B"
+    )
 
 
 MOCK_FILE_HEADERS = (
@@ -103,4 +120,9 @@ MOCK_FILE_DATA = (
     '"J82067"|"https://fhir.nhs.uk/Id/ods-organization-code"'
 )
 
+MOCK_EXTENDED_ATTRIBUTES_FILE_DATA = '"VACCINATION_UNIQUE_ID"|"VACCINATION_UNIQUE_ID_URI"|"ACTION_FLAG"|"ATTRIBUTE_ID"|"ATTRIBUTE_DISPLAYED_TEXT"|"ATTRIBUTE_VALUE"|"RECORDED_DATE"'
+
+MOCK_EXTENDED_ATTRIBUTES_FILE_DATA = '"e045626e-4dc5-4df3-bc35-da25263f901e"|"https://supplierABC/identifiers/vacc"|"new"|"003"|"Are you a health care worker?"|"NOT_SPECIFIED"|"20210801"'
+
 MOCK_BATCH_FILE_CONTENT = MOCK_FILE_HEADERS + MOCK_FILE_DATA
+MOCK_EXTENDED_ATTRIBUTES_FILE_CONTENT = MOCK_FILE_HEADERS + MOCK_EXTENDED_ATTRIBUTES_FILE_DATA

@@ -10,6 +10,12 @@ variable "csoc_account_id" {
   default = "693466633220"
 }
 
+variable "dspp_kms_key_alias" {
+  description = "Alias name of the DPS KMS key allowed for SSE-KMS encryption"
+  type        = string
+  default     = "nhsd-dspp-core-ref-extended-attributes-gdp-key"
+}
+
 variable "create_mesh_processor" {
   default = false
 }
@@ -34,10 +40,16 @@ variable "pds_environment" {
   default = "int"
 }
 
+variable "mesh_no_invocation_period_seconds" {
+  description = "The maximum duration the MESH Processor Lambda can go without being invoked before the no-invocation alarm is triggered."
+  type        = number
+  default     = 300
+}
+
 # Remember to switch off in PR envs after testing
-variable "batch_error_notifications_enabled" {
+variable "error_alarm_notifications_enabled" {
   default     = true
-  description = "Switch to enable batch processing error notifications to Slack"
+  description = "Switch to enable error alarm notifications to Slack"
   type        = bool
 }
 

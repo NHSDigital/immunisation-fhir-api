@@ -59,7 +59,7 @@ jobs:
     needs: [run-internal-dev-tests]
     strategy:
       matrix:
-        sub_environment_name: [ref, int]
+        sub_environment_name: [ref, internal-qa]
     uses: ./.github/workflows/deploy-backend.yml
     with:
       apigee_environment: ${{ matrix.sub_environment_name }}
@@ -71,7 +71,7 @@ jobs:
     needs: [deploy-higher-dev-envs]
     strategy:
       matrix:
-        sub_environment_name: [ref, int]
+        sub_environment_name: [ref, internal-qa]
     uses: ./.github/workflows/run-e2e-tests.yml
     with:
       apigee_environment: ${{ matrix.sub_environment_name }}

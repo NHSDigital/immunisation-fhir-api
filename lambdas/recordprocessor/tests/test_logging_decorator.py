@@ -22,8 +22,8 @@ from utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
 
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from common.clients import REGION_NAME
-    from errors import InvalidHeaders, NoOperationPermissions
     from file_level_validation import file_level_validation
+    from models.errors import InvalidHeaders, NoOperationPermissions
 
 
 from utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
@@ -68,6 +68,7 @@ class TestLoggingDecorator(unittest.TestCase):
         # These patches can be overridden in individual tests.
         common_patches = [
             patch("file_level_validation.update_audit_table_status"),
+            patch("file_level_validation.set_audit_table_ingestion_start_time"),
         ]
 
         with ExitStack() as stack:

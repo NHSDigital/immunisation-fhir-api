@@ -1,9 +1,9 @@
 SHELL=/usr/bin/env bash -euo pipefail
 
-PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS = backend lambdas/ack_backend lambdas/batch_processor_filter lambdas/delta_backend lambdas/filenameprocessor lambdas/id_sync lambdas/mesh_processor lambdas/mns_subscription lambdas/recordprocessor lambdas/redis_sync lambdas/shared
+PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS = lambdas/backend lambdas/ack_backend lambdas/batch_processor_filter lambdas/delta_backend lambdas/filenameprocessor lambdas/id_sync lambdas/mesh_processor lambdas/mns_subscription lambdas/recordforwarder lambdas/recordprocessor lambdas/redis_sync lambdas/shared
 PYTHON_PROJECT_DIRS = tests/e2e tests/e2e_batch quality_checks $(PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS)
 
-.PHONY: install lint format format-check clean publish build-proxy release initialise-all-python-venvs update-all-python-dependencies run-all-python-unit-tests build-all-docker-images
+.PHONY: install lint format format-check clean publish oas build-proxy release initialise-all-python-venvs update-all-python-dependencies run-all-python-unit-tests build-all-docker-images
 
 #Installs dependencies using npm.
 install:
@@ -19,17 +19,28 @@ format:
 format-check:
 	npm run format-check
 
-#Removes build/ + dist/ directories
+#Removes build/, dist/ and sandbox/specification/ directories
 clean:
 	rm -rf build
 	rm -rf dist
+	rm -rf sandbox/specification
 
-#Creates the fully expanded OAS spec in json
+#Creates the OAS spec in JSON for sandbox
 publish: clean
 	mkdir -p build
 	npm run publish 2> /dev/null
 	cp build/immunisation-fhir-api.json sandbox/
 	cp -r specification sandbox/specification
+
+make serve: publish
+	npm run serve
+
+#Creates a minified OAS spec in JSON for sending to APIM
+oas: publish
+	mkdir -p oas
+	rm -f specification/immunisation-fhir-api.json
+	jq -c . build/immunisation-fhir-api.json > oas/immunisation-fhir-api.json
+	chmod -w oas/immunisation-fhir-api.json
 
 #Runs build proxy script
 build-proxy:

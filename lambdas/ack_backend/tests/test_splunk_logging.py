@@ -9,13 +9,13 @@ from unittest.mock import call, patch
 from boto3 import client as boto3_client
 from moto import mock_aws
 
-from tests.utils.generic_setup_and_teardown_for_ack_backend import (
+from utils.generic_setup_and_teardown_for_ack_backend import (
     GenericSetUp,
     GenericTearDown,
 )
-from tests.utils.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames
-from tests.utils.utils_for_ack_backend_tests import generate_event
-from tests.utils.values_for_ack_backend_tests import (
+from utils.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames
+from utils.utils_for_ack_backend_tests import generate_event
+from utils.values_for_ack_backend_tests import (
     EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS,
     DiagnosticsDictionaries,
     InvalidValues,
@@ -45,6 +45,9 @@ class TestLoggingDecorators(unittest.TestCase):
             Body=mock_source_file_with_100_rows.getvalue(),
         )
 
+        self.ack_bucket_patcher = patch("update_ack_file.ACK_BUCKET_NAME", BucketNames.DESTINATION)
+        self.ack_bucket_patcher.start()
+
     def tearDown(self):
         GenericTearDown(self.s3_client)
 
@@ -62,10 +65,11 @@ class TestLoggingDecorators(unittest.TestCase):
             # The logging_decorator.logger is patched individually in each test to allow for assertions to be made.
             # Any uses of the logger in other files will confound the tests and should be patched here.
             patch("update_ack_file.logger"),
+            patch("common.aws_s3_utils.logger"),
             # Time is incremented by 1.0 for each call to time.time for ease of testing.
             # Range is set to a large number (300) due to many calls being made to time.time for some tests.
             patch(
-                "logging_decorators.time.time",
+                "update_ack_file.time.time",
                 side_effect=[0.0 + i for i in range(300)],
             ),
         ]
@@ -119,8 +123,8 @@ class TestLoggingDecorators(unittest.TestCase):
         for operation in ["CREATE", "UPDATE", "DELETE"]:
             with (  # noqa: E999
                 patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
-                patch("ack_processor.is_ack_processing_complete", return_value=False),
                 patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
+                patch("ack_processor.increment_records_failed_count"),  # noqa: E999
             ):  # noqa: E999
                 result = lambda_handler(
                     event=generate_event([{"operation_requested": operation}]),
@@ -161,6 +165,7 @@ class TestLoggingDecorators(unittest.TestCase):
         with (  # noqa: E999
             patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
+            patch("ack_processor.increment_records_failed_count"),  # noqa: E999
         ):  # noqa: E999
             with self.assertRaises(AttributeError):
                 lambda_handler(event={"Records": [{"body": json.dumps([{"": "456", "row_id": "test^1"}])}]}, context={})
@@ -223,8 +228,8 @@ class TestLoggingDecorators(unittest.TestCase):
         for test_case in test_cases:
             with (  # noqa: E999
                 patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
-                patch("ack_processor.is_ack_processing_complete", return_value=False),
                 patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
+                patch("ack_processor.increment_records_failed_count") as mock_increment_records_failed_count,  # noqa: E999
             ):  # noqa: E999
                 result = lambda_handler(
                     event=generate_event([{"diagnostics": test_case["diagnostics"]}]),
@@ -254,6 +259,7 @@ class TestLoggingDecorators(unittest.TestCase):
                     call(self.stream_name, expected_second_logger_info_data),
                 ]
             )
+            mock_increment_records_failed_count.assert_called()
 
     def test_splunk_logging_multiple_rows(self):
         """Tests logging for multiple objects in the body of the event"""
@@ -261,8 +267,8 @@ class TestLoggingDecorators(unittest.TestCase):
 
         with (  # noqa: E999
             patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
-            patch("ack_processor.is_ack_processing_complete", return_value=False),
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
+            patch("ack_processor.increment_records_failed_count"),  # noqa: E999
         ):  # noqa: E999
             result = lambda_handler(generate_event(messages), context={})
 
@@ -312,8 +318,8 @@ class TestLoggingDecorators(unittest.TestCase):
 
         with (  # noqa: E999
             patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
-            patch("ack_processor.is_ack_processing_complete", return_value=False),
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
+            patch("ack_processor.increment_records_failed_count") as mock_increment_records_failed_count,  # noqa: E999
         ):  # noqa: E999
             result = lambda_handler(generate_event(messages), context={})
 
@@ -366,9 +372,9 @@ class TestLoggingDecorators(unittest.TestCase):
                 call(self.stream_name, expected_fourth_logger_info_data),
             ]
         )
+        mock_increment_records_failed_count.assert_called()
 
     def test_splunk_update_ack_file_not_logged(self):
-        self.maxDiff = None
         """Tests that update_ack_file is not logged if we have sent acks for less than the whole file"""
         # send 98 messages
         messages = []
@@ -379,10 +385,10 @@ class TestLoggingDecorators(unittest.TestCase):
         with (  # noqa: E999
             patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
-            patch("ack_processor.is_ack_processing_complete", return_value=False),
             patch(
                 "update_ack_file.change_audit_table_status_to_processed"
             ) as mock_change_audit_table_status_to_processed,  # noqa: E999
+            patch("ack_processor.increment_records_failed_count"),  # noqa: E999
         ):  # noqa: E999
             result = lambda_handler(generate_event(messages), context={})
 
@@ -420,12 +426,16 @@ class TestLoggingDecorators(unittest.TestCase):
         with (  # noqa: E999
             patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
-            patch("ack_processor.is_ack_processing_complete", return_value=True),
+            patch("update_ack_file.get_record_count_and_failures_by_message_id", return_value=(99, 2)),
             patch(
                 "update_ack_file.change_audit_table_status_to_processed"
             ) as mock_change_audit_table_status_to_processed,  # noqa: E999
+            patch(
+                "update_ack_file.set_audit_record_success_count_and_end_time"
+            ) as mock_set_records_succeeded_count_and_end_time,  # noqa: E999
+            patch("ack_processor.increment_records_failed_count"),  # noqa: E999
         ):  # noqa: E999
-            result = lambda_handler(generate_event(messages), context={})
+            result = lambda_handler(generate_event(messages, include_eof_message=True), context={})
 
         self.assertEqual(result, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
 
@@ -458,6 +468,7 @@ class TestLoggingDecorators(unittest.TestCase):
             ]
         )
         mock_change_audit_table_status_to_processed.assert_called()
+        mock_set_records_succeeded_count_and_end_time.assert_called()
 
 
 if __name__ == "__main__":

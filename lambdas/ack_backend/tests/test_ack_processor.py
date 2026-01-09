@@ -3,8 +3,9 @@
 import json
 import os
 import unittest
+from copy import deepcopy
 from io import StringIO
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from boto3 import client as boto3_client
 from moto import mock_aws
@@ -30,7 +31,6 @@ from utils.values_for_ack_backend_tests import (
     DiagnosticsDictionaries,
     ValidValues,
 )
-from utils_for_ack_lambda import _BATCH_EVENT_ID_TO_RECORD_COUNT_MAP
 
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from ack_processor import lambda_handler
@@ -62,6 +62,12 @@ class TestAckProcessor(unittest.TestCase):
         )
         self.logger_info_patcher = patch("common.log_decorator.logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
+
+        self.ack_bucket_patcher = patch("update_ack_file.ACK_BUCKET_NAME", BucketNames.DESTINATION)
+        self.ack_bucket_patcher.start()
+
+        self.source_bucket_patcher = patch("update_ack_file.SOURCE_BUCKET_NAME", BucketNames.SOURCE)
+        self.source_bucket_patcher.start()
 
     def tearDown(self) -> None:
         GenericTearDown(self.s3_client, self.firehose_client, self.dynamodb_client)
@@ -111,26 +117,39 @@ class TestAckProcessor(unittest.TestCase):
         actual_status = audit_entry.get("status", {}).get("S")
         self.assertEqual(actual_status, status)
 
+    def assert_audit_entry_counts_equal(self, message_id: str, expected_counts: dict) -> None:
+        """Checks the audit entry counts are as expected"""
+        audit_entry = self.dynamodb_client.get_item(
+            TableName=AUDIT_TABLE_NAME, Key={"message_id": {"S": message_id}}
+        ).get("Item")
+
+        actual_counts = {
+            "record_count": audit_entry.get("record_count", {}).get("N"),
+            "records_succeeded": audit_entry.get("records_succeeded", {}).get("N"),
+            "records_failed": audit_entry.get("records_failed", {}).get("N"),
+        }
+
+        self.assertDictEqual(actual_counts, expected_counts)
+
     def test_lambda_handler_main_multiple_records(self):
         """Test lambda handler with multiple records."""
         # Set up an audit entry which does not yet have record_count recorded
         add_audit_entry_to_table(self.dynamodb_client, "row")
-        # First array of messages: all successful. Rows 1 to 3
-        array_of_success_messages = [
+        # First array of messages. Rows 1 to 3
+        array_of_messages_one = [
             {
-                **BASE_SUCCESS_MESSAGE,
+                **BASE_FAILURE_MESSAGE,
                 "row_id": f"row^{i}",
-                "imms_id": f"imms_{i}",
                 "local_id": f"local^{i}",
             }
             for i in range(1, 4)
         ]
-        # Second array of messages: all with diagnostics (failure messages). Rows 4 to 7
-        array_of_failure_messages = [
+        # Second batch array of messages. Rows 4 to 7
+        array_of_messages_two = [
             {**BASE_FAILURE_MESSAGE, "row_id": f"row^{i}", "local_id": f"local^{i}"} for i in range(4, 8)
         ]
-        # Third array of messages: mixture of success and failure messages. Rows 8 to 11
-        array_of_mixed_success_and_failure_messages = [
+        # Third array of messages: mixture of diagnostic info.
+        array_of_messages_three = [
             {
                 **BASE_FAILURE_MESSAGE,
                 "row_id": "row^8",
@@ -138,15 +157,13 @@ class TestAckProcessor(unittest.TestCase):
                 "diagnostics": DiagnosticsDictionaries.CUSTOM_VALIDATION_ERROR,
             },
             {
-                **BASE_SUCCESS_MESSAGE,
+                **BASE_FAILURE_MESSAGE,
                 "row_id": "row^9",
-                "imms_id": "imms_9",
                 "local_id": "local^9",
             },
             {
-                **BASE_SUCCESS_MESSAGE,
+                **BASE_FAILURE_MESSAGE,
                 "row_id": "row^10",
-                "imms_id": "imms_10",
                 "local_id": "local^10",
             },
             {
@@ -159,10 +176,15 @@ class TestAckProcessor(unittest.TestCase):
 
         event = {
             "Records": [
-                {"body": json.dumps(array_of_success_messages)},
-                {"body": json.dumps(array_of_failure_messages)},
-                {"body": json.dumps(array_of_mixed_success_and_failure_messages)},
+                {"body": json.dumps(array_of_messages_one)},
+                {"body": json.dumps(array_of_messages_two)},
+                {"body": json.dumps(array_of_messages_three)},
             ]
+        }
+        expected_entry_counts = {
+            "record_count": None,
+            "records_succeeded": None,
+            "records_failed": "11",
         }
 
         response = lambda_handler(event=event, context={})
@@ -171,22 +193,19 @@ class TestAckProcessor(unittest.TestCase):
         validate_ack_file_content(
             self.s3_client,
             [
-                *array_of_success_messages,
-                *array_of_failure_messages,
-                *array_of_mixed_success_and_failure_messages,
+                *array_of_messages_one,
+                *array_of_messages_two,
+                *array_of_messages_three,
             ],
             existing_file_content=ValidValues.ack_headers,
         )
+        self.assert_audit_entry_counts_equal("row", expected_entry_counts)
 
     def test_lambda_handler_main(self):
-        """Test lambda handler with consitent ack_file_name and message_template."""
+        """Test lambda handler with consistent ack_file_name and message_template."""
         # Set up an audit entry which does not yet have record_count recorded
         add_audit_entry_to_table(self.dynamodb_client, "row")
         test_cases = [
-            {
-                "description": "Multiple messages: all successful",
-                "messages": [{"row_id": f"row^{i + 1}"} for i in range(10)],
-            },
             {
                 "description": "Multiple messages: all with diagnostics (failure messages)",
                 "messages": [
@@ -194,35 +213,38 @@ class TestAckProcessor(unittest.TestCase):
                     {"row_id": "row^2", "diagnostics": DiagnosticsDictionaries.NO_PERMISSIONS},
                     {"row_id": "row^3", "diagnostics": DiagnosticsDictionaries.RESOURCE_NOT_FOUND_ERROR},
                 ],
+                "expected_failures_cum_tot": "3",
             },
             {
-                "description": "Multiple messages: mixture of success and failure messages",
+                "description": "Multiple messages: mixture of diagnostic outputs",
                 "messages": [
-                    {"row_id": "row^1", "imms_id": "TEST_IMMS_ID"},
-                    {"row_id": "row^2", "diagnostics": DiagnosticsDictionaries.UNIQUE_ID_MISSING},
+                    {"row_id": "row^1", "diagnostics": DiagnosticsDictionaries.UNIQUE_ID_MISSING},
+                    {"row_id": "row^2", "diagnostics": DiagnosticsDictionaries.CUSTOM_VALIDATION_ERROR},
                     {"row_id": "row^3", "diagnostics": DiagnosticsDictionaries.CUSTOM_VALIDATION_ERROR},
-                    {"row_id": "row^4"},
-                    {"row_id": "row^5", "diagnostics": DiagnosticsDictionaries.CUSTOM_VALIDATION_ERROR},
-                    {"row_id": "row^6", "diagnostics": DiagnosticsDictionaries.CUSTOM_VALIDATION_ERROR},
-                    {"row_id": "row^7"},
-                    {"row_id": "row^8", "diagnostics": DiagnosticsDictionaries.IDENTIFIER_DUPLICATION_ERROR},
+                    {"row_id": "row^4", "diagnostics": DiagnosticsDictionaries.CUSTOM_VALIDATION_ERROR},
+                    {"row_id": "row^5", "diagnostics": DiagnosticsDictionaries.IDENTIFIER_DUPLICATION_ERROR},
                 ],
-            },
-            {
-                "description": "Single row: success",
-                "messages": [{"row_id": "row^1"}],
+                "expected_failures_cum_tot": "8",
             },
             {
                 "description": "Single row: malformed diagnostics info from forwarder",
                 "messages": [{"row_id": "row^1", "diagnostics": "SHOULD BE A DICTIONARY, NOT A STRING"}],
+                "expected_failures_cum_tot": "9",
             },
         ]
 
         for test_case in test_cases:
-            # Test scenario where there is no existing ack file
             with self.subTest(msg=f"No existing ack file: {test_case['description']}"):
                 response = lambda_handler(event=self.generate_event(test_case["messages"]), context={})
                 self.assertEqual(response, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
+                self.assert_audit_entry_counts_equal(
+                    "row",
+                    {
+                        "record_count": None,
+                        "records_succeeded": None,
+                        "records_failed": test_case["expected_failures_cum_tot"],
+                    },
+                )
                 validate_ack_file_content(self.s3_client, test_case["messages"])
 
                 self.s3_client.delete_object(
@@ -242,23 +264,27 @@ class TestAckProcessor(unittest.TestCase):
 
         # Original source file had 100 records
         add_audit_entry_to_table(self.dynamodb_client, mock_batch_message_id, record_count=100)
-        array_of_success_messages = [
+        array_of_failure_messages = [
             {
-                **BASE_SUCCESS_MESSAGE,
+                **BASE_FAILURE_MESSAGE,
                 "row_id": f"{mock_batch_message_id}^{i}",
-                "imms_id": f"imms_{i}",
                 "local_id": f"local^{i}",
             }
             for i in range(1, 4)
         ]
-        test_event = {"Records": [{"body": json.dumps(array_of_success_messages)}]}
+        test_event = {"Records": [{"body": json.dumps(array_of_failure_messages)}]}
+        expected_entry_counts = {
+            "record_count": "100",
+            "records_succeeded": None,
+            "records_failed": "3",
+        }  # Records succeeded not updated until all records are processed
 
         response = lambda_handler(event=test_event, context={})
 
         self.assertEqual(response, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
         validate_ack_file_content(
             self.s3_client,
-            [*array_of_success_messages],
+            [*array_of_failure_messages],
             existing_file_content=ValidValues.ack_headers,
         )
         self.assert_ack_and_source_file_locations_correct(
@@ -268,45 +294,7 @@ class TestAckProcessor(unittest.TestCase):
             is_complete=False,
         )
         self.assert_audit_entry_status_equals(mock_batch_message_id, "Preprocessed")
-
-    @patch("utils_for_ack_lambda.get_record_count_by_message_id", return_value=500)
-    def test_lambda_handler_uses_message_id_to_record_count_cache_to_reduce_ddb_calls(self, mock_get_record_count: Mock):
-        """The DynamoDB Audit table is used to store the total record count for each source file. To reduce calls each
-        time - this test checks that we cache the value as this lambda is called many times for large files"""
-        mock_batch_message_id = "622cdeea-461e-4a83-acb5-7871d47ddbcd"
-
-        # Original source file had 500 records
-        add_audit_entry_to_table(self.dynamodb_client, mock_batch_message_id, record_count=500)
-
-        message_one = [
-            {**BASE_SUCCESS_MESSAGE, "row_id": f"{mock_batch_message_id}^1", "imms_id": "imms_1", "local_id": "local^1"}
-        ]
-        message_two = [
-            {**BASE_SUCCESS_MESSAGE, "row_id": f"{mock_batch_message_id}^2", "imms_id": "imms_2", "local_id": "local^2"}
-        ]
-        test_event_one = {"Records": [{"body": json.dumps(message_one)}]}
-        test_event_two = {"Records": [{"body": json.dumps(message_two)}]}
-
-        response = lambda_handler(event=test_event_one, context={})
-        self.assertEqual(response, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
-        second_invocation_response = lambda_handler(event=test_event_two, context={})
-        self.assertEqual(second_invocation_response, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
-
-        # Assert that the DDB call is only performed once on the first invocation
-        mock_get_record_count.assert_called_once_with(mock_batch_message_id)
-        validate_ack_file_content(
-            self.s3_client,
-            [*message_one, *message_two],
-            existing_file_content=ValidValues.ack_headers,
-        )
-        self.assert_ack_and_source_file_locations_correct(
-            MOCK_MESSAGE_DETAILS.file_key,
-            MOCK_MESSAGE_DETAILS.temp_ack_file_key,
-            MOCK_MESSAGE_DETAILS.archive_ack_file_key,
-            is_complete=False,
-        )
-        self.assertEqual(_BATCH_EVENT_ID_TO_RECORD_COUNT_MAP[mock_batch_message_id], 500)
-        self.assert_audit_entry_status_equals(mock_batch_message_id, "Preprocessed")
+        self.assert_audit_entry_counts_equal(mock_batch_message_id, expected_entry_counts)
 
     def test_lambda_handler_updates_ack_file_and_marks_complete_when_all_records_processed(self):
         """
@@ -330,22 +318,30 @@ class TestAckProcessor(unittest.TestCase):
             Body=StringIO(existing_ack_content).getvalue(),
         )
 
-        array_of_success_messages = [
+        array_of_failure_messages = [
             {
-                **BASE_SUCCESS_MESSAGE,
+                **BASE_FAILURE_MESSAGE,
                 "row_id": f"{mock_batch_message_id}^{i}",
-                "imms_id": f"imms_{i}",
                 "local_id": f"local^{i}",
             }
             for i in range(50, 101)
         ]
-        test_event = {"Records": [{"body": json.dumps(array_of_success_messages)}]}
+
+        # Include the EoF message in the event
+        all_messages_plus_eof = deepcopy(array_of_failure_messages)
+        all_messages_plus_eof.append(MOCK_MESSAGE_DETAILS.eof_message)
+        test_event = {"Records": [{"body": json.dumps(all_messages_plus_eof)}]}
+        expected_entry_counts = {
+            "record_count": "100",
+            "records_succeeded": "49",
+            "records_failed": "51",
+        }
 
         response = lambda_handler(event=test_event, context={})
 
         self.assertEqual(response, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
         validate_ack_file_content(
-            self.s3_client, [*array_of_success_messages], existing_file_content=existing_ack_content, is_complete=True
+            self.s3_client, [*array_of_failure_messages], existing_file_content=existing_ack_content, is_complete=True
         )
         self.assert_ack_and_source_file_locations_correct(
             MOCK_MESSAGE_DETAILS.file_key,
@@ -354,6 +350,7 @@ class TestAckProcessor(unittest.TestCase):
             is_complete=True,
         )
         self.assert_audit_entry_status_equals(mock_batch_message_id, "Processed")
+        self.assert_audit_entry_counts_equal(mock_batch_message_id, expected_entry_counts)
 
     def test_lambda_handler_error_scenarios(self):
         """Test that the lambda handler raises appropriate exceptions for malformed event data."""
