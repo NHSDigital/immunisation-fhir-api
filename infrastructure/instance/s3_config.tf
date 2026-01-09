@@ -152,8 +152,7 @@ resource "aws_s3_bucket_replication_configuration" "replication" {
     }
 
     destination {
-      bucket        = aws_s3_bucket.batch_data_source_bucket.arn
-      storage_class = "STANDARD"
+      bucket = aws_s3_bucket.batch_data_source_bucket.arn
 
       replication_time {
         status = "Enabled"
@@ -183,8 +182,7 @@ resource "aws_s3_bucket_replication_configuration" "replication" {
     }
 
     destination {
-      bucket        = strcontains(aws_s3_bucket.batch_data_source_bucket.arn, "blue") ? replace(aws_s3_bucket.batch_data_source_bucket.arn, "blue", "green") : replace(aws_s3_bucket.batch_data_source_bucket.arn, "green", "blue")
-      storage_class = "STANDARD"
+      bucket = strcontains(aws_s3_bucket.batch_data_source_bucket.arn, "blue") ? replace(aws_s3_bucket.batch_data_source_bucket.arn, "blue", "green") : replace(aws_s3_bucket.batch_data_source_bucket.arn, "green", "blue")
 
       replication_time {
         status = "Enabled"
