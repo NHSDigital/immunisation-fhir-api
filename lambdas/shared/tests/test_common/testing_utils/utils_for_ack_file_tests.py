@@ -1,4 +1,4 @@
-"""Utils for the recordprocessor tests"""
+"""Utils for the ack_file tests"""
 
 from io import StringIO
 from unittest.mock import patch
