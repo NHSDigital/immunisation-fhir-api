@@ -1,72 +1,82 @@
-from multiprocessing import context
-from src.dynamoDB.dynamo_db_helper import *
-from src.objectModels.api_immunization_builder import *
-from src.objectModels.batch.batch_file_builder import *
-from utilities.batch_S3_buckets import *
-from utilities.batch_file_helper import *
-from utilities.date_helper import *
-from utilities.text_helper import get_text
-from utilities.vaccination_constants import *
-from pytest_bdd import scenarios, given, when, then, parsers
-import pytest_check as check
-from .batch_common_steps import *
-from features.APITests.steps.common_steps import *
+import pandas as pd
+from pytest_bdd import given, scenarios, then, when
+from src.objectModels.batch.batch_file_builder import build_batch_file
+from utilities.batch_file_helper import read_and_validate_bus_ack_file_content
+from utilities.enums import GenderCode
+from utilities.error_constants import ERROR_MAP
+
+from features.APITests.steps.common_steps import (
+    The_request_will_have_status_code,
+    send_update_for_immunization_event,
+    valid_json_payload_is_created,
+    validate_etag_in_header,
+    validate_imms_event_table_by_operation,
+    validVaccinationRecordIsCreated,
+)
 from features.APITests.steps.test_create_steps import validate_imms_delta_table_by_ImmsID
 from features.APITests.steps.test_update_steps import validate_delta_table_for_updated_event
 
-scenarios('batchTests/update_batch.feature')
+from .batch_common_steps import build_dataFrame_using_datatable, create_batch_file
+
+scenarios("batchTests/update_batch.feature")
+
 
 @given("batch file is created for below data as full dataset and each record has a valid update record in the same file")
-def valid_batch_file_is_created_with_details(datatable, context):    
-    build_dataFrame_using_datatable(datatable, context) 
+def valid_batch_file_is_created_with_details(datatable, context):
+    build_dataFrame_using_datatable(datatable, context)
     df_new = context.vaccine_df.copy()
     df_update = df_new.copy()
     df_update[["ACTION_FLAG", "EXPIRY_DATE"]] = ["UPDATE", "20281231"]
-    context.vaccine_df = pd.concat([df_new, df_update], ignore_index=True) 
-    context.expected_version = 2      
+    context.vaccine_df = pd.concat([df_new, df_update], ignore_index=True)
+    context.expected_version = 2
     create_batch_file(context)
-    
+
+
 @given("I have created a valid vaccination record through API")
 def create_valid_vaccination_record_through_api(context):
     validVaccinationRecordIsCreated(context)
     print(f"Created Immunization record with ImmsID: {context.ImmsID}")
-    
-    
-    
+
+
 @when("An update to above  vaccination record is made through batch file upload")
 def upload_batch_file_to_s3_for_update(context):
     record = build_batch_file(context)
-    context.vaccine_df = pd.DataFrame([record.dict()]) 
-    context.vaccine_df.loc[0, [
-                                "NHS_NUMBER",
-                                "PERSON_FORENAME",
-                                "PERSON_SURNAME",
-                                "PERSON_GENDER_CODE",
-                                "PERSON_DOB",
-                                "PERSON_POSTCODE",
-                                "ACTION_FLAG",
-                                "UNIQUE_ID",
-                                "UNIQUE_ID_URI"
-                            ]] = [
-                                context.create_object.contained[1].identifier[0].value,
-                                context.create_object.contained[1].name[0].given[0],
-                                context.create_object.contained[1].name[0].family,
-                                context.create_object.contained[1].gender,
-                                context.create_object.contained[1].birthDate.replace("-", ""),
-                                context.create_object.contained[1].address[0].postalCode,
-                                "UPDATE",
-                                context.create_object.identifier[0].value,
-                                context.create_object.identifier[0].system
-                            ]
-    context.expected_version = 2 
-    create_batch_file(context) 
-   
-@then("The delta and imms event table will be populated with the correct data for api created event")    
+    context.vaccine_df = pd.DataFrame([record.dict()])
+    context.vaccine_df.loc[
+        0,
+        [
+            "NHS_NUMBER",
+            "PERSON_FORENAME",
+            "PERSON_SURNAME",
+            "PERSON_GENDER_CODE",
+            "PERSON_DOB",
+            "PERSON_POSTCODE",
+            "ACTION_FLAG",
+            "UNIQUE_ID",
+            "UNIQUE_ID_URI",
+        ],
+    ] = [
+        context.create_object.contained[1].identifier[0].value,
+        context.create_object.contained[1].name[0].given[0],
+        context.create_object.contained[1].name[0].family,
+        context.create_object.contained[1].gender,
+        context.create_object.contained[1].birthDate.replace("-", ""),
+        context.create_object.contained[1].address[0].postalCode,
+        "UPDATE",
+        context.create_object.identifier[0].value,
+        context.create_object.identifier[0].system,
+    ]
+    context.expected_version = 2
+    create_batch_file(context)
+
+
+@then("The delta and imms event table will be populated with the correct data for api created event")
 @given("The delta and imms event table will be populated with the correct data for api created event")
 def validate_imms_delta_table_for_api_created_event(context):
     validate_imms_event_table_by_operation(context, "created")
     validate_imms_delta_table_by_ImmsID(context)
-    
+
+
 @when("Send a update for Immunization event created with vaccination detail being updated through API request")
 def send_update_for_immunization_event_with_vaccination_detail_updated(context):
     valid_json_payload_is_created(context)
@@ -77,21 +87,23 @@ def send_update_for_immunization_event_with_vaccination_detail_updated(context):
     reverse_gender_map = {v.value: v.name for v in GenderCode}
     code = row["PERSON_GENDER_CODE"]
     context.immunization_object.contained[1].gender = reverse_gender_map.get(code, "unknown")
-    context.immunization_object.contained[1].birthDate = (
-                        f"{row['PERSON_DOB'][:4]}-{row['PERSON_DOB'][4:6]}-{row['PERSON_DOB'][6:]}"
-                            )
+    context.immunization_object.contained[
+        1
+    ].birthDate = f"{row['PERSON_DOB'][:4]}-{row['PERSON_DOB'][4:6]}-{row['PERSON_DOB'][6:]}"
     context.immunization_object.contained[1].address[0].postalCode = row["PERSON_POSTCODE"]
     context.immunization_object.identifier[0].value = row["UNIQUE_ID"]
     context.immunization_object.identifier[0].system = row["UNIQUE_ID_URI"]
-    send_update_for_immunization_event(context) 
-    
+    send_update_for_immunization_event(context)
+
+
 @then("Api request will be successful and tables will be updated correctly")
 def api_request_will_be_successful_and_tables_will_be_updated_correctly(context):
     The_request_will_have_status_code(context, 200)
     validate_etag_in_header(context)
     validate_imms_event_table_by_operation(context, "updated")
     validate_delta_table_for_updated_event(context)
-    
+
+
 @when("Update to above vaccination record is made through batch file upload with mandatory field missing")
 def upload_batch_file_to_s3_for_update_with_mandatory_field_missing(context):
     # Build base record
@@ -133,7 +145,7 @@ def upload_batch_file_to_s3_for_update_with_mandatory_field_missing(context):
         15: {"VACCINATION_PROCEDURE_CODE": " ", "PERSON_SURNAME": "empty_procedure_code"},
         16: {"PRIMARY_SOURCE": "test", "PERSON_SURNAME": "no_primary_source"},
         17: {"ACTION_FLAG": "", "PERSON_SURNAME": "invalid_action_flag"},
-        18: {"ACTION_FLAG": " ", "PERSON_SURNAME": "invalid_action_flag"}
+        18: {"ACTION_FLAG": " ", "PERSON_SURNAME": "invalid_action_flag"},
     }
 
     # Apply all missing-field modifications
@@ -143,11 +155,13 @@ def upload_batch_file_to_s3_for_update_with_mandatory_field_missing(context):
 
     create_batch_file(context)
 
+
 @then("bus ack will have error records for all the updated records in the batch file")
-def all_records_are_processed_successfully_in_the_batch_file(context): 
-    file_rows = read_and_validate_bus_ack_file_content(context, False, True) 
+def all_records_are_processed_successfully_in_the_batch_file(context):
+    file_rows = read_and_validate_bus_ack_file_content(context, False, True)
     all_valid = validate_bus_ack_file_for_error_by_surname(context, file_rows)
     assert all_valid, "One or more records failed validation checks"
+
 
 def validate_bus_ack_file_for_error_by_surname(context, file_rows) -> bool:
     if not file_rows:
@@ -157,7 +171,6 @@ def validate_bus_ack_file_for_error_by_surname(context, file_rows) -> bool:
     overall_valid = True
 
     for batch_idx, row in context.vaccine_df.iterrows():
-
         bus_ack_row_number = batch_idx + 2
 
         row_data_list = file_rows.get(bus_ack_row_number)
@@ -184,7 +197,6 @@ def validate_bus_ack_file_for_error_by_surname(context, file_rows) -> bool:
             imms_id = fields[11]
             operation_outcome = fields[12]
             message_delivery = fields[13]
-
 
             if header_response_code != "Fatal Error":
                 print(f"Row {i}: HEADER_RESPONSE_CODE is not 'Fatal Error'")

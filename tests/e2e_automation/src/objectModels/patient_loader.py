@@ -1,7 +1,9 @@
 import pandas as pd
-from src.objectModels.api_data_objects import HumanName, Address, Identifier, Patient
+
+from src.objectModels.api_data_objects import Address, HumanName, Identifier, Patient
 
 csv_path = "input/testData.csv"
+
 
 def load_patient_by_id(id: str) -> Patient:
     row = read_patient_from_csv(id)  # FIXED: Correct function call
@@ -12,15 +14,9 @@ def load_patient_by_id(id: str) -> Patient:
     nhs_number = row.get("nhs_number", "").strip()
     nhs_number = None if not nhs_number or nhs_number.lower() in ["null", "none"] else nhs_number
 
-    identifier = Identifier(
-        system="https://fhir.nhs.uk/Id/nhs-number",
-        value=nhs_number
-    )
+    identifier = Identifier(system="https://fhir.nhs.uk/Id/nhs-number", value=nhs_number)
 
-    name = HumanName(
-        family=row["family_name"],
-        given=[row["given_name"]]
-    )
+    name = HumanName(family=row["family_name"], given=[row["given_name"]])
 
     address = Address(
         use="Home",
@@ -32,10 +28,7 @@ def load_patient_by_id(id: str) -> Patient:
         state=row["state"],
         postalCode=row["postal_code"],
         country=row["country"],
-        period= {
-            "start": row["start_date"], 
-            "end": row["end_date"]
-        }
+        period={"start": row["start_date"], "end": row["end_date"]},
     )
 
     return Patient(
@@ -45,8 +38,9 @@ def load_patient_by_id(id: str) -> Patient:
         name=[name],
         gender=row["gender"],
         birthDate=row["birth_date"],
-        address=[address]
+        address=[address],
     )
+
 
 def read_patient_from_csv(id: str):
     df = pd.read_csv(csv_path, dtype=str)
