@@ -1,6 +1,5 @@
 """Utils functions for filenameprocessor tests"""
 
-from io import StringIO
 from unittest.mock import patch
 
 from boto3 import client as boto3_client
@@ -15,8 +14,6 @@ from utils_for_tests.values_for_tests import FileDetails, MockFileDetails
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from csv import DictReader
-
     from common.clients import REGION_NAME
     from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys, FileStatus
     from common.models.constants import RedisHashKeys
@@ -25,13 +22,6 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
 MOCK_ODS_CODE_TO_SUPPLIER = {"YGM41": "EMIS", "X8E5B": "RAVS"}
 
 dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
-
-
-def get_csv_file_dict_reader(s3_client, bucket_name: str, file_key: str) -> DictReader:
-    """Download the file from the S3 bucket and return it as a DictReader"""
-    ack_file_csv_obj = s3_client.get_object(Bucket=bucket_name, Key=file_key)
-    csv_content_string = ack_file_csv_obj["Body"].read().decode("utf-8")
-    return DictReader(StringIO(csv_content_string), delimiter="|")
 
 
 def add_entry_to_table(file_details: MockFileDetails, file_status: FileStatus) -> None:

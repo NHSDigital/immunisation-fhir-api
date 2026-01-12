@@ -308,7 +308,7 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
         self.mock_table = MagicMock()
         self.mock_get_ieds_table_patcher.return_value = self.mock_table
 
-        self.mock_dynamodb_client = patch("ieds_db_operations.dynamodb_client")
+        self.mock_dynamodb_client = patch("common.clients.global_dynamodb_client")
         self.mock_dynamodb_client_patcher = self.mock_dynamodb_client.start()
 
         # Mock transact_write_items (not update_item)
@@ -494,7 +494,7 @@ class TestIedsDbOperationsConditional(unittest.TestCase):
         self.mock_get_ieds_table = self.get_ieds_table_patcher.start()
 
         # Patch dynamodb client
-        self.dynamodb_client_patcher = patch("ieds_db_operations.dynamodb_client")
+        self.dynamodb_client_patcher = patch("common.clients.global_dynamodb_client")
         self.mock_dynamodb_client = self.dynamodb_client_patcher.start()
 
     def tearDown(self):

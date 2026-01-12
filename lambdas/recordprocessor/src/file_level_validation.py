@@ -7,6 +7,7 @@ import time
 from csv import DictReader
 
 from audit_table import set_audit_table_ingestion_start_time, update_audit_table_status
+from common.ack_file_utils import make_and_upload_ack_file
 from common.aws_s3_utils import move_file
 from common.clients import logger
 from common.models.batch_constants import (
@@ -18,7 +19,6 @@ from common.models.batch_constants import (
 )
 from constants import ARCHIVE_DIR_NAME, EXPECTED_CSV_HEADERS, PROCESSING_DIR_NAME
 from logging_decorator import file_level_validation_logging_decorator
-from make_and_upload_ack_file import make_and_upload_ack_file
 from models.errors import InvalidHeaders, NoOperationPermissions
 from utils_for_recordprocessor import get_csv_content_dict_reader
 

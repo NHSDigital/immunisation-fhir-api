@@ -79,6 +79,9 @@ class TestForwardLambdaHandler(TestCase):
         self.redis_getter_patcher = patch("common.models.utils.validation_utils.get_redis_client")
         self.mock_redis_getter = self.redis_getter_patcher.start()
 
+        self.sqs_client_patcher = patch("common.clients.global_sqs_client")
+        self.mock_sqs_client = self.sqs_client_patcher.start()
+
     def tearDown(self):
         """Tear down after each test. This runs after every test"""
         patch.stopall()
@@ -204,8 +207,7 @@ class TestForwardLambdaHandler(TestCase):
 
             self.assertTrue(match_found)
 
-    @patch("forwarding_batch_lambda.sqs_client.send_message")
-    def test_forward_lambda_handler_single_operations(self, mock_send_message):
+    def test_forward_lambda_handler_single_operations(self):
         """Test each operation independently in forward lambda handler.
         name: Description of the test case scenario,
         input: generates the kinesis row data for the event,
@@ -275,7 +277,7 @@ class TestForwardLambdaHandler(TestCase):
 
         for test_case in test_cases:
             with self.subTest(test_case=test_case["name"]):
-                mock_send_message.reset_mock()
+                self.mock_sqs_client.send_message.reset_mock()
                 self.table.put_item(
                     Item={
                         "PK": pk_test,
@@ -286,11 +288,10 @@ class TestForwardLambdaHandler(TestCase):
                 )
                 event = self.generate_event([test_case])
                 forward_lambda_handler(event, {})
-                self.assert_values_in_sqs_messages(mock_send_message, [test_case])
+                self.assert_values_in_sqs_messages(self.mock_sqs_client.send_message, [test_case])
                 self.assert_dynamo_item(test_case["expected_dynamo_item"])
 
-    @patch("forwarding_batch_lambda.sqs_client.send_message")
-    def test_forward_lambda_handler_multiple_scenarios(self, mock_send_message):
+    def test_forward_lambda_handler_multiple_scenarios(self):
         """Test forward lambda handler with multiple rows in the event with create, update, and delete operations,
         and diagnostics handling.
             name: Description of the test case scenario,
@@ -461,7 +462,7 @@ class TestForwardLambdaHandler(TestCase):
                 "Version": 1,
             }
         )
-        mock_send_message.reset_mock()
+        self.mock_sqs_client.send_message.reset_mock()
         event = self.generate_event(test_cases)
 
         self.mock_redis.hget.return_value = "RSV"
@@ -470,10 +471,9 @@ class TestForwardLambdaHandler(TestCase):
         forward_lambda_handler(event, {})
 
         self.assert_dynamo_item(table_item)
-        self.assert_values_in_sqs_messages(mock_send_message, test_cases)
+        self.assert_values_in_sqs_messages(self.mock_sqs_client.send_message, test_cases)
 
-    @patch("forwarding_batch_lambda.sqs_client.send_message")
-    def test_forward_lambda_handler_groups_and_sends_events_by_filename(self, mock_send_message):
+    def test_forward_lambda_handler_groups_and_sends_events_by_filename(self):
         """VED-734 - each batch handled by the Lambda may have events relating to different parent CSV files. This
         test ensures events are grouped accordingly and sent with the correct SQS. The messages contain errors as we
         only forward errors to the ack file."""
@@ -506,7 +506,7 @@ class TestForwardLambdaHandler(TestCase):
 
         forward_lambda_handler(mock_kinesis_event, {})
 
-        sqs_calls = mock_send_message.call_args_list
+        sqs_calls = self.mock_sqs_client.send_message.call_args_list
         _, first_call_kwargs = sqs_calls[0]
         _, second_call_kwargs = sqs_calls[1]
 
@@ -552,8 +552,7 @@ class TestForwardLambdaHandler(TestCase):
             },
         )
 
-    @patch("forwarding_batch_lambda.sqs_client.send_message")
-    def test_forward_lambda_handler_sends_eof_message(self, mock_send_message):
+    def test_forward_lambda_handler_sends_eof_message(self):
         """VED-926 - the forward lambda handler should identify and send an EOF message to SQS."""
         mock_records = [
             {
@@ -593,7 +592,7 @@ class TestForwardLambdaHandler(TestCase):
 
         forward_lambda_handler(mock_kinesis_event, {})
 
-        _, sqs_call_kwargs = mock_send_message.call_args_list[0]
+        _, sqs_call_kwargs = self.mock_sqs_client.send_message.call_args_list[0]
 
         self.assertEqual(sqs_call_kwargs["MessageGroupId"], "supplier_1_rsv_test_file_2025-01-24T12:00:00Z")
         self.assertEqual(sqs_call_kwargs["QueueUrl"], "test-queue-url")
@@ -628,8 +627,7 @@ class TestForwardLambdaHandler(TestCase):
             },
         )
 
-    @patch("forwarding_batch_lambda.sqs_client.send_message")
-    def test_forward_lambda_handler_update_scenarios(self, mock_send_message):
+    def test_forward_lambda_handler_update_scenarios(self):
         """Test forward lambda handler with multiple rows in the event with update and delete operations,
         to test update scenarios.
             name: Description of the test case scenario,
@@ -744,10 +742,10 @@ class TestForwardLambdaHandler(TestCase):
 
         for test_case in test_cases:
             with self.subTest(test_case=test_case["name"]):
-                mock_send_message.reset_mock()
+                self.mock_sqs_client.send_message.reset_mock()
                 event = self.generate_event([test_case])
                 forward_lambda_handler(event, {})
-                self.assert_values_in_sqs_messages(mock_send_message, [test_case])
+                self.assert_values_in_sqs_messages(self.mock_sqs_client.send_message, [test_case])
                 self.assert_dynamo_item(test_case["expected_dynamo_item"])
 
     def test_create_diagnostics_dictionary(self):
@@ -813,7 +811,6 @@ class TestForwardLambdaHandler(TestCase):
                 result = create_diagnostics_dictionary(case["error"])
                 self.assertEqual(result, case["expected_output"])
 
-    @patch("forwarding_batch_lambda.sqs_client.send_message")
     @patch("forwarding_batch_lambda.forward_request_to_dynamo")
     @patch("forwarding_batch_lambda.create_table")
     @patch("forwarding_batch_lambda.make_batch_controller")
@@ -822,7 +819,6 @@ class TestForwardLambdaHandler(TestCase):
         mock_make_controller,
         mock_create_table,
         mock_forward_request_to_dynamo,
-        mock_send_message,
     ):
         """Test forward lambda handler to assert dynamo db is called,
         and diagnostics handling.
@@ -863,8 +859,7 @@ class TestForwardLambdaHandler(TestCase):
         expected_values = test_case[0]["expected_values"]
         assert expected_values.items() <= call_data.items()
 
-    @patch("forwarding_batch_lambda.sqs_client.send_message")
-    def test_forward_lambda_handler_exception_handler(self, mock_send_message):
+    def test_forward_lambda_handler_exception_handler(self):
         """Test exception handling when sqs_client fails"""
         # Arrange
         # Ensure there is at least one failure, so that sqs_client is called
@@ -893,7 +888,7 @@ class TestForwardLambdaHandler(TestCase):
             }
         )
 
-        mock_send_message.side_effect = Exception("Unknown Exception in SQS client")
+        self.mock_sqs_client.send_message.side_effect = Exception("Unknown Exception in SQS client")
 
         event = self.generate_event(test_cases)
 

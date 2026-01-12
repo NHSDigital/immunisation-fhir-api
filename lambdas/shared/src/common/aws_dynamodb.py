@@ -1,4 +1,4 @@
-from common.clients import dynamodb_resource, logger
+from common.clients import get_dynamodb_resource, logger
 
 
 def get_dynamodb_table(table_name):
@@ -7,7 +7,7 @@ def get_dynamodb_table(table_name):
     """
     try:
         logger.info("Initializing table: %s", table_name)
-        return dynamodb_resource.Table(table_name)
+        return get_dynamodb_resource().Table(table_name)
     except Exception as e:
         logger.exception("Error initializing DynamoDB table: %s", table_name)
         raise e
