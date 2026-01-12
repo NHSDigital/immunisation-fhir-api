@@ -3,7 +3,7 @@
 import time
 from typing import Optional
 
-from common.clients import dynamodb_client, logger
+from common.clients import get_dynamodb_client, logger
 from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys
 from common.models.errors import UnhandledAuditTableError
 
@@ -32,7 +32,7 @@ def update_audit_table_status(
 
     try:
         # Update the status in the audit table to "Processed"
-        dynamodb_client.update_item(
+        get_dynamodb_client().update_item(
             TableName=AUDIT_TABLE_NAME,
             Key={AuditTableKeys.MESSAGE_ID: {"S": message_id}},
             UpdateExpression=update_expression,
@@ -67,7 +67,7 @@ def set_audit_table_ingestion_start_time(
     expression_attr_values = {f":{AuditTableKeys.INGESTION_START_TIME}": {"S": ingestion_start_time}}
 
     try:
-        response = dynamodb_client.update_item(
+        response = get_dynamodb_client().update_item(
             TableName=AUDIT_TABLE_NAME,
             Key={AuditTableKeys.MESSAGE_ID: {"S": message_id}},
             UpdateExpression=update_expression,

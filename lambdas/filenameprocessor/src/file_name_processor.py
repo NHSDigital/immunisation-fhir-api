@@ -9,6 +9,7 @@ NOTE: The expected file format for incoming files from the data sources bucket i
 from uuid import uuid4
 
 from audit_table import upsert_audit_table
+from common.ack_file_utils import make_and_upload_ack_file
 from common.aws_s3_utils import (
     copy_file_to_external_bucket,
     move_file,
@@ -27,7 +28,6 @@ from constants import (
     EXTENDED_ATTRIBUTES_FILE_PREFIX,
 )
 from file_validation import is_file_in_directory_root, validate_batch_file_key, validate_extended_attributes_file_key
-from make_and_upload_ack_file import make_and_upload_the_ack_file
 from models.errors import (
     InvalidFileKeyError,
     UnhandledSqsError,
@@ -219,8 +219,7 @@ def handle_batch_file(
         )
 
         # Create ack file
-        message_delivered = False
-        make_and_upload_the_ack_file(message_id, file_key, message_delivered, created_at_formatted_string)
+        make_and_upload_ack_file(message_id, file_key, False, False, created_at_formatted_string)
 
         # Move file to archive
         move_file(bucket_name, file_key, f"archive/{file_key}")

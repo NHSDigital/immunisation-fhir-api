@@ -3,7 +3,7 @@
 import os
 from json import dumps as json_dumps
 
-from common.clients import logger, sqs_client
+from common.clients import get_sqs_client, logger
 from models.errors import UnhandledSqsError
 
 
@@ -11,7 +11,7 @@ def send_to_supplier_queue(message_body: dict, vaccine_type: str, supplier: str)
     """Sends a message to the supplier queue. Raises an exception if the message is not successfully sent."""
     try:
         queue_url = os.getenv("QUEUE_URL")
-        sqs_client.send_message(
+        get_sqs_client().send_message(
             QueueUrl=queue_url,
             MessageBody=json_dumps(message_body),
             MessageGroupId=f"{supplier}_{vaccine_type}",

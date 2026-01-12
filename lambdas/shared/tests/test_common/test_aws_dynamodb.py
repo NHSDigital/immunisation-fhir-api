@@ -19,7 +19,7 @@ class TestGetIedsTable(unittest.TestCase):
         self.mock_getenv = self.getenv_patch.start()
         self.mock_getenv.side_effect = lambda key, default=None: {"AWS_REGION": self.AWS_REGION}.get(key, default)
 
-        self.dynamodb_resource_patcher = patch("common.aws_dynamodb.dynamodb_resource")
+        self.dynamodb_resource_patcher = patch("common.clients.global_dynamodb_resource")
         self.mock_dynamodb_resource = self.dynamodb_resource_patcher.start()
 
     def tearDown(self):
