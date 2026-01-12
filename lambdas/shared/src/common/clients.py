@@ -71,6 +71,6 @@ def get_kinesis_client():
         global_kinesis_client = boto3_client(
             "kinesis",
             region_name=REGION_NAME,
-            config=Config(retries={"max_attempts": 3, "mode": "standard"}),
+            config=Config(retries={"mode": "standard"}),
         )
     return global_kinesis_client

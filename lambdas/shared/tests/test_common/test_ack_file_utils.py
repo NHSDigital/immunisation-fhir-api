@@ -19,12 +19,12 @@ from test_common.testing_utils.values_for_ack_file_tests import (
 )
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
-    from common.clients import REGION_NAME
-    from common.models.utils.ack_file_utils import (
+    from common.ack_file_utils import (
         make_ack_data,
         make_and_upload_ack_file,
         upload_ack_file,
     )
+    from common.clients import REGION_NAME
 
 from test_common.testing_utils.utils_for_ack_file_tests import (
     GenericSetUp,

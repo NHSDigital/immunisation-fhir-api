@@ -11,7 +11,7 @@ def make_ack_data(
     message_id: str,
     validation_passed: bool,
     message_delivered: bool,
-    created_at_formatted_string,
+    created_at_formatted_string: str,
 ) -> dict:
     """Returns a dictionary of ack data based on the input values. Dictionary keys are the ack file headers,
     dictionary values are the values for the ack file row"""

@@ -34,6 +34,15 @@ class TestClients(unittest.TestCase):
         self.mock_logger_instance = MagicMock()
         self.mock_getLogger.return_value = self.mock_logger_instance
 
+        # Clear all global clients
+        common.clients.global_s3_client = None
+        common.clients.global_sqs_client = None
+        common.clients.global_firehose_client = None
+        common.clients.global_secrets_manager_client = None
+        common.clients.global_dynamodb_client = None
+        common.clients.global_dynamodb_resource = None
+        common.clients.global_kinesis_client = None
+
     def tearDown(self):
         self.getenv_patch.stop()
         self.logging_patch.stop()
@@ -41,6 +50,7 @@ class TestClients(unittest.TestCase):
 
     def test_global_s3_client(self):
         """Test global_s3_client is initialized exactly once even with multiple invocations"""
+        self.assertEqual(common.clients.global_s3_client, None)
         common.clients.get_s3_client()
         self.assertNotEqual(common.clients.global_s3_client, None)
         call_count = self.mock_boto3_client.call_count
@@ -49,6 +59,7 @@ class TestClients(unittest.TestCase):
 
     def test_global_sqs_client(self):
         """Test global_sqs_client is initialized exactly once even with multiple invocations"""
+        self.assertEqual(common.clients.global_sqs_client, None)
         common.clients.get_sqs_client()
         self.assertNotEqual(common.clients.global_sqs_client, None)
         call_count = self.mock_boto3_client.call_count
@@ -57,6 +68,7 @@ class TestClients(unittest.TestCase):
 
     def test_global_firehose_client(self):
         """Test global_firehose_client is initialized exactly once even with multiple invocations"""
+        self.assertEqual(common.clients.global_firehose_client, None)
         common.clients.get_firehose_client()
         self.assertNotEqual(common.clients.global_firehose_client, None)
         call_count = self.mock_boto3_client.call_count
@@ -65,6 +77,7 @@ class TestClients(unittest.TestCase):
 
     def test_global_secrets_manager_client(self):
         """Test global_secrets_manager_client is initialized exactly once even with multiple invocations"""
+        self.assertEqual(common.clients.global_secrets_manager_client, None)
         common.clients.get_secrets_manager_client()
         self.assertNotEqual(common.clients.global_secrets_manager_client, None)
         call_count = self.mock_boto3_client.call_count
@@ -73,6 +86,7 @@ class TestClients(unittest.TestCase):
 
     def test_global_dynamodb_client(self):
         """Test global_dynamodb_client is initialized exactly once even with multiple invocations"""
+        self.assertEqual(common.clients.global_dynamodb_client, None)
         common.clients.get_dynamodb_client()
         self.assertNotEqual(common.clients.global_dynamodb_client, None)
         call_count = self.mock_boto3_client.call_count
@@ -81,6 +95,7 @@ class TestClients(unittest.TestCase):
 
     def test_global_dynamodb_resource(self):
         """Test global_dynamodb_resource is initialized exactly once even with multiple invocations"""
+        self.assertEqual(common.clients.global_dynamodb_resource, None)
         common.clients.get_dynamodb_resource()
         self.assertNotEqual(common.clients.global_dynamodb_resource, None)
         call_count = self.mock_boto3_client.call_count
@@ -88,6 +103,7 @@ class TestClients(unittest.TestCase):
         self.assertEqual(self.mock_boto3_client.call_count, call_count)
 
     def test_global_kinesis_client(self):
+        self.assertEqual(common.clients.global_kinesis_client, None)
         """Test global_kinesis_client is initialized exactly once even with multiple invocations"""
         common.clients.get_kinesis_client()
         self.assertNotEqual(common.clients.global_kinesis_client, None)

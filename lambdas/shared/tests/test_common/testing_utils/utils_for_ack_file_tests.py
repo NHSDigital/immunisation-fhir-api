@@ -25,8 +25,7 @@ def get_csv_file_dict_reader(s3_client, bucket_name: str, file_key: str) -> Dict
 class GenericSetUp:
     """
     Performs generic setup of mock resources:
-    * If s3_client is provided, creates source, destination and firehose buckets (firehose bucket is used for testing
-        only)
+    * If s3_client is provided, creates source, destination and firehose buckets
     """
 
     def __init__(

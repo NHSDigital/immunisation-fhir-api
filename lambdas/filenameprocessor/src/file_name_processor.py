@@ -9,6 +9,7 @@ NOTE: The expected file format for incoming files from the data sources bucket i
 from uuid import uuid4
 
 from audit_table import upsert_audit_table
+from common.ack_file_utils import make_and_upload_ack_file
 from common.aws_s3_utils import (
     copy_file_to_external_bucket,
     move_file,
@@ -17,7 +18,6 @@ from common.clients import STREAM_NAME, get_s3_client, logger
 from common.log_decorator import logging_decorator
 from common.models.batch_constants import SOURCE_BUCKET_NAME, FileNotProcessedReason, FileStatus
 from common.models.errors import UnhandledAuditTableError
-from common.models.utils.ack_file_utils import make_and_upload_ack_file
 from constants import (
     DPS_DESTINATION_BUCKET_NAME,
     DPS_DESTINATION_PREFIX,
