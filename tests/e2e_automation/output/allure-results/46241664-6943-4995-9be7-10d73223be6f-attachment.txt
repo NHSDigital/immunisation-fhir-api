@@ -1,1 +1,0 @@
-✅ Step Passed: **all records are processed successfully in the bus ack file
