@@ -11,7 +11,7 @@ from mypy_boto3_dynamodb import DynamoDBServiceResource
 
 from batch.batch_filename_to_events_mapper import BatchFilenameToEventsMapper
 from common.batch.eof_utils import is_eof_message
-from common.clients import sqs_client
+from common.clients import get_sqs_client
 from common.models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
@@ -142,7 +142,7 @@ def forward_lambda_handler(event, _):
         sqs_message_body = json.dumps(events)
         logger.info(f"total message length:{len(sqs_message_body)}")
 
-        sqs_client.send_message(
+        get_sqs_client().send_message(
             QueueUrl=QUEUE_URL,
             MessageBody=sqs_message_body,
             MessageGroupId=filename_key,

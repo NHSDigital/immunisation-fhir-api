@@ -5,38 +5,36 @@ from copy import deepcopy
 from unittest.mock import patch
 
 from boto3 import client as boto3_client
-from moto import mock_s3
+from moto import mock_aws
 
-from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
+from test_common.testing_utils.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
     BucketNames,
 )
-from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
+from test_common.testing_utils.utils_for_ack_file_tests import (
     get_csv_file_dict_reader,
 )
-from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
+from test_common.testing_utils.values_for_ack_file_tests import (
     MockFileDetails,
 )
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
-    from common.clients import REGION_NAME
-    from make_and_upload_ack_file import (
+    from common.ack_file_utils import (
         make_ack_data,
         make_and_upload_ack_file,
         upload_ack_file,
     )
+    from common.clients import REGION_NAME
 
-from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
+from test_common.testing_utils.utils_for_ack_file_tests import (
     GenericSetUp,
     GenericTearDown,
 )
 
-s3_client = boto3_client("s3", region_name=REGION_NAME)
-
 FILE_DETAILS = MockFileDetails.flu_emis
 
 
-@mock_s3
+@mock_aws
 @patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
 class TestMakeAndUploadAckFile(unittest.TestCase):
     "Tests for make_and_upload_ack_file functions"
@@ -87,10 +85,11 @@ class TestMakeAndUploadAckFile(unittest.TestCase):
             "MESSAGE_DELIVERY": False,
         }
 
-        GenericSetUp(s3_client)
+        self.s3_client = boto3_client("s3", region_name=REGION_NAME)
+        GenericSetUp(self.s3_client)
 
     def tearDown(self):
-        GenericTearDown(s3_client)
+        GenericTearDown(self.s3_client)
 
     def test_make_ack_data(self):
         "Tests make_ack_data makes correct ack data based on the input args"
@@ -125,7 +124,9 @@ class TestMakeAndUploadAckFile(unittest.TestCase):
         expected_result = [deepcopy(self.ack_data_validation_passed_and_message_delivered)]
         # Note that the data downloaded from the CSV will contain the bool as a string
         expected_result[0]["MESSAGE_DELIVERY"] = "True"
-        csv_dict_reader = get_csv_file_dict_reader(s3_client, BucketNames.DESTINATION, FILE_DETAILS.inf_ack_file_key)
+        csv_dict_reader = get_csv_file_dict_reader(
+            self.s3_client, BucketNames.DESTINATION, FILE_DETAILS.inf_ack_file_key
+        )
         self.assertEqual(list(csv_dict_reader), expected_result)
 
     def test_upload_ack_file_failure(self):
@@ -139,7 +140,9 @@ class TestMakeAndUploadAckFile(unittest.TestCase):
         expected_result = [deepcopy(self.ack_data_validation_passed_and_message_not_delivered)]
         # Note that the data downloaded from the CSV will contain the bool as a string
         expected_result[0]["MESSAGE_DELIVERY"] = "False"
-        csv_dict_reader = get_csv_file_dict_reader(s3_client, BucketNames.DESTINATION, FILE_DETAILS.inf_ack_file_key)
+        csv_dict_reader = get_csv_file_dict_reader(
+            self.s3_client, BucketNames.DESTINATION, FILE_DETAILS.inf_ack_file_key
+        )
         self.assertEqual(list(csv_dict_reader), expected_result)
 
     def test_make_and_upload_ack_file_success(self):
@@ -155,7 +158,9 @@ class TestMakeAndUploadAckFile(unittest.TestCase):
         expected_result = [deepcopy(self.ack_data_validation_passed_and_message_delivered)]
         # Note that the data downloaded from the CSV will contain the bool as a string
         expected_result[0]["MESSAGE_DELIVERY"] = "True"
-        csv_dict_reader = get_csv_file_dict_reader(s3_client, BucketNames.DESTINATION, FILE_DETAILS.inf_ack_file_key)
+        csv_dict_reader = get_csv_file_dict_reader(
+            self.s3_client, BucketNames.DESTINATION, FILE_DETAILS.inf_ack_file_key
+        )
         self.assertEqual(list(csv_dict_reader), expected_result)
 
     def test_make_and_upload_ack_file_failure(self):
@@ -171,7 +176,9 @@ class TestMakeAndUploadAckFile(unittest.TestCase):
         expected_result = [deepcopy(self.ack_data_validation_passed_and_message_not_delivered)]
         # Note that the data downloaded from the CSV will contain the bool as a string
         expected_result[0]["MESSAGE_DELIVERY"] = "False"
-        csv_dict_reader = get_csv_file_dict_reader(s3_client, BucketNames.DESTINATION, FILE_DETAILS.inf_ack_file_key)
+        csv_dict_reader = get_csv_file_dict_reader(
+            self.s3_client, BucketNames.DESTINATION, FILE_DETAILS.inf_ack_file_key
+        )
         self.assertEqual(list(csv_dict_reader), expected_result)
 
 
