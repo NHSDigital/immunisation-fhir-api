@@ -1,13 +1,14 @@
-"""Add the filename to the audit table and check for duplicates."""
-
 from typing import Optional
 
 from common.clients import get_dynamodb_client, logger
 from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys
 from common.models.errors import UnhandledAuditTableError
 
+FILE_EXISTS_CONDITION_EXPRESSION = f"attribute_exists({AuditTableKeys.MESSAGE_ID})"
+FILE_DOES_NOT_EXIST_CONDITION_EXPRESSION = f"attribute_not_exists({AuditTableKeys.MESSAGE_ID})"
 
-def upsert_audit_table(
+
+def create_audit_table_item(
     message_id: str,
     file_key: str,
     created_at_formatted_str: str,
@@ -18,7 +19,7 @@ def upsert_audit_table(
     condition_expression: Optional[str] = None,
 ) -> None:
     """
-    Updates the audit table with the file details
+    Creates an audit table item with the file details
     """
     audit_item = {
         AuditTableKeys.MESSAGE_ID: {"S": message_id},

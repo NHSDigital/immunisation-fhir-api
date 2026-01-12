@@ -8,12 +8,12 @@ NOTE: The expected file format for incoming files from the data sources bucket i
 
 from uuid import uuid4
 
-from audit_table import upsert_audit_table
 from common.ack_file_utils import make_and_upload_ack_file
 from common.aws_s3_utils import (
     copy_file_to_external_bucket,
     move_file,
 )
+from common.batch.audit_table import FILE_DOES_NOT_EXIST_CONDITION_EXPRESSION, create_audit_table_item
 from common.clients import STREAM_NAME, get_s3_client, logger
 from common.log_decorator import logging_decorator
 from common.models.batch_constants import SOURCE_BUCKET_NAME, FileNotProcessedReason, FileStatus
@@ -168,14 +168,14 @@ def handle_batch_file(
         permissions = validate_vaccine_type_permissions(vaccine_type=vaccine_type, supplier=supplier)
         queue_name = f"{supplier}_{vaccine_type}"
 
-        upsert_audit_table(
+        create_audit_table_item(
             message_id,
             file_key,
             created_at_formatted_string,
             expiry_timestamp,
             queue_name,
             FileStatus.QUEUED,
-            condition_expression="attribute_not_exists(message_id)",  # Prevents accidental overwrites
+            condition_expression=FILE_DOES_NOT_EXIST_CONDITION_EXPRESSION,  # Prevents accidental overwrites
         )
         make_and_send_sqs_message(
             file_key,
@@ -208,7 +208,7 @@ def handle_batch_file(
         file_status = get_file_status_for_error(error)
         queue_name = f"{supplier}_{vaccine_type}"
 
-        upsert_audit_table(
+        create_audit_table_item(
             message_id,
             file_key,
             created_at_formatted_string,
@@ -251,7 +251,7 @@ def handle_extended_attributes_file(
             vaccine_type, organisation_code
         )
 
-        upsert_audit_table(
+        create_audit_table_item(
             message_id,
             file_key,
             created_at_formatted_string,
@@ -272,7 +272,7 @@ def handle_extended_attributes_file(
 
         move_file(bucket_name, file_key, f"{EXTENDED_ATTRIBUTES_ARCHIVE_PREFIX}/{file_key}")
 
-        upsert_audit_table(
+        create_audit_table_item(
             message_id,
             file_key,
             created_at_formatted_string,
@@ -306,7 +306,7 @@ def handle_extended_attributes_file(
         # Move file to archive
         move_file(bucket_name, file_key, f"{EXTENDED_ATTRIBUTES_ARCHIVE_PREFIX}/{file_key}")
 
-        upsert_audit_table(
+        create_audit_table_item(
             message_id,
             file_key,
             created_at_formatted_string,
