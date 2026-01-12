@@ -26,12 +26,12 @@ To execute the tests from your system, please follow the 4 easy steps below:
 4. To activate env
    a. in git bash terminal
    `console
- source .venv/Scripts/activate
- `
+source .venv/Scripts/activate
+`
    b. in Terminal
    `console
-     .venv\Scripts\Activate.ps1
- `
+    .venv\Scripts\Activate.ps1
+`
 
 5. Need to create .env file, please get in touch with Imms FHIR API Test team to get the content of the file
 
