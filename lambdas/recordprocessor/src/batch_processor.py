@@ -62,10 +62,10 @@ def process_csv_to_fhir(incoming_message_body: dict) -> int:
             logger.warning(f"Encoding Error: {err}.")
             new_encoder = "cp1252"
             logger.info(f"Encode error at row {row_count} with {encoder}. Switch to {new_encoder}")
-            encoder = new_encoder
+            encoding = new_encoder
 
             # load alternative encoder
-            csv_reader = get_csv_content_dict_reader(f"{PROCESSING_DIR_NAME}/{file_key}", encoder=encoder)
+            csv_reader = get_csv_content_dict_reader(f"{PROCESSING_DIR_NAME}/{file_key}", encoding=encoding)
             # re-read the file and skip processed rows
             row_count, err = process_rows(
                 file_id,

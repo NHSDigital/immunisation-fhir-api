@@ -70,6 +70,10 @@ def file_level_validation(incoming_message_body: dict) -> dict:
     NOTE: If file level validation fails the source file is moved to the archive folder, the audit table is updated
     to reflect the file has been processed and the filename lambda is invoked with the next file in the queue.
     """
+    message_id = None
+    file_key = None
+    created_at_formatted_string = None
+
     try:
         message_id = incoming_message_body.get("message_id")
         vaccine = incoming_message_body.get("vaccine_type").upper()
@@ -77,17 +81,10 @@ def file_level_validation(incoming_message_body: dict) -> dict:
         file_key = incoming_message_body.get("filename")
         permission = incoming_message_body.get("permission")
         created_at_formatted_string = incoming_message_body.get("created_at_formatted_string")
-        encoder = incoming_message_body.get("encoder", "utf-8")
+        encoding = incoming_message_body.get("encoding", "utf-8")
 
         # Fetch the data
-        try:
-            csv_reader = get_csv_content_dict_reader(file_key, encoder=encoder)
-            validate_content_headers(csv_reader)
-        except UnicodeDecodeError as e:
-            logger.warning("Invalid Encoding detected: %s", e)
-            # retry with cp1252 encoding
-            csv_reader = get_csv_content_dict_reader(file_key, encoder="cp1252")
-            validate_content_headers(csv_reader)
+        csv_reader = get_validated_csv_reader(file_key, encoding=encoding)
 
         # Validate has permission to perform at least one of the requested actions
         allowed_operations_set = get_permitted_operations(supplier, vaccine, permission)
@@ -110,24 +107,48 @@ def file_level_validation(incoming_message_body: dict) -> dict:
         }
 
     except Exception as error:
-        logger.error("Error in file_level_validation: %s", error)
-
-        # NOTE: The Exception may occur before the file_id, file_key and created_at_formatted_string are assigned
-        message_id = message_id or "Unable to ascertain message_id"
-        file_key = file_key or "Unable to ascertain file_key"
-        created_at_formatted_string = created_at_formatted_string or "Unable to ascertain created_at_formatted_string"
-        make_and_upload_ack_file(message_id, file_key, False, False, created_at_formatted_string)
-        file_status = (
-            f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.UNAUTHORISED}"
-            if isinstance(error, NoOperationPermissions)
-            else FileStatus.FAILED
+        handle_file_level_validation_exception(
+            error, message_id=message_id, file_key=file_key, created_at_formatted_string=created_at_formatted_string
         )
-
-        try:
-            move_file(SOURCE_BUCKET_NAME, file_key, f"{ARCHIVE_DIR_NAME}/{file_key}")
-        except Exception as move_file_error:
-            logger.error("Failed to move file to archive: %s", move_file_error)
-
-        # Update the audit table
-        update_audit_table_status(file_key, message_id, file_status, error_details=str(error))
         raise
+
+
+def get_validated_csv_reader(file_key: str, encoding: str = "utf-8") -> DictReader:
+    """Helper function to get a validated CSV DictReader object."""
+    try:
+        csv_reader = get_csv_content_dict_reader(file_key, encoding=encoding)
+        validate_content_headers(csv_reader)
+        return csv_reader
+    except UnicodeDecodeError as e:
+        logger.warning("Invalid Encoding detected: %s", e)
+        # Retry using cp-1252 encoding if the expected utf-8 fails
+        # This is a known issue with a supplier - see VED-754 for details
+        csv_reader = get_csv_content_dict_reader(file_key, encoding="cp1252")
+
+    validate_content_headers(csv_reader)
+    return csv_reader
+
+
+def handle_file_level_validation_exception(
+    error: Exception, message_id: str | None, file_key: str | None, created_at_formatted_string: str | None
+) -> None:
+    logger.error("Error in file_level_validation: %s", error)
+
+    # NOTE: The Exception may occur before the file_id, file_key and created_at_formatted_string are assigned
+    message_id = message_id or "Unable to ascertain message_id"
+    file_key = file_key or "Unable to ascertain file_key"
+    created_at_formatted_string = created_at_formatted_string or "Unable to ascertain created_at_formatted_string"
+    make_and_upload_ack_file(message_id, file_key, False, False, created_at_formatted_string)
+    file_status = (
+        f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.UNAUTHORISED}"
+        if isinstance(error, NoOperationPermissions)
+        else FileStatus.FAILED
+    )
+
+    try:
+        move_file(SOURCE_BUCKET_NAME, file_key, f"{ARCHIVE_DIR_NAME}/{file_key}")
+    except Exception as move_file_error:
+        logger.error("Failed to move file to archive: %s", move_file_error)
+
+    # Update the audit table
+    update_audit_table_status(file_key, message_id, file_status, error_details=str(error))

@@ -425,6 +425,7 @@ class TestLoggingDecorators(unittest.TestCase):
 
         with (  # noqa: E999
             patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+            patch("update_ack_file.datetime") as mock_datetime,
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
             patch("update_ack_file.get_record_count_and_failures_by_message_id", return_value=(99, 2)),
             patch(
@@ -435,6 +436,7 @@ class TestLoggingDecorators(unittest.TestCase):
             ) as mock_set_records_succeeded_count_and_end_time,  # noqa: E999
             patch("ack_processor.increment_records_failed_count"),  # noqa: E999
         ):  # noqa: E999
+            mock_datetime.now.return_value = ValidValues.fixed_datetime
             result = lambda_handler(generate_event(messages, include_eof_message=True), context={})
 
         self.assertEqual(result, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
