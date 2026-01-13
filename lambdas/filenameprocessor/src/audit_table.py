@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from common.clients import dynamodb_client, logger
+from common.clients import get_dynamodb_client, logger
 from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys
 from common.models.errors import UnhandledAuditTableError
 
@@ -35,12 +35,12 @@ def upsert_audit_table(
     try:
         # Add to the audit table (regardless of whether it is a duplicate)
         if not condition_expression:
-            dynamodb_client.put_item(
+            get_dynamodb_client().put_item(
                 TableName=AUDIT_TABLE_NAME,
                 Item=audit_item,
             )
         else:
-            dynamodb_client.put_item(
+            get_dynamodb_client().put_item(
                 TableName=AUDIT_TABLE_NAME,
                 Item=audit_item,
                 ConditionExpression=condition_expression,

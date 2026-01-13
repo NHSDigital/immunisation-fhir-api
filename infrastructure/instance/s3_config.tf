@@ -125,7 +125,7 @@ data "aws_iam_policy_document" "replication_allow_destination" {
 
 resource "aws_iam_policy" "replication_allow_destination" {
   count  = var.has_sub_environment_scope ? 0 : 1
-  name   = "${local.batch_prefix}-destination"
+  name   = "allow-replication-to-${var.sub_environment}-data-sources"
   policy = data.aws_iam_policy_document.replication_allow_destination[0].json
 }
 
@@ -145,17 +145,25 @@ resource "aws_s3_bucket_replication_configuration" "replication" {
     priority = strcontains(var.sub_environment, "blue") ? 0 : 1
     status   = "Enabled"
 
-    filter {
-      prefix = ""
+    filter {}
+
+    delete_marker_replication {
+      status = "Disabled"
     }
 
     destination {
-      bucket        = aws_s3_bucket.batch_data_source_bucket.arn
-      storage_class = "STANDARD"
+      bucket = aws_s3_bucket.batch_data_source_bucket.arn
 
       replication_time {
         status = "Enabled"
         time {
+          minutes = 15
+        }
+      }
+
+      metrics {
+        status = "Enabled"
+        event_threshold {
           minutes = 15
         }
       }
@@ -167,17 +175,25 @@ resource "aws_s3_bucket_replication_configuration" "replication" {
     priority = strcontains(var.sub_environment, "blue") ? 1 : 0
     status   = "Disabled"
 
-    filter {
-      prefix = ""
+    filter {}
+
+    delete_marker_replication {
+      status = "Disabled"
     }
 
     destination {
-      bucket        = strcontains(aws_s3_bucket.batch_data_source_bucket.arn, "blue") ? replace(aws_s3_bucket.batch_data_source_bucket.arn, "blue", "green") : replace(aws_s3_bucket.batch_data_source_bucket.arn, "green", "blue")
-      storage_class = "STANDARD"
+      bucket = strcontains(aws_s3_bucket.batch_data_source_bucket.arn, "blue") ? replace(aws_s3_bucket.batch_data_source_bucket.arn, "blue", "green") : replace(aws_s3_bucket.batch_data_source_bucket.arn, "green", "blue")
 
       replication_time {
         status = "Enabled"
         time {
+          minutes = 15
+        }
+      }
+
+      metrics {
+        status = "Enabled"
+        event_threshold {
           minutes = 15
         }
       }

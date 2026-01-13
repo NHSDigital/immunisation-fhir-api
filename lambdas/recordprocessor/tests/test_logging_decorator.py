@@ -86,7 +86,7 @@ class TestLoggingDecorator(unittest.TestCase):
         )
 
         with (  # noqa: E999
-            patch("common.log_firehose.firehose_client") as mock_firehose_client,  # noqa: E999
+            patch("common.clients.global_firehose_client") as mock_firehose_client,  # noqa: E999
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
             patch("logging_decorator.datetime") as mock_datetime,  # noqa: E999
             patch("logging_decorator.time") as mock_start_time,  # noqa: E999
@@ -152,7 +152,7 @@ class TestLoggingDecorator(unittest.TestCase):
                 )
 
                 with (  # noqa: E999
-                    patch("common.log_firehose.firehose_client") as mock_firehose_client,  # noqa: E999
+                    patch("common.clients.global_firehose_client") as mock_firehose_client,  # noqa: E999
                     patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
                     patch("logging_decorator.datetime") as mock_datetime,  # noqa: E999
                     patch("logging_decorator.time") as mock_start_time,  # noqa: E999
@@ -190,7 +190,7 @@ class TestLoggingDecorator(unittest.TestCase):
         )
 
         with (  # noqa: E999
-            patch("common.log_firehose.firehose_client") as mock_firehose_client,  # noqa: E999
+            patch("common.clients.global_firehose_client") as mock_firehose_client,  # noqa: E999
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
             patch("logging_decorator.datetime") as mock_datetime,  # noqa: E999
             patch("logging_decorator.time") as mock_start_time,  # noqa: E999

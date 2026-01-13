@@ -14,7 +14,7 @@ class TestGetPdsPatientDetails(unittest.TestCase):
         self.logger_patcher = patch("pds_details.logger")
         self.mock_logger = self.logger_patcher.start()
 
-        self.secrets_manager_patcher = patch("pds_details.secrets_manager_client")
+        self.secrets_manager_patcher = patch("common.clients.global_secrets_manager_client")
         self.mock_secrets_manager = self.secrets_manager_patcher.start()
 
         self.pds_env_patcher = patch("pds_details.get_pds_env")
