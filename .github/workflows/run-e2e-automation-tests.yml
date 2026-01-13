@@ -46,7 +46,7 @@ jobs:
 
     steps:
       - name: Connect to AWS
-        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a
         with:
           aws-region: eu-west-2
           role-to-assume: arn:aws:iam::${{ secrets.AWS_IAM_ACCOUNT }}:role/auto-ops
@@ -58,18 +58,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install poetry
-        run: pip install poetry==2.1.4
-
-      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
           python-version: 3.11
-          cache: "poetry"
-          cache-dependency-path: tests/e2e_automation/poetry.lock
 
-      - name: Install e2e_automation test dependencies
-        working-directory: tests/e2e_automation
-        run: poetry install --no-root
+      - name: Install Python dependencies
+        run: |
+          set -o pipefail
+          python -m venv venv
+          source venv/bin/activate
+          python -m pip install --upgrade pip 2> pip_error.log || { cat pip_error.log; exit 1; }
+          pip install -r requirements.txt 2> req_error.log || { cat req_error.log; exit 1; }
+          pip install allure-pytest 2> allure_error.log || { cat allure_error.log; exit 1; }
 
       - name: Run Pytest-BDD tests for ${{ github.event_name == 'workflow_dispatch' && (inputs.testPath || 'API&batchTests') }} with filter ${{ github.event_name == 'workflow_dispatch' && (inputs.testFilter || 'functional') }}
         env:
@@ -109,6 +110,7 @@ jobs:
               TEST_PATH="features/$TEST_PATH"
             fi
           fi
+          source venv/bin/activate
           pytest "$TEST_PATH" -m "$TEST_FILTER" --junitxml=output/test-results.xml --alluredir=output/allure-results
 
           if [ $? -ne 0 ]; then
@@ -120,7 +122,7 @@ jobs:
 
       - name: Publish test results to GitHub UI
         if: always()
-        uses: dorny/test-reporter@a810f9bf83f2344124a920a7a0a85a6716e791f0
+        uses: dorny/test-reporter@31a54ee7ebcacc03a09ea97a7e5465a47b84aea5
         with:
           name: BDD Test Summary
           path: "**/output/test-results.xml"
@@ -146,7 +148,7 @@ jobs:
 
       - name: Publish Allure report to GitHub Pages
         if: always()
-        uses: peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d475ec49e8ef4d45e
+        uses: peaceiris/actions-gh-pages@373f7f263a76c20808c831209c920827a82a2847
         with:
           github_token: ${{ secrets.ALLURE_GITHUB_TOKEN }}
           publish_branch: gh-pages
