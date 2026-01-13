@@ -23,12 +23,9 @@ from utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from audit_table import (
-        set_audit_table_ingestion_start_time,
-        update_audit_table_status,
-    )
+    from common.batch.audit_table import update_audit_table_item
     from common.clients import REGION_NAME
-    from common.models.batch_constants import AUDIT_TABLE_NAME, FileStatus
+    from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys, FileStatus
 
 dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
 
@@ -42,7 +39,7 @@ class TestAuditTable(TestCase):
 
     def setUp(self):
         """Set up test values to be used for the tests"""
-        self.logger_patcher = patch("audit_table.logger")
+        self.logger_patcher = patch("common.batch.audit_table.logger")
         self.mock_logger = self.logger_patcher.start()
         GenericSetUp(dynamo_db_client=dynamodb_client)
 
@@ -57,7 +54,7 @@ class TestAuditTable(TestCase):
 
         return dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
 
-    def test_update_audit_table_status(self):
+    def test_update_audit_table_item_status(self):
         """Checks audit table correctly updates a record to the requested status"""
         # Test case 1: file should be updated with status of 'Processed'.
 
@@ -72,26 +69,27 @@ class TestAuditTable(TestCase):
         file_key = ravs_rsv_test_file.file_key
         message_id = ravs_rsv_test_file.message_id
 
-        update_audit_table_status(file_key, message_id, FileStatus.PREPROCESSED)
+        update_audit_table_item(file_key=file_key, message_id=message_id, status=FileStatus.PREPROCESSED)
         table_items = dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
 
         self.assertIn(expected_table_entry, table_items)
         self.mock_logger.info.assert_called_once_with(
-            "The status of %s file, with message id %s, was successfully updated to %s in the audit table",
+            "The %s of file %s, with message id %s, was successfully updated to %s in the audit table",
+            AuditTableKeys.STATUS,
             "RSV_Vaccinations_v5_X26_20210730T12000000.csv",
             "rsv_ravs_test_id",
             "Preprocessed",
         )
 
-    def test_update_audit_table_status_including_error_details(self):
+    def test_update_audit_table_item_status_including_error_details(self):
         """Checks audit table correctly updates a record including some error details"""
         add_entry_to_table(MockFileDetails.rsv_ravs, file_status=FileStatus.QUEUED)
         ravs_rsv_test_file = FileDetails("RSV", "RAVS", "X26")
 
-        update_audit_table_status(
-            ravs_rsv_test_file.file_key,
-            ravs_rsv_test_file.message_id,
-            FileStatus.FAILED,
+        update_audit_table_item(
+            file_key=ravs_rsv_test_file.file_key,
+            message_id=ravs_rsv_test_file.message_id,
+            status=FileStatus.FAILED,
             error_details="Test error details",
         )
 
@@ -106,24 +104,25 @@ class TestAuditTable(TestCase):
             table_items[0],
         )
         self.mock_logger.info.assert_called_once_with(
-            "The status of %s file, with message id %s, was successfully updated to %s in the audit table",
+            "The %s of file %s, with message id %s, was successfully updated to %s in the audit table",
+            AuditTableKeys.STATUS,
             "RSV_Vaccinations_v5_X26_20210730T12000000.csv",
             "rsv_ravs_test_id",
             "Failed",
         )
 
-    def test_update_audit_table_status_throws_exception_with_invalid_id(self):
+    def test_update_audit_table_item_status_throws_exception_with_invalid_id(self):
         emis_flu_test_file_2 = FileDetails("FLU", "EMIS", "YGM41")
 
         message_id = emis_flu_test_file_2.message_id
         file_key = emis_flu_test_file_2.file_key
 
         with self.assertRaises(UnhandledAuditTableError):
-            update_audit_table_status(file_key, message_id, FileStatus.PROCESSED)
+            update_audit_table_item(file_key=file_key, message_id=message_id, status=FileStatus.PROCESSED)
 
         self.mock_logger.error.assert_called_once()
 
-    def test_set_audit_table_ingestion_start_time(self):
+    def test_update_audit_table_item_ingestion_start_time(self):
         """Checks audit table correctly sets ingestion_start_time to the requested value"""
         add_entry_to_table(MockFileDetails.rsv_ravs, file_status=FileStatus.PROCESSING)
 
@@ -132,7 +131,7 @@ class TestAuditTable(TestCase):
         message_id = ravs_rsv_test_file.message_id
         test_start_time = 1627647000
 
-        set_audit_table_ingestion_start_time(file_key, message_id, test_start_time)
+        update_audit_table_item(file_key=file_key, message_id=message_id, ingestion_start_time=test_start_time)
 
         table_items = dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
         self.assertEqual(1, len(table_items))
@@ -145,13 +144,14 @@ class TestAuditTable(TestCase):
             table_items[0],
         )
         self.mock_logger.info.assert_called_once_with(
-            "ingestion_start_time for %s file, with message id %s, was successfully updated to %s in the audit table",
+            "The %s of file %s, with message id %s, was successfully updated to %s in the audit table",
+            AuditTableKeys.INGESTION_START_TIME,
             "RSV_Vaccinations_v5_X26_20210730T12000000.csv",
             "rsv_ravs_test_id",
             "20210730T12100000",
         )
 
-    def test_set_audit_table_ingestion_start_time_throws_exception_with_invalid_id(self):
+    def test_update_audit_table_item_ingestion_start_time_throws_exception_with_invalid_id(self):
         emis_flu_test_file_2 = FileDetails("FLU", "EMIS", "YGM41")
 
         message_id = emis_flu_test_file_2.message_id
@@ -159,7 +159,7 @@ class TestAuditTable(TestCase):
         test_start_time = 1627647000
 
         with self.assertRaises(UnhandledAuditTableError):
-            set_audit_table_ingestion_start_time(file_key, message_id, test_start_time)
+            update_audit_table_item(file_key=file_key, message_id=message_id, ingestion_start_time=test_start_time)
 
         self.mock_logger.error.assert_called_once()
 

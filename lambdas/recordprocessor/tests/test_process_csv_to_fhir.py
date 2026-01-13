@@ -61,11 +61,9 @@ class TestProcessCsvToFhir(unittest.TestCase):
         )
         mock_redis_getter.return_value = mock_redis
 
-        set_audit_table_ingestion_start_time_patcher = patch(
-            "file_level_validation.set_audit_table_ingestion_start_time"
-        )
-        self.addCleanup(set_audit_table_ingestion_start_time_patcher.stop)
-        set_audit_table_ingestion_start_time_patcher.start()
+        update_audit_table_item_patcher = patch("file_level_validation.update_audit_table_item")
+        self.addCleanup(update_audit_table_item_patcher.stop)
+        update_audit_table_item_patcher.start()
 
     def tearDown(self) -> None:
         GenericTearDown(

@@ -7,8 +7,8 @@ from csv import DictReader
 from json import JSONDecodeError
 from typing import Optional
 
-from audit_table import update_audit_table_status
 from common.aws_s3_utils import move_file
+from common.batch.audit_table import update_audit_table_item
 from common.batch.eof_utils import make_batch_eof_message
 from common.clients import logger
 from common.models.batch_constants import SOURCE_BUCKET_NAME, FileNotProcessedReason, FileStatus
@@ -90,10 +90,12 @@ def process_csv_to_fhir(incoming_message_body: dict) -> int:
             f"{ARCHIVE_DIR_NAME}/{file_key}",
         )
         file_status = f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.EMPTY}"
-        update_audit_table_status(file_key, file_id, file_status, record_count=row_count)
+        update_audit_table_item(file_key=file_key, message_id=file_id, status=file_status, record_count=row_count)
         return row_count
 
-    update_audit_table_status(file_key, file_id, FileStatus.PREPROCESSED, record_count=row_count)
+    update_audit_table_item(
+        file_key=file_key, message_id=file_id, status=FileStatus.PREPROCESSED, record_count=row_count
+    )
     batch_eof_message = make_batch_eof_message(
         file_key, supplier, vaccine, created_at_formatted_string, file_id, row_count
     )
@@ -171,7 +173,9 @@ def main(event: str) -> None:
         # If an unexpected error occurs, attempt to mark the event as failed. If the event is so malformed that this
         # also fails, we will still get the error alert and the event will remain in processing meaning the supplier +
         # vacc type queue is blocked until we resolve the issue
-        update_audit_table_status(file_key, message_id, FileStatus.FAILED, error_details=str(error))
+        update_audit_table_item(
+            file_key=file_key, message_id=message_id, status=FileStatus.FAILED, error_details=str(error)
+        )
 
     end = time.time()
     logger.info("Total rows processed: %s", n_rows_processed)

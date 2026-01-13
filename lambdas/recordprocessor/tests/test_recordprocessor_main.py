@@ -74,9 +74,9 @@ class TestRecordProcessor(unittest.TestCase):
         )
         mock_redis_getter.return_value = mock_redis
         self.mock_logger_info = create_patch("logging.Logger.info")
-        self.mock_set_audit_table_ingestion_start_time = create_patch(
-            "file_level_validation.set_audit_table_ingestion_start_time"
-        )
+
+        self.update_audit_table_item_pather = patch("file_level_validation.update_audit_table_item")
+        self.update_audit_table_item_pather.start()
 
     def tearDown(self) -> None:
         patch.stopall()
@@ -332,6 +332,8 @@ class TestRecordProcessor(unittest.TestCase):
         """
         Tests that file containing UPDATE and DELETE is successfully processed when the supplier has no permissions.
         """
+        self.update_audit_table_item_pather.stop()
+
         test_file = mock_rsv_emis_file
         add_entry_to_table(test_file, FileStatus.PROCESSING)
         self.upload_source_files(ValidMockFileContent.with_update_and_delete)
