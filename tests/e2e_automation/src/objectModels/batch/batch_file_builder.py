@@ -1,15 +1,14 @@
-from typing import Dict, Any, Optional
-import uuid
+import csv
 import random
 import re
+import uuid
+from typing import Any, Dict, Optional
+
 from src.objectModels.batch.batch_data_object import BatchVaccinationRecord
-from utilities.enums import GenderCode
-from utilities.vaccination_constants import (
-    VACCINATION_PROCEDURE_MAP, VACCINE_CODE_MAP, SITE_MAP, ROUTE_MAP
-)
-from utilities.date_helper import generate_date
 from src.objectModels.patient_loader import load_patient_by_id
-import csv
+from utilities.date_helper import generate_date
+from utilities.enums import GenderCode
+from utilities.vaccination_constants import ROUTE_MAP, SITE_MAP, VACCINATION_PROCEDURE_MAP, VACCINE_CODE_MAP
 
 
 def build_procedure_code(vaccine_type: str) -> Dict[str, str]:
@@ -18,6 +17,7 @@ def build_procedure_code(vaccine_type: str) -> Dict[str, str]:
         return {"term": selected["display"], "code": selected["code"]}
     except KeyError:
         raise ValueError(f"Unsupported vaccine type: {vaccine_type}")
+
 
 def build_vaccine_details(vaccine_type: str, lot_number: str = "", expiry_date: str = "") -> Dict[str, Any]:
     try:
@@ -30,14 +30,13 @@ def build_vaccine_details(vaccine_type: str, lot_number: str = "", expiry_date: 
         "code": selected["code"],
         "manufacturer": selected["manufacturer"],
         "lot_number": lot_number or str(random.randint(100000, 999999)),
-        "expiry_date": expiry_date or generate_date("current_date").replace("-", "")
+        "expiry_date": expiry_date or generate_date("current_date").replace("-", ""),
     }
 
-def build_location_site_identifier(value: str = 'X99999') -> Dict[str, str]:
-    return {
-        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
-        "value": value
-    }
+
+def build_location_site_identifier(value: str = "X99999") -> Dict[str, str]:
+    return {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": value}
+
 
 def get_batch_date(date_str: str = "current_occurrence") -> str:
     raw_date = generate_date(date_str)
@@ -45,45 +44,35 @@ def get_batch_date(date_str: str = "current_occurrence") -> str:
     return cleaned_date
 
 
-def get_performing_professional(forename: str = 'Automation', surname: str = 'Tests') -> Dict[str, str]:
-    return {
-        "performing_professional_forename": forename,
-        "performing_professional_surname": surname
-    }
+def get_performing_professional(forename: str = "Automation", surname: str = "Tests") -> Dict[str, str]:
+    return {"performing_professional_forename": forename, "performing_professional_surname": surname}
+
 
 def build_site_of_vaccination() -> Dict[str, str]:
     selected = random.choice(SITE_MAP)
-    return {
-        "site_of_vaccination_code": selected["code"],
-        "site_of_vaccination_term": selected["display"]
-    }
+    return {"site_of_vaccination_code": selected["code"], "site_of_vaccination_term": selected["display"]}
+
 
 def build_route_of_vaccination() -> Dict[str, str]:
     selected = random.choice(ROUTE_MAP)
-    return {
-        "route_of_vaccination_code": selected["code"],
-        "route_of_vaccination_term": selected["display"]
-    }
+    return {"route_of_vaccination_code": selected["code"], "route_of_vaccination_term": selected["display"]}
+
 
 def build_dose_details(
-    dose_sequence: str = "1",
-    dose_amount: str = "0.5",
-    dose_unit_code: str = "ml",
-    dose_unit_term: str = "millilitre"
+    dose_sequence: str = "1", dose_amount: str = "0.5", dose_unit_code: str = "ml", dose_unit_term: str = "millilitre"
 ) -> Dict[str, str]:
     return {
         "dose_sequence": dose_sequence,
         "dose_amount": dose_amount,
         "dose_unit_code": dose_unit_code,
-        "dose_unit_term": dose_unit_term
+        "dose_unit_term": dose_unit_term,
     }
+
 
 def build_unique_reference(unique_id: Optional[str] = None) -> Dict[str, str]:
     uid = unique_id or str(uuid.uuid4())
-    return {
-        "unique_id": uid,
-        "unique_id_uri": "https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk"
-    }
+    return {"unique_id": uid, "unique_id_uri": "https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk"}
+
 
 def get_patient_details(context) -> Dict[str, str]:
     patient = load_patient_by_id(context.patient_id)
@@ -93,11 +82,13 @@ def get_patient_details(context) -> Dict[str, str]:
         "nhs_number": patient.identifier[0].value,
         "gender": GenderCode[patient.gender].value,
         "birth_date": patient.birthDate.replace("-", ""),
-        "postal_code": patient.address[0].postalCode
+        "postal_code": patient.address[0].postalCode,
     }
+
 
 def generate_file_name(context) -> str:
     return f"{context.vaccine_type}_Vaccinations_v5_{context.supplier_ods_code}_{context.FileTimestamp}.{context.file_extension}"
+
 
 def build_batch_file(context, unique_id: str = None) -> BatchVaccinationRecord:
     patient = get_patient_details(context)
@@ -144,9 +135,10 @@ def build_batch_file(context, unique_id: str = None) -> BatchVaccinationRecord:
         DOSE_UNIT_TERM=dose["dose_unit_term"],
         INDICATION_CODE="443684005",
         LOCATION_CODE=location["value"],
-        LOCATION_CODE_TYPE_URI=location["system"]
+        LOCATION_CODE_TYPE_URI=location["system"],
     )
-    
+
+
 def save_record_to_batch_files_directory(context, delimiter):
     file_path = f"{context.working_directory}/{context.filename}"
     df = context.vaccine_df.copy()
@@ -154,10 +146,8 @@ def save_record_to_batch_files_directory(context, delimiter):
 
     with open(file_path, mode="w", newline="", encoding="utf-8") as file:
         writer = csv.writer(file, delimiter=delimiter, quoting=csv.QUOTE_ALL)
-        writer.writerow(df.columns.tolist())  
+        writer.writerow(df.columns.tolist())
         for row in df.itertuples(index=False):
             writer.writerow(row)
 
     print(f"✅ Pipe-delimited file saved to: {file_path}")
-
-

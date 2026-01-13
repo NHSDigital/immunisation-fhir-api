@@ -1,6 +1,8 @@
-import boto3
 import time
-from botocore.exceptions import NoCredentialsError, ClientError
+
+import boto3
+from botocore.exceptions import ClientError, NoCredentialsError
+
 
 def upload_file_to_S3(context):
     s3 = boto3.client("s3")
@@ -16,11 +18,11 @@ def upload_file_to_S3(context):
     except Exception as e:
         print(f"Upload failed: {e}")
 
+
 def wait_for_file_to_move_archive(context, timeout=120, interval=5):
     s3 = boto3.client("s3")
     source_bucket = f"immunisation-batch-{context.S3_env}-data-sources"
     archive_key = f"archive/{context.filename}"
-    file_path = f"{context.working_directory}/{context.filename}"
     print(f"Waiting for file in archive: s3://{source_bucket}/{archive_key}")
     elapsed = 0
 
@@ -41,14 +43,16 @@ def wait_for_file_to_move_archive(context, timeout=120, interval=5):
     print(f"Timeout: File not found in archive after {timeout} seconds")
     return False
 
-def wait_and_read_ack_file(context, folderName: str, timeout=120, interval=5, duplicate_bus_files=False, duplicate_inf_files=False):
 
+def wait_and_read_ack_file(
+    context, folderName: str, timeout=120, interval=5, duplicate_bus_files=False, duplicate_inf_files=False
+):
     s3 = boto3.client("s3")
     destination_bucket = f"immunisation-batch-{context.S3_env}-data-destinations"
     source_filename = context.filename
-    base_name = source_filename.replace(f'.{context.file_extension}', "")
+    base_name = source_filename.replace(f".{context.file_extension}", "")
     forwarded_prefix = f"{folderName}/{base_name}"
-    
+
     context.forwarded_prefix = forwarded_prefix
 
     print(f"Waiting for file starting with '{forwarded_prefix}' in bucket: {destination_bucket}")

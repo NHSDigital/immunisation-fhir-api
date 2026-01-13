@@ -1,1 +1,0 @@
-✅ Step Passed: **The delta table will be populated with the correct data for all records in batch file
