@@ -2,7 +2,7 @@ name: FHIR API and Batch Automation - E2E Tests
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   workflow_dispatch:
     inputs:
       environment:
@@ -30,7 +30,7 @@ on:
         options:
           - smoke
           - functional
-          - Batch_File_Validation_Feature 
+          - Batch_File_Validation_Feature
 
 permissions:
   contents: write
@@ -46,7 +46,7 @@ jobs:
 
     steps:
       - name: Connect to AWS
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a
         with:
           aws-region: eu-west-2
           role-to-assume: arn:aws:iam::${{ secrets.AWS_IAM_ACCOUNT }}:role/auto-ops
@@ -61,7 +61,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: 3.11
 
       - name: Install Python dependencies
         run: |
@@ -71,18 +71,18 @@ jobs:
           python -m pip install --upgrade pip 2> pip_error.log || { cat pip_error.log; exit 1; }
           pip install -r requirements.txt 2> req_error.log || { cat req_error.log; exit 1; }
           pip install allure-pytest 2> allure_error.log || { cat allure_error.log; exit 1; }
-          
+
       - name: Run Pytest-BDD tests for ${{ github.event_name == 'workflow_dispatch' && (inputs.testPath || 'API&batchTests') }} with filter ${{ github.event_name == 'workflow_dispatch' && (inputs.testFilter || 'functional') }}
-        env: 
+        env:
           S3_env: ${{ env.S3_ENV }}
           auth_url: https://${{ env.S3_ENV }}.api.service.nhs.uk/oauth2-mock/authorize
           token_url: https://${{ env.S3_ENV }}.api.service.nhs.uk/oauth2-mock/token
           baseUrl: https://${{ env.S3_ENV }}.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4
-          callback_url: 'https://oauth.pstmn.io/v1/callback'
+          callback_url: "https://oauth.pstmn.io/v1/callback"
           Postman_Auth_client_Id: ${{ secrets.Postman_Auth_client_Id }}
           Postman_Auth_client_Secret: ${{ secrets.Postman_Auth_client_Secret }}
           username: ${{ secrets.username }}
-          scope: 'nhs-cis2'
+          scope: "nhs-cis2"
           RAVS_client_Id: ${{ secrets.RAVS_client_Id }}
           RAVS_client_Secret: ${{ secrets.RAVS_client_Secret }}
           MAVIS_client_Id: ${{ secrets.MAVIS_client_Id }}
@@ -95,7 +95,7 @@ jobs:
           SONAR_client_Secret: ${{ secrets.SONAR_client_Secret }}
           MEDICUS_client_Id: ${{ secrets.MEDICUS_client_Id }}
           MEDICUS_client_Secret: ${{ secrets.MEDICUS_client_Secret }}
-          aws_token_refresh: 'False'
+          aws_token_refresh: "False"
           PYTHONPATH: ${{ github.workspace }}
         run: |
           TEST_PATH="${{ github.event_name == 'workflow_dispatch' && inputs.testPath || 'API&batchTests' }}"
@@ -122,10 +122,10 @@ jobs:
 
       - name: Publish test results to GitHub UI
         if: always()
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@31a54ee7ebcacc03a09ea97a7e5465a47b84aea5
         with:
           name: BDD Test Summary
-          path: '**/output/test-results.xml'
+          path: "**/output/test-results.xml"
           reporter: java-junit
           fail-on-error: false
 
@@ -139,7 +139,7 @@ jobs:
 
       - name: Build Allure report
         if: always()
-        uses: simple-elf/allure-report-action@master
+        uses: simple-elf/allure-report-action@53ebb757a2097edc77c53ecef4d454fc2f2f774c
         with:
           allure_results: output/allure-results
           gh_pages: gh-pages
@@ -148,7 +148,7 @@ jobs:
 
       - name: Publish Allure report to GitHub Pages
         if: always()
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@373f7f263a76c20808c831209c920827a82a2847
         with:
           github_token: ${{ secrets.ALLURE_GITHUB_TOKEN }}
           publish_branch: gh-pages

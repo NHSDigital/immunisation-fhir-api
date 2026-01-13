@@ -6,15 +6,14 @@ def validate_bus_ack_file_for_successful_records(context, file_rows) -> bool:
         print("No rows found in BUS ACK file for successful records")
         return True
     else:
-        success_mask = (
-            ~context.vaccine_df["UNIQUE_ID"].str.startswith("Fail-", na=False) &
-            (context.vaccine_df["UNIQUE_ID"].str.strip() != "")
+        success_mask = ~context.vaccine_df["UNIQUE_ID"].str.startswith("Fail-", na=False) & (
+            context.vaccine_df["UNIQUE_ID"].str.strip() != ""
         )
 
         success_df = context.vaccine_df[success_mask]
 
         valid_ids = set(success_df["UNIQUE_ID"].astype(str) + "^" + success_df["UNIQUE_ID_URI"].astype(str))
-        
+
         file_ids = set(file_rows["LOCAL_ID"].astype(str))
 
         intersection = valid_ids & file_ids
@@ -24,7 +23,7 @@ def validate_bus_ack_file_for_successful_records(context, file_rows) -> bool:
             return False
         else:
             print("No successful records present in BUS ACK file — validation passed")
-            return True   
+            return True
 
 
 def validate_inf_ack_file(context, success: bool = True) -> bool:
@@ -37,12 +36,11 @@ def validate_inf_ack_file(context, success: bool = True) -> bool:
     if len(header) != expected_columns:
         print(f"Header column count mismatch: expected {expected_columns}, got {len(header)}")
         return False
-    
+
     row_valid = True  # Reset for each row
 
     if len(row) != expected_columns:
-        print(f"Row {i}: column count mismatch ({len(row)} fields)")
-        overall_valid = False
+        print(f"Row column count mismatch: expected {expected_columns} got {len(row)}")
         return False
 
     header_response_code = row[1]
@@ -51,19 +49,19 @@ def validate_inf_ack_file(context, success: bool = True) -> bool:
     response_code = row[6]
     response_display = row[7]
     message_delivery = row[11]
-    
+
     if success:
         expected_message_delivery = "True"
         excepted_header_response_code = "Success"
         excepted_issue_severity = "Information"
-        excepted_issue_code = "OK"  
+        excepted_issue_code = "OK"
         excepted_response_code = "20013"
         expected_response_display = "Success"
     else:
         expected_message_delivery = "False"
         excepted_header_response_code = "Failure"
         excepted_issue_severity = "Fatal"
-        excepted_issue_code = "Fatal Error"  
+        excepted_issue_code = "Fatal Error"
         excepted_response_code = "10002"
         expected_response_display = "Infrastructure Level Response Value - Processing Error"
 
@@ -85,8 +83,9 @@ def validate_inf_ack_file(context, success: bool = True) -> bool:
     if message_delivery != expected_message_delivery:
         print(f"MESSAGE_DELIVERY is not {expected_message_delivery}")
         row_valid = False
-    
+
     return row_valid
+
 
 def normalize_for_lookup(id_str: str) -> str:
     parts = str(id_str).split("^")
@@ -96,15 +95,15 @@ def normalize_for_lookup(id_str: str) -> str:
     normalized_suffix = "" if suffix in ["", "nan"] else suffix
     return f"{normalized_prefix}^{normalized_suffix}"
 
+
 def validate_bus_ack_file_for_error(context, file_rows) -> bool:
-    
     if not file_rows:
         print("No rows found in BUS ACK file for failed records")
         return False
 
-    fail_mask = (
-        context.vaccine_df["UNIQUE_ID"].str.startswith("Fail-", na=False) | (context.vaccine_df["UNIQUE_ID"].str.strip() == "")
-     )
+    fail_mask = context.vaccine_df["UNIQUE_ID"].str.startswith("Fail-", na=False) | (
+        context.vaccine_df["UNIQUE_ID"].str.strip() == ""
+    )
 
     fail_df = context.vaccine_df[fail_mask]
 
@@ -120,7 +119,7 @@ def validate_bus_ack_file_for_error(context, file_rows) -> bool:
             print(f"Valid ID '{valid_id}' not found in file")
             overall_valid = False
             continue
-        
+
         for row_data in row_data_list:
             i = row_data["row"]
             fields = row_data["fields"]
@@ -131,12 +130,10 @@ def validate_bus_ack_file_for_error(context, file_rows) -> bool:
             issue_code = fields[3]
             response_code = fields[6]
             response_display = fields[7]
-            local_id = fields[10]
             imms_id = fields[11]
             operation_outcome = fields[12]
             message_delivery = fields[13]
 
-        
             if header_response_code != "Fatal Error":
                 print(f"Row {i}: HEADER_RESPONSE_CODE is not 'Fatal Error'")
                 row_valid = False
@@ -160,10 +157,10 @@ def validate_bus_ack_file_for_error(context, file_rows) -> bool:
                 row_valid = False
 
             try:
-                valid_id_df = context.vaccine_df.loc[i-2]
+                valid_id_df = context.vaccine_df.loc[i - 2]
                 prefix = str(valid_id_df["UNIQUE_ID"]).strip()
 
-                if prefix in ["", " ","nan"]:
+                if prefix in ["", " ", "nan"]:
                     expected_error = valid_id_df["PERSON_SURNAME"] if not valid_id_df.empty else "no_valid_surname"
 
                 else:
@@ -173,7 +170,9 @@ def validate_bus_ack_file_for_error(context, file_rows) -> bool:
                 expected_diagnostic = ERROR_MAP.get(expected_error, {}).get("diagnostics")
 
                 if operation_outcome != expected_diagnostic:
-                    print(f"Row {i}: operation_outcome does not match expected diagnostics '{expected_diagnostic}' for '{expected_error}' but got '{operation_outcome}'")
+                    print(
+                        f"Row {i}: operation_outcome does not match expected diagnostics '{expected_diagnostic}' for '{expected_error}' but got '{operation_outcome}'"
+                    )
                     row_valid = False
 
             except Exception as e:
@@ -184,12 +183,8 @@ def validate_bus_ack_file_for_error(context, file_rows) -> bool:
 
     return overall_valid
 
-def read_and_validate_bus_ack_file_content(
-    context, 
-    by_local_id: bool = True, 
-    by_row_number: bool = False
-) -> dict:
 
+def read_and_validate_bus_ack_file_content(context, by_local_id: bool = True, by_row_number: bool = False) -> dict:
     # Prevent invalid combinations
     if by_local_id and by_row_number:
         raise ValueError("Choose only one mode: by_local_id OR by_row_number")

@@ -1,15 +1,16 @@
+import datetime
 import hmac
 import os
 import uuid
-import datetime
 from hashlib import sha256
+
 
 def build_auth_header(mailbox_id: str, nonce: str = None, nonce_count: int = 0):
     mailbox_id = os.getenv("MAILBOX_ID")
     password = os.getenv("MAILBOX_PASSWORD")
     auth_schema_name = os.getenv("AUTH_SCHEMA_NAME")
     shared_key = os.getenv("SHARED_KEY")
-    
+
     """ Generate MESH Authorization header for mailboxid. """
     # Generate a GUID if required.
     if not nonce:
@@ -23,12 +24,4 @@ def build_auth_header(mailbox_id: str, nonce: str = None, nonce_count: int = 0):
 
     # HMAC is a standard crypto hash method built in the python standard library.
     hash_code = hmac.HMAC(shared_key.encode(), hmac_msg.encode(), sha256).hexdigest()
-    return (
-            auth_schema_name 
-            + mailbox_id + ":"
-            + nonce + ":"
-            + str(nonce_count) + ":"
-            + timestamp+ ":"
-            + hash_code
-    )
-
+    return auth_schema_name + mailbox_id + ":" + nonce + ":" + str(nonce_count) + ":" + timestamp + ":" + hash_code
