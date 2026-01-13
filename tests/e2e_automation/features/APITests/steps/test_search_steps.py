@@ -3,7 +3,6 @@ from datetime import datetime
 from urllib.parse import parse_qs
 
 import pytest_check as check
-import requests
 from pytest_bdd import parsers, scenarios, then, when
 from src.objectModels.api_search_object import convert_to_form_data, set_request_data
 from utilities.api_fhir_immunization_helper import (
@@ -14,6 +13,7 @@ from utilities.api_fhir_immunization_helper import (
 )
 from utilities.api_get_header import get_search_get_url_header, get_search_post_url_header
 from utilities.date_helper import iso_to_compact
+from utilities.http_requests_session import http_requests_session
 
 from .common_steps import normalize_param
 
@@ -27,7 +27,7 @@ def send_search_post_request_with_identifier_header(context):
         "identifier": f"{context.create_object.identifier[0].system}|{context.create_object.identifier[0].value}"
     }
     print(f"\n Search Post Request - \n {context.request}")
-    context.response = requests.post(context.url, headers=context.headers, data=context.request)
+    context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
 
 
 @when("Send a search request with Post method using identifier and _elements header for Immunization event created")
@@ -38,7 +38,7 @@ def send_search_post_request_with_identifier_and_elements_header(context):
         "_elements": "meta,id",
     }
     print(f"\n Search Post Request - \n {context.request}")
-    context.response = requests.post(context.url, headers=context.headers, data=context.request)
+    context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
 
 
 @when("Send a search request with post method using invalid identifier header for Immunization event created")
@@ -46,7 +46,7 @@ def send_search_post_request_with_invalid_identifier_header(context):
     get_search_post_url_header(context)
     context.request = {"identifier": f"https://www.ieds.england.nhs.uk/|{str(uuid.uuid4())}", "_elements": "meta,id"}
     print(f"\n Search Post Request - \n {context.request}")
-    context.response = requests.post(context.url, headers=context.headers, data=context.request)
+    context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
 
 
 @when("Send a search request with GET method for Immunization event created")
@@ -58,7 +58,7 @@ def TriggerSearchGetRequest(context):
         )
     )
     print(f"\n Search Get Parameters - \n {context.params}")
-    context.response = requests.get(context.url, params=context.params, headers=context.headers)
+    context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
 
     print(f"\n Search Get Response - \n {context.response.json()}")
 
@@ -72,7 +72,7 @@ def TriggerSearchPostRequest(context):
         )
     )
     print(f"\n Search Post Request - \n {context.request}")
-    context.response = requests.post(context.url, headers=context.headers, data=context.request)
+    context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
 
     print(f"\n Search Post Response - \n {context.response.json()}")
 
@@ -102,7 +102,7 @@ def send_invalid_param_get_request(context, NHSNumber, DiseaseType):
         set_request_data(NHSNumber, DiseaseType, datetime.today().strftime("%Y-%m-%d"))
     )
     print(f"\n Search Get parameters - \n {context.params}")
-    context.response = requests.get(context.url, params=context.params, headers=context.headers)
+    context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
 
 
 @when(
@@ -130,7 +130,7 @@ def send_invalid_param_post_request(context, NHSNumber, DiseaseType):
         set_request_data(NHSNumber, DiseaseType, datetime.today().strftime("%Y-%m-%d"))
     )
     print(f"\n Search Post request - \n {context.request}")
-    context.response = requests.post(context.url, headers=context.headers, data=context.request)
+    context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
 
 
 @when(
@@ -156,7 +156,7 @@ def send_invalid_date_get_request(context, DateFrom, DateTo):
 
     context.params = convert_to_form_data(set_request_data(9001066569, context.vaccine_type, DateFrom, DateTo))
     print(f"\n Search Get parameters - \n {context.params}")
-    context.response = requests.get(context.url, params=context.params, headers=context.headers)
+    context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
 
 
 @when(
@@ -182,7 +182,7 @@ def send_invalid_param_post_request_with_dates(context, DateFrom, DateTo):
 
     context.request = convert_to_form_data(set_request_data(9001066569, context.vaccine_type, DateFrom, DateTo))
     print(f"\n Search Post request - \n {context.request}")
-    context.response = requests.post(context.url, headers=context.headers, data=context.request)
+    context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
 
 
 @when(
@@ -195,7 +195,7 @@ def send_valid_param_get_request(context, NHSNumber, vaccine_type, DateFrom, Dat
 
     context.params = convert_to_form_data(set_request_data(NHSNumber, vaccine_type, DateFrom, DateTo))
     print(f"\n Search Get parameters - \n {context.params}")
-    context.response = requests.get(context.url, params=context.params, headers=context.headers)
+    context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
 
 
 @when(
@@ -208,7 +208,7 @@ def send_valid_param_post_request(context, NHSNumber, vaccine_type, DateFrom, Da
 
     context.request = convert_to_form_data(set_request_data(NHSNumber, vaccine_type, DateFrom, DateTo))
     print(f"\n Search Get parameters - \n {context.request}")
-    context.response = requests.post(context.url, headers=context.headers, data=context.request)
+    context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
 
 
 @when(
@@ -220,7 +220,7 @@ def send_valid_param_get_request_with_include(context, NHSNumber, vaccine_type, 
     get_search_get_url_header(context)
     context.params = convert_to_form_data(set_request_data(NHSNumber, vaccine_type, include=include))
     print(f"\n Search Get parameters - \n {context.params}")
-    context.response = requests.get(context.url, params=context.params, headers=context.headers)
+    context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
 
 
 @when(
@@ -232,7 +232,7 @@ def send_valid_param_post_request_with_include(context, NHSNumber, vaccine_type,
     get_search_post_url_header(context)
     context.request = convert_to_form_data(set_request_data(NHSNumber, vaccine_type, include=include))
     print(f"\n Search Post parameters - \n {context.request}")
-    context.response = requests.post(context.url, headers=context.headers, data=context.request)
+    context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
 
 
 @when(
@@ -244,7 +244,7 @@ def send_valid_param_post_request_with_include_and_dates(context, NHSNumber, vac
     get_search_post_url_header(context)
     context.request = convert_to_form_data(set_request_data(NHSNumber, vaccine_type, DateFrom, DateTo, include))
     print(f"\n Search Post parameters - \n {context.request}")
-    context.response = requests.post(context.url, headers=context.headers, data=context.request)
+    context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
 
 
 @when(
@@ -256,7 +256,7 @@ def send_valid_param_get_request_with_include_and_dates(context, NHSNumber, vacc
     get_search_get_url_header(context)
     context.params = convert_to_form_data(set_request_data(NHSNumber, vaccine_type, DateFrom, DateTo, include))
     print(f"\n Search Get parameters - \n {context.params}")
-    context.response = requests.get(context.url, params=context.params, headers=context.headers)
+    context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
 
 
 @then("The occurrenceDateTime of the immunization events should be within the Date From and Date To range")

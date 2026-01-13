@@ -4,7 +4,6 @@ from urllib.parse import parse_qs
 from venv import logger
 
 import pytest_check as check
-import requests
 from pytest_bdd import given, parsers, then, when
 from src.dynamoDB.dynamo_db_helper import fetch_immunization_events_detail, parse_imms_int_imms_event_response
 from src.objectModels.api_immunization_builder import (
@@ -26,6 +25,7 @@ from utilities.api_gen_token import get_tokens
 from utilities.api_get_header import get_create_post_url_header, get_delete_url_header, get_update_url_header
 from utilities.date_helper import is_valid_date
 from utilities.enums import Operation
+from utilities.http_requests_session import http_requests_session
 from utilities.vaccination_constants import ROUTE_MAP, SITE_MAP
 
 
@@ -76,7 +76,7 @@ def Trigger_the_post_create_request(context):
     get_create_post_url_header(context)
     context.create_object = context.immunization_object
     context.request = context.create_object.dict(exclude_none=True, exclude_unset=True)
-    context.response = requests.post(context.url, json=context.request, headers=context.headers)
+    context.response = http_requests_session.post(context.url, json=context.request, headers=context.headers)
     print(f"Create Request is {json.dumps(context.request)}")
 
 
@@ -238,7 +238,9 @@ def send_update_for_vaccination_detail(context):
     context.update_object.route = build_site_route(random.choice(ROUTE_MAP))
     context.create_object = context.update_object
     context.request = context.update_object.dict(exclude_none=True, exclude_unset=True)
-    context.response = requests.put(context.url + "/" + context.ImmsID, json=context.request, headers=context.headers)
+    context.response = http_requests_session.put(
+        context.url + "/" + context.ImmsID, json=context.request, headers=context.headers
+    )
     print(f"Update Request is {json.dumps(context.request)}")
 
 
@@ -269,14 +271,16 @@ def created_event_is_being_deleted(context):
 def send_delete_for_immunization_event_created(context):
     get_delete_url_header(context)
     print(f"\n Delete Request is {context.url}/{context.ImmsID}")
-    context.response = requests.delete(f"{context.url}/{context.ImmsID}", headers=context.headers)
+    context.response = http_requests_session.delete(f"{context.url}/{context.ImmsID}", headers=context.headers)
 
 
 def trigger_the_updated_request(context):
     context.expected_version = int(context.expected_version) + 1
     context.create_object = context.update_object
     context.request = context.update_object.dict(exclude_none=True, exclude_unset=True)
-    context.response = requests.put(context.url + "/" + context.ImmsID, json=context.request, headers=context.headers)
+    context.response = http_requests_session.put(
+        context.url + "/" + context.ImmsID, json=context.request, headers=context.headers
+    )
     print(f"Update Request is {json.dumps(context.request)}")
 
 
