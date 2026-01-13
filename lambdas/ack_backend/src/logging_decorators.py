@@ -6,9 +6,9 @@ from datetime import datetime
 from functools import wraps
 
 from common.log_decorator import generate_and_send_logs
-from constants import LAMBDA_FUNCTION_NAME_PREFIX, STREAM_NAME
+from constants import DEFAULT_STREAM_NAME, LAMBDA_FUNCTION_NAME_PREFIX
 
-STREAM_NAME = os.getenv("SPLUNK_FIREHOSE_NAME", STREAM_NAME)
+STREAM_NAME = os.getenv("SPLUNK_FIREHOSE_NAME", DEFAULT_STREAM_NAME)
 
 
 def convert_message_to_ack_row_logging_decorator(func):

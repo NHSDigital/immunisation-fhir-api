@@ -124,8 +124,9 @@ def get_validated_csv_reader(file_key: str, encoding: str = "utf-8") -> DictRead
         # Retry using cp-1252 encoding if the expected utf-8 fails
         # This is a known issue with a supplier - see VED-754 for details
         csv_reader = get_csv_content_dict_reader(file_key, encoding="cp1252")
-        validate_content_headers(csv_reader)
-        return csv_reader
+
+    validate_content_headers(csv_reader)
+    return csv_reader
 
 
 def handle_file_level_validation_exception(

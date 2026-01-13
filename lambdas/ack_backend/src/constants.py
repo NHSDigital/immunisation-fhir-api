@@ -5,7 +5,7 @@ TEMP_ACK_DIR = "TempAck"
 BATCH_FILE_PROCESSING_DIR = "processing"
 BATCH_FILE_ARCHIVE_DIR = "archive"
 LAMBDA_FUNCTION_NAME_PREFIX = "ack_processor"
-STREAM_NAME = "immunisation-fhir-api-internal-dev-splunk-firehose"
+DEFAULT_STREAM_NAME = "immunisation-fhir-api-internal-dev-splunk-firehose"
 
 
 ACK_HEADERS = [
