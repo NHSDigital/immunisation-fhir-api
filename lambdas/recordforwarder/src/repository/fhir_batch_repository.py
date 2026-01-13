@@ -239,7 +239,8 @@ class ImmunizationBatchRepository:
 
         return deleted_at_required, update_reinstated, is_reinstate
 
-    def _build_update_expression(self, is_reinstate: bool) -> str:
+    @staticmethod
+    def _build_update_expression(is_reinstate: bool) -> str:
         if is_reinstate:
             return (
                 "SET UpdatedAt = :timestamp, PatientPK = :patient_pk, "

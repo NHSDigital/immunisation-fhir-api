@@ -3,7 +3,7 @@ import json
 from boto3.dynamodb.conditions import Key
 
 from common.aws_dynamodb import get_dynamodb_table
-from common.clients import dynamodb_client, logger
+from common.clients import get_dynamodb_client, logger
 from exceptions.id_sync_exception import IdSyncException
 from os_vars import get_ieds_table_name
 from utils import make_status
@@ -183,7 +183,7 @@ def execute_transaction_in_batches(transact_items: list) -> tuple:
         total_batches += 1
         logger.info(f"Transacting batch {total_batches} of size: {len(batch)}")
 
-        response = dynamodb_client.transact_write_items(TransactItems=batch)
+        response = get_dynamodb_client().transact_write_items(TransactItems=batch)
         logger.info("Batch update complete. Response: %s", response)
 
         # Check each batch response
