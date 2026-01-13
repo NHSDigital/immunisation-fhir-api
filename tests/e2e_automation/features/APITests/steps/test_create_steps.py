@@ -285,7 +285,7 @@ def create_request_with_invalid_Nhsnumber(context, invalid_NhsNumber):
 def create_request_with_invalid_forename(context, forename):
     valid_json_payload_is_created(context)
     if forename == "single_value_max_len":
-        context.immunization_object.contained[1].name[0].given = [get_text("name_length_36")]
+        context.immunization_object.contained[1].name[0].given = [get_text("name_length_181")]
     elif forename == "max_len_array":
         context.immunization_object.contained[1].name[0].given = [
             get_text("name_length_15"),

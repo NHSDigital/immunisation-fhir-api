@@ -1,7 +1,6 @@
 import logging
 import uuid
 
-import requests
 from pytest_bdd import parsers, scenarios, then, when
 from src.dynamoDB.dynamo_db_helper import (
     fetch_immunization_int_delta_detail_by_immsID,
@@ -10,6 +9,7 @@ from src.dynamoDB.dynamo_db_helper import (
 from utilities.api_fhir_immunization_helper import find_entry_by_Imms_id, parse_FHIR_immunization_response
 from utilities.api_get_header import get_delete_url_header
 from utilities.enums import ActionFlag, Operation
+from utilities.http_requests_session import http_requests_session
 
 from .common_steps import (
     The_request_will_have_status_code,
@@ -30,7 +30,7 @@ def send_delete_for_immunization_event_created_invalid(context):
     get_delete_url_header(context)
     context.ImmsID = str(uuid.uuid4())
     print(f"\n Delete Request is {context.url}/{context.ImmsID}")
-    context.response = requests.delete(f"{context.url}/{context.ImmsID}", headers=context.headers)
+    context.response = http_requests_session.delete(f"{context.url}/{context.ImmsID}", headers=context.headers)
 
 
 @when(parsers.parse("Send a delete for Immunization event created for the above created event is send by '{Supplier}'"))

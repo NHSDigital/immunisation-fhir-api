@@ -129,7 +129,7 @@ ERROR_MAP = {
     },
     "max_len_forename": {
         "code": "INVARIANT",
-        "diagnostics": "Validation errors: contained[?(@.resourceType=='Patient')].name[0].given[0] must be 35 or fewer characters",
+        "diagnostics": "Validation errors: contained[?(@.resourceType=='Patient')].name[0].given[0] must be 180 or fewer characters",
     },
     "max_item_forename": {
         "code": "INVARIANT",
