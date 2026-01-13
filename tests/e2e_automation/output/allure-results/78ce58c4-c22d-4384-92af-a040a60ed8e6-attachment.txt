@@ -1,0 +1,2 @@
+INFO     botocore.credentials:credentials.py:1352 Found credentials in shared credentials file: ~/.aws/credentials
+INFO     botocore.credentials:credentials.py:1213 Found credentials in environment variables.

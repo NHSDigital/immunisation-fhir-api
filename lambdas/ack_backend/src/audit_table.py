@@ -1,6 +1,6 @@
 """Add the filename to the audit table and check for duplicates."""
 
-from common.clients import dynamodb_client, logger
+from common.clients import get_dynamodb_client, logger
 from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys, FileStatus
 from common.models.errors import UnhandledAuditTableError
 
@@ -11,7 +11,7 @@ def change_audit_table_status_to_processed(file_key: str, message_id: str) -> No
     """Updates the status in the audit table to 'Processed' and returns the queue name."""
     try:
         # Update the status in the audit table to "Processed"
-        response = dynamodb_client.update_item(
+        response = get_dynamodb_client().update_item(
             TableName=AUDIT_TABLE_NAME,
             Key={AuditTableKeys.MESSAGE_ID: {"S": message_id}},
             UpdateExpression="SET #status = :status",
@@ -35,7 +35,7 @@ def change_audit_table_status_to_processed(file_key: str, message_id: str) -> No
 
 def get_record_count_and_failures_by_message_id(event_message_id: str) -> tuple[int, int]:
     """Retrieves total record count and total failures by unique event message ID"""
-    audit_record = dynamodb_client.get_item(
+    audit_record = get_dynamodb_client().get_item(
         TableName=AUDIT_TABLE_NAME, Key={AuditTableKeys.MESSAGE_ID: {"S": event_message_id}}
     )
 
@@ -55,7 +55,7 @@ def increment_records_failed_count(message_id: str) -> None:
 
     try:
         # Use SET with if_not_exists to safely increment the counter attribute
-        dynamodb_client.update_item(
+        get_dynamodb_client().update_item(
             TableName=AUDIT_TABLE_NAME,
             Key={AuditTableKeys.MESSAGE_ID: {"S": message_id}},
             UpdateExpression="SET #attribute = if_not_exists(#attribute, :initial) + :increment",
@@ -88,7 +88,7 @@ def set_audit_record_success_count_and_end_time(
     }
 
     try:
-        dynamodb_client.update_item(
+        get_dynamodb_client().update_item(
             TableName=AUDIT_TABLE_NAME,
             Key={AuditTableKeys.MESSAGE_ID: {"S": message_id}},
             UpdateExpression=update_expression,
