@@ -3,7 +3,6 @@ from pathlib import Path
 
 import allure
 import pytest
-import requests
 from dotenv import load_dotenv
 from utilities.api_fhir_immunization_helper import empty_folder
 from utilities.api_gen_token import get_tokens
@@ -11,6 +10,7 @@ from utilities.api_get_header import get_delete_url_header
 from utilities.aws_token import refresh_sso_token, set_aws_session_token
 from utilities.context import ScenarioContext
 from utilities.enums import SupplierNameWithODSCode
+from utilities.http_requests_session import http_requests_session
 
 # Ignore F403 * imports. Pytest BDD requires common steps to be imported in conftest
 from features.APITests.steps.common_steps import *  # noqa: F403
@@ -103,7 +103,7 @@ def pytest_bdd_after_scenario(request, feature, scenario):
     if "Delete_cleanUp" in tags:
         if context.ImmsID is not None:
             print(f"\n Delete Request is {context.url}/{context.ImmsID}")
-            context.response = requests.delete(f"{context.url}/{context.ImmsID}", headers=context.headers)
+            context.response = http_requests_session.delete(f"{context.url}/{context.ImmsID}", headers=context.headers)
             assert context.response.status_code == 204, (
                 f"Expected status code 204, but got {context.response.status_code}. Response: {context.response.json()}"
             )
@@ -119,7 +119,7 @@ def pytest_bdd_after_scenario(request, feature, scenario):
         for imms_id in context.vaccine_df["IMMS_ID_CLEAN"].dropna().unique():
             delete_url = f"{context.url}/{imms_id}"
             print(f"Sending DELETE request to: {delete_url}")
-            response = requests.delete(delete_url, headers=context.headers)
+            response = http_requests_session.delete(delete_url, headers=context.headers)
 
             assert response.status_code == 204, (
                 f" Failed to delete {imms_id}: expected 204, got {response.status_code}. Response: {response.text}"
