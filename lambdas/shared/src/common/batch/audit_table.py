@@ -63,8 +63,10 @@ def update_audit_table_item(
     message_id: str,
     status: Optional[str] = None,
     ingestion_start_time: Optional[float] = None,
+    ingestion_end_time: Optional[str] = None,
     error_details: Optional[str] = None,
     record_count: Optional[int] = None,
+    records_succeeded: Optional[int] = None,
 ) -> None:
     """Updates an item in the audit table with the requested values"""
     # TODO: tidy up duplicated code into helper func. Maybe loop through optional args
@@ -84,10 +86,20 @@ def update_audit_table_item(
         expression_attr_names = {f"#{AuditTableKeys.INGESTION_START_TIME}": AuditTableKeys.INGESTION_START_TIME}
         expression_attr_values = {f":{AuditTableKeys.INGESTION_START_TIME}": {"S": ingestion_start_time_str}}
 
+    if ingestion_end_time is not None:
+        updated_attributes[AuditTableKeys.INGESTION_END_TIME] = ingestion_end_time
+        expression_attr_names = {f"#{AuditTableKeys.INGESTION_END_TIME}": AuditTableKeys.INGESTION_END_TIME}
+        expression_attr_values = {f":{AuditTableKeys.INGESTION_END_TIME}": {"S": ingestion_end_time}}
+
     if record_count is not None:
         updated_attributes[AuditTableKeys.RECORD_COUNT] = record_count
         expression_attr_names[f"#{AuditTableKeys.RECORD_COUNT}"] = AuditTableKeys.RECORD_COUNT
         expression_attr_values[f":{AuditTableKeys.RECORD_COUNT}"] = {"N": str(record_count)}
+
+    if records_succeeded is not None:
+        updated_attributes[AuditTableKeys.RECORDS_SUCCEEDED] = records_succeeded
+        expression_attr_names[f"#{AuditTableKeys.RECORDS_SUCCEEDED}"] = AuditTableKeys.RECORDS_SUCCEEDED
+        expression_attr_values[f":{AuditTableKeys.RECORDS_SUCCEEDED}"] = {"N": str(records_succeeded)}
 
     if error_details is not None:
         updated_attributes[AuditTableKeys.ERROR_DETAILS] = error_details
@@ -115,8 +127,45 @@ def update_audit_table_item(
                 attr_name,
                 file_key,
                 message_id,
-                attr_value,
+                str(attr_value),
             )
+
+    except Exception as error:  # pylint: disable = broad-exception-caught
+        logger.error(error)
+        raise UnhandledAuditTableError(error) from error
+
+
+def get_record_count_and_failures_by_message_id(event_message_id: str) -> tuple[int, int]:
+    """Retrieves total record count and total failures by unique event message ID"""
+    audit_record = dynamodb_client.get_item(
+        TableName=AUDIT_TABLE_NAME, Key={AuditTableKeys.MESSAGE_ID: {"S": event_message_id}}
+    )
+
+    record_count = audit_record.get("Item", {}).get(AuditTableKeys.RECORD_COUNT, {}).get("N")
+    failures_count = audit_record.get("Item", {}).get(AuditTableKeys.RECORDS_FAILED, {}).get("N")
+
+    return int(record_count) if record_count else 0, int(failures_count) if failures_count else 0
+
+
+def increment_records_failed_count(message_id: str) -> None:
+    """
+    Increment a counter attribute safely, handling the case where it might not exist.
+    From https://docs.aws.amazon.com/code-library/latest/ug/dynamodb_example_dynamodb_Scenario_AtomicCounterOperations_section.html
+    """
+    increment_value = 1
+    initial_value = 0
+
+    try:
+        # Use SET with if_not_exists to safely increment the counter attribute
+        dynamodb_client.update_item(
+            TableName=AUDIT_TABLE_NAME,
+            Key={AuditTableKeys.MESSAGE_ID: {"S": message_id}},
+            UpdateExpression="SET #attribute = if_not_exists(#attribute, :initial) + :increment",
+            ExpressionAttributeNames={"#attribute": AuditTableKeys.RECORDS_FAILED},
+            ExpressionAttributeValues={":increment": {"N": str(increment_value)}, ":initial": {"N": str(initial_value)}},
+            ConditionExpression=FILE_EXISTS_CONDITION_EXPRESSION,
+            ReturnValues="UPDATED_NEW",
+        )
 
     except Exception as error:  # pylint: disable = broad-exception-caught
         logger.error(error)

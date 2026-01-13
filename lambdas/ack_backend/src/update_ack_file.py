@@ -7,13 +7,10 @@ from io import BytesIO, StringIO
 
 from botocore.exceptions import ClientError
 
-from audit_table import (
-    change_audit_table_status_to_processed,
-    get_record_count_and_failures_by_message_id,
-    set_audit_record_success_count_and_end_time,
-)
 from common.aws_s3_utils import move_file
+from common.batch.audit_table import get_record_count_and_failures_by_message_id, update_audit_table_item
 from common.clients import get_s3_client, logger
+from common.models.batch_constants import ACK_BUCKET_NAME, SOURCE_BUCKET_NAME, FileStatus
 from common.log_decorator import generate_and_send_logs
 from common.models.batch_constants import ACK_BUCKET_NAME, SOURCE_BUCKET_NAME
 from constants import (
@@ -81,12 +78,17 @@ def complete_batch_file_process(
     move_file(SOURCE_BUCKET_NAME, f"{BATCH_FILE_PROCESSING_DIR}/{file_key}", f"{BATCH_FILE_ARCHIVE_DIR}/{file_key}")
 
     total_ack_rows_processed, total_failures = get_record_count_and_failures_by_message_id(message_id)
-    change_audit_table_status_to_processed(file_key, message_id)
+    update_audit_table_item(file_key=file_key, message_id=message_id, status=FileStatus.PROCESSED)
 
     # Consider creating time utils and using datetime instead of time
     ingestion_end_time = time.strftime("%Y%m%dT%H%M%S00", time.gmtime())
     successful_record_count = total_ack_rows_processed - total_failures
-    set_audit_record_success_count_and_end_time(file_key, message_id, successful_record_count, ingestion_end_time)
+    update_audit_table_item(
+        file_key=file_key,
+        message_id=message_id,
+        records_succeeded=successful_record_count,
+        ingestion_end_time=ingestion_end_time,
+    )
 
     result = {
         "message_id": message_id,
