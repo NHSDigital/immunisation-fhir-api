@@ -6,9 +6,9 @@ from datetime import datetime
 from functools import wraps
 
 from common.log_decorator import generate_and_send_logs
+from constants import DEFAULT_STREAM_NAME, LAMBDA_FUNCTION_NAME_PREFIX
 
-PREFIX = "ack_processor"
-STREAM_NAME = os.getenv("SPLUNK_FIREHOSE_NAME", "immunisation-fhir-api-internal-dev-splunk-firehose")
+STREAM_NAME = os.getenv("SPLUNK_FIREHOSE_NAME", DEFAULT_STREAM_NAME)
 
 
 def convert_message_to_ack_row_logging_decorator(func):
@@ -17,7 +17,7 @@ def convert_message_to_ack_row_logging_decorator(func):
     @wraps(func)
     def wrapper(message, created_at_formatted_string):
         base_log_data = {
-            "function_name": f"{PREFIX}_{func.__name__}",
+            "function_name": f"{LAMBDA_FUNCTION_NAME_PREFIX}_{func.__name__}",
             "date_time": str(datetime.now()),
         }
         start_time = time.time()
@@ -69,41 +69,13 @@ def convert_message_to_ack_row_logging_decorator(func):
     return wrapper
 
 
-def complete_batch_file_process_logging_decorator(func):
-    """This decorator logs when record processing is complete."""
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        base_log_data = {
-            "function_name": f"{PREFIX}_{func.__name__}",
-            "date_time": str(datetime.now()),
-        }
-        start_time = time.time()
-
-        # NB this doesn't require a try-catch block as the wrapped function never throws an exception
-        result = func(*args, **kwargs)
-        if result is not None:
-            message_for_logs = "Record processing complete"
-            base_log_data.update(result)
-            additional_log_data = {
-                "status": "success",
-                "statusCode": 200,
-                "message": message_for_logs,
-            }
-            generate_and_send_logs(STREAM_NAME, start_time, base_log_data, additional_log_data)
-
-        return result
-
-    return wrapper
-
-
 def ack_lambda_handler_logging_decorator(func):
     """This decorator logs the execution info for the ack lambda handler."""
 
     @wraps(func)
     def wrapper(event, context, *args, **kwargs):
         base_log_data = {
-            "function_name": f"{PREFIX}_{func.__name__}",
+            "function_name": f"{LAMBDA_FUNCTION_NAME_PREFIX}_{func.__name__}",
             "date_time": str(datetime.now()),
         }
         start_time = time.time()
