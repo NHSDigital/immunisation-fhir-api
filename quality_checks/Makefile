@@ -1,11 +1,11 @@
 lint-fix:
-	poetry run ruff check --fix --extend-exclude tests/e2e_automation/ ..
+	poetry run ruff check --fix ..
 
 lint:
-	poetry run ruff check --extend-exclude tests/e2e_automation/ ..
+	poetry run ruff check ..
 
 format:
-	poetry run ruff format --exclude tests/e2e_automation/ ..
+	poetry run ruff format ..
 
 format-check:
-	poetry run ruff format --check --exclude tests/e2e_automation/ ..
+	poetry run ruff format --check ..
