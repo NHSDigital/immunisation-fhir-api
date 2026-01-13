@@ -23,8 +23,8 @@
   "lint-staged": {
     "*": "prettier --ignore-unknown --write",
     "*.py": [
-      "poetry -P quality_checks run ruff check --fix",
-      "poetry -P quality_checks run ruff format"
+      "poetry -P quality_checks run ruff check --fix --extend-exclude tests/e2e_automation/",
+      "poetry -P quality_checks run ruff format --exclude tests/e2e_automation/"
     ],
     "*.tf": "terraform fmt",
     "immunisation-fhir-api.{yaml,json}": "redocly lint --skip-rule=security-defined"
