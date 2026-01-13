@@ -1,104 +1,48 @@
-# imms_fhir_api_automation
+# ## End-to-end Automation Tests
 
-pytest-bdd Automation for Immunisation FHIR API
+This directory contains End-to-end Automation Tests for the Immunisation FHIR API.
 
-## Need to check in case any other libraries to be added
+## Setting up e2e tests to run locally
 
-## Installation
+1. Follow the instructions in the root level README.md to setup the [dependencies](../README.md#environment-setup) and create a [virtual environment](../README.md#) for this folder (`e2e_automation`).
 
-This test pack requires Python 3.10 installed on the system or greater to run.
+2. Add values to the .env file.
 
-To execute the tests from your system, please follow the 4 easy steps below:
+The following values should be added:
+`     aws_token_refresh=True
+    baseUrl=https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4
+    auth_url=https://internal-qa.api.service.nhs.uk/oauth2-mock/authorize
+    token_url=https://internal-qa.api.service.nhs.uk/oauth2-mock/token
+    callback_url=https://oauth.pstmn.io/v1/callback
+    S3_env=internal-qa
+    aws_profile_name={your-profile}
+    `
 
-1. Clone the repo to any local folder
-2. Create a virtual environment
+3. Add login and secret values to the .env file.
+   **Please contact the Imms FHIR API Test team to get these values.**
 
-    ```console
-    # python -m venv .venv
-    ```
+The following values should be added:
+`     username
+    scope
+    Postman_Auth_client_Id
+    Postman_Auth_client_Secret
+    RAVS_client_Id
+    RAVS_client_Secret
+    MAVIS_client_Id
+    MAVIS_client_Secret
+    EMIS_client_Id
+    EMIS_client_Secret
+    SONAR_client_Id
+    SONAR_client_Secret
+    TPP_client_Id
+    TPP_client_Secret
+    MEDICUS_client_Id
+    MEDICUS_client_Secret
+    `
 
-3. Install all dependencies
+4. Run `poetry install --no-root` to install dependencies.
 
-    ```console
-    # pip install -r .\requirements.txt
-    ```
-
-4. To activate env
-   a. in git bash terminal
-   `console
-source .venv/Scripts/activate
-`
-   b. in Terminal
-   `console
-    .venv\Scripts\Activate.ps1
-`
-
-5. Need to create .env file, please get in touch with Imms FHIR API Test team to get the content of the file
-
-6. run following command to see that test are discovered
-
-    ```console
-       # pytest --collect-only
-    ```
-
-7. install and configure Aws CLI using following commands:
-    1. pip install awscli
-    2. aws configure
-    3. if you want to use aws configure sso then install aws cli 2 and follow the instructions on AWS access key page.
-
-8. to update the python packages run command 1 and to update requirement file run command 2.
-    1. python -m pip install --upgrade <package name>
-    2. python -m pip freeze > requirements.txt
-
-----DO NOT USE BELOW---------------------------------------------
-
-## Reporting
-
-To create the json report -
-pip install allure-behave
-
-Command -
-behave -f allure_behave.formatter:AllureFormatter -o output/allure-results
-
-## To convert the json file to html in Allure Reporting
-
-Dwnload the latest release allure-2.32.2.zip Allure Package from <https://github.com/allure-framework/allure2/releases>
-Unzip the folder and add the bin directory to system variable path
-
-Command to convert the json reports to html -
-allure serve output/allure-results
-
-Command to generate the html report manually if BROWSE does not work -
-allure generate output/allure-results -o output/allure-report --clean
-
-Start a http server to view the results -
-python -m http.server
-
-## To Open the index.html file
-
-once the allure plug in place then we need to update the ymal with following code :
-'''
-
-- script: |
-  source venv/bin/activate
-  pytest --junitxml=output/test-results.xml --alluredir=output/allure-results || true
-  displayName: 'Run Pytest-BDD tests with Allure'
-
-- task: Bash@3
-  displayName: 'Generate Allure Report'
-  inputs:
-  targetType: 'inline'
-  script: |
-  allure generate output/allure-results --clean -o output/allure-report
-
-- script: ls -la output/allure-report
-  displayName: 'List Allure Report Contents'
-
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish Allure Report Artifact'
-  inputs:
-  pathToPublish: 'output/allure-report'
-  artifactName: 'AllureReport'
-  publishLocation: 'Pipeline'
-
-'''
+5. The `Makefile` in this directory provides the following commands:
+   `make test` - run all tests (may take some time)
+   `make smoke-test` - run smoke tests only (quicker)
+   `make collect-only` - check that all tests are discovered
