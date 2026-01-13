@@ -12,6 +12,10 @@ from utilities.aws_token import refresh_sso_token, set_aws_session_token
 from utilities.context import ScenarioContext
 from utilities.enums import SupplierNameWithODSCode
 
+# Ignore F403 * imports. Pytest BDD requires common steps to be imported in conftest
+from features.APITests.steps.common_steps import *  # noqa: F403
+from features.batchTests.Steps.batch_common_steps import *  # noqa: F403
+
 
 @pytest.hookimpl(tryfirst=True)
 def pytest_bdd_after_step(request, feature, scenario, step, step_func, step_func_args):
