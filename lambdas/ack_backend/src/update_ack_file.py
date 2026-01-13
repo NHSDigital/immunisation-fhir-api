@@ -21,11 +21,12 @@ from constants import (
     BATCH_FILE_ARCHIVE_DIR,
     BATCH_FILE_PROCESSING_DIR,
     COMPLETED_ACK_DIR,
+    LAMBDA_FUNCTION_NAME_PREFIX,
+    STREAM_NAME,
     TEMP_ACK_DIR,
 )
 
-PREFIX = "ack_processor"
-STREAM_NAME = os.getenv("SPLUNK_FIREHOSE_NAME", "immunisation-fhir-api-internal-dev-splunk-firehose")
+STREAM_NAME = os.getenv("SPLUNK_FIREHOSE_NAME", STREAM_NAME)
 
 
 def create_ack_data(
@@ -100,16 +101,14 @@ def complete_batch_file_process(
     log_batch_file_process(
         start_time=start_time,
         result=result,
-        function_name=f"{PREFIX}_complete_batch_file_process",
+        function_name=f"{LAMBDA_FUNCTION_NAME_PREFIX}_complete_batch_file_process",
     )
 
     return result
 
 
 def log_batch_file_process(start_time: float, result: dict, function_name: str) -> None:
-    if result is None:
-        return
-
+    """Logs the batch file processing completion to Splunk"""
     base_log_data = {
         "function_name": function_name,
         "date_time": str(datetime.now()),

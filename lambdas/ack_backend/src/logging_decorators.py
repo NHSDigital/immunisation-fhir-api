@@ -6,9 +6,9 @@ from datetime import datetime
 from functools import wraps
 
 from common.log_decorator import generate_and_send_logs
+from constants import LAMBDA_FUNCTION_NAME_PREFIX, STREAM_NAME
 
-PREFIX = "ack_processor"
-STREAM_NAME = os.getenv("SPLUNK_FIREHOSE_NAME", "immunisation-fhir-api-internal-dev-splunk-firehose")
+STREAM_NAME = os.getenv("SPLUNK_FIREHOSE_NAME", STREAM_NAME)
 
 
 def convert_message_to_ack_row_logging_decorator(func):
@@ -17,7 +17,7 @@ def convert_message_to_ack_row_logging_decorator(func):
     @wraps(func)
     def wrapper(message, created_at_formatted_string):
         base_log_data = {
-            "function_name": f"{PREFIX}_{func.__name__}",
+            "function_name": f"{LAMBDA_FUNCTION_NAME_PREFIX}_{func.__name__}",
             "date_time": str(datetime.now()),
         }
         start_time = time.time()
@@ -75,7 +75,7 @@ def ack_lambda_handler_logging_decorator(func):
     @wraps(func)
     def wrapper(event, context, *args, **kwargs):
         base_log_data = {
-            "function_name": f"{PREFIX}_{func.__name__}",
+            "function_name": f"{LAMBDA_FUNCTION_NAME_PREFIX}_{func.__name__}",
             "date_time": str(datetime.now()),
         }
         start_time = time.time()
