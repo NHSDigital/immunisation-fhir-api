@@ -8,11 +8,11 @@ from boto3.dynamodb.conditions import Key
 from botocore.config import Config
 from utilities.api_fhir_immunization_helper import extract_practitioner_name
 from utilities.date_helper import covert_to_expected_date_format, format_date_yyyymmdd, iso_to_compact
+from utilities.enums import GenderCode
 from utilities.vaccination_constants import PROTOCOL_DISEASE_MAP
 
 from src.objectModels.api_data_objects import (
     Coding,
-    GenderCode,
     ImmunizationReadResponse_IntTable,
     Patient,
     Practitioner,
