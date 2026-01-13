@@ -1,4 +1,4 @@
-# ## End-to-end Automation Tests
+## End-to-end Automation Tests
 
 This directory contains End-to-end Automation Tests for the Immunisation FHIR API.
 
@@ -8,21 +8,26 @@ This directory contains End-to-end Automation Tests for the Immunisation FHIR AP
 
 2. Add values to the .env file.
 
-The following values should be added:
-`     aws_token_refresh=True
+    The following values should be added:
+
+    ```
+    aws_token_refresh=True
     baseUrl=https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4
     auth_url=https://internal-qa.api.service.nhs.uk/oauth2-mock/authorize
     token_url=https://internal-qa.api.service.nhs.uk/oauth2-mock/token
     callback_url=https://oauth.pstmn.io/v1/callback
     S3_env=internal-qa
     aws_profile_name={your-profile}
-    `
+    ```
 
 3. Add login and secret values to the .env file.
-   **Please contact the Imms FHIR API Test team to get these values.**
 
-The following values should be added:
-`     username
+    **Please contact the Imms FHIR API Test team to get these values.**
+
+    The following values should be added:
+
+    ```
+    username
     scope
     Postman_Auth_client_Id
     Postman_Auth_client_Secret
@@ -38,11 +43,12 @@ The following values should be added:
     TPP_client_Secret
     MEDICUS_client_Id
     MEDICUS_client_Secret
-    `
+    ```
 
 4. Run `poetry install --no-root` to install dependencies.
 
 5. The `Makefile` in this directory provides the following commands:
-   `make test` - run all tests (may take some time)
-   `make smoke-test` - run smoke tests only (quicker)
-   `make collect-only` - check that all tests are discovered
+
+- `make test` - run all tests (may take some time)
+- `make smoke-test` - run smoke tests only (quicker)
+- `make collect-only` - check that all tests are discovered
