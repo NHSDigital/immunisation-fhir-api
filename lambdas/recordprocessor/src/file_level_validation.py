@@ -81,10 +81,10 @@ def file_level_validation(incoming_message_body: dict) -> dict:
         file_key = incoming_message_body.get("filename")
         permission = incoming_message_body.get("permission")
         created_at_formatted_string = incoming_message_body.get("created_at_formatted_string")
-        encoder = incoming_message_body.get("encoder", "utf-8")
+        encoding = incoming_message_body.get("encoding", "utf-8")
 
         # Fetch the data
-        csv_reader = get_validated_csv_reader(file_key, encoder=encoder)
+        csv_reader = get_validated_csv_reader(file_key, encoding=encoding)
 
         # Validate has permission to perform at least one of the requested actions
         allowed_operations_set = get_permitted_operations(supplier, vaccine, permission)
@@ -113,16 +113,17 @@ def file_level_validation(incoming_message_body: dict) -> dict:
         raise
 
 
-def get_validated_csv_reader(file_key: str, encoder: str = "utf-8") -> DictReader:
+def get_validated_csv_reader(file_key: str, encoding: str = "utf-8") -> DictReader:
     """Helper function to get a validated CSV DictReader object."""
     try:
-        csv_reader = get_csv_content_dict_reader(file_key, encoder=encoder)
+        csv_reader = get_csv_content_dict_reader(file_key, encoding=encoding)
         validate_content_headers(csv_reader)
         return csv_reader
     except UnicodeDecodeError as e:
         logger.warning("Invalid Encoding detected: %s", e)
-        # retry with cp1252 encoding
-        csv_reader = get_csv_content_dict_reader(file_key, encoder="cp1252")
+        # Retry using cp-1252 encoding if the expected utf-8 fails
+        # This is a known issue with a supplier - see VED-754 for details
+        csv_reader = get_csv_content_dict_reader(file_key, encoding="cp1252")
         validate_content_headers(csv_reader)
         return csv_reader
 
