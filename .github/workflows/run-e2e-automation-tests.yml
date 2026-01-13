@@ -58,19 +58,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Install poetry
+        run: pip install poetry==2.1.4
+
+      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548
         with:
           python-version: 3.11
+          cache: "poetry"
+          cache-dependency-path: tests/e2e_automation/poetry.lock
 
-      - name: Install Python dependencies
-        run: |
-          set -o pipefail
-          python -m venv venv
-          source venv/bin/activate
-          python -m pip install --upgrade pip 2> pip_error.log || { cat pip_error.log; exit 1; }
-          pip install -r requirements.txt 2> req_error.log || { cat req_error.log; exit 1; }
-          pip install allure-pytest 2> allure_error.log || { cat allure_error.log; exit 1; }
+      - name: Install e2e_automation test dependencies
+        working-directory: tests/e2e_automation
+        run: poetry install --no-root
 
       - name: Run Pytest-BDD tests for ${{ github.event_name == 'workflow_dispatch' && (inputs.testPath || 'API&batchTests') }} with filter ${{ github.event_name == 'workflow_dispatch' && (inputs.testFilter || 'functional') }}
         env:
@@ -110,7 +109,6 @@ jobs:
               TEST_PATH="features/$TEST_PATH"
             fi
           fi
-          source venv/bin/activate
           pytest "$TEST_PATH" -m "$TEST_FILTER" --junitxml=output/test-results.xml --alluredir=output/allure-results
 
           if [ $? -ne 0 ]; then
