@@ -18,7 +18,7 @@ class ScenarioContext:
         self.auth_url = None
         self.token_url = None
         self.callback_url = None
-        self.auth_client_Id= None
+        self.auth_client_Id = None
         self.auth_client_Secret = None
         self.username = None
         self.scope = None
@@ -26,7 +26,7 @@ class ScenarioContext:
         self.request = None
         self.baseUrl = None
         self.location = None
-        self.parsed_search__object= None
+        self.parsed_search__object = None
         self.created_event = None
         self.create_object = None
         self.Patient_fullUrl = None
@@ -43,4 +43,3 @@ class ScenarioContext:
         self.working_directory = None
         self.fileContent = None
         self.delta_cache = None
-

@@ -2,6 +2,7 @@ import random
 import string
 from typing import Optional, Union
 
+
 def get_text(text_str: str) -> Optional[Union[str, int]]:
     match text_str:
         case "missing":
@@ -27,7 +28,7 @@ def get_text(text_str: str) -> Optional[Union[str, int]]:
         case _:
             raise ValueError(f"Unknown text type: '{text_str}'")
 
-def generate_random_length_name(length=20) -> str:
-    name = ''.join(random.choices(string.ascii_letters, k=length))
-    return name.capitalize()
 
+def generate_random_length_name(length=20) -> str:
+    name = "".join(random.choices(string.ascii_letters, k=length))
+    return name.capitalize()
