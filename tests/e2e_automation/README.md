@@ -52,5 +52,8 @@ This directory contains End-to-end Automation Tests for the Immunisation FHIR AP
 5. The `Makefile` in this directory provides the following commands:
 
 - `make test` - run all tests (may take some time)
-- `make smoke-test` - run smoke tests only (quicker)
+- `make test-api-functional` - run API tests
+- `make test-api-smoke` - run API smoke tests only (quicker)
+- `make test-batch-functional` - run Batch tests
+- `make test-batch-smoke` - run Batch smoke tests only (quicker)
 - `make collect-only` - check that all tests are discovered
