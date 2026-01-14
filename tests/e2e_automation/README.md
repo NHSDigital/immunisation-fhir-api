@@ -8,7 +8,7 @@ This directory contains End-to-end Automation Tests for the Immunisation FHIR AP
 
 2. Add values to the .env file.
 
-    For an example of a template .env file, see [.env.example](../../.env.example).
+    For an example of a template .env file, see [.env.example](./.env.example).
 
     The following values should be added:
 
