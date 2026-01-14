@@ -2,11 +2,13 @@
 
 This directory contains End-to-end Automation Tests for the Immunisation FHIR API.
 
-## Setting up e2e tests to run locally
+## Setting up e2e_automation tests to run locally
 
 1. Follow the instructions in the root level README.md to setup the [dependencies](../../README.md#environment-setup) and create a [virtual environment](../../README.md#setting-up-a-virtual-environment-with-poetry) for this folder (`e2e_automation`).
 
 2. Add values to the .env file.
+
+    For an example of a template .env file, see [.env.example](../../.env.example).
 
     The following values should be added:
 
