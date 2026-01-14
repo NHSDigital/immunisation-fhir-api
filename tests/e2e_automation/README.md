@@ -31,6 +31,8 @@ This directory contains End-to-end Automation Tests for the Immunisation FHIR AP
     ```
     username
     scope
+    STATUS_API_KEY
+    AWS_DOMAIN_NAME
     Postman_Auth_client_Id
     Postman_Auth_client_Secret
     RAVS_client_Id
