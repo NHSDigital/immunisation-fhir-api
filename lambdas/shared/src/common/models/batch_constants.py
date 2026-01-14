@@ -42,6 +42,23 @@ class AuditTableKeys(StrEnum):
     ERROR_DETAILS = "error_details"
 
 
+# It would be better to use boto3.dynamodb.types for these constants but it could cause issues across shared lambdas
+# with different dependencies
+class AuditTableKeyDataTypes:
+    STRING = "S"
+    NUMBER = "N"
+
+
+audit_table_key_data_types_map = {
+    AuditTableKeys.STATUS: AuditTableKeyDataTypes.STRING,
+    AuditTableKeys.INGESTION_START_TIME: AuditTableKeyDataTypes.STRING,
+    AuditTableKeys.INGESTION_END_TIME: AuditTableKeyDataTypes.STRING,
+    AuditTableKeys.RECORD_COUNT: AuditTableKeyDataTypes.NUMBER,
+    AuditTableKeys.RECORDS_SUCCEEDED: AuditTableKeyDataTypes.NUMBER,
+    AuditTableKeys.ERROR_DETAILS: AuditTableKeyDataTypes.STRING,
+}
+
+
 class Operation(StrEnum):
     CREATE = "CREATE"
     UPDATE = "UPDATE"

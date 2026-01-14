@@ -11,7 +11,7 @@ from common.aws_s3_utils import move_file
 from common.batch.audit_table import update_audit_table_item
 from common.batch.eof_utils import make_batch_eof_message
 from common.clients import logger
-from common.models.batch_constants import SOURCE_BUCKET_NAME, FileNotProcessedReason, FileStatus
+from common.models.batch_constants import SOURCE_BUCKET_NAME, AuditTableKeys, FileNotProcessedReason, FileStatus
 from constants import ARCHIVE_DIR_NAME, PROCESSING_DIR_NAME
 from file_level_validation import file_is_empty, file_level_validation
 from mappings import map_target_disease
@@ -90,12 +90,22 @@ def process_csv_to_fhir(incoming_message_body: dict) -> int:
             f"{ARCHIVE_DIR_NAME}/{file_key}",
         )
         file_status = f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.EMPTY}"
-        update_audit_table_item(file_key=file_key, message_id=file_id, status=file_status, record_count=row_count)
+        update_audit_table_item(
+            file_key=file_key,
+            message_id=file_id,
+            optional_params={AuditTableKeys.RECORD_COUNT: row_count, AuditTableKeys.STATUS: file_status},
+        )
         return row_count
 
     update_audit_table_item(
-        file_key=file_key, message_id=file_id, status=FileStatus.PREPROCESSED, record_count=row_count
+        file_key=file_key,
+        message_id=file_id,
+        optional_params={
+            AuditTableKeys.RECORD_COUNT: row_count,
+            AuditTableKeys.STATUS: FileStatus.PREPROCESSED,
+        },
     )
+
     batch_eof_message = make_batch_eof_message(
         file_key, supplier, vaccine, created_at_formatted_string, file_id, row_count
     )
@@ -174,7 +184,9 @@ def main(event: str) -> None:
         # also fails, we will still get the error alert and the event will remain in processing meaning the supplier +
         # vacc type queue is blocked until we resolve the issue
         update_audit_table_item(
-            file_key=file_key, message_id=message_id, status=FileStatus.FAILED, error_details=str(error)
+            file_key=file_key,
+            message_id=message_id,
+            optional_params={AuditTableKeys.ERROR_DETAILS: str(error), AuditTableKeys.STATUS: FileStatus.FAILED},
         )
 
     end = time.time()

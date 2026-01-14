@@ -1,8 +1,7 @@
-import time
 from typing import Optional
 
-from common.clients import get_dynamodb_client, logger
-from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys
+from common.clients import dynamodb_client, logger
+from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys, audit_table_key_data_types_map
 from common.models.errors import UnhandledAuditTableError
 
 FILE_EXISTS_CONDITION_EXPRESSION = f"attribute_exists({AuditTableKeys.MESSAGE_ID})"
@@ -37,12 +36,12 @@ def create_audit_table_item(
     try:
         # Add to the audit table (regardless of whether it is a duplicate)
         if not condition_expression:
-            get_dynamodb_client().put_item(
+            dynamodb_client.put_item(
                 TableName=AUDIT_TABLE_NAME,
                 Item=audit_item,
             )
         else:
-            get_dynamodb_client().put_item(
+            dynamodb_client.put_item(
                 TableName=AUDIT_TABLE_NAME,
                 Item=audit_item,
                 ConditionExpression=condition_expression,
@@ -61,54 +60,22 @@ def create_audit_table_item(
 def update_audit_table_item(
     file_key: str,
     message_id: str,
-    status: Optional[str] = None,
-    ingestion_start_time: Optional[float] = None,
-    ingestion_end_time: Optional[str] = None,
-    error_details: Optional[str] = None,
-    record_count: Optional[int] = None,
-    records_succeeded: Optional[int] = None,
+    optional_params: dict[AuditTableKeys, any],
 ) -> None:
     """Updates an item in the audit table with the requested values"""
-    # TODO: tidy up duplicated code into helper func. Maybe loop through optional args
-    updated_attributes = {}
+    update_expression = "SET "
     expression_attr_names = {}
     expression_attr_values = {}
 
-    if status is not None:
-        updated_attributes[AuditTableKeys.STATUS] = status
-        expression_attr_names = {f"#{AuditTableKeys.STATUS}": AuditTableKeys.STATUS}
-        expression_attr_values = {f":{AuditTableKeys.STATUS}": {"S": status}}
-
-    if ingestion_start_time is not None:
-        ingestion_start_time_str = time.strftime("%Y%m%dT%H%M%S00", time.gmtime(ingestion_start_time))
-
-        updated_attributes[AuditTableKeys.INGESTION_START_TIME] = ingestion_start_time_str
-        expression_attr_names = {f"#{AuditTableKeys.INGESTION_START_TIME}": AuditTableKeys.INGESTION_START_TIME}
-        expression_attr_values = {f":{AuditTableKeys.INGESTION_START_TIME}": {"S": ingestion_start_time_str}}
-
-    if ingestion_end_time is not None:
-        updated_attributes[AuditTableKeys.INGESTION_END_TIME] = ingestion_end_time
-        expression_attr_names = {f"#{AuditTableKeys.INGESTION_END_TIME}": AuditTableKeys.INGESTION_END_TIME}
-        expression_attr_values = {f":{AuditTableKeys.INGESTION_END_TIME}": {"S": ingestion_end_time}}
-
-    if record_count is not None:
-        updated_attributes[AuditTableKeys.RECORD_COUNT] = record_count
-        expression_attr_names[f"#{AuditTableKeys.RECORD_COUNT}"] = AuditTableKeys.RECORD_COUNT
-        expression_attr_values[f":{AuditTableKeys.RECORD_COUNT}"] = {"N": str(record_count)}
-
-    if records_succeeded is not None:
-        updated_attributes[AuditTableKeys.RECORDS_SUCCEEDED] = records_succeeded
-        expression_attr_names[f"#{AuditTableKeys.RECORDS_SUCCEEDED}"] = AuditTableKeys.RECORDS_SUCCEEDED
-        expression_attr_values[f":{AuditTableKeys.RECORDS_SUCCEEDED}"] = {"N": str(records_succeeded)}
-
-    if error_details is not None:
-        updated_attributes[AuditTableKeys.ERROR_DETAILS] = error_details
-        expression_attr_names[f"#{AuditTableKeys.ERROR_DETAILS}"] = AuditTableKeys.ERROR_DETAILS
-        expression_attr_values[f":{AuditTableKeys.ERROR_DETAILS}"] = {"S": error_details}
-
+    for audit_table_key, value in optional_params.items():
+        update_expression = _build_update_attribute_names_and_values(
+            key=audit_table_key,
+            value=value,
+            update_expression=update_expression,
+            expression_attr_names=expression_attr_names,
+            expression_attr_values=expression_attr_values,
+        )
     try:
-        update_expression = "SET " + ", ".join(f"#{attr} = :{attr}" for attr in updated_attributes.keys())
-
         dynamodb_client.update_item(
             TableName=AUDIT_TABLE_NAME,
             Key={AuditTableKeys.MESSAGE_ID: {"S": message_id}},
@@ -118,21 +85,35 @@ def update_audit_table_item(
             ConditionExpression=FILE_EXISTS_CONDITION_EXPRESSION,
         )
 
-        for attr_name, attr_value in updated_attributes.items():
-            if attr_name is AuditTableKeys.ERROR_DETAILS:
+        for audit_table_key, value in optional_params.items():
+            if audit_table_key is AuditTableKeys.ERROR_DETAILS:
                 continue
 
             logger.info(
                 "The %s of file %s, with message id %s, was successfully updated to %s in the audit table",
-                attr_name,
+                audit_table_key,
                 file_key,
                 message_id,
-                str(attr_value),
+                str(value),
             )
 
     except Exception as error:  # pylint: disable = broad-exception-caught
         logger.error(error)
         raise UnhandledAuditTableError(error) from error
+
+
+def _build_update_attribute_names_and_values(
+    key: str, value: any, update_expression: str, expression_attr_names: dict, expression_attr_values: dict
+):
+    element = f"#{key} = :{key}"
+    update_expression = (
+        update_expression + element if update_expression == "SET " else update_expression + ", " + element
+    )
+
+    expression_attr_names[f"#{key}"] = key
+    expression_attr_values[f":{key}"] = {audit_table_key_data_types_map[key]: str(value)}
+
+    return update_expression
 
 
 def get_record_count_and_failures_by_message_id(event_message_id: str) -> tuple[int, int]:

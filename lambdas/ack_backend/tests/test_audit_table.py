@@ -22,7 +22,7 @@ class TestAuditTable(unittest.TestCase):
         update_audit_table_item(
             file_key="file1",
             message_id="msg1",
-            status=FileStatus.PROCESSED,
+            optional_params={AuditTableKeys.STATUS: FileStatus.PROCESSED},
         )
         self.mock_dynamodb_client.update_item.assert_called_once_with(
             TableName=AUDIT_TABLE_NAME,
@@ -37,7 +37,7 @@ class TestAuditTable(unittest.TestCase):
     def test_change_audit_table_status_to_processed_raises(self):
         self.mock_dynamodb_client.update_item.side_effect = Exception("fail!")
         with self.assertRaises(UnhandledAuditTableError) as ctx:
-            update_audit_table_item(file_key="file1", message_id="msg1")
+            update_audit_table_item(file_key="file1", message_id="msg1", optional_params={})
         self.assertIn("fail!", str(ctx.exception))
         self.mock_logger.error.assert_called_once()
 
@@ -100,8 +100,10 @@ class TestAuditTable(unittest.TestCase):
         update_audit_table_item(
             file_key=test_file_key,
             message_id=test_message_id,
-            records_succeeded=test_success_count,
-            ingestion_end_time=test_end_time,
+            optional_params={
+                AuditTableKeys.INGESTION_END_TIME: test_end_time,
+                AuditTableKeys.RECORDS_SUCCEEDED: test_success_count,
+            },
         )
 
         self.mock_dynamodb_client.update_item.assert_called_once_with(
@@ -151,8 +153,10 @@ class TestAuditTable(unittest.TestCase):
             update_audit_table_item(
                 file_key=test_file_key,
                 message_id=test_message_id,
-                records_succeeded=test_success_count,
-                ingestion_end_time=test_end_time,
+                optional_params={
+                    AuditTableKeys.RECORDS_SUCCEEDED: test_success_count,
+                    AuditTableKeys.INGESTION_END_TIME: test_end_time,
+                },
             )
         self.assertIn("Unhandled error", str(ctx.exception))
         self.mock_logger.error.assert_called_once()

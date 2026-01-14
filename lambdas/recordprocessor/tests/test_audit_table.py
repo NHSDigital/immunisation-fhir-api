@@ -69,7 +69,9 @@ class TestAuditTable(TestCase):
         file_key = ravs_rsv_test_file.file_key
         message_id = ravs_rsv_test_file.message_id
 
-        update_audit_table_item(file_key=file_key, message_id=message_id, status=FileStatus.PREPROCESSED)
+        update_audit_table_item(
+            file_key=file_key, message_id=message_id, optional_params={AuditTableKeys.STATUS: FileStatus.PREPROCESSED}
+        )
         table_items = dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
 
         self.assertIn(expected_table_entry, table_items)
@@ -89,8 +91,10 @@ class TestAuditTable(TestCase):
         update_audit_table_item(
             file_key=ravs_rsv_test_file.file_key,
             message_id=ravs_rsv_test_file.message_id,
-            status=FileStatus.FAILED,
-            error_details="Test error details",
+            optional_params={
+                AuditTableKeys.ERROR_DETAILS: str("Test error details"),
+                AuditTableKeys.STATUS: FileStatus.FAILED,
+            },
         )
 
         table_items = dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
@@ -118,7 +122,9 @@ class TestAuditTable(TestCase):
         file_key = emis_flu_test_file_2.file_key
 
         with self.assertRaises(UnhandledAuditTableError):
-            update_audit_table_item(file_key=file_key, message_id=message_id, status=FileStatus.PROCESSED)
+            update_audit_table_item(
+                file_key=file_key, message_id=message_id, optional_params={AuditTableKeys.STATUS: FileStatus.PROCESSED}
+            )
 
         self.mock_logger.error.assert_called_once()
 
@@ -129,9 +135,15 @@ class TestAuditTable(TestCase):
         ravs_rsv_test_file = FileDetails("RSV", "RAVS", "X26")
         file_key = ravs_rsv_test_file.file_key
         message_id = ravs_rsv_test_file.message_id
-        test_start_time = 1627647000
+        test_start_time = "20210730T12100000"
 
-        update_audit_table_item(file_key=file_key, message_id=message_id, ingestion_start_time=test_start_time)
+        update_audit_table_item(
+            file_key=file_key,
+            message_id=message_id,
+            optional_params={
+                AuditTableKeys.INGESTION_START_TIME: test_start_time,
+            },
+        )
 
         table_items = dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
         self.assertEqual(1, len(table_items))
@@ -156,10 +168,14 @@ class TestAuditTable(TestCase):
 
         message_id = emis_flu_test_file_2.message_id
         file_key = emis_flu_test_file_2.file_key
-        test_start_time = 1627647000
+        test_start_time = "20210730T12100000"
 
         with self.assertRaises(UnhandledAuditTableError):
-            update_audit_table_item(file_key=file_key, message_id=message_id, ingestion_start_time=test_start_time)
+            update_audit_table_item(
+                file_key=file_key,
+                message_id=message_id,
+                optional_params={AuditTableKeys.INGESTION_START_TIME: test_start_time},
+            )
 
         self.mock_logger.error.assert_called_once()
 

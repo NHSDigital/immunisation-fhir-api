@@ -51,5 +51,5 @@ class BatchAuditRepository:
         update_audit_table_item(
             file_key=file_key,
             message_id=message_id,
-            status=updated_status,
+            optional_params={AuditTableKeys.STATUS: updated_status},
         )

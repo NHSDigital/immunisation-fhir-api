@@ -12,6 +12,7 @@ from common.batch.audit_table import update_audit_table_item
 from common.clients import logger
 from common.models.batch_constants import (
     SOURCE_BUCKET_NAME,
+    AuditTableKeys,
     FileNotProcessedReason,
     FileStatus,
     OperationShortCode,
@@ -93,8 +94,14 @@ def file_level_validation(incoming_message_body: dict) -> dict:
 
         move_file(SOURCE_BUCKET_NAME, file_key, f"{PROCESSING_DIR_NAME}/{file_key}")
 
-        ingestion_start_time = time.time()
-        update_audit_table_item(file_key=file_key, message_id=message_id, ingestion_start_time=ingestion_start_time)
+        ingestion_start_time = time.strftime("%Y%m%dT%H%M%S00", time.gmtime(time.time()))
+        update_audit_table_item(
+            file_key=file_key,
+            message_id=message_id,
+            optional_params={
+                AuditTableKeys.INGESTION_START_TIME: ingestion_start_time,
+            },
+        )
 
         return {
             "message_id": message_id,
@@ -152,3 +159,8 @@ def handle_file_level_validation_exception(
 
         # Update the audit table
         update_audit_table_item(file_key=file_key, message_id=message_id, status=file_status, error_details=str(error))
+        update_audit_table_item(
+            file_key=file_key,
+            message_id=message_id,
+            optional_params={AuditTableKeys.ERROR_DETAILS: str(error), AuditTableKeys.STATUS: file_status},
+        )
