@@ -61,16 +61,7 @@ def context(request, global_context) -> ScenarioContext:
     node = request.node
     tags = [marker.name for marker in node.own_markers]
 
-    env_vars = [
-        "auth_url",
-        "token_url",
-        "callback_url",
-        "baseUrl",
-        "username",
-        "scope",
-        "S3_env",
-        "LOCAL_RUN_WITHOUT_S3_UPLOAD",
-    ]
+    env_vars = ["auth_url", "token_url", "callback_url", "baseUrl", "username", "S3_env", "LOCAL_RUN_WITHOUT_S3_UPLOAD"]
     for var in env_vars:
         setattr(ctx, var, os.getenv(var))
 
