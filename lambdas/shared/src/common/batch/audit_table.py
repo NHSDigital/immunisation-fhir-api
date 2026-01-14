@@ -68,7 +68,7 @@ def update_audit_table_item(
     expression_attr_values = {}
 
     for audit_table_key, value in optional_params.items():
-        update_expression = _build_update_attribute_names_and_values(
+        update_expression = _build_update_expression_attribute_names_and_values(
             key=audit_table_key,
             value=value,
             update_expression=update_expression,
@@ -102,9 +102,10 @@ def update_audit_table_item(
         raise UnhandledAuditTableError(error) from error
 
 
-def _build_update_attribute_names_and_values(
+def _build_update_expression_attribute_names_and_values(
     key: str, value: any, update_expression: str, expression_attr_names: dict, expression_attr_values: dict
-):
+) -> str:
+    """Assembles an UpdateExpression, ExpressionAttributeNames and ExpressionAttributeValues"""
     element = f"#{key} = :{key}"
     update_expression = (
         update_expression + element if update_expression == "SET " else update_expression + ", " + element
