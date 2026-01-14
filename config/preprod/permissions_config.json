@@ -2,12 +2,11 @@
   {
     "supplier": "DPSFULL",
     "permissions": [
-      "3IN1.CRUDS",
       "COVID.CRUDS",
       "FLU.CRUDS",
       "HPV.CRUDS",
-      "MENACWY.CRUDS",
       "MMR.CRUDS",
+      "PERTUSSIS.CRUDS",
       "RSV.CRUDS"
     ],
     "ods_codes": ["DPSFULL"]
@@ -15,12 +14,11 @@
   {
     "supplier": "DPSREDUCED",
     "permissions": [
-      "3IN1.CRUDS",
       "COVID.CRUDS",
       "FLU.CRUDS",
       "HPV.CRUDS",
-      "MENACWY.CRUDS",
       "MMR.CRUDS",
+      "PERTUSSIS.CRUDS",
       "RSV.CRUDS"
     ],
     "ods_codes": ["DPSREDUCED"]
