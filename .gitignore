@@ -12,6 +12,7 @@ newman/
 **/*.iml
 
 __pycache__/
+.pytest_cache/
 .venv/
 .env
 .envrc
@@ -30,7 +31,6 @@ openapi.json
 
 devtools/volume/
 **/.coverage
-
 **/test-results.xml
 allure-results/
 allure-report/

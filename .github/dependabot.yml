@@ -63,6 +63,7 @@ updates:
       - "/lambdas/redis_sync"
       - "/lambdas/shared"
       - "/tests/e2e"
+      - "/tests/e2e_automation"
       - "/tests/e2e_batch"
     schedule:
       interval: "daily"
