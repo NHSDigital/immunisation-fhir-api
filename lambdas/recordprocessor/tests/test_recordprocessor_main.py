@@ -346,8 +346,6 @@ class TestRecordProcessor(unittest.TestCase):
             Key={AuditTableKeys.MESSAGE_ID: {"S": test_file.message_id}},
         ).get("Item")
 
-        self.maxDiff = None
-
         self.assertEqual(len(kinesis_records), 0)
         self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=False)
         self.assertDictEqual(
