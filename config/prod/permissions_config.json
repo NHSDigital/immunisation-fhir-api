@@ -1,12 +1,24 @@
 [
   {
     "supplier": "DPSFULL",
-    "permissions": ["FLU.CRUDS", "HPV.CRUDS", "MMR.CRUDS", "RSV.CRUDS"],
+    "permissions": [
+      "FLU.CRUDS",
+      "HPV.CRUDS",
+      "MMR.CRUDS",
+      "PERTUSSIS.CRUDS",
+      "RSV.CRUDS"
+    ],
     "ods_codes": ["DPSFULL"]
   },
   {
     "supplier": "DPSREDUCED",
-    "permissions": ["FLU.CRUDS", "HPV.CRUDS", "MMR.CRUDS", "RSV.CRUDS"],
+    "permissions": [
+      "FLU.CRUDS",
+      "HPV.CRUDS",
+      "MMR.CRUDS",
+      "PERTUSSIS.CRUDS",
+      "RSV.CRUDS"
+    ],
     "ods_codes": ["DPSREDUCED"]
   },
   {
