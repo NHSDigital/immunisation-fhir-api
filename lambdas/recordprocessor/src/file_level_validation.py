@@ -157,10 +157,9 @@ def handle_file_level_validation_exception(
     except Exception as move_file_error:
         logger.error("Failed to move file to archive: %s", move_file_error)
 
-        # Update the audit table
-        update_audit_table_item(file_key=file_key, message_id=message_id, status=file_status, error_details=str(error))
-        update_audit_table_item(
-            file_key=file_key,
-            message_id=message_id,
-            optional_params={AuditTableKeys.ERROR_DETAILS: str(error), AuditTableKeys.STATUS: file_status},
-        )
+    # Update the audit table
+    update_audit_table_item(
+        file_key=file_key,
+        message_id=message_id,
+        optional_params={AuditTableKeys.ERROR_DETAILS: str(error), AuditTableKeys.STATUS: file_status},
+    )

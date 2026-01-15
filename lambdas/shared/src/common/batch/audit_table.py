@@ -1,11 +1,13 @@
 from typing import Optional
 
-from common.clients import dynamodb_client, logger
+from common.clients import get_dynamodb_client, logger
 from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys, audit_table_key_data_types_map
 from common.models.errors import UnhandledAuditTableError
 
 ITEM_EXISTS_CONDITION_EXPRESSION = f"attribute_exists({AuditTableKeys.MESSAGE_ID})"
 ITEM_DOES_NOT_EXIST_CONDITION_EXPRESSION = f"attribute_not_exists({AuditTableKeys.MESSAGE_ID})"
+
+dynamodb_client = get_dynamodb_client()
 
 
 def create_audit_table_item(

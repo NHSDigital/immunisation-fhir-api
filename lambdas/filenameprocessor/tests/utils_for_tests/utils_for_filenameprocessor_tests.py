@@ -24,13 +24,6 @@ MOCK_ODS_CODE_TO_SUPPLIER = {"YGM41": "EMIS", "X8E5B": "RAVS"}
 dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
 
 
-def get_csv_file_dict_reader(s3_client, bucket_name: str, file_key: str) -> DictReader:
-    """Download the file from the S3 bucket and return it as a DictReader"""
-    ack_file_csv_obj = s3_client.get_object(Bucket=bucket_name, Key=file_key)
-    csv_content_string = ack_file_csv_obj["Body"].read().decode("utf-8")
-    return DictReader(StringIO(csv_content_string), delimiter="|")
-
-
 def assert_audit_table_entry(file_details: FileDetails, expected_status: str) -> None:
     """Assert that the file details are in the audit table"""
     table_entry = dynamodb_client.get_item(
