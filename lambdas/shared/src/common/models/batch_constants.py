@@ -44,7 +44,7 @@ class AuditTableKeys(StrEnum):
 
 # It would be better to use boto3.dynamodb.types for these constants but it could cause issues across shared lambdas
 # with different dependencies
-class AuditTableKeyDataTypes:
+class AuditTableKeyDataTypes(StrEnum):
     STRING = "S"
     NUMBER = "N"
 

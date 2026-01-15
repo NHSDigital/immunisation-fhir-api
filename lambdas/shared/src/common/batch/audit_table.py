@@ -80,7 +80,7 @@ def update_audit_table_item(
     try:
         dynamodb_client.update_item(
             TableName=AUDIT_TABLE_NAME,
-            Key={AuditTableKeys.MESSAGE_ID: {"S": message_id}},
+            Key={AuditTableKeys.MESSAGE_ID: {audit_table_key_data_types_map[AuditTableKeys.MESSAGE_ID]: message_id}},
             UpdateExpression=update_expression,
             ExpressionAttributeNames=expression_attr_names,
             ExpressionAttributeValues=expression_attr_values,
