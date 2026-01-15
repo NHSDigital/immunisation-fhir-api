@@ -6,7 +6,7 @@ data "aws_route53_zone" "grafana_zone" {
 # Create an A record (alias) pointing to the ALB
 resource "aws_route53_record" "grafana" {
   zone_id = data.aws_route53_zone.grafana_zone.zone_id
-  name    = "grafana.${local.environment}.imms.dev.vds.platform.nhs.uk"
+  name    = "grafana.imms.${local.environment}.vds.platform.nhs.uk"
   type    = "A"
 
   alias {
