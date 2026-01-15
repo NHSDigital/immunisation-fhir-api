@@ -13,7 +13,7 @@ from common.aws_s3_utils import (
     copy_file_to_external_bucket,
     move_file,
 )
-from common.batch.audit_table import FILE_DOES_NOT_EXIST_CONDITION_EXPRESSION, create_audit_table_item
+from common.batch.audit_table import ITEM_DOES_NOT_EXIST_CONDITION_EXPRESSION, create_audit_table_item
 from common.clients import STREAM_NAME, get_s3_client, logger
 from common.log_decorator import logging_decorator
 from common.models.batch_constants import SOURCE_BUCKET_NAME, FileNotProcessedReason, FileStatus
@@ -175,7 +175,7 @@ def handle_batch_file(
             expiry_timestamp,
             queue_name,
             FileStatus.QUEUED,
-            condition_expression=FILE_DOES_NOT_EXIST_CONDITION_EXPRESSION,  # Prevents accidental overwrites
+            condition_expression=ITEM_DOES_NOT_EXIST_CONDITION_EXPRESSION,  # Prevents accidental overwrites
         )
         make_and_send_sqs_message(
             file_key,

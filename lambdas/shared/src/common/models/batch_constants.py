@@ -50,11 +50,17 @@ class AuditTableKeyDataTypes:
 
 
 audit_table_key_data_types_map = {
+    AuditTableKeys.FILENAME: AuditTableKeyDataTypes.STRING,
+    AuditTableKeys.MESSAGE_ID: AuditTableKeyDataTypes.STRING,
+    AuditTableKeys.QUEUE_NAME: AuditTableKeyDataTypes.STRING,
+    AuditTableKeys.RECORD_COUNT: AuditTableKeyDataTypes.NUMBER,
     AuditTableKeys.STATUS: AuditTableKeyDataTypes.STRING,
+    AuditTableKeys.TIMESTAMP: AuditTableKeyDataTypes.STRING,
+    AuditTableKeys.EXPIRES_AT: AuditTableKeyDataTypes.NUMBER,
     AuditTableKeys.INGESTION_START_TIME: AuditTableKeyDataTypes.STRING,
     AuditTableKeys.INGESTION_END_TIME: AuditTableKeyDataTypes.STRING,
-    AuditTableKeys.RECORD_COUNT: AuditTableKeyDataTypes.NUMBER,
     AuditTableKeys.RECORDS_SUCCEEDED: AuditTableKeyDataTypes.NUMBER,
+    AuditTableKeys.RECORDS_FAILED: AuditTableKeyDataTypes.NUMBER,
     AuditTableKeys.ERROR_DETAILS: AuditTableKeyDataTypes.STRING,
 }
 

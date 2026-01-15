@@ -4,8 +4,8 @@ from common.clients import dynamodb_client, logger
 from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys, audit_table_key_data_types_map
 from common.models.errors import UnhandledAuditTableError
 
-FILE_EXISTS_CONDITION_EXPRESSION = f"attribute_exists({AuditTableKeys.MESSAGE_ID})"
-FILE_DOES_NOT_EXIST_CONDITION_EXPRESSION = f"attribute_not_exists({AuditTableKeys.MESSAGE_ID})"
+ITEM_EXISTS_CONDITION_EXPRESSION = f"attribute_exists({AuditTableKeys.MESSAGE_ID})"
+ITEM_DOES_NOT_EXIST_CONDITION_EXPRESSION = f"attribute_not_exists({AuditTableKeys.MESSAGE_ID})"
 
 
 def create_audit_table_item(
@@ -22,16 +22,18 @@ def create_audit_table_item(
     Creates an audit table item with the file details
     """
     audit_item = {
-        AuditTableKeys.MESSAGE_ID: {"S": message_id},
-        AuditTableKeys.FILENAME: {"S": file_key},
-        AuditTableKeys.QUEUE_NAME: {"S": queue_name},
-        AuditTableKeys.STATUS: {"S": file_status},
-        AuditTableKeys.TIMESTAMP: {"S": created_at_formatted_str},
-        AuditTableKeys.EXPIRES_AT: {"N": str(expiry_timestamp)},
+        AuditTableKeys.MESSAGE_ID: {audit_table_key_data_types_map[AuditTableKeys.MESSAGE_ID]: message_id},
+        AuditTableKeys.FILENAME: {audit_table_key_data_types_map[AuditTableKeys.FILENAME]: file_key},
+        AuditTableKeys.QUEUE_NAME: {audit_table_key_data_types_map[AuditTableKeys.QUEUE_NAME]: queue_name},
+        AuditTableKeys.STATUS: {audit_table_key_data_types_map[AuditTableKeys.STATUS]: file_status},
+        AuditTableKeys.TIMESTAMP: {audit_table_key_data_types_map[AuditTableKeys.TIMESTAMP]: created_at_formatted_str},
+        AuditTableKeys.EXPIRES_AT: {audit_table_key_data_types_map[AuditTableKeys.EXPIRES_AT]: str(expiry_timestamp)},
     }
 
     if error_details is not None:
-        audit_item[AuditTableKeys.ERROR_DETAILS] = {"S": error_details}
+        audit_item[AuditTableKeys.ERROR_DETAILS] = {
+            audit_table_key_data_types_map[AuditTableKeys.ERROR_DETAILS]: error_details
+        }
 
     try:
         # Add to the audit table (regardless of whether it is a duplicate)
@@ -82,7 +84,7 @@ def update_audit_table_item(
             UpdateExpression=update_expression,
             ExpressionAttributeNames=expression_attr_names,
             ExpressionAttributeValues=expression_attr_values,
-            ConditionExpression=FILE_EXISTS_CONDITION_EXPRESSION,
+            ConditionExpression=ITEM_EXISTS_CONDITION_EXPRESSION,
         )
 
         for audit_table_key, value in optional_params.items():
@@ -145,7 +147,7 @@ def increment_records_failed_count(message_id: str) -> None:
             UpdateExpression="SET #attribute = if_not_exists(#attribute, :initial) + :increment",
             ExpressionAttributeNames={"#attribute": AuditTableKeys.RECORDS_FAILED},
             ExpressionAttributeValues={":increment": {"N": str(increment_value)}, ":initial": {"N": str(initial_value)}},
-            ConditionExpression=FILE_EXISTS_CONDITION_EXPRESSION,
+            ConditionExpression=ITEM_EXISTS_CONDITION_EXPRESSION,
             ReturnValues="UPDATED_NEW",
         )
 

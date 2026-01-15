@@ -2,7 +2,7 @@
 
 import unittest
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 from boto3 import client as boto3_client
 from moto import mock_aws
@@ -142,17 +142,16 @@ class TestAuditTable(TestCase):
 
         add_entry_to_table(MockFileDetails.rsv_ravs, file_status=FileStatus.PROCESSING)
         add_entry_to_table(MockFileDetails.flu_emis, file_status=FileStatus.QUEUED)
-
+        ravs_rsv_test_file = FileDetails("RSV", "RAVS", "X26")
         expected_table_entry = {
             **MockFileDetails.rsv_ravs.audit_table_entry,
             "status": {"S": FileStatus.PREPROCESSED},
         }
-        ravs_rsv_test_file = FileDetails("RSV", "RAVS", "X26")
-        file_key = ravs_rsv_test_file.file_key
-        message_id = ravs_rsv_test_file.message_id
 
         update_audit_table_item(
-            file_key=file_key, message_id=message_id, optional_params={AuditTableKeys.STATUS: FileStatus.PREPROCESSED}
+            file_key=ravs_rsv_test_file.file_key,
+            message_id=ravs_rsv_test_file.message_id,
+            optional_params={AuditTableKeys.STATUS: FileStatus.PREPROCESSED},
         )
         table_items = dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
 
@@ -169,6 +168,11 @@ class TestAuditTable(TestCase):
         """Checks audit table correctly updates a record including some error details"""
         add_entry_to_table(MockFileDetails.rsv_ravs, file_status=FileStatus.QUEUED)
         ravs_rsv_test_file = FileDetails("RSV", "RAVS", "X26")
+        expected_table_entry = {
+            **MockFileDetails.rsv_ravs.audit_table_entry,
+            "status": {"S": FileStatus.FAILED},
+            "error_details": {"S": "Test error details"},
+        }
 
         update_audit_table_item(
             file_key=ravs_rsv_test_file.file_key,
@@ -180,15 +184,9 @@ class TestAuditTable(TestCase):
         )
 
         table_items = dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
+
         self.assertEqual(1, len(table_items))
-        self.assertEqual(
-            {
-                **MockFileDetails.rsv_ravs.audit_table_entry,
-                "status": {"S": FileStatus.FAILED},
-                "error_details": {"S": "Test error details"},
-            },
-            table_items[0],
-        )
+        self.assertEqual(expected_table_entry, table_items[0])
         self.mock_logger.info.assert_called_once_with(
             "The %s of file %s, with message id %s, was successfully updated to %s in the audit table",
             AuditTableKeys.STATUS,
@@ -200,12 +198,11 @@ class TestAuditTable(TestCase):
     def test_update_audit_table_item_status_throws_exception_with_invalid_id(self):
         emis_flu_test_file_2 = FileDetails("FLU", "EMIS", "YGM41")
 
-        message_id = emis_flu_test_file_2.message_id
-        file_key = emis_flu_test_file_2.file_key
-
         with self.assertRaises(UnhandledAuditTableError):
             update_audit_table_item(
-                file_key=file_key, message_id=message_id, optional_params={AuditTableKeys.STATUS: FileStatus.PROCESSED}
+                file_key=emis_flu_test_file_2.file_key,
+                message_id=emis_flu_test_file_2.message_id,
+                optional_params={AuditTableKeys.STATUS: FileStatus.PROCESSED},
             )
 
         self.mock_logger.error.assert_called_once()
@@ -213,28 +210,27 @@ class TestAuditTable(TestCase):
     def test_update_audit_table_item_ingestion_start_time(self):
         """Checks audit table correctly sets ingestion_start_time to the requested value"""
         add_entry_to_table(MockFileDetails.rsv_ravs, file_status=FileStatus.PROCESSING)
-
         ravs_rsv_test_file = FileDetails("RSV", "RAVS", "X26")
-        file_key = ravs_rsv_test_file.file_key
-        message_id = ravs_rsv_test_file.message_id
+        expected_table_entry = {
+            **MockFileDetails.rsv_ravs.audit_table_entry,
+            "status": {"S": FileStatus.PROCESSING},
+            "ingestion_start_time": {"S": "20210730T12100000"},
+        }
         test_start_time = "20210730T12100000"
 
         update_audit_table_item(
-            file_key=file_key,
-            message_id=message_id,
+            file_key=ravs_rsv_test_file.file_key,
+            message_id=ravs_rsv_test_file.message_id,
             optional_params={
                 AuditTableKeys.INGESTION_START_TIME: test_start_time,
             },
         )
 
         table_items = dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
+
         self.assertEqual(1, len(table_items))
         self.assertEqual(
-            {
-                **MockFileDetails.rsv_ravs.audit_table_entry,
-                "status": {"S": FileStatus.PROCESSING},
-                "ingestion_start_time": {"S": "20210730T12100000"},
-            },
+            expected_table_entry,
             table_items[0],
         )
         self.mock_logger.info.assert_called_once_with(
@@ -247,67 +243,108 @@ class TestAuditTable(TestCase):
 
     def test_update_audit_table_item_ingestion_start_time_throws_exception_with_invalid_id(self):
         emis_flu_test_file_2 = FileDetails("FLU", "EMIS", "YGM41")
-
-        message_id = emis_flu_test_file_2.message_id
-        file_key = emis_flu_test_file_2.file_key
         test_start_time = "20210730T12100000"
 
         with self.assertRaises(UnhandledAuditTableError):
             update_audit_table_item(
-                file_key=file_key,
-                message_id=message_id,
+                file_key=emis_flu_test_file_2.file_key,
+                message_id=emis_flu_test_file_2.message_id,
                 optional_params={AuditTableKeys.INGESTION_START_TIME: test_start_time},
             )
 
         self.mock_logger.error.assert_called_once()
 
+    def test_update_audit_table_item_record_success_count_and_end_time(self):
+        """Checks audit table correctly sets ingestion_end_time and success count to the requested value"""
+        add_entry_to_table(MockFileDetails.rsv_ravs, file_status=FileStatus.PROCESSED)
+        ravs_rsv_test_file = FileDetails("RSV", "RAVS", "X26")
+        test_success_count = 5
+        test_end_time = "20251208T14430000"
+        expected_table_entry = {
+            **MockFileDetails.rsv_ravs.audit_table_entry,
+            "status": {"S": FileStatus.PROCESSED},
+            "ingestion_end_time": {"S": test_end_time},
+            "records_succeeded": {"N": str(test_success_count)},
+        }
+
+        update_audit_table_item(
+            file_key=ravs_rsv_test_file.file_key,
+            message_id=ravs_rsv_test_file.message_id,
+            optional_params={
+                AuditTableKeys.INGESTION_END_TIME: test_end_time,
+                AuditTableKeys.RECORDS_SUCCEEDED: test_success_count,
+            },
+        )
+
+        table_items = dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
+
+        self.assertEqual(1, len(table_items))
+        self.assertEqual(1, len(table_items))
+        self.assertEqual(expected_table_entry, table_items[0])
+
+        self.mock_logger.info.assert_has_calls(
+            [
+                call(
+                    "The %s of file %s, with message id %s, was successfully updated to %s in the audit table",
+                    AuditTableKeys.INGESTION_END_TIME,
+                    "RSV_Vaccinations_v5_X26_20210730T12000000.csv",
+                    ravs_rsv_test_file.message_id,
+                    "20251208T14430000",
+                ),
+                call(
+                    "The %s of file %s, with message id %s, was successfully updated to %s in the audit table",
+                    AuditTableKeys.RECORDS_SUCCEEDED,
+                    "RSV_Vaccinations_v5_X26_20210730T12000000.csv",
+                    ravs_rsv_test_file.message_id,
+                    "5",
+                ),
+            ]
+        )
+
     def test_get_record_count_and_failures_by_message_id_returns_the_record_count_and_failures(self):
         """Test that get_record_count_by_message_id retrieves the integer values of the total record count and
         failures"""
+        ravs_rsv_test_file = FileDetails("RSV", "RAVS", "X26")
         expected_table_entry = {
             **MockFileDetails.rsv_ravs.audit_table_entry,
             "status": {"S": FileStatus.PREPROCESSED},
             "record_count": {"N": "1000"},
             "records_failed": {"N": "5"},
         }
-        ravs_rsv_test_file = FileDetails("RSV", "RAVS", "X26")
-        message_id = ravs_rsv_test_file.message_id
 
         dynamodb_client.put_item(TableName=AUDIT_TABLE_NAME, Item=expected_table_entry)
 
-        record_count, failed_count = get_record_count_and_failures_by_message_id(message_id)
+        record_count, failed_count = get_record_count_and_failures_by_message_id(ravs_rsv_test_file.message_id)
 
         self.assertEqual(record_count, 1000)
         self.assertEqual(failed_count, 5)
 
     def test_get_record_count_and_failures_by_message_id_returns_zero_if_values_not_set(self):
         """Test that if the record count has not yet been set on the audit item then zero is returned"""
+        ravs_rsv_test_file = FileDetails("RSV", "RAVS", "X26")
         expected_table_entry = {
             **MockFileDetails.rsv_ravs.audit_table_entry,
             "status": {"S": FileStatus.PREPROCESSED},
         }
-        ravs_rsv_test_file = FileDetails("RSV", "RAVS", "X26")
-        message_id = ravs_rsv_test_file.message_id
 
         dynamodb_client.put_item(TableName=AUDIT_TABLE_NAME, Item=expected_table_entry)
 
-        record_count, failed_count = get_record_count_and_failures_by_message_id(message_id)
+        record_count, failed_count = get_record_count_and_failures_by_message_id(ravs_rsv_test_file.message_id)
 
         self.assertEqual(record_count, 0)
         self.assertEqual(failed_count, 0)
 
     def test_increment_records_failed_count(self):
         """Checks audit table correctly increments the records_failed count"""
+        ravs_rsv_test_file = FileDetails("RSV", "RAVS", "X26")
         expected_table_entry = {
             **MockFileDetails.rsv_ravs.audit_table_entry,
             "status": {"S": FileStatus.PREPROCESSED},
         }
-        ravs_rsv_test_file = FileDetails("RSV", "RAVS", "X26")
-        message_id = ravs_rsv_test_file.message_id
 
         dynamodb_client.put_item(TableName=AUDIT_TABLE_NAME, Item=expected_table_entry)
 
-        increment_records_failed_count(message_id)
+        increment_records_failed_count(ravs_rsv_test_file.message_id)
 
         table_items = dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
         self.assertEqual(table_items[0]["records_failed"]["N"], "1")
