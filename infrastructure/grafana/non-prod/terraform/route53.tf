@@ -1,12 +1,12 @@
 # Data source to get the existing hosted zone
 data "aws_route53_zone" "grafana_zone" {
-  name = "${local.environment}.vds.platform.nhs.uk"
+  name = "imms.${local.environment}.vds.platform.nhs.uk"
 }
 
 # Create an A record (alias) pointing to the ALB
 resource "aws_route53_record" "grafana" {
   zone_id = data.aws_route53_zone.grafana_zone.zone_id
-  name    = "grafana.${local.environment}.vds.platform.nhs.uk"
+  name    = "grafana.${local.environment}.imms.dev.vds.platform.nhs.uk"
   type    = "A"
 
   alias {

@@ -102,21 +102,6 @@ resource "aws_ecs_cluster" "main" {
   name = "${local.prefix}-cluster"
 }
 
-data "template_file" "grafana_app" {
-  template = file("${path.module}/templates/ecs/grafana_app.json.tpl")
-
-  vars = {
-    app_image         = local.app_image
-    app_name          = local.app_name
-    app_port          = var.app_port
-    fargate_cpu       = var.fargate_cpu
-    fargate_memory    = var.fargate_memory
-    aws_region        = var.aws_region
-    log_group         = local.log_group
-    health_check_path = var.health_check_path
-  }
-}
-
 resource "aws_ecs_task_definition" "app" {
   family                   = "${local.prefix}-app"
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
@@ -125,7 +110,16 @@ resource "aws_ecs_task_definition" "app" {
   requires_compatibilities = ["FARGATE"]
   cpu                      = var.fargate_cpu
   memory                   = var.fargate_memory
-  container_definitions    = data.template_file.grafana_app.rendered
+  container_definitions = templatefile("${path.module}/templates/ecs/grafana_app.json.tpl", {
+    app_image         = local.app_image
+    app_name          = local.app_name
+    app_port          = var.app_port
+    fargate_cpu       = var.fargate_cpu
+    fargate_memory    = var.fargate_memory
+    aws_region        = var.aws_region
+    log_group         = local.log_group
+    health_check_path = var.health_check_path
+  })
   tags = merge(var.tags, {
     Name = "${local.prefix}-task"
   })
