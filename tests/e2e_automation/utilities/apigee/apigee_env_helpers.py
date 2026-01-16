@@ -1,23 +1,21 @@
 import os
 
 
-# TODO - consolidate methods - just pass the key. Simple!
+def get_env_var(var_name: str) -> str:
+    value = os.getenv(var_name)
+
+    if not value:
+        raise EnvironmentError(f"{var_name} environment variable is required")
+
+    return value
+
+
 def get_apigee_username() -> str:
-    apigee_username = os.getenv("APIGEE_USERNAME")
-
-    if not apigee_username:
-        raise RuntimeError('"APIGEE_USERNAME" environment variable is required')
-
-    return apigee_username
+    return get_env_var("APIGEE_USERNAME")
 
 
 def get_proxy_name() -> str:
-    proxy_name = os.getenv("PROXY_NAME")
-
-    if not proxy_name:
-        raise RuntimeError('"PROXY_NAME" environment variable is required')
-
-    return proxy_name
+    return get_env_var("PROXY_NAME")
 
 
 def is_pr_env() -> bool:
@@ -27,9 +25,4 @@ def is_pr_env() -> bool:
 
 
 def get_apigee_access_token() -> str:
-    access_token = os.getenv("APIGEE_ACCESS_TOKEN")
-
-    if not access_token:
-        raise RuntimeError('"PROXY_NAME" environment variable is required')
-
-    return access_token
+    return get_env_var("APIGEE_ACCESS_TOKEN")
