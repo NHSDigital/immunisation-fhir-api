@@ -180,7 +180,7 @@ class TestAuditTable(TestCase):
     def test_update_audit_table_item_status_throws_exception_when_no_attrs_to_update(self):
         emis_flu_test_file_2 = FileDetails("FLU", "EMIS", "YGM41")
 
-        with self.assertRaises(UnhandledAuditTableError) as error:
+        with self.assertRaises(ValueError) as error:
             update_audit_table_item(
                 file_key=emis_flu_test_file_2.file_key,
                 message_id=emis_flu_test_file_2.message_id,

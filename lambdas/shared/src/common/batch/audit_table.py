@@ -5,7 +5,7 @@ from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys, audi
 from common.models.errors import UnhandledAuditTableError
 
 ITEM_EXISTS_CONDITION_EXPRESSION = f"attribute_exists({AuditTableKeys.MESSAGE_ID})"
-NOTHING_TO_UPDATE_ERROR_MESSAGE = "Nothing to update"
+NOTHING_TO_UPDATE_ERROR_MESSAGE = "Improper usage: you must provide at least one attribute to update"
 
 dynamodb_client = get_dynamodb_client()
 
@@ -40,7 +40,7 @@ def create_audit_table_item(
         dynamodb_client.put_item(TableName=AUDIT_TABLE_NAME, Item=audit_item)
     except Exception as error:
         logger.error(error)
-        raise UnhandledAuditTableError(str(error)) from error
+        raise UnhandledAuditTableError(error) from error
 
     logger.info(
         "%s file, with message id %s, successfully added to audit table",
@@ -57,7 +57,7 @@ def update_audit_table_item(
     """Updates an item in the audit table with the requested values"""
     if attrs_to_update is None or len(attrs_to_update) == 0:
         logger.error(NOTHING_TO_UPDATE_ERROR_MESSAGE)
-        raise UnhandledAuditTableError(message=NOTHING_TO_UPDATE_ERROR_MESSAGE)
+        raise ValueError(NOTHING_TO_UPDATE_ERROR_MESSAGE)
 
     update_expression, expression_attr_names, expression_attr_values = _build_ddb_update_parameters(attrs_to_update)
     try:
@@ -71,7 +71,7 @@ def update_audit_table_item(
         )
     except Exception as error:
         logger.error(error)
-        raise UnhandledAuditTableError(str(error)) from error
+        raise UnhandledAuditTableError(error) from error
 
     logger.info(_build_audit_table_update_log_message(file_key, message_id, attrs_to_update))
 
@@ -144,4 +144,4 @@ def increment_records_failed_count(message_id: str) -> None:
         )
     except Exception as error:
         logger.error(error)
-        raise UnhandledAuditTableError(str(error)) from error
+        raise UnhandledAuditTableError(error) from error
