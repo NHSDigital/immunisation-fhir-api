@@ -2,7 +2,7 @@
 
 import json
 
-from audit_table import increment_records_failed_count
+from common.batch.audit_table import increment_records_failed_count
 from common.batch.eof_utils import is_eof_message
 from convert_message_to_ack_row import convert_message_to_ack_row
 from logging_decorators import ack_lambda_handler_logging_decorator

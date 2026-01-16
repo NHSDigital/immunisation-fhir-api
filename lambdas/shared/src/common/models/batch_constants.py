@@ -16,13 +16,9 @@ class FileStatus(StrEnum):
     NOT_PROCESSED = "Not processed"
     FAILED = "Failed"
 
-
-class FileNotProcessedReason(StrEnum):
-    """Reasons why a file was not processed"""
-
-    DUPLICATE = "Duplicate"
-    EMPTY = "Empty file"
-    UNAUTHORISED = "Unauthorised"
+    DUPLICATE = f"{NOT_PROCESSED} - Duplicate"
+    EMPTY = f"{NOT_PROCESSED} - Empty file"
+    UNAUTHORISED = f"{NOT_PROCESSED} - Unauthorised"
 
 
 class AuditTableKeys(StrEnum):
@@ -40,6 +36,27 @@ class AuditTableKeys(StrEnum):
     RECORDS_SUCCEEDED = "records_succeeded"
     RECORDS_FAILED = "records_failed"
     ERROR_DETAILS = "error_details"
+
+
+class AuditTableKeyDataTypes(StrEnum):
+    STRING = "S"
+    NUMBER = "N"
+
+
+audit_table_key_data_types_map = {
+    AuditTableKeys.FILENAME: AuditTableKeyDataTypes.STRING,
+    AuditTableKeys.MESSAGE_ID: AuditTableKeyDataTypes.STRING,
+    AuditTableKeys.QUEUE_NAME: AuditTableKeyDataTypes.STRING,
+    AuditTableKeys.RECORD_COUNT: AuditTableKeyDataTypes.NUMBER,
+    AuditTableKeys.STATUS: AuditTableKeyDataTypes.STRING,
+    AuditTableKeys.TIMESTAMP: AuditTableKeyDataTypes.STRING,
+    AuditTableKeys.EXPIRES_AT: AuditTableKeyDataTypes.NUMBER,
+    AuditTableKeys.INGESTION_START_TIME: AuditTableKeyDataTypes.STRING,
+    AuditTableKeys.INGESTION_END_TIME: AuditTableKeyDataTypes.STRING,
+    AuditTableKeys.RECORDS_SUCCEEDED: AuditTableKeyDataTypes.NUMBER,
+    AuditTableKeys.RECORDS_FAILED: AuditTableKeyDataTypes.NUMBER,
+    AuditTableKeys.ERROR_DETAILS: AuditTableKeyDataTypes.STRING,
+}
 
 
 class Operation(StrEnum):

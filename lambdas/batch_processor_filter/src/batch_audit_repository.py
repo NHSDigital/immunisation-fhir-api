@@ -1,6 +1,7 @@
 from boto3.dynamodb.conditions import Key
 
 from common.aws_dynamodb import get_dynamodb_table
+from common.batch.audit_table import update_audit_table_item
 from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys, FileStatus
 from constants import (
     AUDIT_TABLE_FILENAME_GSI,
@@ -45,11 +46,10 @@ class BatchAuditRepository:
 
         return False
 
-    def update_status(self, message_id: str, updated_status: str) -> None:
-        self._batch_audit_table.update_item(
-            Key={AuditTableKeys.MESSAGE_ID: message_id},
-            UpdateExpression="SET #status = :status",
-            ExpressionAttributeNames={"#status": "status"},
-            ExpressionAttributeValues={":status": updated_status},
-            ConditionExpression="attribute_exists(message_id)",
+    @staticmethod
+    def update_status(file_key: str, message_id: str, updated_status: FileStatus) -> None:
+        update_audit_table_item(
+            file_key=file_key,
+            message_id=message_id,
+            attrs_to_update={AuditTableKeys.STATUS: updated_status},
         )

@@ -23,11 +23,9 @@ class TestProcessorEdgeCases(unittest.TestCase):
         self.mock_make_and_move = create_patch("file_level_validation.make_and_upload_ack_file")
         self.mock_move_file = create_patch("file_level_validation.move_file")
         self.mock_get_permitted_operations = create_patch("file_level_validation.get_permitted_operations")
+        self.mock_update_audit_table_item_bp = create_patch("batch_processor.update_audit_table_item")
+        self.mock_update_audit_table_item_flv = create_patch("file_level_validation.update_audit_table_item")
         self.mock_firehose_client = create_patch("common.clients.global_firehose_client")
-        self.mock_update_audit_table_status = create_patch("batch_processor.update_audit_table_status")
-        self.mock_set_audit_table_ingestion_start_time = create_patch(
-            "file_level_validation.set_audit_table_ingestion_start_time"
-        )
 
     def tearDown(self):
         patch.stopall()

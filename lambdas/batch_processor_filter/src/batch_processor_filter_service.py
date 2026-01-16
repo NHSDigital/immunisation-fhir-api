@@ -7,7 +7,7 @@ from batch_file_created_event import BatchFileCreatedEvent
 from batch_file_repository import BatchFileRepository
 from common.clients import get_sqs_client, logger
 from common.log_firehose import send_log_to_firehose
-from common.models.batch_constants import FileNotProcessedReason, FileStatus
+from common.models.batch_constants import FileStatus
 from constants import QUEUE_URL, SPLUNK_FIREHOSE_STREAM_NAME
 from exceptions import EventAlreadyProcessingForSupplierAndVaccTypeError
 
@@ -47,8 +47,9 @@ class BatchProcessorFilterService:
             # Mark as processed and return without error so next event will be picked up from queue
             logger.error("A duplicate file has already been processed. Filename: %s", filename)
             self._batch_audit_repository.update_status(
-                message_id,
-                f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.DUPLICATE}",
+                file_key=filename,
+                message_id=message_id,
+                updated_status=FileStatus.DUPLICATE,
             )
             self._batch_file_repo.upload_failure_ack(batch_file_created_event)
             self._batch_file_repo.move_source_file_to_archive(filename)
@@ -64,7 +65,11 @@ class BatchProcessorFilterService:
                 f"Batch event already processing for supplier: {supplier} and vacc type: {vaccine_type}"
             )
 
-        self._batch_audit_repository.update_status(message_id, FileStatus.PROCESSING)
+        self._batch_audit_repository.update_status(
+            file_key=filename,
+            message_id=message_id,
+            updated_status=FileStatus.PROCESSING,
+        )
         self._queue_client.send_message(
             QueueUrl=QUEUE_URL,
             MessageBody=json.dumps(batch_file_created_event),

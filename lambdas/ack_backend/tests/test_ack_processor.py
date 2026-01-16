@@ -43,7 +43,7 @@ BASE_FAILURE_MESSAGE = {
 
 
 @patch.dict(os.environ, MOCK_ENVIRONMENT_DICT)
-@patch("audit_table.AUDIT_TABLE_NAME", AUDIT_TABLE_NAME)
+@patch("common.batch.audit_table.AUDIT_TABLE_NAME", AUDIT_TABLE_NAME)
 @mock_aws
 class TestAckProcessor(unittest.TestCase):
     """Tests for the ack processor lambda handler."""
