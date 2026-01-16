@@ -7,6 +7,9 @@ from dotenv import load_dotenv
 from utilities.api_fhir_immunization_helper import empty_folder
 from utilities.api_gen_token import get_tokens
 from utilities.api_get_header import get_delete_url_header
+from utilities.apigee.apigee_env_helpers import is_pr_env
+from utilities.apigee.ApigeeApp import ApigeeApp
+from utilities.apigee.ApigeeOnDemandAppManager import ApigeeOnDemandAppManager
 from utilities.aws_token import refresh_sso_token, set_aws_session_token
 from utilities.context import ScenarioContext
 from utilities.enums import SupplierNameWithODSCode
@@ -53,8 +56,25 @@ def global_context():
     ).strip().lower() == "true" else set_aws_session_token()
 
 
+@pytest.fixture(scope="session")
+def temp_apigee_apps():
+    if is_pr_env():
+        apigee_app_mgr = ApigeeOnDemandAppManager()
+        created_apps = apigee_app_mgr.setup_apps_and_product()
+
+        for test_app in created_apps:
+            os.environ[f"{test_app.supplier}_client_Id"] = test_app.client_id
+            os.environ[f"{test_app.supplier}_client_Secret"] = test_app.client_secret
+
+        yield created_apps
+
+        apigee_app_mgr.teardown_apps_and_product()
+    else:
+        yield None
+
+
 @pytest.fixture
-def context(request, global_context) -> ScenarioContext:
+def context(request, global_context, temp_apigee_apps: list[ApigeeApp] | None) -> ScenarioContext:
     ctx = ScenarioContext()
     ctx.aws_profile_name = os.getenv("aws_profile_name")
 
