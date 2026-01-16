@@ -59,3 +59,22 @@ This directory contains End-to-end Automation Tests for the Immunisation FHIR AP
 - `make test-batch-full` - run Batch tests
 - `make test-batch-smoke` - run Batch smoke tests only (quicker)
 - `make collect-only` - check that all tests are discovered
+
+## Running e2e_automation tests against PR environments
+
+The environment variables define a client ID and client secret for each of the Apigee test apps we use in static
+environments such as `internal-dev`, `internal-qa` and so on.
+
+However, creating pull requests creates a dynamic Apigee proxy and AWS backend which lives for the duration of the PR.
+To minimise admin overhead, the automation tests create dynamic application for the duration of a test run rather than
+us having to create new apps each time we produce a pull request.
+
+These tests are run seamlessly in the pipeline. But if you are doing some local changes and want to test against your
+PR environment, please follow these pre-requisites to get it working:
+
+1. [Install](https://docs.apigee.com/api-platform/system-administration/auth-tools#install) and run the Apigee [`get_token`](https://docs.apigee.com/api-platform/system-administration/using-gettoken) tool to obtain an access token.
+2. Set this value against the `APIGEE_ACCESS_TOKEN` in your .env file.
+3. Finally, use the [.env.example.pr](./.env.example.pr) as your baseline for your .env file and fill all of the required values.
+
+Note: the `get_token` tool is only supported in Linux environments, so if you are using a Windows environment, you will
+at least need to run the operation in WSL to obtain the access token.
