@@ -47,7 +47,7 @@ provider "registry.terraform.io/hashicorp/null" {
 
 provider "registry.terraform.io/hashicorp/template" {
   version     = "2.2.0"
-  constraints = "~> 2.0"
+  constraints = "~> 2.2.0"
   hashes = [
     "h1:44Le5zVomtfOfKUsH+utlMXOcHwPe4CWyCi+0f8y0XQ=",
     "h1:94qn780bi1qjrbC3uQtjJh3Wkfwd5+tTtJHOb7KTg9w=",
