@@ -21,7 +21,7 @@ EXTENDED_ATTRIBUTES_FILE_PREFIX = "Vaccination_Extended_Attributes"
 # Currently only COVID extended attributes files are supported, might be extended in future for other vaccine types
 EXTENDED_ATTRIBUTES_VACC_TYPE = "COVID"
 
-DPS_DESTINATION_PREFIX = "dps_destination"
+DPS_DESTINATION_PREFIX = "generic/EXTENDED_ATTRIBUTES_DAILY_1"
 EXTENDED_ATTRIBUTES_ARCHIVE_PREFIX = "extended-attributes-archive"
 VALID_EA_VERSIONS = ["V1_5"]
 ERROR_TYPE_TO_STATUS_CODE_MAP = {
