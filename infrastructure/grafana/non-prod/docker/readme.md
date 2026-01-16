@@ -17,7 +17,7 @@ This docker folder is used to deploy a grafana docker image to AWS ECR for use b
 
 The name of the Docker image will depend on the environment, AWS account ID and default region.
 
-    _{account_id}.dkr.ecr.{region}.amazonaws.com/imms-{env}-grafana-app:11.0.0-22.04_stable_
+_{account_id}.dkr.ecr.{region}.amazonaws.com/imms-{env}-grafana-app:11.0.0-22.04_stable_
 
 e.g.
 
