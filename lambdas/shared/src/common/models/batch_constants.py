@@ -16,13 +16,9 @@ class FileStatus(StrEnum):
     NOT_PROCESSED = "Not processed"
     FAILED = "Failed"
 
-
-class FileNotProcessedReason(StrEnum):
-    """Reasons why a file was not processed"""
-
-    DUPLICATE = "Duplicate"
-    EMPTY = "Empty file"
-    UNAUTHORISED = "Unauthorised"
+    DUPLICATE = f"{NOT_PROCESSED} - Duplicate"
+    EMPTY = f"{NOT_PROCESSED} - Empty file"
+    UNAUTHORISED = f"{NOT_PROCESSED} - Unauthorised"
 
 
 class AuditTableKeys(StrEnum):
@@ -42,8 +38,6 @@ class AuditTableKeys(StrEnum):
     ERROR_DETAILS = "error_details"
 
 
-# It would be better to use boto3.dynamodb.types for these constants but it could cause issues across shared lambdas
-# with different dependencies
 class AuditTableKeyDataTypes(StrEnum):
     STRING = "S"
     NUMBER = "N"

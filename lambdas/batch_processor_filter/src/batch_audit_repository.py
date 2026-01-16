@@ -47,9 +47,9 @@ class BatchAuditRepository:
         return False
 
     @staticmethod
-    def update_status(file_key: str, message_id: str, updated_status: str) -> None:
+    def update_status(file_key: str, message_id: str, updated_status: FileStatus) -> None:
         update_audit_table_item(
             file_key=file_key,
             message_id=message_id,
-            optional_params={AuditTableKeys.STATUS: updated_status},
+            attrs_to_update={AuditTableKeys.STATUS: updated_status},
         )

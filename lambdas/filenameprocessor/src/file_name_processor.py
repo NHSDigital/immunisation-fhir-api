@@ -13,10 +13,10 @@ from common.aws_s3_utils import (
     copy_file_to_external_bucket,
     move_file,
 )
-from common.batch.audit_table import ITEM_DOES_NOT_EXIST_CONDITION_EXPRESSION, create_audit_table_item
+from common.batch.audit_table import create_audit_table_item
 from common.clients import STREAM_NAME, get_s3_client, logger
 from common.log_decorator import logging_decorator
-from common.models.batch_constants import SOURCE_BUCKET_NAME, FileNotProcessedReason, FileStatus
+from common.models.batch_constants import SOURCE_BUCKET_NAME, FileStatus
 from common.models.errors import UnhandledAuditTableError
 from constants import (
     DPS_DESTINATION_BUCKET_NAME,
@@ -95,7 +95,7 @@ def handle_record(record) -> dict:
 def get_file_status_for_error(error: Exception) -> str:
     """Creates a file status based on the type of error that was thrown"""
     if isinstance(error, VaccineTypePermissionsError):
-        return f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.UNAUTHORISED}"
+        return FileStatus.UNAUTHORISED
 
     return FileStatus.FAILED
 
@@ -169,13 +169,7 @@ def handle_batch_file(
         queue_name = f"{supplier}_{vaccine_type}"
 
         create_audit_table_item(
-            message_id,
-            file_key,
-            created_at_formatted_string,
-            expiry_timestamp,
-            queue_name,
-            FileStatus.QUEUED,
-            condition_expression=ITEM_DOES_NOT_EXIST_CONDITION_EXPRESSION,  # Prevents accidental overwrites
+            message_id, file_key, created_at_formatted_string, expiry_timestamp, queue_name, FileStatus.QUEUED
         )
         make_and_send_sqs_message(
             file_key,

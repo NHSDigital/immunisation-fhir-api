@@ -7,7 +7,7 @@ from batch_file_created_event import BatchFileCreatedEvent
 from batch_file_repository import BatchFileRepository
 from common.clients import get_sqs_client, logger
 from common.log_firehose import send_log_to_firehose
-from common.models.batch_constants import FileNotProcessedReason, FileStatus
+from common.models.batch_constants import FileStatus
 from constants import QUEUE_URL, SPLUNK_FIREHOSE_STREAM_NAME
 from exceptions import EventAlreadyProcessingForSupplierAndVaccTypeError
 
@@ -49,7 +49,7 @@ class BatchProcessorFilterService:
             self._batch_audit_repository.update_status(
                 file_key=filename,
                 message_id=message_id,
-                updated_status=f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.DUPLICATE}",
+                updated_status=FileStatus.DUPLICATE,
             )
             self._batch_file_repo.upload_failure_ack(batch_file_created_event)
             self._batch_file_repo.move_source_file_to_archive(filename)

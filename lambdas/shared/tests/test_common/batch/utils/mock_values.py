@@ -4,7 +4,7 @@ import json
 from decimal import Decimal
 from unittest.mock import patch
 
-from test_common.batch.utils.mock_environment_variables import (
+from test_common.testing_utils.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
 )
 

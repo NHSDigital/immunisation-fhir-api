@@ -1,16 +1,16 @@
-"""Utils for the recordprocessor tests"""
+"""Utils for the audit table tests"""
 
 from typing import Optional
 from unittest.mock import patch
 
 from boto3 import client as boto3_client
 
-from test_common.batch.utils.mock_environment_variables import (
-    MOCK_ENVIRONMENT_DICT,
-)
 from test_common.batch.utils.mock_values import (
     FileDetails,
     MockFileDetails,
+)
+from test_common.testing_utils.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
 )
 
 # Ensure environment variables are mocked before importing from src files

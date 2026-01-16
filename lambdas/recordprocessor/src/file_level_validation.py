@@ -13,7 +13,6 @@ from common.clients import logger
 from common.models.batch_constants import (
     SOURCE_BUCKET_NAME,
     AuditTableKeys,
-    FileNotProcessedReason,
     FileStatus,
     OperationShortCode,
     permission_to_operation_map,
@@ -98,7 +97,7 @@ def file_level_validation(incoming_message_body: dict) -> dict:
         update_audit_table_item(
             file_key=file_key,
             message_id=message_id,
-            optional_params={
+            attrs_to_update={
                 AuditTableKeys.INGESTION_START_TIME: ingestion_start_time,
             },
         )
@@ -146,11 +145,7 @@ def handle_file_level_validation_exception(
     file_key = file_key or "Unable to ascertain file_key"
     created_at_formatted_string = created_at_formatted_string or "Unable to ascertain created_at_formatted_string"
     make_and_upload_ack_file(message_id, file_key, False, False, created_at_formatted_string)
-    file_status = (
-        f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.UNAUTHORISED}"
-        if isinstance(error, NoOperationPermissions)
-        else FileStatus.FAILED
-    )
+    file_status = FileStatus.UNAUTHORISED if isinstance(error, NoOperationPermissions) else FileStatus.FAILED
 
     try:
         move_file(SOURCE_BUCKET_NAME, file_key, f"{ARCHIVE_DIR_NAME}/{file_key}")
@@ -161,5 +156,5 @@ def handle_file_level_validation_exception(
     update_audit_table_item(
         file_key=file_key,
         message_id=message_id,
-        optional_params={AuditTableKeys.ERROR_DETAILS: str(error), AuditTableKeys.STATUS: file_status},
+        attrs_to_update={AuditTableKeys.ERROR_DETAILS: str(error), AuditTableKeys.STATUS: file_status},
     )

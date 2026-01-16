@@ -78,7 +78,7 @@ def complete_batch_file_process(
 
     total_ack_rows_processed, total_failures = get_record_count_and_failures_by_message_id(message_id)
     update_audit_table_item(
-        file_key=file_key, message_id=message_id, optional_params={AuditTableKeys.STATUS: FileStatus.PROCESSED}
+        file_key=file_key, message_id=message_id, attrs_to_update={AuditTableKeys.STATUS: FileStatus.PROCESSED}
     )
 
     # Consider creating time utils and using datetime instead of time
@@ -87,7 +87,7 @@ def complete_batch_file_process(
     update_audit_table_item(
         file_key=file_key,
         message_id=message_id,
-        optional_params={
+        attrs_to_update={
             AuditTableKeys.RECORDS_SUCCEEDED: successful_record_count,
             AuditTableKeys.INGESTION_END_TIME: ingestion_end_time,
         },

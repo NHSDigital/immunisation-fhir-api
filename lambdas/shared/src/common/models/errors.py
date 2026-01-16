@@ -116,8 +116,14 @@ class UnhandledResponseError(RuntimeError):
         )
 
 
+@dataclass
 class UnhandledAuditTableError(Exception):
     """A custom exception for when an unexpected error occurs whilst adding the file to the audit table."""
+
+    message: str
+
+    def __str__(self):
+        return self.message
 
 
 @dataclass

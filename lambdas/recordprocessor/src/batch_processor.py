@@ -11,7 +11,7 @@ from common.aws_s3_utils import move_file
 from common.batch.audit_table import update_audit_table_item
 from common.batch.eof_utils import make_batch_eof_message
 from common.clients import logger
-from common.models.batch_constants import SOURCE_BUCKET_NAME, AuditTableKeys, FileNotProcessedReason, FileStatus
+from common.models.batch_constants import SOURCE_BUCKET_NAME, AuditTableKeys, FileStatus
 from constants import ARCHIVE_DIR_NAME, PROCESSING_DIR_NAME
 from file_level_validation import file_is_empty, file_level_validation
 from mappings import map_target_disease
@@ -89,18 +89,18 @@ def process_csv_to_fhir(incoming_message_body: dict) -> int:
             f"{PROCESSING_DIR_NAME}/{file_key}",
             f"{ARCHIVE_DIR_NAME}/{file_key}",
         )
-        file_status = f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.EMPTY}"
+        file_status = FileStatus.EMPTY
         update_audit_table_item(
             file_key=file_key,
             message_id=file_id,
-            optional_params={AuditTableKeys.RECORD_COUNT: row_count, AuditTableKeys.STATUS: file_status},
+            attrs_to_update={AuditTableKeys.RECORD_COUNT: row_count, AuditTableKeys.STATUS: file_status},
         )
         return row_count
 
     update_audit_table_item(
         file_key=file_key,
         message_id=file_id,
-        optional_params={
+        attrs_to_update={
             AuditTableKeys.RECORD_COUNT: row_count,
             AuditTableKeys.STATUS: FileStatus.PREPROCESSED,
         },
@@ -186,7 +186,7 @@ def main(event: str) -> None:
         update_audit_table_item(
             file_key=file_key,
             message_id=message_id,
-            optional_params={AuditTableKeys.ERROR_DETAILS: str(error), AuditTableKeys.STATUS: FileStatus.FAILED},
+            attrs_to_update={AuditTableKeys.ERROR_DETAILS: str(error), AuditTableKeys.STATUS: FileStatus.FAILED},
         )
 
     end = time.time()
