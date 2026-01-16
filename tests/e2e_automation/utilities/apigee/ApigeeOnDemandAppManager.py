@@ -1,0 +1,105 @@
+"""Basic client class for managing interactions with the Apigee API"""
+
+import uuid
+
+import requests
+
+from utilities.apigee.apigee_env_helpers import get_apigee_access_token, get_apigee_username, get_proxy_name
+from utilities.apigee.ApigeeApp import ApigeeApp
+
+
+class ApigeeOnDemandAppManager:
+    """Manager class that provides required Apigee functionality for PR env e2e tests. E.g. creating an app, subscribing it to
+    products and teardown"""
+
+    # We only use the Apigee API in the non-prod organisation and the internal-dev environment
+    _BASE_URL = "https://api.enterprise.apigee.com/v1/organizations/nhsd-nonprod"
+    _APPS_PATH = "apps"
+    _DEVELOPERS_PATH = "developers"
+    _PRODUCTS_PATH = "apiproducts"
+    _INTERNAL_DEV_ENV_NAME = "internal-dev"
+    _TEST_APP_SUPPLIERS = ("EMIS", "MAVIS", "MEDICUS", "Postman_Auth", "RAVS", "SONAR", "TPP")
+
+    def __init__(self):
+        self.pr_proxy_name = get_proxy_name()
+        self.created_product_name_uuid = None
+        self.created_app_name_uuids = []
+        self.display_name = f"test-{self.pr_proxy_name}"
+
+        self.logged_in_username = get_apigee_username()
+        self.access_token = get_apigee_access_token()
+
+        self.requests_session = requests.Session()
+        self.requests_session.headers.update({"Authorization": f"Bearer {self.access_token}"})
+
+    def _create_app(self, target_product_name: str, supplier_name: str) -> ApigeeApp:
+        app_name_uuid = str(uuid.uuid4())
+        app_data = {
+            "name": app_name_uuid,
+            "callbackUrl": "https://oauth.pstmn.io/v1/callback",
+            "status": "approved",
+            "attributes": [
+                {"name": "DisplayName", "value": f"{self.display_name}-{supplier_name}"},
+                {"name": "SupplierSystem", "value": supplier_name},
+            ],
+            "apiProducts": [target_product_name, "identity-service-internal-dev"],
+        }
+
+        response = self.requests_session.post(
+            url=f"{self._BASE_URL}/{self._DEVELOPERS_PATH}/{self.logged_in_username}/{self._APPS_PATH}", json=app_data
+        )
+        response.raise_for_status()
+
+        self.created_app_name_uuids.append(app_name_uuid)
+        response_dict = response.json()
+
+        return ApigeeApp(
+            callback_url=response_dict.get("callbackUrl"),
+            client_id=response_dict["credentials"][0]["consumerKey"],
+            client_secret=response_dict["credentials"][0]["consumerSecret"],
+            supplier=supplier_name,
+        )
+
+    def _create_product(self) -> str:
+        product_name_uuid = str(uuid.uuid4())
+        apigee_product_data = {
+            "name": product_name_uuid,
+            "apiResources": [],
+            "approvalType": "auto",
+            "description": "My API product",
+            "displayName": self.display_name,
+            "environments": [self._INTERNAL_DEV_ENV_NAME],
+            "proxies": [self.pr_proxy_name],
+            "scopes": [
+                f"urn:nhsd:apim:app:level3:{self.pr_proxy_name}",
+                f"urn:nhsd:apim:user-nhs-cis2:aal3:{self.pr_proxy_name}",
+            ],
+        }
+
+        response = self.requests_session.post(
+            url=f"{self._BASE_URL}/{self._PRODUCTS_PATH}",
+            json=apigee_product_data,
+        )
+        response.raise_for_status()
+
+        self.created_product_name_uuids = product_name_uuid
+        return product_name_uuid
+
+    def setup_apps_and_product(self) -> list[ApigeeApp]:
+        """Orchestration method to setup the required product and on-demand apps required for PR testing"""
+        created_apps: list[ApigeeApp] = []
+        product_name_uuid = self._create_product()
+
+        for supplier_name in self._TEST_APP_SUPPLIERS:
+            created_apps.append(self._create_app(product_name_uuid, supplier_name))
+
+        return created_apps
+
+    def teardown_apps_and_product(self):
+        "Orchestration method to remove the Apigee resources in a teardown step"
+        for created_app_name_uuid in self.created_app_name_uuids:
+            self.requests_session.delete(
+                url=f"{self._BASE_URL}/{self._DEVELOPERS_PATH}/{self.logged_in_username}/{self._APPS_PATH}/{created_app_name_uuid}"
+            )
+
+        self.requests_session.delete(url=f"{self._BASE_URL}/{self._PRODUCTS_PATH}/{self.created_product_name_uuid}")
