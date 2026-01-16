@@ -9,10 +9,6 @@ terraform {
       source  = "kreuzwerker/docker"
       version = "3.6.2"
     }
-    template = {
-      source  = "hashicorp/template"
-      version = "~> 2.2.0"
-    }
   }
   backend "s3" {
     bucket       = "immunisation-grafana-terraform-state"
@@ -24,7 +20,7 @@ terraform {
 
 provider "aws" {
   region  = var.aws_region
-  profile = "apim-dev"
+  profile = var.aws_profile
   default_tags {
     tags = var.tags
   }
@@ -33,7 +29,7 @@ provider "aws" {
 provider "aws" {
   alias   = "acm_provider"
   region  = var.aws_region
-  profile = "apim-dev"
+  profile = var.aws_profile
 }
 
 data "aws_region" "current" {}

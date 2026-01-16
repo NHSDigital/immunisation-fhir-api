@@ -1,6 +1,7 @@
 project_name       = "immunisations"
 project_short_name = "imms"
 service            = "grafana"
+environment        = "dev"
 aws_region         = "eu-west-2"
 az_count           = 2
 app_port           = 3000
