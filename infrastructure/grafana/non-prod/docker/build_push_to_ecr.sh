@@ -46,6 +46,7 @@ TAGS='[
 LIFECYCLE_POLICY_FILE="lifecycle-policy.json"
 
 # Generate a strong password. It will only ever appear in the build log, not in the repo.
+# TODO: Re-tool this for the pipeline. Retrieve a password from Github Secrets, or AWS Secrets Manager
 ADMIN_PW=$(tr -dc 'A-Za-z0-9!?%=' < /dev/random | head -c 12)
 echo "*** Admin p/w: $ADMIN_PW"
 
