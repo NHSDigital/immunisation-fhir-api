@@ -45,6 +45,10 @@ TAGS='[
 ]'
 LIFECYCLE_POLICY_FILE="lifecycle-policy.json"
 
+# Generate a strong password. It will only ever appear in the build log, not in the repo.
+ADMIN_PW=$(tr -dc 'A-Za-z0-9!?%=' < /dev/random | head -c 12)
+echo "*** Admin p/w: $ADMIN_PW"
+
 # Change to the directory containing the Dockerfile
 if ! cd "${DOCKERFILE_DIR}"; then
   echo "DOCKERFILE_DIR not found."
@@ -81,7 +85,7 @@ docker pull --platform linux/amd64 grafana/grafana:latest
 
 # Build Docker image for linux/amd64 architecture and push to ECR
 docker buildx create --use
-if ! docker buildx build --platform linux/amd64 -t "${IMAGE_NAME}" --push .; then
+if ! docker buildx build --platform linux/amd64 --build-arg admin_pw="${ADMIN_PW}" -t "${IMAGE_NAME}" --push .; then
   echo "Docker build failed."
   exit 1
 fi

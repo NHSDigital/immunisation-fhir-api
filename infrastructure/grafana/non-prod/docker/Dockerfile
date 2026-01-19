@@ -7,6 +7,10 @@ RUN echo "Installing Python..." \
     && apk add --no-cache python3 py3-pip \
     && echo "Python installed successfully."
 
+# set password from argument
+ARG admin_pw
+ENV ADMIN_PW=$admin_pw
+
 # set timeout for plugin installation
 ENV GF_INSTALL_PLUGINS_TIMEOUT=6000
 ENV GF_UPDATE_CHECK=false
