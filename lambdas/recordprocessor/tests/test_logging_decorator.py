@@ -67,8 +67,7 @@ class TestLoggingDecorator(unittest.TestCase):
         # Set up common patches to be applied to all tests in the class.
         # These patches can be overridden in individual tests.
         common_patches = [
-            patch("file_level_validation.update_audit_table_status"),
-            patch("file_level_validation.set_audit_table_ingestion_start_time"),
+            patch("file_level_validation.update_audit_table_item"),
         ]
 
         with ExitStack() as stack:

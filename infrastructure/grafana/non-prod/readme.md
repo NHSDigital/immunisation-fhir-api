@@ -7,7 +7,7 @@ The build comes in 2 parts
 
 ## Docker Image
 
-The docker file is built and pushed to the AWS ECT
+The docker file is built and pushed to the AWS ECR
 
 The code may be found in the docker folder.
 
@@ -44,21 +44,21 @@ Run the following commands to create and switch to the `int` workspace:
 ```
 ./tf_init.sh int
 ./tf_init.sh ref
-./tf_init.sh internal-dev
+./tf_init.sh dev
 '''
 
 Create an environment
 ```
 
-terraform workspace new int  
+terraform workspace new dev
 Build an environment
 
 ```
-terraform workspace select int
+terraform workspace select dev
 ```
 
 '''
-terraform plan -var="environment=int"
+terraform plan -var="environment=dev"
 '''
 
 ### vpce vs nat gateway
