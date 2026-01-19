@@ -10,8 +10,19 @@ variable "service" {
   default = "fhir-graf"
 }
 
+variable "environment" {
+  description = "Environment name (e.g., int, ref, dev)"
+  type        = string
+}
+
 variable "aws_region" {
   description = "Destination AWS region"
+}
+
+variable "aws_profile" {
+  description = "AWS profile to use for authentication (leave empty to use default credentials)"
+  type        = string
+  default     = null
 }
 
 variable "az_count" {
