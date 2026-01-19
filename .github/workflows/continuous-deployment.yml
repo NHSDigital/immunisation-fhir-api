@@ -18,11 +18,13 @@ jobs:
     # Technically the first step is not a pre-requisite - sandbox backend deployment is handled by APIM
     # Stipulating this condition simply makes it more likely the environment will be ready when tests are invoked
     needs: [deploy-internal-dev-backend]
-    uses: ./.github/workflows/run-e2e-tests.yml
+    uses: ./.github/workflows/run-e2e-automation-tests.yml
     with:
       apigee_environment: internal-dev-sandbox
       environment: dev
       sub_environment: internal-dev-sandbox
+      service_under_test: all
+      suite_to_run: sandbox
     secrets:
       APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
       APIGEE_BASIC_AUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}
@@ -31,11 +33,13 @@ jobs:
 
   run-sandbox-tests:
     needs: [run-internal-dev-sandbox-tests]
-    uses: ./.github/workflows/run-e2e-tests.yml
+    uses: ./.github/workflows/run-e2e-automation-tests.yml
     with:
       apigee_environment: sandbox
       environment: dev
       sub_environment: sandbox
+      service_under_test: all
+      suite_to_run: sandbox
     secrets:
       APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
       APIGEE_BASIC_AUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}
@@ -44,11 +48,13 @@ jobs:
 
   run-internal-dev-tests:
     needs: [deploy-internal-dev-backend]
-    uses: ./.github/workflows/run-e2e-tests.yml
+    uses: ./.github/workflows/run-e2e-automation-tests.yml
     with:
       apigee_environment: internal-dev
       environment: dev
       sub_environment: internal-dev
+      service_under_test: all
+      suite_to_run: smoke
     secrets:
       APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
       APIGEE_BASIC_AUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}
@@ -72,11 +78,18 @@ jobs:
     strategy:
       matrix:
         sub_environment_name: [ref, internal-qa]
-    uses: ./.github/workflows/run-e2e-tests.yml
+      include:
+        - apigee_environment_name: ref
+          required_test_suite: proxy_smoke
+        - apigee_environment_name: internal-qa
+          required_test_suite: smoke
+    uses: ./.github/workflows/run-e2e-automation-tests.yml
     with:
       apigee_environment: ${{ matrix.sub_environment_name }}
       environment: dev
       sub_environment: ${{ matrix.sub_environment_name }}
+      service_under_test: all
+      suite_to_run: ${{ matrix.required_test_suite }}
     secrets:
       APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
       APIGEE_BASIC_AUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}
