@@ -23,6 +23,9 @@ e.g.
 
     345594581768.dkr.ecr.eu-west-2.amazonaws.com/imms-int-grafana-app:11.0.0-22.04_stable
 
+Note: currently the Grafana admin password is generated dynamically and will be displayed in the logging output
+of `build_push_to_ecr.sh`. It will not appear anywhere else.
+
 ## To test the Grafana Docker image locally
 
 1. Build and deploy as above
