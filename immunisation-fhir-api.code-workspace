@@ -40,7 +40,7 @@
             "path": "lambdas/shared",
         },
         {
-            "path": "tests/e2e",
+            "path": "tests/e2e_automation",
         },
         {
             "path": "tests/e2e_batch",
