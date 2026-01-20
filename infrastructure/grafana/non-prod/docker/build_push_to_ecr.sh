@@ -11,13 +11,13 @@ echo "DOCKERFILE_DIR: ${DOCKERFILE_DIR}"
 # loop until valid response is received
 if [[ -z "${1}" ]]; then
   while true; do
-    read -r -p "Enter the environment (prod, int, ref, internal-dev): " ENVIRONMENT
+    read -r -p "Enter the environment (prod, int, ref, dev): " ENVIRONMENT
     case "${ENVIRONMENT}" in
-      prod|int|ref|internal-dev)
+      prod|int|ref|dev)
         break
         ;;
       *)
-        echo "Invalid environment. Please enter one of: prod, int, ref, internal-dev."
+        echo "Invalid environment. Please enter one of: prod, int, ref, dev."
         ;;
     esac
   done
@@ -25,8 +25,8 @@ else
   ENVIRONMENT="${1}"
 fi
 # Check if the environment is valid
-if [[ ! "${ENVIRONMENT}" =~ ^(prod|int|ref|internal-dev)$ ]]; then
-  echo "Invalid environment. Please enter one of: prod, int, ref, internal-dev."
+if [[ ! "${ENVIRONMENT}" =~ ^(prod|int|ref|dev)$ ]]; then
+  echo "Invalid environment. Please enter one of: prod, int, ref, dev."
   exit 1
 fi
 
