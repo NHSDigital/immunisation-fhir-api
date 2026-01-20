@@ -27,7 +27,7 @@ def send_request_status_endpoint(context: ScenarioContext) -> None:
 def send_request_to_aws_backend(context: ScenarioContext) -> None:
     # Let exception be raised if expected env var is not present
     aws_domain_name: str = os.environ["AWS_DOMAIN_NAME"]
-    backend_status_url = aws_domain_name + "/status"
+    backend_status_url = "https://" + aws_domain_name + "/status"
 
     with pytest.raises(requests.exceptions.ConnectionError) as e:
         requests.get(backend_status_url)
