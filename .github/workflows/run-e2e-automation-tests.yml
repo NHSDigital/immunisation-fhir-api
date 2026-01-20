@@ -80,13 +80,13 @@ env:
 
 jobs:
   wait-for-deployment:
-    if: github.event_name != 'workflow_dispatch'
     permissions:
       contents: read
     runs-on: ubuntu-latest
     environment: ${{ inputs.apigee_environment }}
     steps:
       - name: Wait for API to be available
+        if: github.event_name != 'workflow_dispatch'
         run: |
           endpoint=""
           if [[ ${APIGEE_ENVIRONMENT} =~ "prod" ]]; then
