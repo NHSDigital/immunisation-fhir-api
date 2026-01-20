@@ -1,7 +1,7 @@
 -include .env
 
 cmd = poetry run pytest
-
+# Add sandbox, add to README
 test:
 	$(cmd)
 
@@ -16,6 +16,9 @@ test-batch-smoke:
 
 test-batch-full:
 	$(cmd) features/batchTests -m functional
+
+test-sandbox:
+	$(cmd) features -m sandbox
 
 collect-only:
 	$(cmd) --collect-only

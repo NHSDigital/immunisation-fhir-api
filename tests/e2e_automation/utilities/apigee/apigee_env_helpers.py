@@ -34,7 +34,7 @@ def use_temp_apigee_apps() -> bool:
     if get_proxy_name() == INT_PROXY_NAME:
         return False
 
-    return os.getenv("USE_STATIC_APPS", "false") != "true"
+    return os.getenv("USE_STATIC_APPS", "False") != "True"
 
 
 def is_pr_env() -> bool:
