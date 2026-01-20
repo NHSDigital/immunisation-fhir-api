@@ -12,7 +12,7 @@ resource "aws_route53_record" "grafana_validation" {
     }
   }
 
-  zone_id = data.aws_route53_zone.this.zone_id
+  zone_id = data.aws_route53_zone.grafana_zone.zone_id
   name    = each.value.name
   type    = each.value.type
   records = [each.value.value]
@@ -20,12 +20,12 @@ resource "aws_route53_record" "grafana_validation" {
 }
 
 resource "aws_acm_certificate_validation" "grafana" {
-  certificate_arn         = aws_acm_certificate.grafana.arn
+  certificate_arn         = aws_acm_certificate.grafana_url.arn
   validation_record_fqdns = [for r in aws_route53_record.grafana_validation : r.fqdn]
 }
 
 resource "aws_lb_listener" "https" {
-  load_balancer_arn = aws_lb.this.arn
+  load_balancer_arn = aws_alb.main.arn
   port              = 443
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
@@ -39,7 +39,7 @@ resource "aws_lb_listener" "https" {
 
 # Optional: redirect http -> https
 resource "aws_lb_listener" "http" {
-  load_balancer_arn = aws_lb.this.arn
+  load_balancer_arn = aws_alb.main.arn
   port              = 80
   protocol          = "HTTP"
 
@@ -59,7 +59,7 @@ resource "aws_lb_target_group" "grafana" {
   port        = 3000
   protocol    = "HTTP"
   target_type = "ip"
-  vpc_id      = aws_vpc.this.id
+  vpc_id      = aws_vpc.grafana_main.id
 
   health_check {
     path                = "/api/health"
