@@ -41,14 +41,12 @@ on:
           - internal-qa
           - int
           - ref
-          - prod
       environment:
         type: string
         description: Select the backend environment
         options:
           - dev
           - preprod
-          - prod
       sub_environment:
         type: string
         description: Set the sub environment name e.g. pr-xxx, or green/blue in higher environments
@@ -71,6 +69,7 @@ on:
           - proxy_smoke
 
 env:
+  APIGEE_AUTH_ENV: ${{ inputs.apigee_environment == 'int' && inputs.apigee_environment || 'internal-dev' }}
   APIGEE_ENVIRONMENT: ${{ inputs.apigee_environment }}
   ENVIRONMENT: ${{ inputs.environment }}
   SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
@@ -211,14 +210,14 @@ jobs:
         working-directory: tests/e2e_automation
         env:
           S3_env: ${{ inputs.sub_environment }}
-          auth_url: https://${{ inputs.apigee_environment }}.api.service.nhs.uk/oauth2-mock/authorize
-          token_url: https://${{ inputs.apigee_environment }}.api.service.nhs.uk/oauth2-mock/token
+          auth_url: https://${{ env.APIGEE_AUTH_ENV }}.api.service.nhs.uk/oauth2-mock/authorize
+          token_url: https://${{ env.APIGEE_AUTH_ENV }}.api.service.nhs.uk/oauth2-mock/token
           baseUrl: https://${{ inputs.apigee_environment }}.api.service.nhs.uk/${{env.SERVICE_BASE_PATH}}
           callback_url: "https://oauth.pstmn.io/v1/callback"
-          Postman_Auth_client_Id: ${{ secrets.Postman_Auth_client_Id }}
-          Postman_Auth_client_Secret: ${{ secrets.Postman_Auth_client_Secret }}
           username: ${{ secrets.CIS2_E2E_USERNAME }}
           scope: "nhs-cis2"
+          Postman_Auth_client_Id: ${{ secrets.Postman_Auth_client_Id }} # The following static app values are only needed in INT
+          Postman_Auth_client_Secret: ${{ secrets.Postman_Auth_client_Secret }}
           RAVS_client_Id: ${{ secrets.RAVS_client_Id }}
           RAVS_client_Secret: ${{ secrets.RAVS_client_Secret }}
           MAVIS_client_Id: ${{ secrets.MAVIS_client_Id }}

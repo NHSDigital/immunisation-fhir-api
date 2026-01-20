@@ -4,6 +4,8 @@ This directory contains End-to-end Automation Tests for the Immunisation FHIR AP
 
 ## Setting up e2e_automation tests to run locally
 
+Update README with the changes to use get_token
+
 1. Follow the instructions in the root level README.md to setup the [dependencies](../../README.md#environment-setup) and create a [virtual environment](../../README.md#setting-up-a-virtual-environment-with-poetry) for this folder (`e2e_automation`).
 
 2. Add values to the .env file.
@@ -61,6 +63,8 @@ This directory contains End-to-end Automation Tests for the Immunisation FHIR AP
 - `make collect-only` - check that all tests are discovered
 
 ## Running e2e_automation tests against PR environments
+
+Need to update this in PR and explain how to use static apps if desired locally.
 
 The environment variables define a client ID and client secret for each of the Apigee test apps we use in static
 environments such as `internal-dev`, `internal-qa` and so on.

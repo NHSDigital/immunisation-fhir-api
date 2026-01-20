@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from utilities.api_fhir_immunization_helper import empty_folder
 from utilities.api_gen_token import get_tokens
 from utilities.api_get_header import get_delete_url_header
-from utilities.apigee.apigee_env_helpers import is_pr_env
+from utilities.apigee.apigee_env_helpers import use_temp_apigee_apps
 from utilities.apigee.ApigeeApp import ApigeeApp
 from utilities.apigee.ApigeeOnDemandAppManager import ApigeeOnDemandAppManager
 from utilities.aws_token import refresh_sso_token, set_aws_session_token
@@ -58,7 +58,7 @@ def global_context():
 
 @pytest.fixture(scope="session")
 def temp_apigee_apps():
-    if is_pr_env():
+    if use_temp_apigee_apps():
         apigee_app_mgr = ApigeeOnDemandAppManager()
         created_apps = apigee_app_mgr.setup_apps_and_product()
 
