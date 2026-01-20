@@ -80,6 +80,7 @@ env:
 
 jobs:
   wait-for-deployment:
+    if: github.event_name != 'workflow_dispatch'
     permissions:
       contents: read
     runs-on: ubuntu-latest

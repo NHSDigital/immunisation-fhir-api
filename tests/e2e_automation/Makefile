@@ -1,7 +1,7 @@
 -include .env
 
 cmd = poetry run pytest
-# Add sandbox, add to README
+
 test:
 	$(cmd)
 
