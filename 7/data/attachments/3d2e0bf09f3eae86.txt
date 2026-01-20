@@ -1,0 +1,2 @@
+❌ Step failed! **I send a direct request to the AWS backend** 
+ Error: APIGEE_ACCESS_TOKEN environment variable is required
