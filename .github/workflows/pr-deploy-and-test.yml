@@ -34,4 +34,5 @@ jobs:
       APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
       APIGEE_BASIC_AUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}
       APIGEE_OTP_KEY: ${{ secrets.APIGEE_OTP_KEY }}
+      CIS2_E2E_USERNAME: ${{ secrets.CIS2_E2E_USERNAME }}
       STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}

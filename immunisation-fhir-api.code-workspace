@@ -42,9 +42,6 @@
         {
             "path": "tests/e2e_automation",
         },
-        {
-            "path": "tests/e2e_batch",
-        },
     ],
     "settings": {},
 }

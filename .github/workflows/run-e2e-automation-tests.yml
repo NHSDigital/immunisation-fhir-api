@@ -1,7 +1,7 @@
 name: FHIR API and Batch Automation - E2E Tests
 
 on:
-  workflow call:
+  workflow_call:
     inputs:
       apigee_environment:
         required: true
@@ -24,6 +24,8 @@ on:
       APIGEE_BASIC_AUTH_TOKEN:
         required: true
       APIGEE_OTP_KEY:
+        required: true
+      CIS2_E2E_USERNAME:
         required: true
       STATUS_API_KEY:
         required: true
@@ -127,11 +129,9 @@ jobs:
           fi
 
   e2e-tests:
-    # TODO - test. Will we need further permissions for publishing test reports
     permissions:
       id-token: write
-      checks: write
-      contents: read
+      contents: write
     runs-on: ubuntu-latest
     needs: [wait-for-deployment]
     environment: ${{ inputs.apigee_environment }}
@@ -206,7 +206,7 @@ jobs:
           echo "::add-mask::$token"
           echo "APIGEE_ACCESS_TOKEN=$token" >> $GITHUB_ENV
 
-      - name: Run Pytest-BDD ${{ inputs.service_under_test }} tests for with the ${{ inputs.suite_to_run }} filter
+      - name: Run Pytest-BDD ${{ inputs.service_under_test }} tests with the ${{ inputs.suite_to_run }} filter
         working-directory: tests/e2e_automation
         env:
           S3_env: ${{ inputs.sub_environment }}
@@ -231,17 +231,12 @@ jobs:
           MEDICUS_client_Id: ${{ secrets.MEDICUS_client_Id }}
           MEDICUS_client_Secret: ${{ secrets.MEDICUS_client_Secret }}
           aws_token_refresh: "False"
-        run: |
-          TEST_PATH="${{ inputs.service_under_test == 'batch' && 'features/batchTest' || inputs.service_under_test == 'fhir_api' && 'features/APITests' || 'features' }}"
-          TEST_FILTER="${{ inputs.suite_to_run == 'proxy_smoke' && 'Status_feature' || inputs.suite_to_run }}"
+          TEST_PATH: ${{ inputs.service_under_test == 'batch' && 'features/batchTest' || inputs.service_under_test == 'fhir_api' && 'features/APITests' || 'features' }}
+          TEST_FILTER: ${{ inputs.suite_to_run == 'proxy_smoke' && 'Status_feature' || inputs.suite_to_run }}
+        run: poetry run pytest "$TEST_PATH" -m "$TEST_FILTER" --junitxml=output/test-results.xml --alluredir=output/allure-results
 
-          poetry run pytest "$TEST_PATH" -m "$TEST_FILTER" --junitxml=output/test-results.xml --alluredir=output/allure-results
-
-      # Might need to figure out if this needs to be in certain directory, and needs particular permissions
-      - name: Publish test results to GitHub UI
-        working-directory: tests/e2e_automation
+      - uses: dorny/test-reporter@31a54ee7ebcacc03a09ea97a7e5465a47b84aea5
         if: always()
-        uses: dorny/test-reporter@31a54ee7ebcacc03a09ea97a7e5465a47b84aea5
         with:
           name: BDD Test Summary
           path: "**/output/test-results.xml"
