@@ -186,7 +186,7 @@ jobs:
         run: poetry install --no-root
 
       - name: Get Apigee access token
-        if: ${{ startsWith(inputs.sub_environment, 'pr-') }}
+        if: ${{ if inputs.apigee_environment != 'int' }}
         working-directory: tests/e2e_automation
         env:
           APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
@@ -217,6 +217,7 @@ jobs:
           callback_url: "https://oauth.pstmn.io/v1/callback"
           username: ${{ secrets.CIS2_E2E_USERNAME }}
           scope: "nhs-cis2"
+          USE_STATIC_APPS: ${{ inputs.apigee_environment == 'int' && 'True' || 'False' }}
           Postman_Auth_client_Id: ${{ secrets.Postman_Auth_client_Id }} # The following static app values are only needed in INT
           Postman_Auth_client_Secret: ${{ secrets.Postman_Auth_client_Secret }}
           RAVS_client_Id: ${{ secrets.RAVS_client_Id }}
