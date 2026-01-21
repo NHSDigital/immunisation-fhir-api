@@ -90,7 +90,7 @@ def valid_batch_file_is_created_with_invalid_patient_data(datatable, context):
     context.vaccine_df.loc[8, "PERSON_FORENAME"] = " "
     context.vaccine_df.loc[9, "PERSON_SURNAME"] = " "
     context.vaccine_df.loc[10, "PERSON_SURNAME"] = get_text("name_length_36")
-    context.vaccine_df.loc[11, "PERSON_FORENAME"] = get_text("name_length_36")
+    context.vaccine_df.loc[11, "PERSON_FORENAME"] = get_text("name_length_181")
     create_batch_file(context)
 
 
