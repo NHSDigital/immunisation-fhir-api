@@ -128,7 +128,7 @@ jobs:
               exit 1
           fi
 
-  e2e-tests:
+  e2e-automation-tests:
     permissions:
       id-token: write
       checks: write

@@ -14,7 +14,7 @@ from utilities.apigee.ApigeeApp import ApigeeApp
 
 
 class ApigeeOnDemandAppManager:
-    """Manager class that provides required Apigee functionality for Apigee non-prod env e2e tests. E.g. creating an
+    """Manager class that provides required Apigee functionality for Apigee non-prod env e2e tests, e.g. creating an
     app, subscribing it to products and teardown"""
 
     # We only use the Apigee API in the non-prod organisation i.e. all environments except INT and PROD
@@ -92,7 +92,7 @@ class ApigeeOnDemandAppManager:
         return product_name_uuid
 
     def setup_apps_and_product(self) -> list[ApigeeApp]:
-        """Orchestration method to setup the required product and on-demand apps required for PR testing"""
+        """Orchestration method to set up the required product and on-demand apps required for PR testing"""
         created_apps: list[ApigeeApp] = []
         product_name_uuid = self._create_product()
 

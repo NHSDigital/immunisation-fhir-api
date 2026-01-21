@@ -13,7 +13,7 @@ jobs:
       environment: dev
       sub_environment: pr-${{github.event.pull_request.number}}
 
-  run-e2e-tests:
+  run-e2e-automation-tests:
     needs: [deploy-pr-backend]
     strategy:
       matrix:
