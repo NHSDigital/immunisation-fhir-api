@@ -8,7 +8,7 @@ resource "aws_alb" "main" {
 
 resource "aws_alb_target_group" "app" {
   name        = "${local.prefix}-tg"
-  port        = 3000
+  port        = var.app_port
   protocol    = "HTTP"
   vpc_id      = aws_vpc.grafana_main.id
   target_type = "ip"

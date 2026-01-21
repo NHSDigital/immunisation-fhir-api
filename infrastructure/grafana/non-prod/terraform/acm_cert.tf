@@ -1,4 +1,4 @@
-resource "aws_acm_certificate" "grafana_url" {
+resource "aws_acm_certificate" "grafana_url_certificate" {
   domain_name       = "grafana.imms.${local.environment}.vds.platform.nhs.uk"
   validation_method = "DNS"
 }
@@ -56,7 +56,7 @@ resource "aws_lb_listener" "http" {
 # 3) Target group forwards to Grafana container port (usually 3000)
 resource "aws_lb_target_group" "grafana" {
   name        = "imms-dev-grafana-tg"
-  port        = 3000
+  port        = var.app_port
   protocol    = "HTTP"
   target_type = "ip"
   vpc_id      = aws_vpc.grafana_main.id
