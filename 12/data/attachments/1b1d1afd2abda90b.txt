@@ -1,0 +1,1 @@
+✅ Step Passed: **The delta table will have delete entry with no change to record detail
