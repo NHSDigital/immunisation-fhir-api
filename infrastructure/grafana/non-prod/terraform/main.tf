@@ -23,17 +23,17 @@ terraform {
 }
 
 provider "aws" {
-  region  = var.aws_region
-  profile = "apim-dev"
+  region = var.aws_region
+  #  profile = "apim-dev"
   default_tags {
     tags = var.tags
   }
 }
 
 provider "aws" {
-  alias   = "acm_provider"
-  region  = var.aws_region
-  profile = "apim-dev"
+  alias  = "acm_provider"
+  region = var.aws_region
+  #  profile = "apim-dev"
 }
 
 data "aws_region" "current" {}
