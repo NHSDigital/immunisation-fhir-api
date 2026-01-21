@@ -1,88 +1,225 @@
 name: FHIR API and Batch Automation - E2E Tests
 
 on:
-  push:
-    branches: [master]
+  workflow_call:
+    inputs:
+      apigee_environment:
+        required: true
+        type: string
+      environment:
+        required: true
+        type: string
+      sub_environment:
+        required: true
+        type: string
+      service_under_test:
+        required: true
+        type: string
+      suite_to_run:
+        required: true
+        type: string
+    secrets:
+      APIGEE_PASSWORD:
+        required: true
+      APIGEE_BASIC_AUTH_TOKEN:
+        required: true
+      APIGEE_OTP_KEY:
+        required: true
+      CIS2_E2E_USERNAME:
+        required: true
+      STATUS_API_KEY:
+        required: true
   workflow_dispatch:
     inputs:
-      environment:
-        description: "Target environment"
-        required: true
-        default: "internal-qa"
+      apigee_environment:
         type: choice
+        description: Select the Apigee proxy environment
         options:
+          - internal-dev
+          - internal-dev-sandbox
+          - sandbox
           - internal-qa
           - int
-      testPath:
-        description: "Test to execute"
+          - ref
+      environment:
+        type: string
+        description: Select the backend environment
+        options:
+          - dev
+          - preprod
+      sub_environment:
+        type: string
+        description: Set the sub environment name e.g. pr-xxx, or green/blue in higher environments
+      service_under_test:
+        description: Select the service you want to test
         required: true
-        default: "APITests"
         type: choice
         options:
-          - APITests
-          - batchTests
-          - API&batchTests
-      testFilter:
-        description: "Tag filter for tests"
-        required: false
+          - fhir_api
+          - batch
+          - all
+      suite_to_run:
+        description: Select the suite you would like to run
         default: "functional"
         type: choice
         options:
           - smoke
           - functional
-          - Batch_File_Validation_Feature
+          - sandbox
+          - proxy_smoke
 
-permissions:
-  contents: write
-  id-token: write
-  checks: write
+env:
+  APIGEE_AUTH_ENV: ${{ inputs.apigee_environment == 'int' && inputs.apigee_environment || 'internal-dev' }}
+  APIGEE_ENVIRONMENT: ${{ inputs.apigee_environment }}
+  ENVIRONMENT: ${{ inputs.environment }}
+  SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
+  SERVICE_BASE_PATH: ${{ startsWith(inputs.sub_environment, 'pr-') && format('immunisation-fhir-api/FHIR/R4-{0}', inputs.sub_environment) || 'immunisation-fhir-api/FHIR/R4' }}
+  PROXY_NAME: ${{ startsWith(inputs.sub_environment, 'pr-') && format('immunisation-fhir-api-{0}', inputs.sub_environment) || format('immunisation-fhir-api-{0}', inputs.apigee_environment) }}
+  STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}
+  SOURCE_COMMIT_ID: ${{ github.sha }}
 
 jobs:
-  test:
+  wait-for-deployment:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
-    environment: ${{ github.event_name == 'workflow_dispatch' && (inputs.environment || 'internal-qa') }}
+    environment: ${{ inputs.apigee_environment }}
+    steps:
+      - name: Wait for API to be available
+        if: github.event_name != 'workflow_dispatch'
+        run: |
+          endpoint=""
+          if [[ ${APIGEE_ENVIRONMENT} =~ "prod" ]]; then
+            endpoint="https://api.service.nhs.uk/${SERVICE_BASE_PATH}/_status"
+          else
+            endpoint="https://${APIGEE_ENVIRONMENT}.api.service.nhs.uk/${SERVICE_BASE_PATH}/_status"
+          fi
+
+          counter=0
+          while [[ ${counter} -lt 31 ]]; do
+            response=$(curl -H "apikey: ${STATUS_API_KEY}" -s "${endpoint}")
+
+            response_code=$(jq -r '.checks.healthcheck.responseCode' <<< "${response}")
+            response_body=$(jq -r '.checks.healthcheck.outcome' <<< "${response}")
+            status=$(jq -r '.status' <<< "${response}")
+            commitId=$(jq -r '.commitId' <<< "${response}")
+
+            if [[ "${response_code}" -eq 200 ]] && [[ "${response_body}" == "OK" ]] && [[ "${status}" == "pass" ]]; then
+              echo "Status test successful"
+              if [[ "${commitId}" == "${SOURCE_COMMIT_ID}" ]]; then
+                echo "Commit hash test successful"
+                break
+              else
+                echo "Waiting for ${endpoint} to return the correct commit hash..."
+              fi
+            else
+              echo "Waiting for ${endpoint} to return a 200 response with 'OK' body..."
+            fi
+
+            ((counter=counter+1)) # Increment counter by 1
+            echo "Attempt ${counter}"
+            sleep 30
+          done
+
+          if [[ ${counter} -eq 31 ]]; then
+              echo "Status test failed: Maximum number of attempts reached"
+              echo "Last response received:"
+              echo "${response}"
+              exit 1
+          fi
+
+  e2e-automation-tests:
+    permissions:
+      id-token: write
+      checks: write
+      contents: write
+    runs-on: ubuntu-latest
+    needs: [wait-for-deployment]
+    environment: ${{ inputs.apigee_environment }}
     env:
-      S3_ENV: ${{ github.event_name == 'workflow_dispatch' && (inputs.environment || 'internal-qa') }}
+      APIGEE_USERNAME: ${{ vars.APIGEE_USERNAME }}
+      TF_OUTPUTS_REQUIRED: ${{ inputs.suite_to_run != 'sandbox' }}
 
     steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+
       - name: Connect to AWS
-        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a
+        if: ${{ env.TF_OUTPUTS_REQUIRED == 'true' }}
+        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708
         with:
           aws-region: eu-west-2
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_IAM_ACCOUNT }}:role/auto-ops
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
           role-session-name: github-actions
 
-      - name: Whoami
-        run: aws sts get-caller-identity
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
+        if: ${{ env.TF_OUTPUTS_REQUIRED == 'true' }}
+        with:
+          terraform_version: "1.12.2"
 
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: Terraform Init
+        if: ${{ env.TF_OUTPUTS_REQUIRED == 'true' }}
+        working-directory: infrastructure/instance
+        run: make init
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Set Terraform workspace
+        if: ${{ env.TF_OUTPUTS_REQUIRED == 'true' }}
+        working-directory: infrastructure/instance
+        run: make workspace
+
+      - name: Read Terraform outputs
+        if: ${{ env.TF_OUTPUTS_REQUIRED == 'true' }}
+        working-directory: infrastructure/instance
+        run: |
+          echo "AWS_DOMAIN_NAME=$(make -s output name=service_domain_name)" >> $GITHUB_ENV
+
+      - name: Install poetry
+        run: pip install poetry==2.1.4
+
+      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548
         with:
           python-version: 3.11
+          cache: "poetry"
+          cache-dependency-path: tests/e2e_automation/poetry.lock
 
-      - name: Install Python dependencies
-        run: |
-          set -o pipefail
-          python -m venv venv
-          source venv/bin/activate
-          python -m pip install --upgrade pip 2> pip_error.log || { cat pip_error.log; exit 1; }
-          pip install -r requirements.txt 2> req_error.log || { cat req_error.log; exit 1; }
-          pip install allure-pytest 2> allure_error.log || { cat allure_error.log; exit 1; }
+      - name: Install e2e test dependencies
+        working-directory: tests/e2e_automation
+        run: poetry install --no-root
 
-      - name: Run Pytest-BDD tests for ${{ github.event_name == 'workflow_dispatch' && (inputs.testPath || 'API&batchTests') }} with filter ${{ github.event_name == 'workflow_dispatch' && (inputs.testFilter || 'functional') }}
+      - name: Get Apigee access token
+        if: inputs.apigee_environment != 'int'
+        working-directory: tests/e2e_automation
         env:
-          S3_env: ${{ env.S3_ENV }}
-          auth_url: https://${{ env.S3_ENV }}.api.service.nhs.uk/oauth2-mock/authorize
-          token_url: https://${{ env.S3_ENV }}.api.service.nhs.uk/oauth2-mock/token
-          baseUrl: https://${{ env.S3_ENV }}.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4
+          APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
+          APIGEE_BASIC_AUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}
+          APIGEE_OTP_KEY: ${{ secrets.APIGEE_OTP_KEY }}
+        run: |
+          CODE=$(poetry run python utilities/compute_totp_code.py "$APIGEE_OTP_KEY")
+          echo "::add-mask::$CODE"
+
+          echo "Requesting access token from Apigee..."
+          response=$(curl -s -X POST "https://login.apigee.com/oauth/token" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            -H "Accept: application/json;charset=utf-8" \
+            -H "Authorization: Basic $APIGEE_BASIC_AUTH_TOKEN" \
+            -d "username=$APIGEE_USERNAME&password=$APIGEE_PASSWORD&mfa_token=$CODE&grant_type=password")
+
+          token=$(jq -e -r '.access_token' <<< "$response")
+          echo "::add-mask::$token"
+          echo "APIGEE_ACCESS_TOKEN=$token" >> $GITHUB_ENV
+
+      - name: Run Pytest-BDD ${{ inputs.service_under_test }} tests with the ${{ inputs.suite_to_run }} filter
+        working-directory: tests/e2e_automation
+        env:
+          S3_env: ${{ inputs.sub_environment }}
+          auth_url: https://${{ env.APIGEE_AUTH_ENV }}.api.service.nhs.uk/oauth2-mock/authorize
+          token_url: https://${{ env.APIGEE_AUTH_ENV }}.api.service.nhs.uk/oauth2-mock/token
+          baseUrl: https://${{ inputs.apigee_environment }}.api.service.nhs.uk/${{env.SERVICE_BASE_PATH}}
           callback_url: "https://oauth.pstmn.io/v1/callback"
-          Postman_Auth_client_Id: ${{ secrets.Postman_Auth_client_Id }}
-          Postman_Auth_client_Secret: ${{ secrets.Postman_Auth_client_Secret }}
-          username: ${{ secrets.username }}
+          username: ${{ secrets.CIS2_E2E_USERNAME }}
           scope: "nhs-cis2"
+          USE_STATIC_APPS: ${{ inputs.apigee_environment == 'int' && 'True' || 'False' }}
+          Postman_Auth_client_Id: ${{ secrets.Postman_Auth_client_Id }} # The following static app values are only needed in INT
+          Postman_Auth_client_Secret: ${{ secrets.Postman_Auth_client_Secret }}
           RAVS_client_Id: ${{ secrets.RAVS_client_Id }}
           RAVS_client_Secret: ${{ secrets.RAVS_client_Secret }}
           MAVIS_client_Id: ${{ secrets.MAVIS_client_Id }}
@@ -96,33 +233,12 @@ jobs:
           MEDICUS_client_Id: ${{ secrets.MEDICUS_client_Id }}
           MEDICUS_client_Secret: ${{ secrets.MEDICUS_client_Secret }}
           aws_token_refresh: "False"
-          PYTHONPATH: ${{ github.workspace }}
-        run: |
-          TEST_PATH="${{ github.event_name == 'workflow_dispatch' && inputs.testPath || 'API&batchTests' }}"
-          TEST_FILTER="${{ github.event_name == 'workflow_dispatch' && inputs.testFilter || 'functional' }}"
+          TEST_PATH: ${{ inputs.service_under_test == 'batch' && 'features/batchTests' || inputs.service_under_test == 'fhir_api' && 'features/APITests' || 'features' }}
+          TEST_FILTER: ${{ inputs.suite_to_run == 'proxy_smoke' && 'Status_feature' || inputs.suite_to_run }}
+        run: poetry run pytest "$TEST_PATH" -m "$TEST_FILTER" --junitxml=output/test-results.xml --alluredir=output/allure-results
 
-          if [ "$TEST_FILTER" = "Batch_File_Validation_Feature" ]; then
-            TEST_PATH="features/batchTests"
-          else
-            if [ "$TEST_PATH" = "API&batchTests" ]; then
-              TEST_PATH="features"
-            else
-              TEST_PATH="features/$TEST_PATH"
-            fi
-          fi
-          source venv/bin/activate
-          pytest "$TEST_PATH" -m "$TEST_FILTER" --junitxml=output/test-results.xml --alluredir=output/allure-results
-
-          if [ $? -ne 0 ]; then
-            echo "Pytest-BDD tests failed"
-            exit 1
-          else
-            echo "Pytest-BDD tests passed"
-          fi
-
-      - name: Publish test results to GitHub UI
+      - uses: dorny/test-reporter@31a54ee7ebcacc03a09ea97a7e5465a47b84aea5
         if: always()
-        uses: dorny/test-reporter@31a54ee7ebcacc03a09ea97a7e5465a47b84aea5
         with:
           name: BDD Test Summary
           path: "**/output/test-results.xml"
@@ -130,7 +246,7 @@ jobs:
           fail-on-error: false
 
       - name: Load test report history
-        uses: actions/checkout@v3
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
         if: always()
         continue-on-error: true
         with:
@@ -141,7 +257,7 @@ jobs:
         if: always()
         uses: simple-elf/allure-report-action@53ebb757a2097edc77c53ecef4d454fc2f2f774c
         with:
-          allure_results: output/allure-results
+          allure_results: tests/e2e_automation/output/allure-results
           gh_pages: gh-pages
           allure_report: allure-report
           allure_history: allure-history
@@ -150,7 +266,7 @@ jobs:
         if: always()
         uses: peaceiris/actions-gh-pages@373f7f263a76c20808c831209c920827a82a2847
         with:
-          github_token: ${{ secrets.ALLURE_GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
           publish_dir: allure-history
 

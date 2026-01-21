@@ -46,7 +46,7 @@ def get_delete_url_header(context):
         "X-Request-ID": str(uuid.uuid4()),
         "Accept": "application/fhir+json",
         "Content-Type": "application/fhir+json",
-        "Authorization": "Bearer " + context.token,
+        "Authorization": "Bearer " + context.token if context.token is not None else "",
     }
     context.corrID = context.headers["X-Correlation-ID"]
     context.reqID = context.headers["X-Request-ID"]

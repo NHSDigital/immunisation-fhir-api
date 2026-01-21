@@ -17,5 +17,8 @@ test-batch-smoke:
 test-batch-full:
 	$(cmd) features/batchTests -m functional
 
+test-sandbox:
+	$(cmd) features -m sandbox
+
 collect-only:
 	$(cmd) --collect-only
