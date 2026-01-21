@@ -233,7 +233,7 @@ jobs:
           MEDICUS_client_Id: ${{ secrets.MEDICUS_client_Id }}
           MEDICUS_client_Secret: ${{ secrets.MEDICUS_client_Secret }}
           aws_token_refresh: "False"
-          TEST_PATH: ${{ inputs.service_under_test == 'batch' && 'features/batchTest' || inputs.service_under_test == 'fhir_api' && 'features/APITests' || 'features' }}
+          TEST_PATH: ${{ inputs.service_under_test == 'batch' && 'features/batchTests' || inputs.service_under_test == 'fhir_api' && 'features/APITests' || 'features' }}
           TEST_FILTER: ${{ inputs.suite_to_run == 'proxy_smoke' && 'Status_feature' || inputs.suite_to_run }}
         run: poetry run pytest "$TEST_PATH" -m "$TEST_FILTER" --junitxml=output/test-results.xml --alluredir=output/allure-results
 
