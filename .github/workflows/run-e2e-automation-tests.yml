@@ -69,7 +69,6 @@ on:
           - proxy_smoke
 
 env:
-  ALLURE_REPORT_ENVIRONMENT: ${{ startsWith(inputs.sub_environment, 'pr-') && inputs.sub_environment || inputs.apigee_environment }}
   APIGEE_AUTH_ENV: ${{ inputs.apigee_environment == 'int' && inputs.apigee_environment || 'internal-dev' }}
   APIGEE_ENVIRONMENT: ${{ inputs.apigee_environment }}
   ENVIRONMENT: ${{ inputs.environment }}
@@ -260,8 +259,8 @@ jobs:
         with:
           allure_results: tests/e2e_automation/output/allure-results
           gh_pages: gh-pages
-          allure_report: allure-report/${{env.ALLURE_REPORT_ENVIRONMENT}}
-          allure_history: allure-history/${{env.ALLURE_REPORT_ENVIRONMENT}}
+          allure_report: allure-report
+          allure_history: allure-history
 
       - name: Publish Allure report to GitHub Pages
         if: always()
@@ -269,7 +268,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
-          publish_dir: allure-history/${{env.ALLURE_REPORT_ENVIRONMENT}}
+          publish_dir: allure-history
 
       - name: Add link to Allure report
         if: always()
