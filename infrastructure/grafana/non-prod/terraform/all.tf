@@ -8,7 +8,7 @@ resource "aws_alb" "main" {
 
 resource "aws_alb_target_group" "app" {
   name        = "${local.prefix}-tg"
-  port        = 3000
+  port        = var.app_port
   protocol    = "HTTP"
   vpc_id      = aws_vpc.grafana_main.id
   target_type = "ip"
@@ -486,9 +486,26 @@ resource "aws_security_group" "lb" {
 
   ingress {
     protocol    = "tcp"
+    from_port   = 80
+    to_port     = 80
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow HTTP traffic"
+  }
+
+  ingress {
+    protocol    = "tcp"
+    from_port   = 443
+    to_port     = 443
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow HTTPS traffic"
+  }
+
+  ingress {
+    protocol    = "tcp"
     from_port   = var.app_port
     to_port     = var.app_port
     cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow application port traffic"
   }
 
   egress {
