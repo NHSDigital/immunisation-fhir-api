@@ -1,6 +1,6 @@
 # S3 state bucket
 resource "aws_s3_bucket" "grafana_tf_state_bucket" {
-  bucket = "immunisation-grafana-${var.environment}-terraform-state"
+  bucket = "immunisation-${var.environment}-grafana-terraform-state"
   region = var.aws_region
 }
 
