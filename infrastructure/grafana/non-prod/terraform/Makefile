@@ -5,7 +5,7 @@ region              ?= $(AWS_REGION)
 
 tf_cmd = AWS_PROFILE=$(AWS_PROFILE) terraform
 
-bucket_name = immunisation-$(environment)-grafana-terraform-state
+bucket_name = immunisation-grafana-terraform-state
 state_key=state/$(environment)/terraform.tfstate
 
 tf_state = \

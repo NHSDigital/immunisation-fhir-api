@@ -1,6 +1,6 @@
-# S3 state bucket
+# S3 state bucket - NB this is not parameterized
 resource "aws_s3_bucket" "grafana_tf_state_bucket" {
-  bucket = "immunisation-${var.environment}-grafana-terraform-state"
+  bucket = "immunisation-grafana-terraform-state"
   region = var.aws_region
 }
 
