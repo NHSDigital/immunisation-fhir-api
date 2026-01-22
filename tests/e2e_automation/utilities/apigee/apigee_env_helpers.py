@@ -1,6 +1,7 @@
 import os
 
 PROXY_PR_PREFIX = "immunisation-fhir-api-pr-"
+SANDBOX_PROXY_NAME = "immunisation-fhir-api-sandbox"
 INT_PROXY_NAME = "immunisation-fhir-api-int"
 
 
@@ -25,13 +26,15 @@ def use_temp_apigee_apps() -> bool:
     """
     Determines if temporary Apigee Apps are required for the test run based on the following business logic:
     - dynamic PR environments always require temporary apps
-    - Apigee non-prod environments (everything except INT and PROD) use dynamic apps unless the user provides the
-    USE_STATIC_APPS env var to override this
+    - Apigee non-prod environments (everything except sandbox, int and prod) use dynamic apps unless the user provides
+    the USE_STATIC_APPS env var to override this
     """
     if is_pr_env():
         return True
 
-    if get_proxy_name() == INT_PROXY_NAME:
+    proxy_name = get_proxy_name()
+
+    if proxy_name == INT_PROXY_NAME or proxy_name == SANDBOX_PROXY_NAME:
         return False
 
     return os.getenv("USE_STATIC_APPS", "False") != "True"

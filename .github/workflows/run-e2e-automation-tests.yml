@@ -186,7 +186,7 @@ jobs:
         run: poetry install --no-root
 
       - name: Get Apigee access token
-        if: inputs.apigee_environment != 'int'
+        if: inputs.apigee_environment != 'int' && inputs.apigee_environment != 'sandbox'
         working-directory: tests/e2e_automation
         env:
           APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
