@@ -30,7 +30,8 @@
       "FLU.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
-      "MMR.CRUDS"
+      "MMR.CRUDS",
+      "MMRV.CRUDS"
     ],
     "ods_codes": ["V0V8L"]
   },
