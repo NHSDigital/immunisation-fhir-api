@@ -1,2 +1,0 @@
-❌ Step failed! **I send a request to the status endpoint** 
- Error: APIGEE_ACCESS_TOKEN environment variable is required

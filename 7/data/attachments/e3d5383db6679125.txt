@@ -1,2 +1,0 @@
-❌ Step failed! **I send an unauthenticated request to the API** 
- Error: APIGEE_ACCESS_TOKEN environment variable is required
