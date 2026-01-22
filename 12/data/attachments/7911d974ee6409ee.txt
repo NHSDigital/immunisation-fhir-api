@@ -1,2 +1,0 @@
-❌ Step failed! **all records are rejected in the bus ack file and no imms id is generated** 
- Error: One or more records failed validation checks
