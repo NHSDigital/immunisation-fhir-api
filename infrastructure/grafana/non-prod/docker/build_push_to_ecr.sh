@@ -15,7 +15,7 @@ source ../terraform/.env
 
 # If it doesn't, prompt for the environment.
 # Do not accept response if it is not one of the following
-environments="prod|int|ref|internal-dev"
+environments="prod|int|ref|dev"
 
 if [[ ! "${ENVIRONMENT}" =~ ^${environments}$ ]] ; then
   echo "Invalid environment: ${ENVIRONMENT}"
