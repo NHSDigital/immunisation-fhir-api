@@ -1,49 +1,38 @@
 #!/bin/bash
 
+# Build the Grafana docker image.
+# This will be done manually. 
+# We assume the ECR artifacts have been created already by the Makefile.
+
 # Set variables
 
 dirname=$(dirname "${0}")
 DOCKERFILE_DIR=$(realpath "${dirname}")
 echo "DOCKERFILE_DIR: ${DOCKERFILE_DIR}"
 
-# if parameter not passed, prompt for the environment.
-# Do not accept response if it is not one of the following: prod, int, ref, internal-dev
-# loop until valid response is received
-if [[ -z "${1}" ]]; then
-  while true; do
-    read -r -p "Enter the environment (prod, int, ref, dev): " ENVIRONMENT
-    case "${ENVIRONMENT}" in
-      prod|int|ref|dev)
-        break
-        ;;
-      *)
-        echo "Invalid environment. Please enter one of: prod, int, ref, dev."
-        ;;
-    esac
-  done
-else
-  ENVIRONMENT="${1}"
-fi
-# Check if the environment is valid
-if [[ ! "${ENVIRONMENT}" =~ ^(prod|int|ref|dev)$ ]]; then
-  echo "Invalid environment. Please enter one of: prod, int, ref, dev."
-  exit 1
+# Import the terraform's .env file; it should contain the ENVIRONMENT
+source ../terraform/.env
+
+# If it doesn't, prompt for the environment.
+# Do not accept response if it is not one of the following
+environments="prod|int|ref|internal-dev"
+
+if [[ ! "${ENVIRONMENT}" =~ ^${environments}$ ]] ; then
+  echo "Invalid environment: ${ENVIRONMENT}"
+  read -r -p "Please enter one of: $environments: " ENVIRONMENT
+  if [[ ! "${ENVIRONMENT}" =~ ^${environments}$ ]] ; then
+    echo "Invalid environment"
+    exit 1
+  fi
 fi
 
 # Set the prefix and other variables
 PREFIX="imms-${ENVIRONMENT}"
-AWS_REGION="eu-west-2"
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 REPOSITORY_NAME="${PREFIX}-grafana-app"
 IMAGE_TAG="11.0.0-22.04_stable"
 LOCAL_IMAGE_NAME="${REPOSITORY_NAME}:${IMAGE_TAG}"
 IMAGE_NAME="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${LOCAL_IMAGE_NAME}"
-TAGS='[
-  {"Key": "Environment", "Value": "non-prod"},
-  {"Key": "Project", "Value": "immunisation-fhir-api-grafana"},
-  {"Key": "Environment", "Value": "'"${ENVIRONMENT}"'"}
-]'
-LIFECYCLE_POLICY_FILE="lifecycle-policy.json"
 
 # Generate a strong password. It will only ever appear in the build log, not in the repo.
 # TODO: Re-tool this for the pipeline. Retrieve a password from Github Secrets, or AWS Secrets Manager
@@ -61,17 +50,6 @@ if [[ ! -f Dockerfile ]]; then
   echo "Dockerfile not found in DOCKERFILE_DIR."
   exit 1
 fi
-
-# Create ECR repository if it does not exist
-if ! aws ecr describe-repositories --repository-names "${REPOSITORY_NAME}" --region "${AWS_REGION}" > /dev/null 2>&1; then
-  echo "Creating ECR repository: ${REPOSITORY_NAME}"
-  aws ecr create-repository --repository-name "${REPOSITORY_NAME}" --region "${AWS_REGION}"
-  # Add tags to the repository
-  aws ecr tag-resource --resource-arn "arn:aws:ecr:${AWS_REGION}:${ACCOUNT_ID}:repository/${REPOSITORY_NAME}" --tags "${TAGS}"
-fi
-
-# Apply lifecycle policy to the ECR repository
-aws ecr put-lifecycle-policy --repository-name "${REPOSITORY_NAME}" --lifecycle-policy-text "file://${LIFECYCLE_POLICY_FILE}" --region "${AWS_REGION}"
 
 printf "Building and pushing Docker image to ECR...\n"
 # Authenticate Docker to ECR
