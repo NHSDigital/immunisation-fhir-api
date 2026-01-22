@@ -5,8 +5,7 @@ region              ?= $(AWS_REGION)
 
 tf_cmd = AWS_PROFILE=$(AWS_PROFILE) terraform
 
-bucket_name = immunisation-grafana-terraform-state
-#bucket_name = immunisation-$(environment)-grafana-terraform-state
+bucket_name = immunisation-grafana-$(environment)-terraform-state
 state_key=state/$(environment)/terraform.tfstate
 
 tf_state = \
@@ -24,6 +23,7 @@ tf_bucket_vars = \
   --create-bucket-configuration LocationConstraint="$(region)"
 
 tf_bucket_versioning = \
+  --bucket "$(bucket_name)" \
   --versioning-configuration Status=Enabled \
 
 bucket-exists:
