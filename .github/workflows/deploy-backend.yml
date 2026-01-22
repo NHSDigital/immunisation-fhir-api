@@ -129,7 +129,7 @@ jobs:
         if: ${{ inputs.environment == 'dev' && inputs.create_mns_subscription }}
         run: pip install poetry==2.1.4
 
-      - uses: actions/setup-python@v6.1.0
+      - uses: actions/setup-python@v6.2.0
         if: ${{ inputs.environment == 'dev' && inputs.create_mns_subscription }}
         with:
           python-version: 3.11
