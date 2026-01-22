@@ -11,7 +11,7 @@ This directory contains End-to-end Automation Tests for the Immunisation FHIR AP
    they are spun up and torn down on each test run, therefore requiring fewer env vars and less operational overhead. Skip
    to the relevant section below depending on which approach you are going to use.
 
-## Setup when using on demand apps
+## Setup when using on temporary apps
 
 **NOTE:** this approach cannot be used in INT. Both INT and PROD (we do not test here) belong to the APIM Apigee prod
 organisation so there is no support for creating apps on the fly.
