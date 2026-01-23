@@ -1,0 +1,1 @@
+✅ Step Passed: **Valid vaccination record is created with Patient 'SupersedeNhsNo' and vaccine_type '4IN1'
