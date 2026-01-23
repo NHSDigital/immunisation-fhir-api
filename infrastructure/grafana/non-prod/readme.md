@@ -21,45 +21,23 @@ The infrastructure is built using terraform. The code may be found in the terraf
 
 #### initialise terraform
 
-The terraform amanges multiple environmments. When running terraform init is used to specify the key dynamically using the -backend-config flag. This is done in the tf_init.sh file.
+NOTE: Currently this process only runs locally. It is being reconstructed pending incorporation of the Grafana terraform into the infrastructure/account folder.
 
-to rebuild the docker image from the ECR to ECS, run
-
-```
-terraform taint aws_ecs_task_definition.app
-```
-
-to review the docker image
-
-```
-docker image inspect imms-internal-dev-fhir-api-grafana:11.0.0-22.04_stable
-docker image inspect imms-int-fhir-api-grafana:11.0.0-22.04_stable
-docker image inspect imms-ref-fhir-api-grafana:11.0.0-22.04_stable
-```
+The script file `tf_init.sh` is no longer used. Instead a Makefile has been implemented.
 
 ### building environments
 
 Run the following commands to create and switch to the `int` workspace:
 
-```
-./tf_init.sh int
-./tf_init.sh ref
-./tf_init.sh dev
-'''
+1. Edit .env so that ENVIRONMENT is set to the desired environment (int, dev, prod, ref)
+2. Create and build an environment.
 
-Create an environment
 ```
-
 terraform workspace new dev
-Build an environment
-
-```
 terraform workspace select dev
+make init
+make plan
 ```
-
-'''
-terraform plan -var="environment=dev"
-'''
 
 ### vpce vs nat gateway
 
@@ -67,4 +45,4 @@ By default, grafana image requires access to internet for plugins and updates.
 
 1. Disable internet access. The updates can be disabled and plugins can be preloaded. However, this was timeboxed and timed out.
 2. Permit access via VPC Endpoints. This gives access to AWS services. However updates & & info updates require internet access by default. To avoid a natgw, a proxy could be used.
-3. NatGateway - this is the current solutipn. However, it should be reviewed as it is more permissive and has higher costs.
+3. NatGateway - this is the current solution. However, it should be reviewed as it is more permissive and has higher costs.
