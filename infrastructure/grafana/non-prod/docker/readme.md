@@ -11,6 +11,8 @@ This docker folder is used to deploy a grafana docker image to AWS ECR for use b
 
 ## To Build and deploy Grafana Docker image to AWS ECR
 
+First, ensure that the Terraform for the chosen environment has been applied.
+
 1. Start docker
 2. execute `build_push_to_ecr.sh`
 3. Success message "Docker image built and pushed to ECR successfully."
@@ -24,7 +26,7 @@ e.g.
     345594581768.dkr.ecr.eu-west-2.amazonaws.com/imms-int-grafana-app:11.0.0-22.04_stable
 
 Note: currently the Grafana admin password is generated dynamically and will be displayed in the logging output
-of `build_push_to_ecr.sh`. It will not appear anywhere else.
+of `build_push_to_ecr.sh`. It will not appear anywhere else. This will eventually move to a Github or AWS secret.
 
 ## To test the Grafana Docker image locally
 
@@ -42,6 +44,7 @@ of `build_push_to_ecr.sh`. It will not appear anywhere else.
     `http://localhost:3000`
 
     The admin login will be as given in the `./grafana.ini` file.
+    Note that currently this is generated in `build_push_to_ecr.sh` (see above).
 
 Note that the local image will not display any data, as it is unable to connect to CloudWatch.
 
