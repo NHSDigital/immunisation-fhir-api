@@ -42,14 +42,14 @@ on:
           - int
           - ref
       environment:
-        type: string
-        description: Select the backend environment
+        type: choice
+        description: Select the AWS backend environment
         options:
           - dev
           - preprod
       sub_environment:
         type: string
-        description: Set the sub environment name e.g. pr-xxx, or green/blue in higher environments
+        description: Set the sub environment name e.g. pr-xxx, internal-qa, internal-dev, int-green or int-blue
       service_under_test:
         description: Select the service you want to test
         required: true
@@ -141,7 +141,7 @@ jobs:
       TF_OUTPUTS_REQUIRED: ${{ inputs.suite_to_run != 'sandbox' }}
 
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
 
       - name: Connect to AWS
         if: ${{ env.TF_OUTPUTS_REQUIRED == 'true' }}
@@ -175,7 +175,7 @@ jobs:
       - name: Install poetry
         run: pip install poetry==2.1.4
 
-      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
           python-version: 3.11
           cache: "poetry"
@@ -186,7 +186,7 @@ jobs:
         run: poetry install --no-root
 
       - name: Get Apigee access token
-        if: inputs.apigee_environment != 'int'
+        if: inputs.apigee_environment != 'int' && inputs.apigee_environment != 'sandbox'
         working-directory: tests/e2e_automation
         env:
           APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
@@ -246,7 +246,7 @@ jobs:
           fail-on-error: false
 
       - name: Load test report history
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
         if: always()
         continue-on-error: true
         with:
