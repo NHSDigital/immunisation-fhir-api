@@ -1,0 +1,6 @@
+❌ Step failed! **The status response will contain a passing healthcheck** 
+ Error: Status response assertions failed. Res: {'status': 'fail', 'version': 'immunisation-fhir-api-int', 'revision': '518', 'releaseId': '447259', 'commitId': '4d37aee8edc398f6064c0bff5b224ddd90bc372d', 'checks': {'healthcheck': {'status': 'fail', 'timeout': 'false', 'responseCode': 403, 'outcome': {'message': 'Forbidden'}, 'links': {'self': 'https://int-blue.imms.preprod.vds.platform.nhs.uk/status'}}}}
+assert 'fail' == 'pass'
+  
+  - pass
+  + fail
