@@ -33,6 +33,7 @@ REPOSITORY_NAME="${PREFIX}-grafana-app"
 IMAGE_TAG="11.0.0-22.04_stable"
 LOCAL_IMAGE_NAME="${REPOSITORY_NAME}:${IMAGE_TAG}"
 IMAGE_NAME="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${LOCAL_IMAGE_NAME}"
+DATASOURCE_ROLE="arn:aws:iam::${ACCOUNT_ID}:role/${PREFIX}-grafana-monitoring-role"
 
 # Generate a strong password. It will only ever appear in the build log, not in the repo.
 # TODO: Re-tool this for the pipeline. Retrieve a password from Github Secrets, or AWS Secrets Manager
@@ -64,7 +65,7 @@ docker pull --platform linux/amd64 grafana/grafana:latest
 
 # Build Docker image for linux/amd64 architecture and push to ECR
 docker buildx create --use
-if ! docker buildx build --platform linux/amd64 --build-arg admin_pw="${ADMIN_PW}" -t "${IMAGE_NAME}" --push .; then
+if ! docker buildx build --platform linux/amd64 --build-arg admin_pw="${ADMIN_PW}" --build-arg ds_role="${DATASOURCE_ROLE}" --build-arg ds_region="${AWS_REGION}" -t "${IMAGE_NAME}" --push .; then
   echo "Docker build failed."
   exit 1
 fi
