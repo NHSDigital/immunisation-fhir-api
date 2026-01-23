@@ -6,10 +6,13 @@ dirname=$(dirname "${0}")
 DOCKERFILE_DIR=$(realpath "${dirname}")
 echo "DOCKERFILE_DIR: ${DOCKERFILE_DIR}"
 
+# Import the terraform's .env file; it should contain the ENVIRONMENT
+source ../terraform/.env
+
 # if parameter not passed, prompt for the environment.
 # Do not accept response if it is not one of the following: prod, int, ref, internal-dev
 # loop until valid response is received
-if [[ -z "${1}" ]]; then
+if [[ -z "${ENVIRONMENT}" ]]; then
   while true; do
     read -r -p "Enter the environment (prod, int, ref, dev): " ENVIRONMENT
     case "${ENVIRONMENT}" in
@@ -21,8 +24,6 @@ if [[ -z "${1}" ]]; then
         ;;
     esac
   done
-else
-  ENVIRONMENT="${1}"
 fi
 # Check if the environment is valid
 if [[ ! "${ENVIRONMENT}" =~ ^(prod|int|ref|dev)$ ]]; then
@@ -38,6 +39,7 @@ REPOSITORY_NAME="${PREFIX}-grafana-app"
 IMAGE_TAG="11.0.0-22.04_stable"
 LOCAL_IMAGE_NAME="${REPOSITORY_NAME}:${IMAGE_TAG}"
 IMAGE_NAME="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${LOCAL_IMAGE_NAME}"
+DATASOURCE_ROLE="arn:aws:iam::${ACCOUNT_ID}:role/${PREFIX}-grafana-monitoring-role"
 TAGS='[
   {"Key": "Environment", "Value": "non-prod"},
   {"Key": "Project", "Value": "immunisation-fhir-api-grafana"},
@@ -86,7 +88,7 @@ docker pull --platform linux/amd64 grafana/grafana:latest
 
 # Build Docker image for linux/amd64 architecture and push to ECR
 docker buildx create --use
-if ! docker buildx build --platform linux/amd64 --build-arg admin_pw="${ADMIN_PW}" -t "${IMAGE_NAME}" --push .; then
+if ! docker buildx build --platform linux/amd64 --build-arg admin_pw="${ADMIN_PW}" --build-arg ds_role="${DATASOURCE_ROLE}" --build-arg ds_region="${AWS_REGION}" -t "${IMAGE_NAME}" --push .; then
   echo "Docker build failed."
   exit 1
 fi

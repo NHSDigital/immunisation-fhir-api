@@ -16,7 +16,7 @@ datasources:
     isDefault: true # <bool> mark as default datasource. Max one per org
     jsonData: # <map> fields that will be converted to json and stored in json_data
       authType: default
-      assumeRoleArn: arn:aws:iam::345594581768:role/imms-int-grafana-monitoring-role
-      defaultRegion: eu-west-2
+      assumeRoleArn: $DS_ROLE
+      defaultRegion: $DS_REGION
     editable: false # whether it should be editable
     version: 1
