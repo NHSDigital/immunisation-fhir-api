@@ -34,7 +34,7 @@ on:
         default: true
       environment:
         type: choice
-        description: Select the backend environment
+        description: Select the AWS backend environment
         options:
           - dev
           - preprod
