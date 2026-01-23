@@ -89,6 +89,7 @@ def context(request, global_context, temp_apigee_apps: list[ApigeeApp] | None) -
         "username",
         "scope",
         "S3_env",
+        "sub_environment",
         "LOCAL_RUN_WITHOUT_S3_UPLOAD",
     ]
     for var in env_vars:

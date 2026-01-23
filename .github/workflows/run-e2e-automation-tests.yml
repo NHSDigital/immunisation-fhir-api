@@ -217,6 +217,7 @@ jobs:
           callback_url: "https://oauth.pstmn.io/v1/callback"
           username: ${{ secrets.CIS2_E2E_USERNAME }}
           scope: "nhs-cis2"
+          sub_environment: ${{ inputs.sub_environment }}
           USE_STATIC_APPS: ${{ inputs.apigee_environment == 'int' && 'True' || 'False' }}
           Postman_Auth_client_Id: ${{ secrets.Postman_Auth_client_Id }} # The following static app values are only needed in INT
           Postman_Auth_client_Secret: ${{ secrets.Postman_Auth_client_Secret }}
