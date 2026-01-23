@@ -1,1 +1,0 @@
-✅ Step Passed: **Send a search request with POST method for Immunization event created
