@@ -42,14 +42,14 @@ on:
           - int
           - ref
       environment:
-        type: string
-        description: Select the backend environment
+        type: choice
+        description: Select the AWS backend environment
         options:
           - dev
           - preprod
       sub_environment:
         type: string
-        description: Set the sub environment name e.g. pr-xxx, or green/blue in higher environments
+        description: Set the sub environment name e.g. pr-xxx, internal-qa, internal-dev, int-green or int-blue
       service_under_test:
         description: Select the service you want to test
         required: true
