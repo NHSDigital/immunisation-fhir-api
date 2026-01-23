@@ -1,0 +1,1 @@
+✅ Step Passed: **Valid vaccination record is created with Patient 'Mod11_NHS' and vaccine_type 'RSV'
