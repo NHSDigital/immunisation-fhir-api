@@ -1,1 +1,0 @@
-INFO     botocore.credentials:credentials.py:1213 Found credentials in environment variables.
