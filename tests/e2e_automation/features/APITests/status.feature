@@ -8,6 +8,7 @@ Scenario: Verify that the /ping endpoint works
 
 @smoke @sandbox
 Scenario: Verify that the /status endpoint works
+    Given the status API key is available in the given environment
     When I send a request to the status endpoint
     Then The request will be successful with the status code '200'
     And The status response will contain a passing healthcheck
