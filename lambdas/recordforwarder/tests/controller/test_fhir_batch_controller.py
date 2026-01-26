@@ -14,6 +14,10 @@ from service.fhir_batch_service import ImmunizationBatchService
 from test_common.testing_utils.immunization_utils import create_covid_immunization
 
 
+def _make_immunization_pk(_id):
+    return f"Immunization#{_id}"
+
+
 class TestCreateImmunizationBatchController(unittest.TestCase):
     def setUp(self):
         self.mock_repo = create_autospec(ImmunizationBatchRepository)
@@ -25,6 +29,7 @@ class TestCreateImmunizationBatchController(unittest.TestCase):
         """it should create Immunization and return imms id location"""
 
         imms_id = str(uuid.uuid4())
+        last_imms_pk = _make_immunization_pk(imms_id)
         imms = create_covid_immunization(imms_id)
         message_body = {
             "supplier": "test_supplier",
@@ -35,7 +40,7 @@ class TestCreateImmunizationBatchController(unittest.TestCase):
 
         self.mock_service.create_immunization.return_value = imms_id
 
-        result = self.controller.send_request_to_dynamo(message_body, self.mock_table, True)
+        result = self.controller.send_request_to_dynamo(message_body, self.mock_table, last_imms_pk)
 
         self.assertEqual(result, imms_id)
         self.mock_service.create_immunization.assert_called_once_with(
@@ -43,13 +48,14 @@ class TestCreateImmunizationBatchController(unittest.TestCase):
             supplier_system=message_body["supplier"],
             vax_type=message_body["vax_type"],
             table=self.mock_table,
-            is_present=True,
+            last_imms_pk=last_imms_pk,
         )
 
     def test_send_request_to_dynamo_create_badrequest(self):
         """it should return error since it got failed in initial validation"""
 
         imms_id = str(uuid.uuid4())
+        last_imms_pk = _make_immunization_pk(imms_id)
         imms = create_covid_immunization(imms_id)
         create_result = CustomValidationError(
             message="Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value does not exists"
@@ -64,7 +70,7 @@ class TestCreateImmunizationBatchController(unittest.TestCase):
 
         self.mock_service.create_immunization.return_value = create_result
 
-        result = self.controller.send_request_to_dynamo(message_body, self.mock_table, True)
+        result = self.controller.send_request_to_dynamo(message_body, self.mock_table, last_imms_pk)
 
         self.assertEqual(result, create_result)
         self.mock_service.create_immunization.assert_called_once_with(
@@ -72,13 +78,14 @@ class TestCreateImmunizationBatchController(unittest.TestCase):
             supplier_system=message_body["supplier"],
             vax_type=message_body["vax_type"],
             table=self.mock_table,
-            is_present=True,
+            last_imms_pk=last_imms_pk,
         )
 
     def test_send_request_to_dynamo_create_duplicate(self):
         """it should not create the Immunization since its a duplicate record"""
 
         imms_id = str(uuid.uuid4())
+        last_imms_pk = _make_immunization_pk(imms_id)
         imms = create_covid_immunization(imms_id)
         create_result = IdentifierDuplicationError(identifier="test#123")
         message_body = {
@@ -90,7 +97,7 @@ class TestCreateImmunizationBatchController(unittest.TestCase):
 
         self.mock_service.create_immunization.return_value = create_result
 
-        result = self.controller.send_request_to_dynamo(message_body, self.mock_table, True)
+        result = self.controller.send_request_to_dynamo(message_body, self.mock_table, last_imms_pk)
 
         self.assertEqual(result, create_result)
         self.mock_service.create_immunization.assert_called_once_with(
@@ -98,13 +105,14 @@ class TestCreateImmunizationBatchController(unittest.TestCase):
             supplier_system=message_body["supplier"],
             vax_type=message_body["vax_type"],
             table=self.mock_table,
-            is_present=True,
+            last_imms_pk=last_imms_pk,
         )
 
     def test_send_request_to_dynamo_create_unhandled_error(self):
         """it should not create the Immunization since the error occoured in db"""
 
         imms_id = str(uuid.uuid4())
+        last_imms_pk = _make_immunization_pk(imms_id)
         imms = create_covid_immunization(imms_id)
         update_result = UnhandledResponseError(response="Non-200 response from dynamodb", message="connection timeout")
         message_body = {
@@ -118,7 +126,7 @@ class TestCreateImmunizationBatchController(unittest.TestCase):
             "Non-200 response from dynamodb", "connection timeout"
         )
 
-        result = self.controller.send_request_to_dynamo(message_body, self.mock_table, True)
+        result = self.controller.send_request_to_dynamo(message_body, self.mock_table, last_imms_pk)
 
         self.assertEqual(result, update_result)
         self.mock_service.create_immunization.assert_called_once_with(
@@ -126,7 +134,7 @@ class TestCreateImmunizationBatchController(unittest.TestCase):
             supplier_system=message_body["supplier"],
             vax_type=message_body["vax_type"],
             table=self.mock_table,
-            is_present=True,
+            last_imms_pk=last_imms_pk,
         )
 
 
@@ -141,6 +149,7 @@ class TestUpdateImmunizationBatchController(unittest.TestCase):
         """it should update Immunization and return imms id"""
 
         imms_id = str(uuid.uuid4())
+        last_imms_pk = _make_immunization_pk(imms_id)
         imms = create_covid_immunization(imms_id)
         message_body = {
             "supplier": "test_supplier",
@@ -151,7 +160,7 @@ class TestUpdateImmunizationBatchController(unittest.TestCase):
 
         self.mock_service.update_immunization.return_value = imms_id
 
-        result = self.controller.send_request_to_dynamo(message_body, self.mock_table, True)
+        result = self.controller.send_request_to_dynamo(message_body, self.mock_table, last_imms_pk)
 
         self.assertEqual(result, imms_id)
         self.mock_service.update_immunization.assert_called_once_with(
@@ -159,13 +168,14 @@ class TestUpdateImmunizationBatchController(unittest.TestCase):
             supplier_system=message_body["supplier"],
             vax_type=message_body["vax_type"],
             table=self.mock_table,
-            is_present=True,
+            last_imms_pk=last_imms_pk,
         )
 
     def test_send_request_to_dynamo_update_badrequest(self):
         """it should return error since it got failed in initial validation"""
 
         imms_id = str(uuid.uuid4())
+        last_imms_pk = _make_immunization_pk(imms_id)
         imms = create_covid_immunization(imms_id)
         update_result = CustomValidationError(
             message="Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value does not exists"
@@ -179,7 +189,7 @@ class TestUpdateImmunizationBatchController(unittest.TestCase):
 
         self.mock_service.update_immunization.return_value = update_result
 
-        result = self.controller.send_request_to_dynamo(message_body, self.mock_table, True)
+        result = self.controller.send_request_to_dynamo(message_body, self.mock_table, last_imms_pk)
 
         self.assertEqual(result, update_result)
         self.mock_service.update_immunization.assert_called_once_with(
@@ -187,13 +197,14 @@ class TestUpdateImmunizationBatchController(unittest.TestCase):
             supplier_system=message_body["supplier"],
             vax_type=message_body["vax_type"],
             table=self.mock_table,
-            is_present=True,
+            last_imms_pk=last_imms_pk,
         )
 
     def test_send_request_to_dynamo_update_resource_not_found(self):
         """it should not update the Immunization since no resource found for the record"""
 
         imms_id = str(uuid.uuid4())
+        last_imms_pk = _make_immunization_pk(imms_id)
         imms = create_covid_immunization(imms_id)
         update_result = ResourceNotFoundError("Immunization", "test#123")
         message_body = {
@@ -205,7 +216,7 @@ class TestUpdateImmunizationBatchController(unittest.TestCase):
 
         self.mock_service.update_immunization.return_value = update_result
 
-        result = self.controller.send_request_to_dynamo(message_body, self.mock_table, True)
+        result = self.controller.send_request_to_dynamo(message_body, self.mock_table, last_imms_pk)
 
         self.assertEqual(result, update_result)
         self.mock_service.update_immunization.assert_called_once_with(
@@ -213,13 +224,14 @@ class TestUpdateImmunizationBatchController(unittest.TestCase):
             supplier_system=message_body["supplier"],
             vax_type=message_body["vax_type"],
             table=self.mock_table,
-            is_present=True,
+            last_imms_pk=last_imms_pk,
         )
 
     def test_send_request_to_dynamo_update_unhandled_error(self):
         """it should not update the Immunization since the error occoured in db"""
 
         imms_id = str(uuid.uuid4())
+        last_imms_pk = _make_immunization_pk(imms_id)
         imms = create_covid_immunization(imms_id)
         update_result = UnhandledResponseError(response="Non-200 response from dynamodb", message="connection timeout")
         message_body = {
@@ -233,7 +245,7 @@ class TestUpdateImmunizationBatchController(unittest.TestCase):
             "Non-200 response from dynamodb", "connection timeout"
         )
 
-        result = self.controller.send_request_to_dynamo(message_body, self.mock_table, True)
+        result = self.controller.send_request_to_dynamo(message_body, self.mock_table, last_imms_pk)
 
         self.assertEqual(result, update_result)
         self.mock_service.update_immunization.assert_called_once_with(
@@ -241,7 +253,7 @@ class TestUpdateImmunizationBatchController(unittest.TestCase):
             supplier_system=message_body["supplier"],
             vax_type=message_body["vax_type"],
             table=self.mock_table,
-            is_present=True,
+            last_imms_pk=last_imms_pk,
         )
 
 
@@ -256,6 +268,7 @@ class TestDeleteImmunizationBatchController(unittest.TestCase):
         """it should delete Immunization and return imms id"""
 
         imms_id = str(uuid.uuid4())
+        last_imms_pk = _make_immunization_pk(imms_id)
         imms = create_covid_immunization(imms_id)
         message_body = {
             "supplier": "test_supplier",
@@ -266,7 +279,7 @@ class TestDeleteImmunizationBatchController(unittest.TestCase):
 
         self.mock_service.delete_immunization.return_value = imms_id
 
-        result = self.controller.send_request_to_dynamo(message_body, self.mock_table, True)
+        result = self.controller.send_request_to_dynamo(message_body, self.mock_table, last_imms_pk)
 
         self.assertEqual(result, imms_id)
         self.mock_service.delete_immunization.assert_called_once_with(
@@ -274,13 +287,14 @@ class TestDeleteImmunizationBatchController(unittest.TestCase):
             supplier_system=message_body["supplier"],
             vax_type=message_body["vax_type"],
             table=self.mock_table,
-            is_present=True,
+            last_imms_pk=last_imms_pk,
         )
 
     def test_send_request_to_dynamo_delete_badrequest(self):
         """it should return error since it got failed in initial validation"""
 
         imms_id = str(uuid.uuid4())
+        last_imms_pk = _make_immunization_pk(imms_id)
         imms = create_covid_immunization(imms_id)
         update_result = CustomValidationError(
             message="Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value does not exists"
@@ -294,7 +308,7 @@ class TestDeleteImmunizationBatchController(unittest.TestCase):
 
         self.mock_service.delete_immunization.return_value = update_result
 
-        result = self.controller.send_request_to_dynamo(message_body, self.mock_table, True)
+        result = self.controller.send_request_to_dynamo(message_body, self.mock_table, last_imms_pk)
 
         self.assertEqual(result, update_result)
         self.mock_service.delete_immunization.assert_called_once_with(
@@ -302,13 +316,14 @@ class TestDeleteImmunizationBatchController(unittest.TestCase):
             supplier_system=message_body["supplier"],
             vax_type=message_body["vax_type"],
             table=self.mock_table,
-            is_present=True,
+            last_imms_pk=last_imms_pk,
         )
 
     def test_send_request_to_dynamo_delete_resource_not_found(self):
         """it should not delete the Immunization since no resource found for the record"""
 
         imms_id = str(uuid.uuid4())
+        last_imms_pk = _make_immunization_pk(imms_id)
         imms = create_covid_immunization(imms_id)
         update_result = ResourceNotFoundError("Immunization", "test#123")
         message_body = {
@@ -320,7 +335,7 @@ class TestDeleteImmunizationBatchController(unittest.TestCase):
 
         self.mock_service.delete_immunization.return_value = update_result
 
-        result = self.controller.send_request_to_dynamo(message_body, self.mock_table, True)
+        result = self.controller.send_request_to_dynamo(message_body, self.mock_table, last_imms_pk)
 
         self.assertEqual(result, update_result)
         self.mock_service.delete_immunization.assert_called_once_with(
@@ -328,13 +343,14 @@ class TestDeleteImmunizationBatchController(unittest.TestCase):
             supplier_system=message_body["supplier"],
             vax_type=message_body["vax_type"],
             table=self.mock_table,
-            is_present=True,
+            last_imms_pk=last_imms_pk,
         )
 
     def test_send_request_to_dynamo_delete_unhandled_error(self):
         """it should not delete the Immunization since the error occoured in db"""
 
         imms_id = str(uuid.uuid4())
+        last_imms_pk = _make_immunization_pk(imms_id)
         imms = create_covid_immunization(imms_id)
         update_result = UnhandledResponseError(response="Non-200 response from dynamodb", message="connection timeout")
         message_body = {
@@ -348,7 +364,7 @@ class TestDeleteImmunizationBatchController(unittest.TestCase):
             "Non-200 response from dynamodb", "connection timeout"
         )
 
-        result = self.controller.send_request_to_dynamo(message_body, self.mock_table, True)
+        result = self.controller.send_request_to_dynamo(message_body, self.mock_table, last_imms_pk)
 
         self.assertEqual(result, update_result)
         self.mock_service.delete_immunization.assert_called_once_with(
@@ -356,7 +372,7 @@ class TestDeleteImmunizationBatchController(unittest.TestCase):
             supplier_system=message_body["supplier"],
             vax_type=message_body["vax_type"],
             table=self.mock_table,
-            is_present=True,
+            last_imms_pk=last_imms_pk,
         )
 
 

@@ -3,7 +3,6 @@
 import base64
 import logging
 import os
-import time
 from datetime import datetime
 
 import simplejson as json
@@ -59,13 +58,13 @@ def create_diagnostics_dictionary(error: Exception) -> dict:
 def forward_request_to_dynamo(
     message_body: dict,
     table: DynamoDBServiceResource,
-    is_present: bool,
+    last_imms_pk: str,
     batch_controller: ImmunizationBatchController,
 ):
     """Forwards the request to the Imms API (where possible) and updates the ack file with the outcome"""
     row_id = message_body.get("row_id")
     logger.info("FORWARDED MESSAGE: ID %s", row_id)
-    return batch_controller.send_request_to_dynamo(message_body, table, is_present)
+    return batch_controller.send_request_to_dynamo(message_body, table, last_imms_pk)
 
 
 def forward_lambda_handler(event, _):
@@ -73,7 +72,7 @@ def forward_lambda_handler(event, _):
     logger.info("Processing started")
     table = create_table()
     filename_to_events_mapper = BatchFilenameToEventsMapper()
-    array_of_identifiers = []
+    list_of_identifiers = {}
     controller = make_batch_controller()
 
     for record in event["Records"]:
@@ -108,22 +107,13 @@ def forward_lambda_handler(event, _):
                 raise MessageNotSuccessfulError("Server error - FHIR JSON not correctly sent to forwarder")
 
             # Check if the identifier is already present in the array
-            identifier_already_present = False
             identifier_system = fhir_json["identifier"][0]["system"]
             identifier_value = fhir_json["identifier"][0]["value"]
             identifier = f"{identifier_system}#{identifier_value}"
+            last_imms_pk = list_of_identifiers.get(identifier)
 
-            if identifier in array_of_identifiers:
-                identifier_already_present = True
-                delay_milliseconds = 30
-                # A basic workaround by the existing team to ensure that subsequent operations e.g. an update after an
-                # initial create for the same item complete successfully. Consider using strongly consistent reads
-                # instead: VED-958
-                time.sleep(delay_milliseconds / 1000)
-            else:
-                array_of_identifiers.append(identifier)
-
-            imms_pk = forward_request_to_dynamo(incoming_message_body, table, identifier_already_present, controller)
+            imms_pk = forward_request_to_dynamo(incoming_message_body, table, last_imms_pk, controller)
+            list_of_identifiers[identifier] = imms_pk
             logger.info("Successfully processed message. Local id: %s, PK: %s", local_id, imms_pk)
 
         except Exception as error:  # pylint: disable = broad-exception-caught

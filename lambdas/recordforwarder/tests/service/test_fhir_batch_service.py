@@ -56,7 +56,7 @@ class TestCreateImmunizationBatchService(TestFhirBatchServiceBase):
             supplier_system="test_supplier",
             vax_type="test_vax",
             table=self.mock_table,
-            is_present=True,
+            last_imms_pk=None,
         )
         self.assertEqual(result, imms_id)
 
@@ -72,7 +72,7 @@ class TestCreateImmunizationBatchService(TestFhirBatchServiceBase):
                 supplier_system="test_supplier",
                 vax_type="test_vax",
                 table=self.mock_table,
-                is_present=True,
+                last_imms_pk=None,
             )
         self.assertTrue(expected_msg in error.exception.message)
         self.mock_repo.create_immunization.assert_not_called()
@@ -92,7 +92,7 @@ class TestCreateImmunizationBatchService(TestFhirBatchServiceBase):
                 supplier_system="test_supplier",
                 vax_type="test_vax",
                 table=self.mock_table,
-                is_present=True,
+                last_imms_pk=None,
             )
         self.assertTrue(expected_msg in error.exception.message)
         self.mock_repo.create_immunization.assert_not_called()
@@ -127,7 +127,7 @@ class TestUpdateImmunizationBatchService(TestFhirBatchServiceBase):
             supplier_system="test_supplier",
             vax_type="test_vax",
             table=self.mock_table,
-            is_present=True,
+            last_imms_pk=None,
         )
         self.assertEqual(result, imms_id)
 
@@ -143,7 +143,7 @@ class TestUpdateImmunizationBatchService(TestFhirBatchServiceBase):
                 supplier_system="test_supplier",
                 vax_type="test_vax",
                 table=self.mock_table,
-                is_present=True,
+                last_imms_pk=None,
             )
         self.assertTrue(expected_msg in error.exception.message)
         self.mock_repo.update_immunization.assert_not_called()
@@ -164,7 +164,7 @@ class TestUpdateImmunizationBatchService(TestFhirBatchServiceBase):
                 supplier_system="test_supplier",
                 vax_type="test_vax",
                 table=self.mock_table,
-                is_present=True,
+                last_imms_pk=None,
             )
         self.assertTrue(expected_msg in error.exception.message)
         self.mock_repo.update_immunization.assert_not_called()
@@ -190,7 +190,7 @@ class TestDeleteImmunizationBatchService(unittest.TestCase):
             supplier_system="test_supplier",
             vax_type="test_vax",
             table=self.mock_table,
-            is_present=True,
+            last_imms_pk=None,
         )
         self.assertEqual(result, imms_id)
 

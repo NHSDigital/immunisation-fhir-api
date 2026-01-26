@@ -19,7 +19,7 @@ class ImmunizationBatchController:
         self.immunization_repo = immunization_repo
         self.fhir_service = fhir_service
 
-    def send_request_to_dynamo(self, message_body: dict, table: any, is_present: bool):
+    def send_request_to_dynamo(self, message_body: dict, table: any, last_imms_pk: str):
         """Sends request to the Imms API. Returns the imms id."""
         supplier = message_body.get("supplier")
         fhir_json = message_body.get("fhir_json")
@@ -37,5 +37,5 @@ class ImmunizationBatchController:
             supplier_system=supplier,
             vax_type=vax_type,
             table=table,
-            is_present=is_present,
+            last_imms_pk=last_imms_pk,
         )

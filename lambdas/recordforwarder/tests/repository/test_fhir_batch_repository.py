@@ -1,5 +1,6 @@
 import os
 import unittest
+from copy import deepcopy
 from unittest.mock import ANY, MagicMock, Mock, patch
 from uuid import uuid4
 
@@ -34,6 +35,7 @@ class TestImmunizationBatchRepository(unittest.TestCase):
         self.repository = ImmunizationBatchRepository()
         self.table.put_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
         self.table.query = MagicMock(return_value={})
+        self.table.get_item = MagicMock(return_value=None)
         self.immunization = create_covid_immunization_dict(imms_id)
         self.table.update_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
         self.mock_redis = Mock()
@@ -55,13 +57,13 @@ class TestCreateImmunization(TestImmunizationBatchRepository):
                     del self.immunization["contained"][i]
                     break
 
-    def create_immunization_test_logic(self, is_present, remove_nhs):
+    def create_immunization_test_logic(self, last_imms_pk, remove_nhs):
         """Common logic for testing immunization creation."""
         self.mock_redis.hget.side_effect = ["COVID"]
         self.mock_redis_getter.return_value = self.mock_redis
         self.modify_immunization(remove_nhs)
 
-        self.repository.create_immunization(self.immunization, "supplier", "vax-type", self.table, is_present)
+        self.repository.create_immunization(self.immunization, "supplier", "vax-type", self.table, last_imms_pk)
         item = self.table.put_item.call_args.kwargs["Item"]
 
         self.table.put_item.assert_called_with(
@@ -81,12 +83,12 @@ class TestCreateImmunization(TestImmunizationBatchRepository):
 
     def test_create_immunization_with_nhs_number(self):
         """Test creating Immunization with NHS number."""
-        self.create_immunization_test_logic(is_present=True, remove_nhs=False)
+        self.create_immunization_test_logic(last_imms_pk=None, remove_nhs=False)
 
     def test_create_immunization_without_nhs_number(self):
         """Test creating Immunization without NHS number."""
 
-        self.create_immunization_test_logic(is_present=False, remove_nhs=True)
+        self.create_immunization_test_logic(last_imms_pk=None, remove_nhs=True)
 
     def test_create_immunization_duplicate(self):
         """it should not create Immunization since the request is duplicate"""
@@ -143,62 +145,65 @@ class TestUpdateImmunization(TestImmunizationBatchRepository):
     def test_update_immunization(self):
         """it should update Immunization record"""
 
+        test_item = {
+            "PK": _make_immunization_pk(imms_id),
+            "Resource": json.dumps(self.immunization),
+            "Version": 1,
+        }
+        test_item_deleted = deepcopy(test_item)
+        test_item_deleted["DeletedAt"] = "20210101"
+
+        test_item_reinstated = deepcopy(test_item)
+        test_item_reinstated["DeletedAt"] = "reinstated"
+
         test_cases = [
             # Update scenario
             {
+                "get_item_response": {
+                    "Item": test_item,
+                },
                 "query_response": {
                     "Count": 1,
-                    "Items": [
-                        {
-                            "PK": _make_immunization_pk(imms_id),
-                            "Resource": json.dumps(self.immunization),
-                            "Version": 1,
-                        }
-                    ],
+                    "Items": [test_item],
                 },
                 "expected_extra_values": {},  # No extra assertion values
             },
             # Reinstated scenario
             {
+                "get_item_response": {
+                    "Item": test_item_deleted,
+                },
                 "query_response": {
                     "Count": 1,
-                    "Items": [
-                        {
-                            "PK": _make_immunization_pk(imms_id),
-                            "Resource": json.dumps(self.immunization),
-                            "Version": 1,
-                            "DeletedAt": "20210101",
-                        }
-                    ],
+                    "Items": [test_item_deleted],
                 },
                 "expected_extra_values": {":respawn": "reinstated"},
             },
             # Update reinstated scenario
             {
+                "get_item_response": {
+                    "Item": test_item_reinstated,
+                },
                 "query_response": {
                     "Count": 1,
-                    "Items": [
-                        {
-                            "PK": _make_immunization_pk(imms_id),
-                            "Resource": json.dumps(self.immunization),
-                            "Version": 1,
-                            "DeletedAt": "reinstated",
-                        }
-                    ],
+                    "Items": [test_item_reinstated],
                 },
                 "expected_extra_values": {},
             },
         ]
-        for is_present in [True, False]:
+        for last_imms_pk in [_make_immunization_pk(imms_id), None]:
             for case in test_cases:
-                with self.subTest(is_present=is_present, case=case):
-                    self.table.query = MagicMock(return_value=case["query_response"])
+                with self.subTest(last_imms_pk=last_imms_pk, case=case):
+                    if last_imms_pk:
+                        self.table.get_item = MagicMock(return_value=case["get_item_response"])
+                    else:
+                        self.table.query = MagicMock(return_value=case["query_response"])
                     response = self.repository.update_immunization(
                         self.immunization,
                         "supplier",
                         "vax-type",
                         self.table,
-                        is_present,
+                        last_imms_pk,
                     )
                     expected_values = {
                         ":timestamp": ANY,
@@ -305,21 +310,27 @@ class TestDeleteImmunization(TestImmunizationBatchRepository):
     def test_delete_immunization(self):
         """it should delete Immunization record"""
 
-        self.table.query = MagicMock(
-            return_value={
-                "Count": 1,
-                "Items": [
-                    {
-                        "PK": _make_immunization_pk(imms_id),
-                        "Resource": json.dumps(self.immunization),
-                        "Version": 1,
-                    }
-                ],
-            }
-        )
-        for is_present in [True, False]:
+        test_item = {
+            "PK": _make_immunization_pk(imms_id),
+            "Resource": json.dumps(self.immunization),
+            "Version": 1,
+        }
+
+        get_item_response = {
+            "Item": test_item,
+        }
+        query_response = {
+            "Count": 1,
+            "Items": [test_item],
+        }
+
+        for last_imms_pk in [_make_immunization_pk(imms_id), None]:
+            if last_imms_pk:
+                self.table.get_item = MagicMock(return_value=get_item_response)
+            else:
+                self.table.query = MagicMock(return_value=query_response)
             response = self.repository.delete_immunization(
-                self.immunization, "supplier", "vax-type", self.table, is_present
+                self.immunization, "supplier", "vax-type", self.table, last_imms_pk
             )
             self.table.update_item.assert_called_with(
                 Key={"PK": _make_immunization_pk(imms_id)},

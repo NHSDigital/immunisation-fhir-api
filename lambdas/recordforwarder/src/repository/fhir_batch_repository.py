@@ -8,7 +8,6 @@ import botocore.exceptions
 import simplejson as json
 from boto3.dynamodb.conditions import Attr, Key
 
-from common.clients import logger
 from common.models.errors import (
     IdentifierDuplicationError,
     ResourceFoundError,
@@ -32,29 +31,24 @@ def _make_patient_pk(_id: str):
     return f"Patient#{_id}"
 
 
-def _query_identifier(table, index, pk, identifier, is_present):
-    retries = 0
-    delay_milliseconds = 60
-    if is_present:
-        while retries < 30:
-            queryresponse = table.query(IndexName=index, KeyConditionExpression=Key(pk).eq(identifier), Limit=1)
-
-            if queryresponse.get("Count", 0) > 0:
-                return queryresponse
-
-            if retries > 6:
-                logger.info(f"{identifier}: Crossed {retries} retries")
-
-            retries += 1
-            # Delay time in milliseconds
-            time.sleep(delay_milliseconds / 1000)
-
-        return None
+def _query_identifier(table, index, pk, identifier, last_imms_pk):
+    if last_imms_pk:
+        response = table.get_item(Key={"PK": last_imms_pk}, ConsistentRead=True)
+        queryresponse = (
+            {
+                "Count": 1,
+                "Items": [response.get("Item")],
+            }
+            if response
+            else None
+        )
     else:
         queryresponse = table.query(IndexName=index, KeyConditionExpression=Key(pk).eq(identifier), Limit=1)
 
-        if queryresponse.get("Count", 0) > 0:
-            return queryresponse
+    if queryresponse and queryresponse.get("Count", 0) > 0:
+        return queryresponse
+
+    return None
 
 
 @dataclass
@@ -93,13 +87,13 @@ class ImmunizationBatchRepository:
         supplier_system: str,
         vax_type: str,
         table: any,
-        is_present: bool,
+        last_imms_pk: str,
     ) -> dict:
         new_id = str(uuid.uuid4())
         immunization["id"] = new_id
         attr = RecordAttributes(immunization, vax_type, supplier_system, 0)
 
-        query_response = _query_identifier(table, "IdentifierGSI", "IdentifierPK", attr.identifier, is_present)
+        query_response = _query_identifier(table, "IdentifierGSI", "IdentifierPK", attr.identifier, last_imms_pk)
 
         if query_response is not None:
             raise IdentifierDuplicationError(identifier=attr.identifier)
@@ -138,10 +132,10 @@ class ImmunizationBatchRepository:
         supplier_system: str,
         vax_type: str,
         table: any,
-        is_present: bool,
+        last_imms_pk: str,
     ) -> dict:
         identifier = self._identifier_response(immunization)
-        query_response = _query_identifier(table, "IdentifierGSI", "IdentifierPK", identifier, is_present)
+        query_response = _query_identifier(table, "IdentifierGSI", "IdentifierPK", identifier, last_imms_pk)
         if query_response is None:
             raise ResourceNotFoundError(resource_type="Immunization", resource_id=identifier)
         old_id, version = self._get_id_version(query_response)
@@ -166,10 +160,10 @@ class ImmunizationBatchRepository:
         supplier_system: str,
         _: str,  # vax_type not used
         table: any,
-        is_present: bool,
+        last_imms_pk: str,
     ) -> dict:
         identifier = self._identifier_response(immunization)
-        query_response = _query_identifier(table, "IdentifierGSI", "IdentifierPK", identifier, is_present)
+        query_response = _query_identifier(table, "IdentifierGSI", "IdentifierPK", identifier, last_imms_pk)
         if query_response is None:
             raise ResourceNotFoundError(resource_type="Immunization", resource_id=identifier)
         try:
