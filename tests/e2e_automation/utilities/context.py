@@ -36,6 +36,7 @@ class ScenarioContext:
         self.expected_version = 1
         self.eTag = None
         self.S3_env = None
+        self.sub_environment = None
         self.fileName = None
         self.vaccine_df = None
         self.file_extension = "csv"
