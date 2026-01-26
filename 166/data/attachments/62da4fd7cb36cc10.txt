@@ -1,7 +1,0 @@
-❌ Step failed! **Valid vaccination record is created with Patient 'Mod11_NHS' and vaccine_type 'RSV'** 
- Error: <html>
-<head><title>403 Forbidden</title></head>
-<body>
-<center><h1>403 Forbidden</h1></center>
-</body>
-</html>
