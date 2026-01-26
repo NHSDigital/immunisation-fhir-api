@@ -1,0 +1,2 @@
+❌ Step failed! **I have created a valid vaccination record** 
+ Error: Expecting value: line 1 column 1 (char 0)

@@ -1,0 +1,6 @@
+❌ Step failed! **The request is rejected** 
+ Error: got unexpected mTLS error msg: <ExceptionInfo ConnectionError(MaxRetryError('HTTPSConnectionPool(host=\'pr-1160.imms.dev.vds.platform.nhs.uk\', port=443): Max retri...k\', port=443): Failed to resolve \'pr-1160.imms.dev.vds.platform.nhs.uk\' ([Errno -2] Name or service not known)"))')) tblen=6>
+assert "<ExceptionIn...)')) tblen=6>" == "<ExceptionIn...'))) tblen=6>"
+  
+  - <ExceptionInfo ConnectionError(ProtocolError('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))) tblen=6>
+  + <ExceptionInfo ConnectionError(MaxRetryError('HTTPSConnectionPool(host=\'pr-1160.imms.dev.vds.platform.nhs.uk\', port=443): Max retri...k\', port=443): Failed to resolve \'pr-1160.imms.dev.vds.platform.nhs.uk\' ([Errno -2] Name or service not known)"))')) tblen=6>

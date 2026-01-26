@@ -1,0 +1,3 @@
+❌ Step failed! **Valid vaccination record is created with Patient 'SFlag' and vaccine_type 'FLU'** 
+ Error: 
+ Expected status code: 201, but got: 404. Response: {'message': 'Domain not found'} 

@@ -1,0 +1,2 @@
+❌ Step failed! **Valid vaccination record is created with Patient 'Random' and vaccine_type 'FLU'** 
+ Error: Expecting value: line 1 column 1 (char 0)
