@@ -273,7 +273,7 @@ jobs:
 
       - name: Add link to Allure report
         if: always()
-        uses: actions/github-script@v6
+        uses: actions/github-script@v8
         with:
           script: |
             const url = `https://${context.repo.owner}.github.io/${context.repo.repo}/`;
