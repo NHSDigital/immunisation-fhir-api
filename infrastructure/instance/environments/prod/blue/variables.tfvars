@@ -8,5 +8,5 @@ error_alarm_notifications_enabled = true
 mesh_no_invocation_period_seconds = 86400
 create_mesh_processor             = true
 has_sub_environment_scope         = false
-dspp_submission_s3_bucket_name = "nhsd-dspp-core-prod-s3-submission-upload"
-dspp_submission_kms_key_alias = "nhsd-dspp-core-prod-s3-submission-upload-key"
+dspp_submission_s3_bucket_name    = "nhsd-dspp-core-prod-s3-submission-upload"
+dspp_submission_kms_key_alias     = "nhsd-dspp-core-prod-s3-submission-upload-key"
