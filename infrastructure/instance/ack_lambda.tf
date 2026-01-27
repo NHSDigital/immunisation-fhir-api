@@ -18,7 +18,7 @@ resource "aws_ecr_repository" "ack_lambda_repository" {
 }
 
 resource "aws_ecr_lifecycle_policy" "cleanup" {
-  repository = aws_ecr_repository.file_name_processor_lambda_repository.name
+  repository = aws_ecr_repository.ack_lambda_repository.name
   policy = jsonencode({
     rules = [{
       rulePriority = 1
