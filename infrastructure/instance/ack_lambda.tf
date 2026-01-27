@@ -17,6 +17,24 @@ resource "aws_ecr_repository" "ack_lambda_repository" {
   force_delete = local.is_temp
 }
 
+resource "aws_ecr_lifecycle_policy" "cleanup" {
+  repository = aws_ecr_repository.file_name_processor_lambda_repository.name
+  policy = jsonencode({
+    rules = [{
+      rulePriority = 1
+      description  = "Keep last 5 images"
+      selection = {
+        tagStatus   = "any"
+        countType   = "imageCountMoreThan"
+        countNumber = 5
+      }
+      action = {
+        type = "expire"
+      }
+    }]
+  })
+}
+
 # Module for building and pushing Docker image to ECR
 module "ack_processor_docker_image" {
   source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
@@ -24,25 +42,8 @@ module "ack_processor_docker_image" {
   docker_file_path = "./ack_backend/Dockerfile"
   create_ecr_repo  = false
   ecr_repo         = aws_ecr_repository.ack_lambda_repository.name
-  ecr_repo_lifecycle_policy = jsonencode({
-    "rules" : [
-      {
-        "rulePriority" : 1,
-        "description" : "Keep only the last 2 images",
-        "selection" : {
-          "tagStatus" : "any",
-          "countType" : "imageCountMoreThan",
-          "countNumber" : 2
-        },
-        "action" : {
-          "type" : "expire"
-        }
-      }
-    ]
-  })
-
-  platform    = "linux/amd64"
-  source_path = abspath("${path.root}/../../lambdas")
+  platform         = "linux/amd64"
+  source_path      = abspath("${path.root}/../../lambdas")
   triggers = {
     dir_sha        = local.ack_lambda_dir_sha
     shared_dir_sha = local.shared_dir_sha
