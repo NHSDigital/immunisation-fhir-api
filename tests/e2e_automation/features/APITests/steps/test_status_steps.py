@@ -2,13 +2,21 @@ import os
 
 import pytest
 import requests
-from pytest_bdd import scenarios, then, when
+from pytest_bdd import given, scenarios, then, when
+from utilities.apigee.apigee_env_helpers import INT_PROXY_NAME, get_proxy_name
 from utilities.context import ScenarioContext
 from utilities.http_requests_session import http_requests_session
 
 scenarios("APITests/status.feature")
 
 CONNECTION_ABORTED_ERROR_MSG = "<ExceptionInfo ConnectionError(ProtocolError('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))) tblen=6>"
+
+
+@given("the status API key is available in the given environment")
+def status_api_key_is_available(context: ScenarioContext):
+    """The status API key is available in all environments except for INT/PREPROD"""
+    if get_proxy_name() == INT_PROXY_NAME:
+        pytest.skip("Status API test skipped in INT environment")
 
 
 @when("I send a request to the ping endpoint")

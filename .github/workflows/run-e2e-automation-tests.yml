@@ -210,13 +210,14 @@ jobs:
       - name: Run Pytest-BDD ${{ inputs.service_under_test }} tests with the ${{ inputs.suite_to_run }} filter
         working-directory: tests/e2e_automation
         env:
-          S3_env: ${{ inputs.sub_environment }}
+          S3_env: ${{ startsWith(inputs.sub_environment, 'int-') && 'preprod' || inputs.sub_environment }}
           auth_url: https://${{ env.APIGEE_AUTH_ENV }}.api.service.nhs.uk/oauth2-mock/authorize
           token_url: https://${{ env.APIGEE_AUTH_ENV }}.api.service.nhs.uk/oauth2-mock/token
           baseUrl: https://${{ inputs.apigee_environment }}.api.service.nhs.uk/${{env.SERVICE_BASE_PATH}}
           callback_url: "https://oauth.pstmn.io/v1/callback"
           username: ${{ secrets.CIS2_E2E_USERNAME }}
           scope: "nhs-cis2"
+          sub_environment: ${{ inputs.sub_environment }}
           USE_STATIC_APPS: ${{ inputs.apigee_environment == 'int' && 'True' || 'False' }}
           Postman_Auth_client_Id: ${{ secrets.Postman_Auth_client_Id }} # The following static app values are only needed in INT
           Postman_Auth_client_Secret: ${{ secrets.Postman_Auth_client_Secret }}
@@ -264,7 +265,7 @@ jobs:
 
       - name: Publish Allure report to GitHub Pages
         if: always()
-        uses: peaceiris/actions-gh-pages@373f7f263a76c20808c831209c920827a82a2847
+        uses: peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d475ec49e8ef4d45e
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
