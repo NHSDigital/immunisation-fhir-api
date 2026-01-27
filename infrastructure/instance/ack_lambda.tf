@@ -13,8 +13,9 @@ resource "aws_ecr_repository" "ack_lambda_repository" {
   image_scanning_configuration {
     scan_on_push = true
   }
-  name         = "${local.short_prefix}-ack-repo"
-  force_delete = local.is_temp
+  name                 = "${local.short_prefix}-ack-repo"
+  image_tag_mutability = "IMMUTABLE"
+  force_delete         = local.is_temp
 }
 
 resource "aws_ecr_lifecycle_policy" "cleanup" {
