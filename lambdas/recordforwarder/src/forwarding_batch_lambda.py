@@ -106,7 +106,8 @@ def forward_lambda_handler(event, _):
             if not (fhir_json := incoming_message_body.get("fhir_json")):
                 raise MessageNotSuccessfulError("Server error - FHIR JSON not correctly sent to forwarder")
 
-            # Check if the identifier is already present in the array
+            # Check if the identifier is already present in the list i.e. if we have already processed a
+            # message for the same identifier in this batch
             identifier_system = fhir_json["identifier"][0]["system"]
             identifier_value = fhir_json["identifier"][0]["value"]
             identifier = f"{identifier_system}#{identifier_value}"

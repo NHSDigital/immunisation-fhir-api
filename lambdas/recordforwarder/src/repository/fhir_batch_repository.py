@@ -33,6 +33,7 @@ def _make_patient_pk(_id: str):
 
 def _query_identifier(table, index, pk, identifier, last_imms_pk):
     if last_imms_pk:
+        # We have already processed a message for the same identifier in this batch
         response = table.get_item(Key={"PK": last_imms_pk}, ConsistentRead=True)
         queryresponse = (
             {
