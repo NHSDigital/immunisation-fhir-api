@@ -22,11 +22,11 @@ resource "aws_ecr_lifecycle_policy" "cleanup" {
   policy = jsonencode({
     rules = [{
       rulePriority = 1
-      description  = "Keep last 5 images"
+      description  = "Keep last 2 images"
       selection = {
         tagStatus   = "any"
         countType   = "imageCountMoreThan"
-        countNumber = 5
+        countNumber = 2
       }
       action = {
         type = "expire"
@@ -38,7 +38,6 @@ resource "aws_ecr_lifecycle_policy" "cleanup" {
 # Module for building and pushing Docker image to ECR
 module "ack_processor_docker_image" {
   source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version          = "8.3.0"
   docker_file_path = "./ack_backend/Dockerfile"
   create_ecr_repo  = false
   ecr_repo         = aws_ecr_repository.ack_lambda_repository.name
