@@ -32,7 +32,7 @@ def _make_patient_pk(_id: str) -> str:
     return f"Patient#{_id}"
 
 
-def _query_identifier(table: any, identifier: str, imms_pk: str | None) -> dict:
+def _query_identifier(table: any, identifier: str, imms_pk: str | None) -> dict | None:
     if imms_pk is not None:
         # We have already processed a message for the same identifier in this batch
         response = table.get_item(Key={"PK": imms_pk}, ConsistentRead=True)
