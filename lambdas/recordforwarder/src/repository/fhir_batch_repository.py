@@ -2,6 +2,7 @@ import os
 import time
 import uuid
 from dataclasses import dataclass
+from typing import Tuple
 
 import boto3
 import botocore.exceptions
@@ -23,19 +24,19 @@ def create_table(region_name="eu-west-2"):
     return dynamodb.Table(table_name)
 
 
-def _make_immunization_pk(_id: str):
+def _make_immunization_pk(_id: str) -> str:
     return f"Immunization#{_id}"
 
 
-def _make_patient_pk(_id: str):
+def _make_patient_pk(_id: str) -> str:
     return f"Patient#{_id}"
 
 
-def _query_identifier(table, index, pk, identifier, last_imms_pk):
-    if last_imms_pk:
+def _query_identifier(table: any, identifier: str, imms_pk: str | None) -> dict:
+    if imms_pk is not None:
         # We have already processed a message for the same identifier in this batch
-        response = table.get_item(Key={"PK": last_imms_pk}, ConsistentRead=True)
-        queryresponse = (
+        response = table.get_item(Key={"PK": imms_pk}, ConsistentRead=True)
+        query_response = (
             {
                 "Count": 1,
                 "Items": [response.get("Item")],
@@ -44,10 +45,12 @@ def _query_identifier(table, index, pk, identifier, last_imms_pk):
             else None
         )
     else:
-        queryresponse = table.query(IndexName=index, KeyConditionExpression=Key(pk).eq(identifier), Limit=1)
+        query_response = table.query(
+            IndexName="IdentifierGSI", KeyConditionExpression=Key("IdentifierPK").eq(identifier), Limit=1
+        )
 
-    if queryresponse and queryresponse.get("Count", 0) > 0:
-        return queryresponse
+    if query_response and query_response.get("Count", 0) > 0:
+        return query_response
 
     return None
 
@@ -88,14 +91,13 @@ class ImmunizationBatchRepository:
         supplier_system: str,
         vax_type: str,
         table: any,
-        last_imms_pk: str,
-    ) -> dict:
+        imms_pk: str | None,
+    ) -> str:
         new_id = str(uuid.uuid4())
         immunization["id"] = new_id
         attr = RecordAttributes(immunization, vax_type, supplier_system, 0)
 
-        query_response = _query_identifier(table, "IdentifierGSI", "IdentifierPK", attr.identifier, last_imms_pk)
-
+        query_response = _query_identifier(table, attr.identifier, imms_pk)
         if query_response is not None:
             raise IdentifierDuplicationError(identifier=attr.identifier)
 
@@ -133,10 +135,10 @@ class ImmunizationBatchRepository:
         supplier_system: str,
         vax_type: str,
         table: any,
-        last_imms_pk: str,
-    ) -> dict:
+        imms_pk: str | None,
+    ) -> str:
         identifier = self._identifier_response(immunization)
-        query_response = _query_identifier(table, "IdentifierGSI", "IdentifierPK", identifier, last_imms_pk)
+        query_response = _query_identifier(table, identifier, imms_pk)
         if query_response is None:
             raise ResourceNotFoundError(resource_type="Immunization", resource_id=identifier)
         old_id, version = self._get_id_version(query_response)
@@ -161,10 +163,10 @@ class ImmunizationBatchRepository:
         supplier_system: str,
         _: str,  # vax_type not used
         table: any,
-        last_imms_pk: str,
-    ) -> dict:
+        imms_pk: str | None,
+    ) -> str:
         identifier = self._identifier_response(immunization)
-        query_response = _query_identifier(table, "IdentifierGSI", "IdentifierPK", identifier, last_imms_pk)
+        query_response = _query_identifier(table, identifier, imms_pk)
         if query_response is None:
             raise ResourceNotFoundError(resource_type="Immunization", resource_id=identifier)
         try:
@@ -195,32 +197,32 @@ class ImmunizationBatchRepository:
                 )
 
     @staticmethod
-    def _handle_dynamo_response(response, imms_id):
+    def _handle_dynamo_response(response: any, imms_id: str) -> str:
         if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
             return imms_id
         else:
             raise UnhandledResponseError(message="Non-200 response from dynamodb", response=response)
 
     @staticmethod
-    def _identifier_response(immunization: any):
+    def _identifier_response(immunization: any) -> str:
         system_id = immunization["identifier"][0]["system"]
         system_value = immunization["identifier"][0]["value"]
         return f"{system_id}#{system_value}"
 
     @staticmethod
-    def _get_pk(query_response: any):
+    def _get_pk(query_response: any) -> str:
         if query_response.get("Count") == 1:
             return query_response["Items"][0]["PK"]
 
     @staticmethod
-    def _get_id_version(query_response: any):
+    def _get_id_version(query_response: any) -> Tuple[str, int]:
         if query_response.get("Count") == 1:
             old_id = query_response["Items"][0]["PK"]
             version = query_response["Items"][0]["Version"]
             return old_id, version
 
     @staticmethod
-    def _get_record_status(query_response: any):
+    def _get_record_status(query_response: any) -> Tuple[bool, bool, bool]:
         deleted_at_required = False
         update_reinstated = False
         is_reinstate = False

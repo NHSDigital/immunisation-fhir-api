@@ -20,8 +20,8 @@ class ImmunizationBatchService:
         supplier_system: str,
         vax_type: str,
         table: any,
-        last_imms_pk: str,
-    ):
+        imms_pk: str | None,
+    ) -> str:
         """
         Creates an Immunization if it does not exits and return the ID back if successful.
         Exception will be raised if resource exits. Multiple calls to this method won't change
@@ -32,7 +32,7 @@ class ImmunizationBatchService:
         except (ValueError, MandatoryError) as error:
             raise CustomValidationError(message=str(error)) from error
 
-        return self.immunization_repo.create_immunization(immunization, supplier_system, vax_type, table, last_imms_pk)
+        return self.immunization_repo.create_immunization(immunization, supplier_system, vax_type, table, imms_pk)
 
     def update_immunization(
         self,
@@ -40,8 +40,8 @@ class ImmunizationBatchService:
         supplier_system: str,
         vax_type: str,
         table: any,
-        last_imms_pk: str,
-    ):
+        imms_pk: str | None,
+    ) -> str:
         """
         Updates an Immunization if it exists and return the ID back if successful.
         Exception will be raised if resource didn't exist.Multiple calls to this method won't change
@@ -52,7 +52,7 @@ class ImmunizationBatchService:
         except (ValueError, MandatoryError) as error:
             raise CustomValidationError(message=str(error)) from error
 
-        return self.immunization_repo.update_immunization(immunization, supplier_system, vax_type, table, last_imms_pk)
+        return self.immunization_repo.update_immunization(immunization, supplier_system, vax_type, table, imms_pk)
 
     def delete_immunization(
         self,
@@ -60,11 +60,11 @@ class ImmunizationBatchService:
         supplier_system: str,
         vax_type: str,
         table: any,
-        last_imms_pk: str,
-    ):
+        imms_pk: str | None,
+    ) -> str:
         """
         Delete an Immunization if it exists and return the ID back if successful.
         Exception will be raised if resource didn't exist.Multiple calls to this method won't change
         the record in the database.
         """
-        return self.immunization_repo.delete_immunization(immunization, supplier_system, vax_type, table, last_imms_pk)
+        return self.immunization_repo.delete_immunization(immunization, supplier_system, vax_type, table, imms_pk)

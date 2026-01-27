@@ -57,13 +57,13 @@ class TestCreateImmunization(TestImmunizationBatchRepository):
                     del self.immunization["contained"][i]
                     break
 
-    def create_immunization_test_logic(self, last_imms_pk, remove_nhs):
+    def create_immunization_test_logic(self, imms_pk, remove_nhs):
         """Common logic for testing immunization creation."""
         self.mock_redis.hget.side_effect = ["COVID"]
         self.mock_redis_getter.return_value = self.mock_redis
         self.modify_immunization(remove_nhs)
 
-        self.repository.create_immunization(self.immunization, "supplier", "vax-type", self.table, last_imms_pk)
+        self.repository.create_immunization(self.immunization, "supplier", "vax-type", self.table, imms_pk)
         item = self.table.put_item.call_args.kwargs["Item"]
 
         self.table.put_item.assert_called_with(
@@ -83,12 +83,12 @@ class TestCreateImmunization(TestImmunizationBatchRepository):
 
     def test_create_immunization_with_nhs_number(self):
         """Test creating Immunization with NHS number."""
-        self.create_immunization_test_logic(last_imms_pk=None, remove_nhs=False)
+        self.create_immunization_test_logic(imms_pk=None, remove_nhs=False)
 
     def test_create_immunization_without_nhs_number(self):
         """Test creating Immunization without NHS number."""
 
-        self.create_immunization_test_logic(last_imms_pk=None, remove_nhs=True)
+        self.create_immunization_test_logic(imms_pk=None, remove_nhs=True)
 
     def test_create_immunization_duplicate(self):
         """it should not create Immunization since the request is duplicate"""
@@ -101,7 +101,7 @@ class TestCreateImmunization(TestImmunizationBatchRepository):
             }
         )
         with self.assertRaises(IdentifierDuplicationError):
-            self.repository.create_immunization(self.immunization, "supplier", "vax-type", self.table, False)
+            self.repository.create_immunization(self.immunization, "supplier", "vax-type", self.table, None)
         self.table.put_item.assert_not_called()
 
     def test_create_should_catch_dynamo_error(self):
@@ -111,7 +111,7 @@ class TestCreateImmunization(TestImmunizationBatchRepository):
         response = {"ResponseMetadata": {"HTTPStatusCode": bad_request}}
         self.table.put_item = MagicMock(return_value=response)
         with self.assertRaises(UnhandledResponseError) as e:
-            self.repository.create_immunization(self.immunization, "supplier", "vax-type", self.table, False)
+            self.repository.create_immunization(self.immunization, "supplier", "vax-type", self.table, None)
         self.assertDictEqual(e.exception.response, response)
 
     def test_create_immunization_unhandled_error(self):
@@ -124,7 +124,7 @@ class TestCreateImmunization(TestImmunizationBatchRepository):
             side_effect=botocore.exceptions.ClientError({"Error": {"Code": "InternalServerError"}}, "PutItem"),
         ):
             with self.assertRaises(UnhandledResponseError) as e:
-                self.repository.create_immunization(self.immunization, "supplier", "vax-type", self.table, False)
+                self.repository.create_immunization(self.immunization, "supplier", "vax-type", self.table, None)
         self.assertDictEqual(e.exception.response, response)
 
     def test_create_immunization_conditionalcheckfailedexception_error(self):
@@ -138,7 +138,7 @@ class TestCreateImmunization(TestImmunizationBatchRepository):
             ),
         ):
             with self.assertRaises(ResourceFoundError):
-                self.repository.create_immunization(self.immunization, "supplier", "vax-type", self.table, False)
+                self.repository.create_immunization(self.immunization, "supplier", "vax-type", self.table, None)
 
 
 class TestUpdateImmunization(TestImmunizationBatchRepository):
@@ -191,10 +191,10 @@ class TestUpdateImmunization(TestImmunizationBatchRepository):
                 "expected_extra_values": {},
             },
         ]
-        for last_imms_pk in [_make_immunization_pk(imms_id), None]:
+        for imms_pk in [_make_immunization_pk(imms_id), None]:
             for case in test_cases:
-                with self.subTest(last_imms_pk=last_imms_pk, case=case):
-                    if last_imms_pk:
+                with self.subTest(imms_pk=imms_pk, case=case):
+                    if imms_pk:
                         self.table.get_item = MagicMock(return_value=case["get_item_response"])
                     else:
                         self.table.query = MagicMock(return_value=case["query_response"])
@@ -203,7 +203,7 @@ class TestUpdateImmunization(TestImmunizationBatchRepository):
                         "supplier",
                         "vax-type",
                         self.table,
-                        last_imms_pk,
+                        imms_pk,
                     )
                     expected_values = {
                         ":timestamp": ANY,
@@ -230,7 +230,7 @@ class TestUpdateImmunization(TestImmunizationBatchRepository):
         """it should not update Immunization since the imms id not found"""
 
         with self.assertRaises(ResourceNotFoundError):
-            self.repository.update_immunization(self.immunization, "supplier", "vax-type", self.table, False)
+            self.repository.update_immunization(self.immunization, "supplier", "vax-type", self.table, None)
         self.table.update_item.assert_not_called()
 
     def test_update_should_catch_dynamo_error(self):
@@ -252,7 +252,7 @@ class TestUpdateImmunization(TestImmunizationBatchRepository):
             }
         )
         with self.assertRaises(UnhandledResponseError) as e:
-            self.repository.update_immunization(self.immunization, "supplier", "vax-type", self.table, False)
+            self.repository.update_immunization(self.immunization, "supplier", "vax-type", self.table, None)
         self.assertDictEqual(e.exception.response, response)
 
     def test_update_immunization_unhandled_error(self):
@@ -277,7 +277,7 @@ class TestUpdateImmunization(TestImmunizationBatchRepository):
                         ],
                     }
                 )
-                self.repository.update_immunization(self.immunization, "supplier", "vax-type", self.table, False)
+                self.repository.update_immunization(self.immunization, "supplier", "vax-type", self.table, None)
         self.assertDictEqual(e.exception.response, response)
 
     def test_update_immunization_conditionalcheckfailedexception_error(self):
@@ -303,7 +303,7 @@ class TestUpdateImmunization(TestImmunizationBatchRepository):
                         ],
                     }
                 )
-                self.repository.update_immunization(self.immunization, "supplier", "vax-type", self.table, False)
+                self.repository.update_immunization(self.immunization, "supplier", "vax-type", self.table, None)
 
 
 class TestDeleteImmunization(TestImmunizationBatchRepository):
@@ -324,13 +324,13 @@ class TestDeleteImmunization(TestImmunizationBatchRepository):
             "Items": [test_item],
         }
 
-        for last_imms_pk in [_make_immunization_pk(imms_id), None]:
-            if last_imms_pk:
+        for imms_pk in [_make_immunization_pk(imms_id), None]:
+            if imms_pk:
                 self.table.get_item = MagicMock(return_value=get_item_response)
             else:
                 self.table.query = MagicMock(return_value=query_response)
             response = self.repository.delete_immunization(
-                self.immunization, "supplier", "vax-type", self.table, last_imms_pk
+                self.immunization, "supplier", "vax-type", self.table, imms_pk
             )
             self.table.update_item.assert_called_with(
                 Key={"PK": _make_immunization_pk(imms_id)},
@@ -349,7 +349,7 @@ class TestDeleteImmunization(TestImmunizationBatchRepository):
         """it should not delete Immunization since the imms id not found"""
 
         with self.assertRaises(ResourceNotFoundError):
-            self.repository.delete_immunization(self.immunization, "supplier", "vax-type", self.table, False)
+            self.repository.delete_immunization(self.immunization, "supplier", "vax-type", self.table, None)
         self.table.update_item.assert_not_called()
 
     def test_delete_should_catch_dynamo_error(self):
@@ -371,7 +371,7 @@ class TestDeleteImmunization(TestImmunizationBatchRepository):
             }
         )
         with self.assertRaises(UnhandledResponseError) as e:
-            self.repository.delete_immunization(self.immunization, "supplier", "vax-type", self.table, False)
+            self.repository.delete_immunization(self.immunization, "supplier", "vax-type", self.table, None)
         self.assertDictEqual(e.exception.response, response)
 
     def test_delete_immunization_unhandled_error(self):
@@ -396,7 +396,7 @@ class TestDeleteImmunization(TestImmunizationBatchRepository):
                         ],
                     }
                 )
-                self.repository.delete_immunization(self.immunization, "supplier", "vax-type", self.table, False)
+                self.repository.delete_immunization(self.immunization, "supplier", "vax-type", self.table, None)
         self.assertDictEqual(e.exception.response, response)
 
     def test_delete_immunization_conditionalcheckfailedexception_error(self):
@@ -422,7 +422,7 @@ class TestDeleteImmunization(TestImmunizationBatchRepository):
                         ],
                     }
                 )
-                self.repository.delete_immunization(self.immunization, "supplier", "vax-type", self.table, False)
+                self.repository.delete_immunization(self.immunization, "supplier", "vax-type", self.table, None)
 
 
 @mock_aws

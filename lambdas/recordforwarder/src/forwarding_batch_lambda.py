@@ -58,13 +58,13 @@ def create_diagnostics_dictionary(error: Exception) -> dict:
 def forward_request_to_dynamo(
     message_body: dict,
     table: DynamoDBServiceResource,
-    last_imms_pk: str,
+    imms_pk: str | None,
     batch_controller: ImmunizationBatchController,
-):
+) -> str:
     """Forwards the request to the Imms API (where possible) and updates the ack file with the outcome"""
     row_id = message_body.get("row_id")
     logger.info("FORWARDED MESSAGE: ID %s", row_id)
-    return batch_controller.send_request_to_dynamo(message_body, table, last_imms_pk)
+    return batch_controller.send_request_to_dynamo(message_body, table, imms_pk)
 
 
 def forward_lambda_handler(event, _):
@@ -72,7 +72,7 @@ def forward_lambda_handler(event, _):
     logger.info("Processing started")
     table = create_table()
     filename_to_events_mapper = BatchFilenameToEventsMapper()
-    list_of_identifiers = {}
+    identifier_to_pk_map = {}
     controller = make_batch_controller()
 
     for record in event["Records"]:
@@ -111,10 +111,10 @@ def forward_lambda_handler(event, _):
             identifier_system = fhir_json["identifier"][0]["system"]
             identifier_value = fhir_json["identifier"][0]["value"]
             identifier = f"{identifier_system}#{identifier_value}"
-            last_imms_pk = list_of_identifiers.get(identifier)
+            imms_pk_from_map = identifier_to_pk_map.get(identifier)
 
-            imms_pk = forward_request_to_dynamo(incoming_message_body, table, last_imms_pk, controller)
-            list_of_identifiers[identifier] = imms_pk
+            imms_pk = forward_request_to_dynamo(incoming_message_body, table, imms_pk_from_map, controller)
+            identifier_to_pk_map[identifier] = imms_pk
             logger.info("Successfully processed message. Local id: %s, PK: %s", local_id, imms_pk)
 
         except Exception as error:  # pylint: disable = broad-exception-caught
