@@ -10,10 +10,16 @@ variable "csoc_account_id" {
   default = "693466633220"
 }
 
-variable "dspp_kms_key_alias" {
-  description = "Alias name of the DPS KMS key allowed for SSE-KMS encryption"
+variable "dspp_submission_s3_bucket_name" {
+  description = "Name of the DSPP (DPS) S3 bucket where extended attributes files should be submitted"
   type        = string
-  default     = "nhsd-dspp-core-ref-extended-attributes-gdp-key"
+  default     = "nhsd-dspp-core-ref-s3-submission-upload"
+}
+
+variable "dspp_submission_kms_key_alias" {
+  description = "Alias of the DSPP (DPS) KMS key required to encrypt extended attributes files"
+  type        = string
+  default     = "nhsd-dspp-core-ref-s3-submission-upload-key"
 }
 
 variable "create_mesh_processor" {
