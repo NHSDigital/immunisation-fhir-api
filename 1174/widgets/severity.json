@@ -1,0 +1,1 @@
+[{"uid":"50d873f0e30b7751","name":"Verify that the /status endpoint works","time":{"start":1769527126605,"stop":1769527126782,"duration":177},"status":"passed","severity":"normal"},{"uid":"2ed190cc70abe6f7","name":"Verify that the /ping endpoint works","time":{"start":1769527116509,"stop":1769527126599,"duration":10090},"status":"passed","severity":"normal"}]
