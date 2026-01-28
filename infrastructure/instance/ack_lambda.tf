@@ -4,8 +4,9 @@ locals {
 
   ack_lambda_files = fileset(local.ack_lambda_dir, "**")
 
-  ack_lambda_dir_sha = sha1(join("", [for f in local.ack_lambda_files : filesha1("${local.ack_lambda_dir}/${f}")]))
-  ack_lambda_name    = "${local.short_prefix}-ack_lambda"
+  relevant_files = setsubtract(local.ack_lambda_files, ["tests/*", "README.md", ".*"])
+
+  ack_lambda_dir_sha = sha1(join("", [for f in local.relevant_files : filesha1("${local.ack_lambda_dir}/${f}")]))
 }
 
 
