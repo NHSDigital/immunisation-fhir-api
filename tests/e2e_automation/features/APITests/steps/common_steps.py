@@ -233,7 +233,7 @@ def send_update_for_vaccination_detail(context):
     # to ensure we are using the latest one for assertions. The timestamp we assign, based on the DynamoDB stream
     # ApproximateCreationDateTime is rounded to the nearest second: https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_streams_StreamRecord.html
     # Therefore, using a sleep to ensure ordering is maintained to avoid intermittent errors when the system runs fast.
-    time.sleep(0.5)
+    time.sleep(1)
 
     get_update_url_header(context, str(context.expected_version))
     context.update_object = convert_to_update(context.immunization_object, context.ImmsID)
