@@ -1,0 +1,1 @@
+✅ Step Passed: **The Search Response JSONs should contain the detail of the immunization events created above
