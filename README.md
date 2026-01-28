@@ -52,10 +52,9 @@ See https://nhsd-confluence.digital.nhs.uk/display/APM/Glossary.
 
 ### Tests
 
-| Folder      | Description                                                                          |
-| ----------- | ------------------------------------------------------------------------------------ |
-| `e2e`       | End-to-end tests executed during PR pipelines.                                       |
-| `e2e_batch` | E2E tests specifically for batch-related functionality, also run in the PR pipeline. |
+| Folder           | Description                                                                   |
+| ---------------- | ----------------------------------------------------------------------------- |
+| `e2e_automation` | End-to-end tests executed during PR pipelines using the pytest-bdd framework. |
 
 ---
 
@@ -143,7 +142,7 @@ Steps:
 
 ### Setting up a virtual environment with poetry
 
-The steps below must be performed in each Lambda function folder and e2e folder to ensure the environment is correctly configured.
+The steps below must be performed in each Lambda function folder and e2e_automation folder to ensure the environment is correctly configured.
 
 For detailed instructions on running individual Lambdas, refer to the README.md files located inside each respective Lambda folder.
 

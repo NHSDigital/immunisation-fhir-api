@@ -25,7 +25,7 @@ from utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from batch_processor import process_csv_to_fhir
-    from constants import AUDIT_TABLE_NAME, FileStatus
+    from common.models.batch_constants import AUDIT_TABLE_NAME, FileStatus
 
 dynamodb_client = boto3.client("dynamodb", region_name=REGION_NAME)
 s3_client = boto3.client("s3", region_name=REGION_NAME)
@@ -61,11 +61,9 @@ class TestProcessCsvToFhir(unittest.TestCase):
         )
         mock_redis_getter.return_value = mock_redis
 
-        set_audit_table_ingestion_start_time_patcher = patch(
-            "file_level_validation.set_audit_table_ingestion_start_time"
-        )
-        self.addCleanup(set_audit_table_ingestion_start_time_patcher.stop)
-        set_audit_table_ingestion_start_time_patcher.start()
+        update_audit_table_item_patcher = patch("file_level_validation.update_audit_table_item")
+        self.addCleanup(update_audit_table_item_patcher.stop)
+        update_audit_table_item_patcher.start()
 
     def tearDown(self) -> None:
         GenericTearDown(

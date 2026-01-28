@@ -8,13 +8,15 @@ NOTE: The expected file format for incoming files from the data sources bucket i
 
 from uuid import uuid4
 
-from audit_table import upsert_audit_table
+from common.ack_file_utils import make_and_upload_ack_file
 from common.aws_s3_utils import (
     copy_file_to_external_bucket,
     move_file,
 )
+from common.batch.audit_table import create_audit_table_item
 from common.clients import STREAM_NAME, get_s3_client, logger
 from common.log_decorator import logging_decorator
+from common.models.batch_constants import SOURCE_BUCKET_NAME, FileStatus
 from common.models.errors import UnhandledAuditTableError
 from constants import (
     DPS_DESTINATION_BUCKET_NAME,
@@ -24,12 +26,8 @@ from constants import (
     EXPECTED_SOURCE_BUCKET_ACCOUNT,
     EXTENDED_ATTRIBUTES_ARCHIVE_PREFIX,
     EXTENDED_ATTRIBUTES_FILE_PREFIX,
-    SOURCE_BUCKET_NAME,
-    FileNotProcessedReason,
-    FileStatus,
 )
 from file_validation import is_file_in_directory_root, validate_batch_file_key, validate_extended_attributes_file_key
-from make_and_upload_ack_file import make_and_upload_the_ack_file
 from models.errors import (
     InvalidFileKeyError,
     UnhandledSqsError,
@@ -97,7 +95,7 @@ def handle_record(record) -> dict:
 def get_file_status_for_error(error: Exception) -> str:
     """Creates a file status based on the type of error that was thrown"""
     if isinstance(error, VaccineTypePermissionsError):
-        return f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.UNAUTHORISED}"
+        return FileStatus.UNAUTHORISED
 
     return FileStatus.FAILED
 
@@ -170,14 +168,8 @@ def handle_batch_file(
         permissions = validate_vaccine_type_permissions(vaccine_type=vaccine_type, supplier=supplier)
         queue_name = f"{supplier}_{vaccine_type}"
 
-        upsert_audit_table(
-            message_id,
-            file_key,
-            created_at_formatted_string,
-            expiry_timestamp,
-            queue_name,
-            FileStatus.QUEUED,
-            condition_expression="attribute_not_exists(message_id)",  # Prevents accidental overwrites
+        create_audit_table_item(
+            message_id, file_key, created_at_formatted_string, expiry_timestamp, queue_name, FileStatus.QUEUED
         )
         make_and_send_sqs_message(
             file_key,
@@ -210,7 +202,7 @@ def handle_batch_file(
         file_status = get_file_status_for_error(error)
         queue_name = f"{supplier}_{vaccine_type}"
 
-        upsert_audit_table(
+        create_audit_table_item(
             message_id,
             file_key,
             created_at_formatted_string,
@@ -221,8 +213,7 @@ def handle_batch_file(
         )
 
         # Create ack file
-        message_delivered = False
-        make_and_upload_the_ack_file(message_id, file_key, message_delivered, created_at_formatted_string)
+        make_and_upload_ack_file(message_id, file_key, False, False, created_at_formatted_string)
 
         # Move file to archive
         move_file(bucket_name, file_key, f"archive/{file_key}")
@@ -254,7 +245,7 @@ def handle_extended_attributes_file(
             vaccine_type, organisation_code
         )
 
-        upsert_audit_table(
+        create_audit_table_item(
             message_id,
             file_key,
             created_at_formatted_string,
@@ -275,7 +266,7 @@ def handle_extended_attributes_file(
 
         move_file(bucket_name, file_key, f"{EXTENDED_ATTRIBUTES_ARCHIVE_PREFIX}/{file_key}")
 
-        upsert_audit_table(
+        create_audit_table_item(
             message_id,
             file_key,
             created_at_formatted_string,
@@ -309,7 +300,7 @@ def handle_extended_attributes_file(
         # Move file to archive
         move_file(bucket_name, file_key, f"{EXTENDED_ATTRIBUTES_ARCHIVE_PREFIX}/{file_key}")
 
-        upsert_audit_table(
+        create_audit_table_item(
             message_id,
             file_key,
             created_at_formatted_string,

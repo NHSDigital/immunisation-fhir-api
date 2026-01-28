@@ -230,7 +230,7 @@ class PreValidators:
         practitioner_id = str(practitioner[0]["id"])
 
         # Ensure that there are no internal references other than to the contained practitioner
-        if sum(1 for x in performer_internal_references if x != "#" + practitioner_id) != 0:
+        if any(x != "#" + practitioner_id for x in performer_internal_references):
             raise ValueError(
                 "performer must not contain any internal references other than"
                 + " to the contained Practitioner resource"
@@ -301,7 +301,8 @@ class PreValidators:
     def pre_validate_patient_name_given(self, values: dict) -> None:
         """
         Pre-validate that, if contained[?(@.resourceType=='Patient')].name[{index}].given index dynamically determined
-        (legacy CSV field name:PERSON_FORENAME) exists, then it is an array containing a single non-empty string
+        (legacy CSV field name:PERSON_FORENAME) exists, then it is an array containing a maximum of 5 items an no items
+        may exceed the GIVEN_NAME_ELEMENT_MAX_LENGTH value
         """
         field_location = patient_name_given_field_location(values)
 
@@ -312,7 +313,7 @@ class PreValidators:
                 field_location,
                 elements_are_strings=True,
                 max_length=5,
-                string_element_max_length=Constants.PERSON_NAME_ELEMENT_MAX_LENGTH,
+                string_element_max_length=Constants.GIVEN_NAME_ELEMENT_MAX_LENGTH,
             )
         except (KeyError, IndexError, AttributeError):
             pass
@@ -320,13 +321,13 @@ class PreValidators:
     def pre_validate_patient_name_family(self, values: dict) -> None:
         """
         Pre-validate that, if a contained[?(@.resourceType=='Patient')].name[{index}].family (legacy CSV field name:
-        PERSON_SURNAME) exists, index dynamically determined then it is a non-empty string of maximum length
-        35 characters
+        PERSON_SURNAME) exists, index dynamically determined then it is a non-empty string no longer than the
+        FAMILY_NAME_MAX_LENGTH value
         """
         field_location = patient_name_family_field_location(values)
         try:
             field_value, _ = patient_and_practitioner_value_and_index(values, "family", "Patient")
-            PreValidation.for_string(field_value, field_location, max_length=Constants.PERSON_NAME_ELEMENT_MAX_LENGTH)
+            PreValidation.for_string(field_value, field_location, max_length=Constants.FAMILY_NAME_MAX_LENGTH)
         except (KeyError, IndexError, AttributeError):
             pass
 
@@ -591,7 +592,7 @@ class PreValidators:
         (legacy CSV field name: VACCINATION_PROCEDURE_CODE) exists, then it is a non-empty string
         """
         url = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-" + "VaccinationProcedure"
-        system = Urls.snomed
+        system = Urls.SNOMED
         field_type = "code"
         field_location = generate_field_location_for_extension(url, system, field_type)
         try:
@@ -608,7 +609,7 @@ class PreValidators:
         (legacy CSV field name: VACCINATION_PROCEDURE_TERM) exists, then it is a non-empty string
         """
         url = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-" + "VaccinationProcedure"
-        system = Urls.snomed
+        system = Urls.SNOMED
         field_type = "display"
         field_location = generate_field_location_for_extension(url, system, field_type)
         try:
@@ -624,7 +625,7 @@ class PreValidators:
         (legacy CSV field name: VACCINATION_SITUATION_CODE) exists, then it is a non-empty string
         """
         url = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationSituation"
-        system = Urls.snomed
+        system = Urls.SNOMED
         field_type = "code"
         field_location = generate_field_location_for_extension(url, system, field_type)
         try:
@@ -640,7 +641,7 @@ class PreValidators:
         (legacy CSV field name: VACCINATION_SITUATION_TERM) exists, then it is a non-empty string
         """
         url = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationSituation"
-        system = Urls.snomed
+        system = Urls.SNOMED
         field_type = "display"
         field_location = generate_field_location_for_extension(url, system, field_type)
         try:
@@ -705,9 +706,9 @@ class PreValidators:
                 field_location = f"protocolApplied[0].targetDisease[{i}].coding"
                 try:
                     coding = values["protocolApplied"][0]["targetDisease"][i]["coding"]
-                    if sum(1 for x in coding if x.get("system") == Urls.snomed) != 1:
+                    if sum(1 for x in coding if x.get("system") == Urls.SNOMED) != 1:
                         raise ValueError(
-                            f"{field_location} must contain exactly one element with a system of {Urls.snomed}"
+                            f"{field_location} must contain exactly one element with a system of {Urls.SNOMED}"
                         )
                 except KeyError:
                     pass
@@ -719,7 +720,7 @@ class PreValidators:
         Pre-validate that, if protocolApplied[0].targetDisease[{i}].coding[?(@.system=='http://snomed.info/sct')].code
         exists, then it is a non-empty string
         """
-        url = Urls.snomed
+        url = Urls.SNOMED
         try:
             for i in range(len(values["protocolApplied"][0]["targetDisease"])):
                 field_location = f"protocolApplied[0].targetDisease[{i}].coding[?(@.system=='{url}')].code"
@@ -778,7 +779,7 @@ class PreValidators:
         Pre-validate that, if site.coding[?(@.system=='http://snomed.info/sct')].code
         (legacy CSV field name: SITE_OF_VACCINATION_CODE) exists, then it is a non-empty string
         """
-        url = Urls.snomed
+        url = Urls.SNOMED
         field_location = f"site.coding[?(@.system=='{url}')].code"
         try:
             site_coding_code = [x for x in values["site"]["coding"] if x.get("system") == url][0]["code"]
@@ -791,7 +792,7 @@ class PreValidators:
         Pre-validate that, if site.coding[?(@.system=='http://snomed.info/sct')].display
         (legacy CSV field name: SITE_OF_VACCINATION_TERM) exists, then it is a non-empty string
         """
-        url = Urls.snomed
+        url = Urls.SNOMED
         field_location = f"site.coding[?(@.system=='{url}')].display"
         try:
             field_value = [x for x in values["site"]["coding"] if x.get("system") == url][0]["display"]
@@ -812,7 +813,7 @@ class PreValidators:
         Pre-validate that, if route.coding[?(@.system=='http://snomed.info/sct')].code
         (legacy CSV field name: ROUTE_OF_VACCINATION_CODE) exists, then it is a non-empty string
         """
-        url = Urls.snomed
+        url = Urls.SNOMED
         field_location = f"route.coding[?(@.system=='{url}')].code"
         try:
             field_value = [x for x in values["route"]["coding"] if x.get("system") == url][0]["code"]
@@ -825,7 +826,7 @@ class PreValidators:
         Pre-validate that, if route.coding[?(@.system=='http://snomed.info/sct')].display
         (legacy CSV field name: ROUTE_OF_VACCINATION_TERM) exists, then it is a non-empty string
         """
-        url = Urls.snomed
+        url = Urls.SNOMED
         field_location = f"route.coding[?(@.system=='{url}')].display"
         try:
             field_value = [x for x in values["route"]["coding"] if x.get("system") == url][0]["display"]
@@ -881,8 +882,6 @@ class PreValidators:
         system = dose_quantity.get("system")
 
         PreValidation.require_system_when_code_present(code, system, "doseQuantity.code", "doseQuantity.system")
-
-        return values
 
     def pre_validate_dose_quantity_unit(self, values: dict) -> None:
         """
@@ -968,7 +967,7 @@ class PreValidators:
         NOTE: vaccineCode is a mandatory FHIR field. A value of None will be rejected by the
         FHIR model before pre-validators are run.
         """
-        url = Urls.snomed
+        url = Urls.SNOMED
         field_location = f"vaccineCode.coding[?(@.system=='{url}')].code"
         try:
             field_value = [x for x in values["vaccineCode"]["coding"] if x.get("system") == url][0]["code"]
@@ -982,7 +981,7 @@ class PreValidators:
         Pre-validate that, if vaccineCode.coding[?(@.system=='http://snomed.info/sct')].display
         (legacy CSV field : VACCINE_PRODUCT_TERM) exists, then it is a non-empty string
         """
-        url = Urls.snomed
+        url = Urls.SNOMED
         field_location = f"vaccineCode.coding[?(@.system=='{url}')].display"
         try:
             field_value = [x for x in values["vaccineCode"]["coding"] if x.get("system") == url][0]["display"]

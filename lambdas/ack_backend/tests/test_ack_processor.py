@@ -43,7 +43,7 @@ BASE_FAILURE_MESSAGE = {
 
 
 @patch.dict(os.environ, MOCK_ENVIRONMENT_DICT)
-@patch("audit_table.AUDIT_TABLE_NAME", AUDIT_TABLE_NAME)
+@patch("common.batch.audit_table.AUDIT_TABLE_NAME", AUDIT_TABLE_NAME)
 @mock_aws
 class TestAckProcessor(unittest.TestCase):
     """Tests for the ack processor lambda handler."""
@@ -62,6 +62,12 @@ class TestAckProcessor(unittest.TestCase):
         )
         self.logger_info_patcher = patch("common.log_decorator.logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
+
+        self.ack_bucket_patcher = patch("update_ack_file.ACK_BUCKET_NAME", BucketNames.DESTINATION)
+        self.ack_bucket_patcher.start()
+
+        self.source_bucket_patcher = patch("update_ack_file.SOURCE_BUCKET_NAME", BucketNames.SOURCE)
+        self.source_bucket_patcher.start()
 
     def tearDown(self) -> None:
         GenericTearDown(self.s3_client, self.firehose_client, self.dynamodb_client)

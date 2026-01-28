@@ -1,7 +1,7 @@
 """Functions for fetching supplier permissions"""
 
 from common.clients import logger
-from constants import Operation
+from common.models.batch_constants import OperationShortCode
 from elasticache import get_supplier_permissions_from_cache, get_supplier_system_from_cache
 from models.errors import VaccineTypePermissionsError
 
@@ -28,9 +28,9 @@ def validate_permissions_for_extended_attributes_files(vaccine_type: str, ods_co
     Raises an exception if the supplier does not have at least one permission for the vaccine type.
     """
     allowed_operations = {
-        Operation.CREATE,
-        Operation.UPDATE,
-        Operation.DELETE,
+        OperationShortCode.CREATE,
+        OperationShortCode.UPDATE,
+        OperationShortCode.DELETE,
     }
     supplier = get_supplier_system_from_cache(ods_code)
     supplier_permissions = get_supplier_permissions_from_cache(supplier)

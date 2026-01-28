@@ -27,7 +27,7 @@ resource "aws_ecr_repository" "processing_repository" {
 # Build and Push Docker Image to ECR (Reusing the existing module)
 module "processing_docker_image" {
   source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version = "8.1.2"
+  version = "8.4.0"
 
   create_ecr_repo  = false
   docker_file_path = "./recordprocessor/Dockerfile"
@@ -158,14 +158,7 @@ resource "aws_iam_policy" "ecs_task_exec_policy" {
           "firehose:PutRecordBatch"
         ],
         "Resource" : "arn:aws:firehose:*:*:deliverystream/${module.splunk.firehose_stream_name}"
-      },
-      {
-        Effect = "Allow",
-        Action = [
-          "s3:PutObject",
-        ],
-        Resource = "${aws_s3_bucket.data_quality_reports_bucket.arn}/*"
-      },
+      }
     ]
   })
 }

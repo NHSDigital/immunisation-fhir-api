@@ -67,8 +67,7 @@ class TestLoggingDecorator(unittest.TestCase):
         # Set up common patches to be applied to all tests in the class.
         # These patches can be overridden in individual tests.
         common_patches = [
-            patch("file_level_validation.update_audit_table_status"),
-            patch("file_level_validation.set_audit_table_ingestion_start_time"),
+            patch("file_level_validation.update_audit_table_item"),
         ]
 
         with ExitStack() as stack:
@@ -86,7 +85,7 @@ class TestLoggingDecorator(unittest.TestCase):
         )
 
         with (  # noqa: E999
-            patch("common.log_firehose.firehose_client") as mock_firehose_client,  # noqa: E999
+            patch("common.clients.global_firehose_client") as mock_firehose_client,  # noqa: E999
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
             patch("logging_decorator.datetime") as mock_datetime,  # noqa: E999
             patch("logging_decorator.time") as mock_start_time,  # noqa: E999
@@ -152,7 +151,7 @@ class TestLoggingDecorator(unittest.TestCase):
                 )
 
                 with (  # noqa: E999
-                    patch("common.log_firehose.firehose_client") as mock_firehose_client,  # noqa: E999
+                    patch("common.clients.global_firehose_client") as mock_firehose_client,  # noqa: E999
                     patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
                     patch("logging_decorator.datetime") as mock_datetime,  # noqa: E999
                     patch("logging_decorator.time") as mock_start_time,  # noqa: E999
@@ -190,7 +189,7 @@ class TestLoggingDecorator(unittest.TestCase):
         )
 
         with (  # noqa: E999
-            patch("common.log_firehose.firehose_client") as mock_firehose_client,  # noqa: E999
+            patch("common.clients.global_firehose_client") as mock_firehose_client,  # noqa: E999
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
             patch("logging_decorator.datetime") as mock_datetime,  # noqa: E999
             patch("logging_decorator.time") as mock_start_time,  # noqa: E999

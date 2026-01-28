@@ -79,7 +79,6 @@ def function_info(func):
             "actual_path": actual_path,
             "resource_path": resource_path,
         }
-        firehose_log = {}
         start = time.time()
         try:
             result = func(*args, **kwargs)
@@ -90,8 +89,7 @@ def function_info(func):
 
             log_data["operation_outcome"] = operation_outcome
             logger.info(json.dumps(log_data))
-            firehose_log["event"] = log_data
-            send_log_to_firehose(STREAM_NAME, firehose_log)
+            send_log_to_firehose(STREAM_NAME, log_data)
             return result
 
         except Exception as e:
@@ -100,8 +98,7 @@ def function_info(func):
             log_data["time_taken"] = f"{round(end - start, 5)}s"
             log_data.update(_log_data_from_body(event))
             logger.exception(json.dumps(log_data))
-            firehose_log["event"] = log_data
-            send_log_to_firehose(STREAM_NAME, firehose_log)
+            send_log_to_firehose(STREAM_NAME, log_data)
             raise
 
     return wrapper

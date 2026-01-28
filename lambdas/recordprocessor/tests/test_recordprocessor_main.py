@@ -36,13 +36,8 @@ from utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from batch_processor import main
-    from constants import (
-        AUDIT_TABLE_NAME,
-        AuditTableKeys,
-        Diagnostics,
-        FileNotProcessedReason,
-        FileStatus,
-    )
+    from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys, FileStatus
+    from constants import Diagnostics
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
 kinesis_client = boto3_client("kinesis", region_name=REGION_NAME)
@@ -79,9 +74,9 @@ class TestRecordProcessor(unittest.TestCase):
         )
         mock_redis_getter.return_value = mock_redis
         self.mock_logger_info = create_patch("logging.Logger.info")
-        self.mock_set_audit_table_ingestion_start_time = create_patch(
-            "file_level_validation.set_audit_table_ingestion_start_time"
-        )
+
+        self.update_audit_table_item_patcher = patch("file_level_validation.update_audit_table_item")
+        self.update_audit_table_item_patcher.start()
 
     def tearDown(self) -> None:
         patch.stopall()
@@ -337,6 +332,8 @@ class TestRecordProcessor(unittest.TestCase):
         """
         Tests that file containing UPDATE and DELETE is successfully processed when the supplier has no permissions.
         """
+        self.update_audit_table_item_patcher.stop()
+
         test_file = mock_rsv_emis_file
         add_entry_to_table(test_file, FileStatus.PROCESSING)
         self.upload_source_files(ValidMockFileContent.with_update_and_delete)
@@ -348,13 +345,14 @@ class TestRecordProcessor(unittest.TestCase):
             TableName=AUDIT_TABLE_NAME,
             Key={AuditTableKeys.MESSAGE_ID: {"S": test_file.message_id}},
         ).get("Item")
+
         self.assertEqual(len(kinesis_records), 0)
         self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=False)
         self.assertDictEqual(
             table_entry,
             {
                 **test_file.audit_table_entry,
-                "status": {"S": f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.UNAUTHORISED}"},
+                "status": {"S": FileStatus.UNAUTHORISED},
                 "error_details": {"S": "EMIS does not have permissions to perform any of the requested actions."},
             },
         )

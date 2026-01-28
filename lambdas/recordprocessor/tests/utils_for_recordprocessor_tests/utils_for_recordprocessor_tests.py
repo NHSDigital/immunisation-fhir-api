@@ -23,10 +23,7 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from csv import DictReader
 
     from common.clients import REGION_NAME
-    from constants import (
-        AUDIT_TABLE_NAME,
-        AuditTableKeys,
-    )
+    from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys
 
 dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
 
@@ -34,13 +31,6 @@ dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
 def convert_string_to_dict_reader(data_string: str):
     """Take a data string and convert it to a csv DictReader"""
     return DictReader(StringIO(data_string), delimiter="|")
-
-
-def get_csv_file_dict_reader(s3_client, bucket_name: str, file_key: str) -> DictReader:
-    """Download the file from the S3 bucket and return it as a DictReader"""
-    ack_file_csv_obj = s3_client.get_object(Bucket=bucket_name, Key=file_key)
-    csv_content_string = ack_file_csv_obj["Body"].read().decode("utf-8")
-    return DictReader(StringIO(csv_content_string), delimiter="|")
 
 
 class GenericSetUp:

@@ -7,17 +7,12 @@ from csv import DictReader
 from json import JSONDecodeError
 from typing import Optional
 
-from audit_table import update_audit_table_status
 from common.aws_s3_utils import move_file
+from common.batch.audit_table import update_audit_table_item
 from common.batch.eof_utils import make_batch_eof_message
 from common.clients import logger
-from constants import (
-    ARCHIVE_DIR_NAME,
-    PROCESSING_DIR_NAME,
-    SOURCE_BUCKET_NAME,
-    FileNotProcessedReason,
-    FileStatus,
-)
+from common.models.batch_constants import SOURCE_BUCKET_NAME, AuditTableKeys, FileStatus
+from constants import ARCHIVE_DIR_NAME, PROCESSING_DIR_NAME
 from file_level_validation import file_is_empty, file_level_validation
 from mappings import map_target_disease
 from process_row import process_row
@@ -67,10 +62,10 @@ def process_csv_to_fhir(incoming_message_body: dict) -> int:
             logger.warning(f"Encoding Error: {err}.")
             new_encoder = "cp1252"
             logger.info(f"Encode error at row {row_count} with {encoder}. Switch to {new_encoder}")
-            encoder = new_encoder
+            encoding = new_encoder
 
             # load alternative encoder
-            csv_reader = get_csv_content_dict_reader(f"{PROCESSING_DIR_NAME}/{file_key}", encoder=encoder)
+            csv_reader = get_csv_content_dict_reader(f"{PROCESSING_DIR_NAME}/{file_key}", encoding=encoding)
             # re-read the file and skip processed rows
             row_count, err = process_rows(
                 file_id,
@@ -94,11 +89,23 @@ def process_csv_to_fhir(incoming_message_body: dict) -> int:
             f"{PROCESSING_DIR_NAME}/{file_key}",
             f"{ARCHIVE_DIR_NAME}/{file_key}",
         )
-        file_status = f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.EMPTY}"
-        update_audit_table_status(file_key, file_id, file_status, record_count=row_count)
+        file_status = FileStatus.EMPTY
+        update_audit_table_item(
+            file_key=file_key,
+            message_id=file_id,
+            attrs_to_update={AuditTableKeys.RECORD_COUNT: row_count, AuditTableKeys.STATUS: file_status},
+        )
         return row_count
 
-    update_audit_table_status(file_key, file_id, FileStatus.PREPROCESSED, record_count=row_count)
+    update_audit_table_item(
+        file_key=file_key,
+        message_id=file_id,
+        attrs_to_update={
+            AuditTableKeys.RECORD_COUNT: row_count,
+            AuditTableKeys.STATUS: FileStatus.PREPROCESSED,
+        },
+    )
+
     batch_eof_message = make_batch_eof_message(
         file_key, supplier, vaccine, created_at_formatted_string, file_id, row_count
     )
@@ -176,7 +183,11 @@ def main(event: str) -> None:
         # If an unexpected error occurs, attempt to mark the event as failed. If the event is so malformed that this
         # also fails, we will still get the error alert and the event will remain in processing meaning the supplier +
         # vacc type queue is blocked until we resolve the issue
-        update_audit_table_status(file_key, message_id, FileStatus.FAILED, error_details=str(error))
+        update_audit_table_item(
+            file_key=file_key,
+            message_id=message_id,
+            attrs_to_update={AuditTableKeys.ERROR_DETAILS: str(error), AuditTableKeys.STATUS: FileStatus.FAILED},
+        )
 
     end = time.time()
     logger.info("Total rows processed: %s", n_rows_processed)
