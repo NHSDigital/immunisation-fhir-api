@@ -44,6 +44,7 @@ module "ack_processor_docker_image" {
   ecr_repo         = aws_ecr_repository.ack_lambda_repository.name
   platform         = "linux/amd64"
   source_path      = abspath("${path.root}/../../lambdas")
+  keep_remotely    = true
   triggers = {
     dir_sha        = local.ack_lambda_dir_sha
     shared_dir_sha = local.shared_dir_sha
