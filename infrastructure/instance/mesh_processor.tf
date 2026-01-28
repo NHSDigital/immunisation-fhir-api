@@ -34,7 +34,7 @@ module "mesh_processor_docker_image" {
   count = var.create_mesh_processor ? 1 : 0
 
   source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version          = "8.3.0"
+  version          = "8.4.0"
   docker_file_path = "./mesh_processor/Dockerfile"
 
   create_ecr_repo = false
