@@ -1,0 +1,1 @@
+✅ Step Passed: **the status API key is available in the given environment
