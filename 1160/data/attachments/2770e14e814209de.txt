@@ -1,2 +1,0 @@
-❌ Step failed! **batch file is uploaded in s3 bucket** 
- Error: File not found in archive after timeout

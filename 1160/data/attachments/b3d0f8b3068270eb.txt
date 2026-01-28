@@ -1,3 +1,0 @@
-❌ Step failed! **The request will be successful with the status code '201'** 
- Error: 
- Expected status code: 201, but got: 404. Response: {'message': 'Domain not found'} 

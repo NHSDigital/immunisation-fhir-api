@@ -1,2 +1,0 @@
-❌ Step failed! **The request will be successful with the status code '201'** 
- Error: Expecting value: line 1 column 1 (char 0)

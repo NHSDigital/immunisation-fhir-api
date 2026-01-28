@@ -1,6 +1,0 @@
-❌ Step failed! **The status response will contain a passing healthcheck** 
- Error: Status response assertions failed. Res: {'status': 'fail', 'version': 'immunisation-fhir-api-pr-1160', 'revision': '3', 'releaseId': '450383', 'commitId': '4887bc4cd27d6aad31474b366b68367b88ce2675', 'checks': {'healthcheck': {'status': 'fail', 'timeout': 'false', 'responseCode': 404, 'outcome': {'message': 'Domain not found'}, 'links': {'self': 'https://pr-1160.imms.dev.vds.platform.nhs.uk/status'}}}}
-assert 'fail' == 'pass'
-  
-  - pass
-  + fail
