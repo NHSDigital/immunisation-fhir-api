@@ -1,4 +1,0 @@
-token started.......
-Error setting AWS session token: 'NoneType' object has no attribute 'get_frozen_credentials'
-200
-200
