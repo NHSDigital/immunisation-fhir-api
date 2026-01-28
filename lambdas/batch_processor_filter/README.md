@@ -33,3 +33,5 @@ basis from an SQS FIFO queue. At a high-level, the pseudocode is as follows:
 - check the Audit Table if there is already an event processing for the given supplier + vacc type
 - if there is not, then update the event's status in the Audit Table and forward to SQS for processing by ECS
 - if there is, then throw an error so that the event is returned to the queue and will be tried again later
+
+test
