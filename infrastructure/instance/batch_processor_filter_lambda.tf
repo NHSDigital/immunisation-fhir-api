@@ -39,7 +39,8 @@ module "batch_processor_filter_docker_image" {
   })
 
   platform      = "linux/amd64"
-  use_image_tag = false
+  use_image_tag = true
+  keep_remotely = true
   source_path   = abspath("${path.root}/../../lambdas")
   triggers = {
     dir_sha        = local.batch_processor_filter_lambda_dir_sha

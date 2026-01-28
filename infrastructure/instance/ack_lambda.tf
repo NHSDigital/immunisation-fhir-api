@@ -47,6 +47,7 @@ module "ack_processor_docker_image" {
   platform         = "linux/amd64"
   source_path      = abspath("${path.root}/../../lambdas")
   use_image_tag    = true
+  keep_remotely    = true
   triggers = {
     dir_sha        = local.ack_lambda_dir_sha
     shared_dir_sha = local.shared_dir_sha
