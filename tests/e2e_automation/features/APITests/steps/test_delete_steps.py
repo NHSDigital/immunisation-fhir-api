@@ -50,10 +50,10 @@ def validate_imms_delta_table_by_deleted_ImmsID(context):
     assert deleted_items, f"No deleted item found for ImmsID: {context.ImmsID}"
 
     # Assuming each item has a 'timestamp' field to determine the latest
-    item = [max(deleted_items, key=lambda x: x.get("timestamp", 0))]
+    latest_delta_record = max(deleted_items, key=lambda x: x.get("timestamp", 0))
 
     validate_imms_delta_record_with_created_event(
-        context, create_obj, item, Operation.deleted.value, ActionFlag.deleted.value
+        context, create_obj, latest_delta_record, Operation.deleted.value, ActionFlag.deleted.value
     )
 
 

@@ -7,12 +7,14 @@ import pytest_check as check
 from boto3.dynamodb.conditions import Key
 from botocore.config import Config
 from utilities.api_fhir_immunization_helper import extract_practitioner_name
+from utilities.context import ScenarioContext
 from utilities.date_helper import covert_to_expected_date_format, format_date_yyyymmdd, iso_to_compact
 from utilities.enums import GenderCode
 from utilities.vaccination_constants import PROTOCOL_DISEASE_MAP
 
 from src.objectModels.api_data_objects import (
     Coding,
+    Immunization,
     ImmunizationReadResponse_IntTable,
     Patient,
     Practitioner,
@@ -140,77 +142,79 @@ def parse_imms_int_imms_event_response(resource: dict) -> ImmunizationReadRespon
     return ImmunizationReadResponse_IntTable.parse_obj(resource)
 
 
-def validate_imms_delta_record_with_created_event(context, create_obj, item, event_type, action_flag):
-    event = item[0].get("Imms")
-    assert event, "Imms field missing in items."
+def validate_imms_delta_record_with_created_event(
+    context: ScenarioContext, create_obj: Immunization, delta_record: dict, event_type: str, action_flag: str
+):
+    imms_event = delta_record.get("Imms")
+    assert imms_event, "Imms field missing in items."
     fields_to_compare = [
-        ("Operation", event_type.upper(), item[0].get("Operation")),
-        ("SupplierSystem", context.supplier_name.lower(), item[0].get("SupplierSystem").lower()),
-        ("VaccineType", context.vaccine_type.lower(), item[0].get("VaccineType").lower()),
-        ("Source", "IEDS", item[0].get("Source")),
-        ("CONVERSION_ERRORS", [], event.get("CONVERSION_ERRORS")),
-        ("PERSON_FORENAME", create_obj.contained[1].name[0].given[0], event.get("PERSON_FORENAME")),
-        ("PERSON_SURNAME", create_obj.contained[1].name[0].family, event.get("PERSON_SURNAME")),
-        ("NHS_NUMBER", create_obj.contained[1].identifier[0].value, event.get("NHS_NUMBER")),
-        ("PERSON_DOB", create_obj.contained[1].birthDate.replace("-", ""), event.get("PERSON_DOB")),
-        ("PERSON_POSTCODE", create_obj.contained[1].address[0].postalCode, event.get("PERSON_POSTCODE")),
-        ("PERSON_GENDER_CODE", GenderCode[(create_obj.contained[1].gender)].value, event.get("PERSON_GENDER_CODE")),
+        ("Operation", event_type.upper(), delta_record.get("Operation")),
+        ("SupplierSystem", context.supplier_name.lower(), delta_record.get("SupplierSystem").lower()),
+        ("VaccineType", context.vaccine_type.lower(), delta_record.get("VaccineType").lower()),
+        ("Source", "IEDS", delta_record.get("Source")),
+        ("CONVERSION_ERRORS", [], imms_event.get("CONVERSION_ERRORS")),
+        ("PERSON_FORENAME", create_obj.contained[1].name[0].given[0], imms_event.get("PERSON_FORENAME")),
+        ("PERSON_SURNAME", create_obj.contained[1].name[0].family, imms_event.get("PERSON_SURNAME")),
+        ("NHS_NUMBER", create_obj.contained[1].identifier[0].value, imms_event.get("NHS_NUMBER")),
+        ("PERSON_DOB", create_obj.contained[1].birthDate.replace("-", ""), imms_event.get("PERSON_DOB")),
+        ("PERSON_POSTCODE", create_obj.contained[1].address[0].postalCode, imms_event.get("PERSON_POSTCODE")),
+        ("PERSON_GENDER_CODE", GenderCode[(create_obj.contained[1].gender)].value, imms_event.get("PERSON_GENDER_CODE")),
         (
             "VACCINATION_PROCEDURE_CODE",
             create_obj.extension[0].valueCodeableConcept.coding[0].code,
-            event.get("VACCINATION_PROCEDURE_CODE"),
+            imms_event.get("VACCINATION_PROCEDURE_CODE"),
         ),
         (
             "VACCINATION_PROCEDURE_TERM",
             create_obj.extension[0].valueCodeableConcept.coding[0].extension[0].valueString,
-            event.get("VACCINATION_PROCEDURE_TERM"),
+            imms_event.get("VACCINATION_PROCEDURE_TERM"),
         ),
         (
             "VACCINE_PRODUCT_TERM",
             create_obj.vaccineCode.coding[0].extension[0].valueString,
-            event.get("VACCINE_PRODUCT_TERM"),
+            imms_event.get("VACCINE_PRODUCT_TERM"),
         ),
-        ("VACCINE_PRODUCT_CODE", create_obj.vaccineCode.coding[0].code, event.get("VACCINE_PRODUCT_CODE")),
-        ("VACCINE_MANUFACTURER", create_obj.manufacturer["display"], event.get("VACCINE_MANUFACTURER")),
-        ("BATCH_NUMBER", create_obj.lotNumber, event.get("BATCH_NUMBER")),
-        ("RECORDED_DATE", create_obj.recorded[:10].replace("-", ""), event.get("RECORDED_DATE")),
-        ("EXPIRY_DATE", create_obj.expirationDate.replace("-", ""), event.get("EXPIRY_DATE")),
-        ("DOSE_SEQUENCE", str(create_obj.protocolApplied[0].doseNumberPositiveInt), event.get("DOSE_SEQUENCE")),
-        ("DOSE_UNIT_TERM", create_obj.doseQuantity.unit, event.get("DOSE_UNIT_TERM")),
-        ("DOSE_UNIT_CODE", create_obj.doseQuantity.code, event.get("DOSE_UNIT_CODE")),
+        ("VACCINE_PRODUCT_CODE", create_obj.vaccineCode.coding[0].code, imms_event.get("VACCINE_PRODUCT_CODE")),
+        ("VACCINE_MANUFACTURER", create_obj.manufacturer["display"], imms_event.get("VACCINE_MANUFACTURER")),
+        ("BATCH_NUMBER", create_obj.lotNumber, imms_event.get("BATCH_NUMBER")),
+        ("RECORDED_DATE", create_obj.recorded[:10].replace("-", ""), imms_event.get("RECORDED_DATE")),
+        ("EXPIRY_DATE", create_obj.expirationDate.replace("-", ""), imms_event.get("EXPIRY_DATE")),
+        ("DOSE_SEQUENCE", str(create_obj.protocolApplied[0].doseNumberPositiveInt), imms_event.get("DOSE_SEQUENCE")),
+        ("DOSE_UNIT_TERM", create_obj.doseQuantity.unit, imms_event.get("DOSE_UNIT_TERM")),
+        ("DOSE_UNIT_CODE", create_obj.doseQuantity.code, imms_event.get("DOSE_UNIT_CODE")),
         (
             "SITE_OF_VACCINATION_TERM",
             create_obj.site.coding[0].extension[0].valueString,
-            event.get("SITE_OF_VACCINATION_TERM"),
+            imms_event.get("SITE_OF_VACCINATION_TERM"),
         ),
-        ("SITE_OF_VACCINATION_CODE", create_obj.site.coding[0].code, event.get("SITE_OF_VACCINATION_CODE")),
-        ("DOSE_AMOUNT", create_obj.doseQuantity.value, float(event.get("DOSE_AMOUNT"))),
-        ("PRIMARY_SOURCE", str(create_obj.primarySource).upper(), event.get("PRIMARY_SOURCE")),
+        ("SITE_OF_VACCINATION_CODE", create_obj.site.coding[0].code, imms_event.get("SITE_OF_VACCINATION_CODE")),
+        ("DOSE_AMOUNT", create_obj.doseQuantity.value, float(imms_event.get("DOSE_AMOUNT"))),
+        ("PRIMARY_SOURCE", str(create_obj.primarySource).upper(), imms_event.get("PRIMARY_SOURCE")),
         (
             "ROUTE_OF_VACCINATION_TERM",
             create_obj.route.coding[0].extension[0].valueString,
-            event.get("ROUTE_OF_VACCINATION_TERM"),
+            imms_event.get("ROUTE_OF_VACCINATION_TERM"),
         ),
-        ("ROUTE_OF_VACCINATION_CODE", create_obj.route.coding[0].code, event.get("ROUTE_OF_VACCINATION_CODE")),
-        ("ACTION_FLAG", action_flag, event.get("ACTION_FLAG")),
-        ("DATE_AND_TIME", iso_to_compact(create_obj.occurrenceDateTime), event.get("DATE_AND_TIME")),
-        ("UNIQUE_ID", create_obj.identifier[0].value, event.get("UNIQUE_ID")),
-        ("UNIQUE_ID_URI", create_obj.identifier[0].system, event.get("UNIQUE_ID_URI")),
+        ("ROUTE_OF_VACCINATION_CODE", create_obj.route.coding[0].code, imms_event.get("ROUTE_OF_VACCINATION_CODE")),
+        ("ACTION_FLAG", action_flag, imms_event.get("ACTION_FLAG")),
+        ("DATE_AND_TIME", iso_to_compact(create_obj.occurrenceDateTime), imms_event.get("DATE_AND_TIME")),
+        ("UNIQUE_ID", create_obj.identifier[0].value, imms_event.get("UNIQUE_ID")),
+        ("UNIQUE_ID_URI", create_obj.identifier[0].system, imms_event.get("UNIQUE_ID_URI")),
         (
             "PERFORMING_PROFESSIONAL_SURNAME",
             create_obj.contained[0].name[0].family,
-            event.get("PERFORMING_PROFESSIONAL_SURNAME"),
+            imms_event.get("PERFORMING_PROFESSIONAL_SURNAME"),
         ),
         (
             "PERFORMING_PROFESSIONAL_FORENAME",
             create_obj.contained[0].name[0].given[0],
-            event.get("PERFORMING_PROFESSIONAL_FORENAME"),
+            imms_event.get("PERFORMING_PROFESSIONAL_FORENAME"),
         ),
-        ("LOCATION_CODE", create_obj.location.identifier.value, event.get("LOCATION_CODE")),
-        ("LOCATION_CODE_TYPE_URI", create_obj.location.identifier.system, event.get("LOCATION_CODE_TYPE_URI")),
-        ("SITE_CODE_TYPE_URI", create_obj.location.identifier.system, event.get("SITE_CODE_TYPE_URI")),
-        ("SITE_CODE", create_obj.performer[1].actor.identifier.value, event.get("SITE_CODE")),
-        ("INDICATION_CODE", create_obj.reasonCode[0].coding[0].code, event.get("INDICATION_CODE")),
+        ("LOCATION_CODE", create_obj.location.identifier.value, imms_event.get("LOCATION_CODE")),
+        ("LOCATION_CODE_TYPE_URI", create_obj.location.identifier.system, imms_event.get("LOCATION_CODE_TYPE_URI")),
+        ("SITE_CODE_TYPE_URI", create_obj.location.identifier.system, imms_event.get("SITE_CODE_TYPE_URI")),
+        ("SITE_CODE", create_obj.performer[1].actor.identifier.value, imms_event.get("SITE_CODE")),
+        ("INDICATION_CODE", create_obj.reasonCode[0].coding[0].code, imms_event.get("INDICATION_CODE")),
     ]
 
     for name, expected, actual in fields_to_compare:
