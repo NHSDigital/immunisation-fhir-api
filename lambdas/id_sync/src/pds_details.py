@@ -4,8 +4,7 @@ Operations related to PDS (Patient Demographic Service)
 
 import tempfile
 
-from common.authentication import AppRestrictedAuth, Service
-from common.cache import Cache
+from common.authentication import AppRestrictedAuth
 from common.clients import get_secrets_manager_client, logger
 from common.pds_service import PdsService
 from exceptions.id_sync_exception import IdSyncException
@@ -18,12 +17,9 @@ safe_tmp_dir = tempfile.mkdtemp(dir="/tmp")  # NOSONAR(S5443)
 # Get Patient details from external service PDS using NHS number from MNS notification
 def pds_get_patient_details(nhs_number: str) -> dict:
     try:
-        cache = Cache(directory=safe_tmp_dir)
         authenticator = AppRestrictedAuth(
-            service=Service.PDS,
             secret_manager_client=get_secrets_manager_client(),
             environment=pds_env,
-            cache=cache,
         )
         pds_service = PdsService(authenticator, pds_env)
         patient = pds_service.get_patient_details(nhs_number)

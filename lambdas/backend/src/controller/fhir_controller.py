@@ -158,7 +158,7 @@ class FhirController:
 
         search_bundle = self.fhir_service.search_immunizations(
             validated_search_params.patient_identifier,
-            validated_search_params.immunization_targets,
+            validated_search_params.IMMUNIZATION_TARGETS,
             supplier_system,
             validated_search_params.date_from,
             validated_search_params.date_to,

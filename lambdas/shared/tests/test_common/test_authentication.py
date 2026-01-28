@@ -7,7 +7,7 @@ from unittest.mock import ANY, MagicMock, patch
 import responses
 from responses import matchers
 
-from common.authentication import AppRestrictedAuth, Service
+from common.authentication import ACCESS_TOKEN_EXPIRY_SECONDS, AppRestrictedAuth
 from common.models.errors import UnhandledResponseError
 
 
@@ -29,11 +29,8 @@ class TestAuthenticator(unittest.TestCase):
         self.secret_manager_client = MagicMock()
         self.secret_manager_client.get_secret_value.return_value = secret_response
 
-        self.cache = MagicMock()
-        self.cache.get.return_value = None
-
         env = "an-env"
-        self.authenticator = AppRestrictedAuth(Service.PDS, self.secret_manager_client, env, self.cache)
+        self.authenticator = AppRestrictedAuth(self.secret_manager_client, env)
         self.url = f"https://{env}.api.service.nhs.uk/oauth2/token"
 
     @responses.activate
@@ -89,35 +86,30 @@ class TestAuthenticator(unittest.TestCase):
         """it should target int environment for none-prod environment, otherwise int"""
         # For env=none-prod
         env = "some-env"
-        auth = AppRestrictedAuth(Service.PDS, None, env, None)
+        auth = AppRestrictedAuth(None, env)
         self.assertTrue(auth.token_url.startswith(f"https://{env}."))
 
         # For env=prod
         env = "prod"
-        auth = AppRestrictedAuth(Service.PDS, None, env, None)
-        self.assertTrue(env not in auth.token_url)
+        auth = AppRestrictedAuth(None, env)
+        self.assertNotIn(env, auth.token_url)
 
     def test_returned_cached_token(self):
         """it should return cached token"""
-        cached_token = {
-            "token": "a-cached-access-token",
-            "expires_at": int(time.time()) + 99999,  # make sure it's not expired
-        }
-        self.cache.get.return_value = cached_token
+        self.authenticator.cached_access_token = "a-cached-access-token"
+        self.authenticator.cached_access_token_expiry_time = int(time.time()) + 99999  # make sure it's not expired
 
         # When
         token = self.authenticator.get_access_token()
 
         # Then
-        self.assertEqual(token, cached_token["token"])
+        self.assertEqual(token, "a-cached-access-token")
         self.secret_manager_client.assert_not_called()
 
     @responses.activate
     def test_update_cache(self):
         """it should update cached token"""
-        self.cache.get.return_value = None
         token = "a-new-access-token"
-        cached_token = {"token": token, "expires_at": ANY}
         responses.add(responses.POST, self.url, status=200, json={"access_token": token})
 
         with patch("jwt.encode") as mock_jwt:
@@ -126,18 +118,15 @@ class TestAuthenticator(unittest.TestCase):
             self.authenticator.get_access_token()
 
         # Then
-        self.cache.put.assert_called_once_with(f"{Service.PDS.value}_access_token", cached_token)
+        self.assertEqual(self.authenticator.cached_access_token, "a-new-access-token")
 
     @responses.activate
     def test_expired_token_in_cache(self):
         """it should not return cached access token if it's expired"""
         now_epoch = 12345
-        expires_at = now_epoch + self.authenticator.expiry
-        cached_token = {
-            "token": "an-expired-cached-access-token",
-            "expires_at": expires_at,
-        }
-        self.cache.get.return_value = cached_token
+        expires_at = now_epoch + ACCESS_TOKEN_EXPIRY_SECONDS
+        self.authenticator.cached_access_token = ("an-expired-cached-access-token",)
+        self.authenticator.cached_access_token_expiry_time = expires_at
 
         new_token = "a-new-token"
         responses.add(responses.POST, self.url, status=200, json={"access_token": new_token})
@@ -151,42 +140,12 @@ class TestAuthenticator(unittest.TestCase):
                 self.authenticator.get_access_token()
 
         # Then
-        exp_cached_token = {
-            "token": new_token,
-            "expires_at": new_now + self.authenticator.expiry,
-        }
-        self.cache.put.assert_called_once_with(ANY, exp_cached_token)
-
-    @responses.activate
-    def test_uses_cache_for_token(self):
-        """it should use the cache for the `Service` auth call"""
-
-        token = "a-new-access-token"
-        token_call = responses.add(responses.POST, self.url, status=200, json={"access_token": token})
-        values = {}
-
-        def get_side_effect(key):
-            return values.get(key, None)
-
-        def put_side_effect(key, value):
-            values[key] = value
-
-        self.cache.get.side_effect = get_side_effect
-        self.cache.put.side_effect = put_side_effect
-
-        with patch("common.authentication.jwt.encode") as mock_jwt:
-            mock_jwt.return_value = "a-jwt"
-            # When
-            self.assertEqual(0, token_call.call_count)
-            self.authenticator.get_access_token()
-            self.assertEqual(1, token_call.call_count)
-            self.authenticator.get_access_token()
-            self.assertEqual(1, token_call.call_count)
+        self.assertEqual(self.authenticator.cached_access_token, new_token)
+        self.assertEqual(self.authenticator.cached_access_token_expiry_time, new_now + ACCESS_TOKEN_EXPIRY_SECONDS)
 
     @responses.activate
     def test_raise_exception(self):
         """it should raise exception if auth response is not 200"""
-        self.cache.get.return_value = None
         responses.add(responses.POST, self.url, status=400)
 
         with patch("common.authentication.jwt.encode") as mock_jwt:
