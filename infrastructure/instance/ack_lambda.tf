@@ -20,7 +20,7 @@ resource "aws_ecr_repository" "ack_lambda_repository" {
 # Module for building and pushing Docker image to ECR
 module "ack_processor_docker_image" {
   source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version          = "8.3.0"
+  version          = "8.4.0"
   docker_file_path = "./ack_backend/Dockerfile"
   create_ecr_repo  = false
   ecr_repo         = aws_ecr_repository.ack_lambda_repository.name
