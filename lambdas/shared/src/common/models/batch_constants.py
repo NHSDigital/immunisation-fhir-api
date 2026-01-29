@@ -4,6 +4,7 @@ from enum import StrEnum
 ACK_BUCKET_NAME = os.getenv("ACK_BUCKET_NAME")
 AUDIT_TABLE_NAME = os.getenv("AUDIT_TABLE_NAME")
 SOURCE_BUCKET_NAME = os.getenv("SOURCE_BUCKET_NAME")
+TEMP_ACK_DIR = "TempAck"
 
 
 class FileStatus(StrEnum):

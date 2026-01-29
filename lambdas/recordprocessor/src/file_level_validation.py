@@ -6,7 +6,7 @@ Functions for completing file-level validation
 import time
 from csv import DictReader
 
-from common.ack_file_utils import make_and_upload_ack_file
+from common.ack_file_utils import create_json_ack_file, make_and_upload_ack_file
 from common.aws_s3_utils import move_file
 from common.batch.audit_table import update_audit_table_item
 from common.clients import logger
@@ -90,6 +90,9 @@ def file_level_validation(incoming_message_body: dict) -> dict:
         allowed_operations_set = get_permitted_operations(supplier, vaccine, permission)
 
         make_and_upload_ack_file(message_id, file_key, True, True, created_at_formatted_string)
+
+        # TODO create JSON ack file if flag is set
+        create_json_ack_file(message_id, file_key, created_at_formatted_string)
 
         move_file(SOURCE_BUCKET_NAME, file_key, f"{PROCESSING_DIR_NAME}/{file_key}")
 

@@ -11,7 +11,13 @@ from common.aws_s3_utils import move_file
 from common.batch.audit_table import get_record_count_and_failures_by_message_id, update_audit_table_item
 from common.clients import get_s3_client, logger
 from common.log_decorator import generate_and_send_logs
-from common.models.batch_constants import ACK_BUCKET_NAME, SOURCE_BUCKET_NAME, AuditTableKeys, FileStatus
+from common.models.batch_constants import (
+    ACK_BUCKET_NAME,
+    SOURCE_BUCKET_NAME,
+    TEMP_ACK_DIR,
+    AuditTableKeys,
+    FileStatus,
+)
 from constants import (
     ACK_HEADERS,
     BATCH_FILE_ARCHIVE_DIR,
@@ -19,7 +25,6 @@ from constants import (
     COMPLETED_ACK_DIR,
     DEFAULT_STREAM_NAME,
     LAMBDA_FUNCTION_NAME_PREFIX,
-    TEMP_ACK_DIR,
 )
 
 STREAM_NAME = os.getenv("SPLUNK_FIREHOSE_NAME", DEFAULT_STREAM_NAME)
