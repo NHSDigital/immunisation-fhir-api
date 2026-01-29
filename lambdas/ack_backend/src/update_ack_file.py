@@ -77,18 +77,15 @@ def complete_batch_file_process(
     the audit table status"""
     start_time = time.time()
 
-    ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.csv')}"
-
-    move_file(ACK_BUCKET_NAME, f"{TEMP_ACK_DIR}/{ack_filename}", f"{COMPLETED_ACK_DIR}/{ack_filename}")
-    move_file(SOURCE_BUCKET_NAME, f"{BATCH_FILE_PROCESSING_DIR}/{file_key}", f"{BATCH_FILE_ARCHIVE_DIR}/{file_key}")
-
     total_ack_rows_processed, total_failures = get_record_count_and_failures_by_message_id(message_id)
     update_audit_table_item(
         file_key=file_key, message_id=message_id, attrs_to_update={AuditTableKeys.STATUS: FileStatus.PROCESSED}
     )
 
     # Consider creating time utils and using datetime instead of time
-    ingestion_end_time = time.strftime("%Y%m%dT%H%M%S00", time.gmtime())
+    time_now = time.gmtime(time.time())
+    ingestion_end_time = time.strftime("%Y%m%dT%H%M%S00", time_now)
+    ingestion_end_time_seconds = int(time.strftime("%s", time_now))
     successful_record_count = total_ack_rows_processed - total_failures
     update_audit_table_item(
         file_key=file_key,
@@ -98,6 +95,32 @@ def complete_batch_file_process(
             AuditTableKeys.INGESTION_END_TIME: ingestion_end_time,
         },
     )
+
+    # finish CSV file
+    ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.csv')}"
+
+    move_file(ACK_BUCKET_NAME, f"{TEMP_ACK_DIR}/{ack_filename}", f"{COMPLETED_ACK_DIR}/{ack_filename}")
+    move_file(SOURCE_BUCKET_NAME, f"{BATCH_FILE_PROCESSING_DIR}/{file_key}", f"{BATCH_FILE_ARCHIVE_DIR}/{file_key}")
+
+    # finish JSON file
+    # TODO: need to abstract this out
+    json_ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.json')}"
+    temp_ack_file_key = f"{TEMP_ACK_DIR}/{json_ack_filename}"
+
+    # read the json file
+    existing_ack_file = get_s3_client().get_object(Bucket=ACK_BUCKET_NAME, Key=temp_ack_file_key)
+    existing_content = existing_ack_file["Body"].read().decode("utf-8")
+    ack_data_dict = json.loads(existing_content)
+
+    ack_data_dict["summary"]["totalRecords"] = total_ack_rows_processed
+    ack_data_dict["summary"]["success"] = successful_record_count
+    ack_data_dict["summary"]["failed"] = total_failures
+    ack_data_dict["summary"]["ingestionTime"]["end"] = ingestion_end_time_seconds
+
+    # Upload ack_data_dict to S3
+    json_bytes = BytesIO(json.dumps(ack_data_dict, indent=2).encode("utf-8"))
+    get_s3_client().upload_fileobj(json_bytes, ACK_BUCKET_NAME, temp_ack_file_key)
+    move_file(ACK_BUCKET_NAME, f"{TEMP_ACK_DIR}/{json_ack_filename}", f"{COMPLETED_ACK_DIR}/{json_ack_filename}")
 
     result = {
         "message_id": message_id,
