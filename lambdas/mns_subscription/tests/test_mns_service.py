@@ -4,16 +4,15 @@ from unittest.mock import MagicMock, Mock, create_autospec, patch
 
 from common.authentication import AppRestrictedAuth
 from common.models.errors import (
-    ResourceNotFoundError,
-    UnhandledResponseError,
-)
-from mns_service import MNS_URL, MnsService
-from models.errors import (
     BadRequestError,
+    ResourceNotFoundError,
     ServerError,
     TokenValidationError,
     UnauthorizedError,
+    UnhandledResponseError,
+    raise_error_response,
 )
+from mns_service import MNS_URL, MnsService
 
 SQS_ARN = "arn:aws:sqs:eu-west-2:123456789012:my-queue"
 
@@ -255,7 +254,7 @@ class TestMnsService(unittest.TestCase):
     def test_404_resource_found_error(self):
         resp = self.mock_response(404, {"resource": "Not found"})
         with self.assertRaises(ResourceNotFoundError) as context:
-            MnsService.raise_error_response(resp)
+            raise_error_response(resp)
         self.assertIn("Subscription or Resource not found", str(context.exception))
         self.assertEqual(context.exception.resource_id, "Subscription or Resource not found")
         self.assertEqual(context.exception.resource_type, {"resource": "Not found"})
@@ -263,7 +262,7 @@ class TestMnsService(unittest.TestCase):
     def test_400_bad_request_error(self):
         resp = self.mock_response(400, {"resource": "Invalid"})
         with self.assertRaises(BadRequestError) as context:
-            MnsService.raise_error_response(resp)
+            raise_error_response(resp)
         self.assertIn("Bad request: Resource type or parameters incorrect", str(context.exception))
         self.assertEqual(
             context.exception.message,
@@ -274,7 +273,7 @@ class TestMnsService(unittest.TestCase):
     def test_unhandled_status_code(self):
         resp = self.mock_response(418, {"resource": 1234})
         with self.assertRaises(UnhandledResponseError) as context:
-            MnsService.raise_error_response(resp)
+            raise_error_response(resp)
         self.assertIn("Unhandled error: 418", str(context.exception))
         self.assertEqual(context.exception.response, {"resource": 1234})
 

@@ -173,3 +173,83 @@ class TestErrors(unittest.TestCase):
             issue.get("diagnostics"),
             f"The provided identifier: {test_identifier} is duplicated",
         )
+
+    def test_errors_unauthorized_error(self):
+        """Test correct operation of UnauthorizedError"""
+        test_response = "test_response"
+        test_message = "test_message"
+
+        with self.assertRaises(errors.UnauthorizedError) as context:
+            raise errors.UnauthorizedError(test_response, test_message)
+        self.assert_response_message(context, test_response, test_message)
+        self.assertEqual(str(context.exception), f"{test_message}\n{test_response}")
+        outcome = context.exception.to_operation_outcome()
+        self.assert_operation_outcome(outcome)
+        issue = outcome.get("issue")[0]
+        self.assertEqual(issue.get("severity"), errors.Severity.error)
+        self.assertEqual(issue.get("code"), errors.Code.forbidden)
+        self.assertEqual(issue.get("diagnostics"), "Unauthorized request")
+
+    def test_errors_token_validation_error(self):
+        """Test correct operation of TokenValidationError"""
+        test_response = "test_response"
+        test_message = "test_message"
+
+        with self.assertRaises(errors.TokenValidationError) as context:
+            raise errors.TokenValidationError(test_response, test_message)
+        self.assert_response_message(context, test_response, test_message)
+        self.assertEqual(str(context.exception), f"{test_message}\n{test_response}")
+        outcome = context.exception.to_operation_outcome()
+        self.assert_operation_outcome(outcome)
+        issue = outcome.get("issue")[0]
+        self.assertEqual(issue.get("severity"), errors.Severity.error)
+        self.assertEqual(issue.get("code"), errors.Code.invalid)
+        self.assertEqual(issue.get("diagnostics"), "Missing/Invalid Token")
+
+    def test_errors_conflict_error(self):
+        """Test correct operation of ConflictError"""
+        test_response = "test_response"
+        test_message = "test_message"
+
+        with self.assertRaises(errors.ConflictError) as context:
+            raise errors.ConflictError(test_response, test_message)
+        self.assert_response_message(context, test_response, test_message)
+        self.assertEqual(str(context.exception), f"{test_message}\n{test_response}")
+        outcome = context.exception.to_operation_outcome()
+        self.assert_operation_outcome(outcome)
+        issue = outcome.get("issue")[0]
+        self.assertEqual(issue.get("severity"), errors.Severity.error)
+        self.assertEqual(issue.get("code"), errors.Code.duplicate)
+        self.assertEqual(issue.get("diagnostics"), "Conflict")
+
+    def test_errors_bad_request_error(self):
+        """Test correct operation of BadRequestError"""
+        test_response = "test_response"
+        test_message = "test_message"
+
+        with self.assertRaises(errors.BadRequestError) as context:
+            raise errors.BadRequestError(test_response, test_message)
+        self.assert_response_message(context, test_response, test_message)
+        self.assertEqual(str(context.exception), f"{test_message}\n{test_response}")
+        outcome = context.exception.to_operation_outcome()
+        self.assert_operation_outcome(outcome)
+        issue = outcome.get("issue")[0]
+        self.assertEqual(issue.get("severity"), errors.Severity.error)
+        self.assertEqual(issue.get("code"), errors.Code.incomplete)
+        self.assertEqual(issue.get("diagnostics"), f"{test_message}\n{test_response}")
+
+    def test_errors_server_error(self):
+        """Test correct operation of ServerError"""
+        test_response = "test_response"
+        test_message = "test_message"
+
+        with self.assertRaises(errors.ServerError) as context:
+            raise errors.ServerError(test_response, test_message)
+        self.assert_response_message(context, test_response, test_message)
+        self.assertEqual(str(context.exception), f"{test_message}\n{test_response}")
+        outcome = context.exception.to_operation_outcome()
+        self.assert_operation_outcome(outcome)
+        issue = outcome.get("issue")[0]
+        self.assertEqual(issue.get("severity"), errors.Severity.error)
+        self.assertEqual(issue.get("code"), errors.Code.server_error)
+        self.assertEqual(issue.get("diagnostics"), f"{test_message}\n{test_response}")

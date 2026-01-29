@@ -157,6 +157,120 @@ class IdentifierDuplicationError(RuntimeError):
         )
 
 
+@dataclass
+class UnauthorizedError(RuntimeError):
+    response: dict | str
+    message: str
+
+    def __str__(self):
+        return f"{self.message}\n{self.response}"
+
+    @staticmethod
+    def to_operation_outcome() -> dict:
+        msg = "Unauthorized request"
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.forbidden,
+            diagnostics=msg,
+        )
+
+
+@dataclass
+class TokenValidationError(RuntimeError):
+    response: dict | str
+    message: str
+
+    def __str__(self):
+        return f"{self.message}\n{self.response}"
+
+    @staticmethod
+    def to_operation_outcome() -> dict:
+        msg = "Missing/Invalid Token"
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.invalid,
+            diagnostics=msg,
+        )
+
+
+@dataclass
+class ForbiddenError(Exception):
+    response: dict | str
+    message: str
+
+    def __str__(self):
+        return f"{self.message}\n{self.response}"
+
+    @staticmethod
+    def to_operation_outcome() -> dict:
+        msg = "Forbidden"
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.forbidden,
+            diagnostics=msg,
+        )
+
+
+@dataclass
+class ConflictError(RuntimeError):
+    response: dict | str
+    message: str
+
+    def __str__(self):
+        return f"{self.message}\n{self.response}"
+
+    @staticmethod
+    def to_operation_outcome() -> dict:
+        msg = "Conflict"
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.duplicate,
+            diagnostics=msg,
+        )
+
+
+@dataclass
+class BadRequestError(RuntimeError):
+    """Use when payload is missing required parameters"""
+
+    response: dict | str
+    message: str
+
+    def __str__(self):
+        return f"{self.message}\n{self.response}"
+
+    def to_operation_outcome(self) -> dict:
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.incomplete,
+            diagnostics=self.__str__(),
+        )
+
+
+@dataclass
+class ServerError(RuntimeError):
+    """Use when there is a server error"""
+
+    response: dict | str
+    message: str
+
+    def __str__(self):
+        return f"{self.message}\n{self.response}"
+
+    def to_operation_outcome(self) -> dict:
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.server_error,
+            diagnostics=self.__str__(),
+        )
+
+
 def create_operation_outcome(resource_id: str, severity: Severity, code: Code, diagnostics: str) -> dict:
     """Create an OperationOutcome object. Do not use `fhir.resource` library since it adds unnecessary validations"""
     return {
@@ -179,3 +293,28 @@ def create_operation_outcome(resource_id: str, severity: Severity, code: Code, d
             }
         ],
     }
+
+
+def raise_error_response(response):
+    error_mapping = {
+        401: (TokenValidationError, "Token validation failed for the request"),
+        400: (
+            BadRequestError,
+            "Bad request: Resource type or parameters incorrect",
+        ),
+        403: (
+            UnauthorizedError,
+            "Forbidden: You do not have permission to access this resource",
+        ),
+        500: (ServerError, "Internal Server Error"),
+        404: (ResourceNotFoundError, "Subscription or Resource not found"),
+        409: (ConflictError, "SQS Queue Already Subscribed, can't re-subscribe"),
+    }
+    exception_class, error_message = error_mapping.get(
+        response.status_code,
+        (UnhandledResponseError, f"Unhandled error: {response.status_code}"),
+    )
+
+    if response.status_code == 404:
+        raise exception_class(resource_type=response.json(), resource_id=error_message)
+    raise exception_class(response=response.json(), message=error_message)

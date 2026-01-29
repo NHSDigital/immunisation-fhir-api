@@ -34,6 +34,14 @@ class PdsService:
         elif response.status_code == 404:
             logger.info("Patient not found")
             return None
+        elif response.status_code in (400, 401, 403):
+            logger.info(f"PDS Client Error: Status = {response.status_code} - Body {response.text}")
+            msg = "Client error occurred while calling PDS"
+            raise UnhandledResponseError(response=response.json(), message=msg)
+        elif response.status_code in (500, 502, 503, 504):
+            logger.error(f"PDS Server Error: Status = {response.status_code} - Body {response.text}")
+            msg = "Server error occurred while calling PDS"
+            raise UnhandledResponseError(response=response.json(), message=msg)
         else:
             logger.error(f"PDS. Error response: {response.status_code} - {response.text}")
             msg = "Downstream service failed to validate the patient"
