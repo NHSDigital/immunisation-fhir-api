@@ -238,7 +238,7 @@ jobs:
           TEST_FILTER: ${{ inputs.suite_to_run == 'proxy_smoke' && 'Status_feature' || inputs.suite_to_run }}
         run: poetry run pytest "$TEST_PATH" -m "$TEST_FILTER" --junitxml=output/test-results.xml --alluredir=output/allure-results
 
-      - uses: dorny/test-reporter@31a54ee7ebcacc03a09ea97a7e5465a47b84aea5
+      - uses: dorny/test-reporter@b082adf0eced0765477756c2a610396589b8c637
         if: always()
         with:
           name: BDD Test Summary
