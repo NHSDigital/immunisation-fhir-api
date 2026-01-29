@@ -155,7 +155,6 @@ def update_ack_file(
     """Updates the ack file with the new data row based on the given arguments"""
     ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.csv')}"
     temp_ack_file_key = f"{TEMP_ACK_DIR}/{ack_filename}"
-    completed_ack_file_key = f"{COMPLETED_ACK_DIR}/{ack_filename}"
     accumulated_csv_content = obtain_current_ack_content(temp_ack_file_key)
 
     for row in ack_data_rows:
@@ -166,4 +165,4 @@ def update_ack_file(
     csv_file_like_object = BytesIO(accumulated_csv_content.getvalue().encode("utf-8"))
 
     get_s3_client().upload_fileobj(csv_file_like_object, ACK_BUCKET_NAME, temp_ack_file_key)
-    logger.info("Ack file updated to %s: %s", ACK_BUCKET_NAME, completed_ack_file_key)
+    logger.info("Ack file updated to %s: %s", ACK_BUCKET_NAME, temp_ack_file_key)
