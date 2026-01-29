@@ -46,14 +46,14 @@ files = [
 
 [[package]]
 name = "aws-sso-lite"
-version = "0.0.4"
+version = "0.0.9"
 description = "A lightweight package to do aws sso without aws cli"
 optional = false
 python-versions = ">=3.6"
 groups = ["main"]
 files = [
-    {file = "aws_sso_lite-0.0.4-py3-none-any.whl", hash = "sha256:13f62d397fef5bf409929f027e092e345f791ff05ed93cfbacc9cdb0d2a350fd"},
-    {file = "aws_sso_lite-0.0.4.tar.gz", hash = "sha256:7f3e8ae94c8bcb36f8c1340f9092499230e4564dff164df9d3a94e07124c702c"},
+    {file = "aws_sso_lite-0.0.9-py3-none-any.whl", hash = "sha256:6d4a2be54f5dcf108e762fa8ca91359735eb41bafc5b0f6e7e48319cbc60f74d"},
+    {file = "aws_sso_lite-0.0.9.tar.gz", hash = "sha256:149c0147c0b212e2fb28ceb0bf314a1d6df5472b0bec5b45d519578dd1c2f5ce"},
 ]
 
 [[package]]
@@ -911,14 +911,14 @@ typing-extensions = "*"
 
 [[package]]
 name = "pytest-check"
-version = "2.5.4"
+version = "2.6.2"
 description = "A pytest plugin that allows multiple failures per test."
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "pytest_check-2.5.4-py3-none-any.whl", hash = "sha256:08c5f0ef40717ef8e55ee09d65dd7c919502db6eadb37a09818c12c28a57ad50"},
-    {file = "pytest_check-2.5.4.tar.gz", hash = "sha256:33d87e28d5e49217f413277e1e0d267cd66c90a85a208944c44312c9c8e4ff74"},
+    {file = "pytest_check-2.6.2-py3-none-any.whl", hash = "sha256:71762eb58f6b8a2d75afb9e6c8b800af7f634f67359d899a65ee48aaee087215"},
+    {file = "pytest_check-2.6.2.tar.gz", hash = "sha256:5e2128405b14978ad74f21f3225fcc52bbb1cc7c41a55d5eaad9f1e3cd27e42e"},
 ]
 
 [package.dependencies]
@@ -944,14 +944,14 @@ six = ">=1.5"
 
 [[package]]
 name = "python-dotenv"
-version = "1.1.1"
+version = "1.2.1"
 description = "Read key-value pairs from a .env file and set them as environment variables"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "python_dotenv-1.1.1-py3-none-any.whl", hash = "sha256:31f23644fe2602f88ff55e1f5c79ba497e01224ee7737937930c448e4d0e24dc"},
-    {file = "python_dotenv-1.1.1.tar.gz", hash = "sha256:a8a6399716257f45be6a007360200409fce5cda2661e3dec71d23dc15f6189ab"},
+    {file = "python_dotenv-1.2.1-py3-none-any.whl", hash = "sha256:b81ee9561e9ca4004139c6cbba3a238c32b03e4894671e181b671e8cb8425d61"},
+    {file = "python_dotenv-1.2.1.tar.gz", hash = "sha256:42667e897e16ab0d66954af0e60a9caa94f0fd4ecf3aaf6d2d260eec1aa36ad6"},
 ]
 
 [package.extras]
@@ -1023,14 +1023,14 @@ files = [
 
 [[package]]
 name = "typing-extensions"
-version = "4.14.1"
+version = "4.15.0"
 description = "Backported and Experimental Type Hints for Python 3.9+"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "typing_extensions-4.14.1-py3-none-any.whl", hash = "sha256:d1e1e3b58374dc93031d6eda2420a48ea44a36c2b4766a4fdeb3710755731d76"},
-    {file = "typing_extensions-4.14.1.tar.gz", hash = "sha256:38b39f4aeeab64884ce9f74c94263ef78f3c22467c8724005483154c26648d36"},
+    {file = "typing_extensions-4.15.0-py3-none-any.whl", hash = "sha256:f0fa19c6845758ab08074a0cfa8b7aecb71c999ca73d62883bc25cc018c4e548"},
+    {file = "typing_extensions-4.15.0.tar.gz", hash = "sha256:0cea48d173cc12fa28ecabc3b837ea3cf6f38c6d1136f85cbaaf598984861466"},
 ]
 
 [[package]]
@@ -1066,4 +1066,4 @@ zstd = ["backports-zstd (>=1.0.0) ; python_version < \"3.14\""]
 [metadata]
 lock-version = "2.1"
 python-versions = "~3.11"
-content-hash = "c55f553f60b049b5a7792646c49aaea6554e95a4f3bdd60399dcbd313d9f5984"
+content-hash = "a801749dacced896ee08a8a47fbed9579b1d146db3669b654daf47585cbc93ca"
