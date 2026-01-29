@@ -3,3 +3,6 @@ variable "aws_environment" {}
 variable "mesh_environment" {}
 variable "mesh_mailbox_ids" {}
 variable "mesh_dlq_mailbox_id" {}
+variable "aws_region" {
+  default = "eu-west-2"
+}
