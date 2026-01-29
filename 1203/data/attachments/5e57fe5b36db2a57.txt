@@ -1,0 +1,2 @@
+❌ Step failed! **I send a request to the ping endpoint** 
+ Error: 502 Server Error: Bad Gateway for url: https://api.enterprise.apigee.com/v1/organizations/nhsd-nonprod/developers/england.immsfhirapigee@nhs.net/apps

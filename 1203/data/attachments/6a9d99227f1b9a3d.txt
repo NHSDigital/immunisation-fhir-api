@@ -1,0 +1,2 @@
+❌ Step failed! **Valid vaccination record is created with Patient 'SupersedeNhsNo' and vaccine_type '4IN1'** 
+ Error: 502 Server Error: Bad Gateway for url: https://api.enterprise.apigee.com/v1/organizations/nhsd-nonprod/developers/england.immsfhirapigee@nhs.net/apps
