@@ -5,7 +5,7 @@ from csv import writer
 from io import BytesIO, StringIO
 
 from common.clients import get_s3_client
-from common.models.batch_constants import ACK_BUCKET_NAME
+from common.models.batch_constants import ACK_BUCKET_NAME, TEMP_ACK_DIR
 
 
 def make_ack_data(
@@ -58,7 +58,7 @@ def create_json_ack_file(
     if file_key is None:
         return
     """Creates the initial JSON BusAck file and uploads it to the temp bucket"""
-    ack_filename = "TempAck/" + file_key.replace(".csv", f"_BusAck_{created_at_formatted_string}.json")
+    ack_filename = TEMP_ACK_DIR + "/" + file_key.replace(".csv", f"_BusAck_{created_at_formatted_string}.json")
     raw_ack_filename = ack_filename.split(".")[0]
     try:
         provider = ack_filename.split("_")[3]
