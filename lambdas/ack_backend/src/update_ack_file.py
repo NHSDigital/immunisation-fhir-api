@@ -1,5 +1,6 @@
 """Functions for uploading the data to the ack file"""
 
+import json
 import os
 import time
 from datetime import datetime
@@ -171,3 +172,36 @@ def update_ack_file(
 
     get_s3_client().upload_fileobj(csv_file_like_object, ACK_BUCKET_NAME, temp_ack_file_key)
     logger.info("Ack file updated to %s: %s", ACK_BUCKET_NAME, temp_ack_file_key)
+
+
+def update_json_ack_file(
+    file_key: str,
+    created_at_formatted_string: str,
+    ack_data_rows: list,
+) -> None:
+    """Updates the ack file with the new data row based on the given arguments"""
+    ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.json')}"
+    temp_ack_file_key = f"{TEMP_ACK_DIR}/{ack_filename}"
+
+    # read the json file
+    existing_ack_file = get_s3_client().get_object(Bucket=ACK_BUCKET_NAME, Key=temp_ack_file_key)
+    existing_content = existing_ack_file["Body"].read().decode("utf-8")
+    ack_data_dict = json.loads(existing_content)
+
+    for row in ack_data_rows:
+        json_data_row = {}
+        json_data_row["rowId"] = row["MESSAGE_HEADER_ID"].split("^")[-1]
+        json_data_row["responseCode"] = row["RESPONSE_CODE"]
+        json_data_row["responseDisplay"] = row["RESPONSE_DISPLAY"]
+        json_data_row["severity"] = row["ISSUE_SEVERITY"]
+        json_data_row["localId"] = row["LOCAL_ID"]
+        json_data_row["operationOutcome"] = row["OPERATION_OUTCOME"]
+
+        ack_data_dict["failures"].append(json_data_row)
+
+        # print(json.dumps(json_data_row, indent=2))
+
+    # Upload ack_data_dict to S3
+    json_bytes = BytesIO(json.dumps(ack_data_dict, indent=2).encode("utf-8"))
+    get_s3_client().upload_fileobj(json_bytes, ACK_BUCKET_NAME, temp_ack_file_key)
+    logger.info("JSON ack file updated to %s: %s", ACK_BUCKET_NAME, temp_ack_file_key)

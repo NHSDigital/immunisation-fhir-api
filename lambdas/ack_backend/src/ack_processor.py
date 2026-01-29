@@ -6,7 +6,11 @@ from common.batch.audit_table import increment_records_failed_count
 from common.batch.eof_utils import is_eof_message
 from convert_message_to_ack_row import convert_message_to_ack_row
 from logging_decorators import ack_lambda_handler_logging_decorator
-from update_ack_file import complete_batch_file_process, update_ack_file
+from update_ack_file import (
+    complete_batch_file_process,
+    update_ack_file,
+    update_json_ack_file,
+)
 
 
 @ack_lambda_handler_logging_decorator
@@ -53,6 +57,9 @@ def lambda_handler(event, _):
             increment_records_failed_count(message_id)
 
     update_ack_file(file_key, created_at_formatted_string, ack_data_rows)
+
+    # TODO: update json ack file on switch
+    update_json_ack_file(file_key, created_at_formatted_string, ack_data_rows)
 
     if file_processing_complete:
         complete_batch_file_process(message_id, supplier, vaccine_type, created_at_formatted_string, file_key)
