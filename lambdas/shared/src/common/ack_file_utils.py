@@ -51,9 +51,7 @@ def upload_ack_file(file_key: str, ack_data: dict, created_at_formatted_string: 
 
 
 def create_json_ack_file(
-    message_id: str,
-    file_key: str,
-    created_at_formatted_string: str,
+    message_id: str, file_key: str, created_at_formatted_string: str, ingestion_start_time_seconds: int
 ) -> None:
     if file_key is None:
         return
@@ -76,6 +74,8 @@ def create_json_ack_file(
     ack_data_dict["messageHeaderId"] = message_id
 
     ack_data_dict["summary"] = {}
+    ack_data_dict["summary"]["ingestionTime"] = {}
+    ack_data_dict["summary"]["ingestionTime"]["start"] = ingestion_start_time_seconds
     ack_data_dict["failures"] = []
 
     print(json.dumps(ack_data_dict, indent=2))
