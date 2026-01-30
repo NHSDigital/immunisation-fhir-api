@@ -238,8 +238,33 @@ jobs:
           TEST_FILTER: ${{ inputs.suite_to_run == 'proxy_smoke' && 'Status_feature' || inputs.suite_to_run }}
         run: poetry run pytest "$TEST_PATH" -m "$TEST_FILTER" --junitxml=output/test-results.xml --alluredir=output/allure-results
 
-      - uses: dorny/test-reporter@b082adf0eced0765477756c2a610396589b8c637
+      - name: Upload e2e automation test artifact
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         if: always()
+        with:
+          name: ${{ env.ENVIRONMENT }}-${{ env.SUB_ENVIRONMENT }}-${{ env.APIGEE_ENVIRONMENT }}-e2e-test-output
+          path: tests/e2e_automation/output
+
+  publish-test-report:
+    permissions:
+      id-token: write
+      checks: write
+      contents: write
+    runs-on: ubuntu-latest
+    needs: [e2e-automation-tests]
+    if: always()
+    environment: ${{ inputs.apigee_environment }}
+
+    steps:
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
+
+      - name: Download e2e automation test artifact
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131
+        with:
+          name: ${{ env.ENVIRONMENT }}-${{ env.SUB_ENVIRONMENT }}-${{ env.APIGEE_ENVIRONMENT }}-e2e-test-output
+          path: tests/e2e_automation/output
+
+      - uses: dorny/test-reporter@b082adf0eced0765477756c2a610396589b8c637
         with:
           name: BDD Test Summary
           path: "**/output/test-results.xml"
@@ -248,14 +273,14 @@ jobs:
 
       - name: Load test report history
         uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
-        if: always()
+        if: github.event_name == 'workflow_dispatch'
         continue-on-error: true
         with:
           ref: gh-pages
           path: gh-pages
 
       - name: Build Allure report
-        if: always()
+        if: github.event_name == 'workflow_dispatch'
         uses: simple-elf/allure-report-action@53ebb757a2097edc77c53ecef4d454fc2f2f774c
         with:
           allure_results: tests/e2e_automation/output/allure-results
@@ -264,7 +289,7 @@ jobs:
           allure_history: allure-history
 
       - name: Publish Allure report to GitHub Pages
-        if: always()
+        if: github.event_name == 'workflow_dispatch'
         uses: peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d475ec49e8ef4d45e
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -272,7 +297,7 @@ jobs:
           publish_dir: allure-history
 
       - name: Add link to Allure report
-        if: always()
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/github-script@v8
         with:
           script: |
