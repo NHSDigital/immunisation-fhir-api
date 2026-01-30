@@ -217,9 +217,7 @@ def obtain_current_json_ack_content(message_id: str, temp_ack_file_key: str) -> 
             logger.error("error whilst obtaining current JSON ack content: %s", error)
             raise
 
-    accumulated_csv_content = StringIO()
-    accumulated_csv_content.write(existing_content)
-    return accumulated_csv_content
+    return ack_data_dict
 
 
 def update_ack_file(
