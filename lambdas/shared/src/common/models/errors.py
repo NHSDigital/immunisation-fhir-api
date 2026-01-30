@@ -335,7 +335,7 @@ def request_with_retry_backoff(
         response = requests.get(url, headers=headers, timeout=timeout)
 
         if response.status_code not in Constants.RETRYABLE_STATUS_CODES:
-            return response
+            break
 
         if request_attempt < max_retries:
             logger.info(
@@ -347,4 +347,4 @@ def request_with_retry_backoff(
             continue
 
         # out of retries, return last response to be handled by caller
-        return response
+    return response
