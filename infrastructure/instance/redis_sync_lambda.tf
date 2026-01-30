@@ -233,11 +233,10 @@ resource "aws_lambda_function" "redis_sync_lambda" {
 
   environment {
     variables = {
-      CONFIG_BUCKET_NAME          = local.config_bucket_name
-      REDIS_HOST                  = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
-      REDIS_PORT                  = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
-      REDIS_SYNC_PROC_LAMBDA_NAME = local.redis_sync_lambda_name
-      SPLUNK_FIREHOSE_NAME        = module.splunk.firehose_stream_name
+      CONFIG_BUCKET_NAME   = local.config_bucket_name
+      REDIS_HOST           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
+      REDIS_PORT           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
+      SPLUNK_FIREHOSE_NAME = module.splunk.firehose_stream_name
     }
   }
   kms_key_arn = data.aws_kms_key.existing_lambda_encryption_key.arn
