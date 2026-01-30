@@ -1,5 +1,6 @@
 import json
 import random
+import time
 from urllib.parse import parse_qs
 from venv import logger
 
@@ -226,25 +227,25 @@ def validate_etag_in_header(context):
     )
 
 
-@when("Send a update for Immunization event created with vaccination detail being updated")
+@when("I subsequently update the vaccination details of the original immunization event")
 def send_update_for_vaccination_detail(context):
+    # We retrieve the delta records for a given event e.g. CREATE - UPDATE - UPDATE and then order them by timestamp
+    # to ensure we are using the latest one for assertions. The timestamp we assign, based on the DynamoDB stream
+    # ApproximateCreationDateTime is rounded to the nearest second: https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_streams_StreamRecord.html
+    # Therefore, using a sleep to ensure ordering is maintained to avoid intermittent errors when the system runs fast.
+    time.sleep(1)
+
     get_update_url_header(context, str(context.expected_version))
     context.update_object = convert_to_update(context.immunization_object, context.ImmsID)
-    context.expected_version = int(context.expected_version) + 1
     context.update_object.extension = [build_vaccine_procedure_extension(context.vaccine_type.upper())]
     vaccine_details = get_vaccine_details(context.vaccine_type.upper())
     context.update_object.vaccineCode = vaccine_details["vaccine_code"]
     context.update_object.site = build_site_route(random.choice(SITE_MAP))
     context.update_object.route = build_site_route(random.choice(ROUTE_MAP))
-    context.create_object = context.update_object
-    context.request = context.update_object.dict(exclude_none=True, exclude_unset=True)
-    context.response = http_requests_session.put(
-        context.url + "/" + context.ImmsID, json=context.request, headers=context.headers
-    )
-    print(f"Update Request is {json.dumps(context.request)}")
+    trigger_the_updated_request(context)
 
 
-@when("Send a update for Immunization event created with patient address being updated")
+@when("I update the address of the original immunization event")
 def send_update_for_immunization_event(context):
     get_update_url_header(context, str(context.expected_version))
     context.update_object = convert_to_update(context.immunization_object, context.ImmsID)
