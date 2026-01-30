@@ -1,6 +1,7 @@
 """Constants for ack lambda"""
 
 COMPLETED_ACK_DIR = "forwardedFile"
+TEMP_ACK_DIR = "TempAck"
 BATCH_FILE_PROCESSING_DIR = "processing"
 BATCH_FILE_ARCHIVE_DIR = "archive"
 LAMBDA_FUNCTION_NAME_PREFIX = "ack_processor"

@@ -111,6 +111,17 @@ def _build_audit_table_update_log_message(file_key: str, message_id: str, attrs_
     )
 
 
+def get_ingestion_start_time_by_message_id(event_message_id: str) -> int:
+    """Retrieves ingestion start time by unique event message ID"""
+    # Required by JSON ack file
+    audit_record = dynamodb_client.get_item(
+        TableName=AUDIT_TABLE_NAME, Key={AuditTableKeys.MESSAGE_ID: {"S": event_message_id}}
+    )
+
+    ingestion_start_time = audit_record.get("Item", {}).get(AuditTableKeys.INGESTION_START_TIME, {}).get("N")
+    return int(ingestion_start_time) if ingestion_start_time else 0
+
+
 def get_record_count_and_failures_by_message_id(event_message_id: str) -> tuple[int, int]:
     """Retrieves total record count and total failures by unique event message ID"""
     audit_record = dynamodb_client.get_item(

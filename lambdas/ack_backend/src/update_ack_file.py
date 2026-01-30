@@ -9,13 +9,16 @@ from io import BytesIO, StringIO
 from botocore.exceptions import ClientError
 
 from common.aws_s3_utils import move_file
-from common.batch.audit_table import get_record_count_and_failures_by_message_id, update_audit_table_item
+from common.batch.audit_table import (
+    get_ingestion_start_time_by_message_id,
+    get_record_count_and_failures_by_message_id,
+    update_audit_table_item,
+)
 from common.clients import get_s3_client, logger
 from common.log_decorator import generate_and_send_logs
 from common.models.batch_constants import (
     ACK_BUCKET_NAME,
     SOURCE_BUCKET_NAME,
-    TEMP_ACK_DIR,
     AuditTableKeys,
     FileStatus,
 )
@@ -26,6 +29,7 @@ from constants import (
     COMPLETED_ACK_DIR,
     DEFAULT_STREAM_NAME,
     LAMBDA_FUNCTION_NAME_PREFIX,
+    TEMP_ACK_DIR,
 )
 
 STREAM_NAME = os.getenv("SPLUNK_FIREHOSE_NAME", DEFAULT_STREAM_NAME)
@@ -106,12 +110,10 @@ def complete_batch_file_process(
     # TODO: need to abstract this out
     json_ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.json')}"
     temp_ack_file_key = f"{TEMP_ACK_DIR}/{json_ack_filename}"
+    ack_data_dict = obtain_current_json_ack_content(message_id, temp_ack_file_key)
 
-    # read the json file
-    existing_ack_file = get_s3_client().get_object(Bucket=ACK_BUCKET_NAME, Key=temp_ack_file_key)
-    existing_content = existing_ack_file["Body"].read().decode("utf-8")
-    ack_data_dict = json.loads(existing_content)
-
+    generated_date = time.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+    ack_data_dict["generatedDate"] = generated_date
     ack_data_dict["summary"]["totalRecords"] = total_ack_rows_processed
     ack_data_dict["summary"]["success"] = successful_record_count
     ack_data_dict["summary"]["failed"] = total_failures
@@ -176,6 +178,50 @@ def obtain_current_ack_content(temp_ack_file_key: str) -> StringIO:
     return accumulated_csv_content
 
 
+def obtain_current_json_ack_content(message_id: str, temp_ack_file_key: str) -> dict:
+    """Returns the current ack file content if the file exists, or else initialises the content with the ack headers."""
+    try:
+        # If ack file exists in S3 download the contents
+        existing_ack_file = get_s3_client().get_object(Bucket=ACK_BUCKET_NAME, Key=temp_ack_file_key)
+        existing_content = existing_ack_file["Body"].read().decode("utf-8")
+        ack_data_dict = json.loads(existing_content)
+    except ClientError as error:
+        # If ack file does not exist in S3 create a new file containing the headers only
+        if error.response["Error"]["Code"] in ("404", "NoSuchKey"):
+            logger.info("No existing JSON ack file found in S3 - creating new file")
+
+            ingestion_start_time = get_ingestion_start_time_by_message_id(message_id)
+            raw_ack_filename = temp_ack_file_key.split(".")[0]
+            try:
+                provider = temp_ack_file_key.split("_")[3]
+            except IndexError:
+                provider = "unknown"
+
+            # Generate the initial fields
+            ack_data_dict = {}
+            ack_data_dict["system"] = "Immunisation FHIR API Batch Report"
+            ack_data_dict["version"] = 1  # TO FIX
+
+            ack_data_dict["generatedDate"] = ""  # will be filled on completion
+            ack_data_dict["filename"] = raw_ack_filename
+            ack_data_dict["provider"] = provider
+            ack_data_dict["messageHeaderId"] = message_id
+
+            ack_data_dict["summary"] = {}
+            ack_data_dict["summary"]["ingestionTime"] = {}
+            ack_data_dict["summary"]["ingestionTime"]["start"] = ingestion_start_time
+            ack_data_dict["failures"] = []
+
+            print(json.dumps(ack_data_dict, indent=2))
+        else:
+            logger.error("error whilst obtaining current JSON ack content: %s", error)
+            raise
+
+    accumulated_csv_content = StringIO()
+    accumulated_csv_content.write(existing_content)
+    return accumulated_csv_content
+
+
 def update_ack_file(
     file_key: str,
     created_at_formatted_string: str,
@@ -205,11 +251,8 @@ def update_json_ack_file(
     """Updates the ack file with the new data row based on the given arguments"""
     ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.json')}"
     temp_ack_file_key = f"{TEMP_ACK_DIR}/{ack_filename}"
-
-    # read the json file
-    existing_ack_file = get_s3_client().get_object(Bucket=ACK_BUCKET_NAME, Key=temp_ack_file_key)
-    existing_content = existing_ack_file["Body"].read().decode("utf-8")
-    ack_data_dict = json.loads(existing_content)
+    message_id = ack_data_rows[0]["MESSAGE_HEADER_ID"].split("^")[-1]
+    ack_data_dict = obtain_current_json_ack_content(message_id, temp_ack_file_key)
 
     for row in ack_data_rows:
         json_data_row = {}
