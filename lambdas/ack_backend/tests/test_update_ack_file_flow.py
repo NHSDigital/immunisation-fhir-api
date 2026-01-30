@@ -37,11 +37,14 @@ class TestUpdateAckFileFlow(unittest.TestCase):
         self.mock_update_audit_table_item = self.update_audit_table_item_patcher.start()
         self.get_record_and_failure_count_patcher = patch("update_ack_file.get_record_count_and_failures_by_message_id")
         self.mock_get_record_and_failure_count = self.get_record_and_failure_count_patcher.start()
+        self.get_ingestion_start_time_patcher = patch("update_ack_file.get_ingestion_start_time_by_message_id")
+        self.mock_get_ingestion_start_time = self.get_ingestion_start_time_patcher.start()
 
     def tearDown(self):
         self.logger_patcher.stop()
         self.update_audit_table_item_patcher.stop()
         self.get_record_and_failure_count_patcher.stop()
+        self.get_ingestion_start_time_patcher.stop()
 
     def test_audit_table_updated_correctly_when_ack_process_complete(self):
         """VED-167 - Test that the audit table has been updated correctly"""
@@ -58,6 +61,7 @@ class TestUpdateAckFileFlow(unittest.TestCase):
             Bucket=self.ack_bucket_name, Key=f"TempAck/audit_table_test_BusAck_{mock_created_at_string}.csv"
         )
         self.mock_get_record_and_failure_count.return_value = 10, 2
+        self.mock_get_ingestion_start_time.return_value = 1769781283
 
         # Act
         update_ack_file.complete_batch_file_process(
