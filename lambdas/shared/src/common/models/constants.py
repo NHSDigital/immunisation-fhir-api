@@ -60,6 +60,7 @@ class Constants:
 
     COMPLETED_STATUS = "completed"
     REINSTATED_RECORD_STATUS = "reinstated"
+    RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
 
 
 class Urls:

@@ -1,10 +1,11 @@
 import uuid
 
-import requests
-
 from common.authentication import AppRestrictedAuth
 from common.clients import logger
-from common.models.errors import UnhandledResponseError
+from common.models.errors import (
+    raise_error_response,
+    requests_get_with_retries,
+)
 
 
 class PdsService:
@@ -27,22 +28,14 @@ class PdsService:
             "X-Request-ID": str(uuid.uuid4()),
             "X-Correlation-ID": str(uuid.uuid4()),
         }
-        response = requests.get(f"{self.base_url}/{patient_id}", headers=request_headers, timeout=5)
+        response = requests_get_with_retries(
+            f"{self.base_url}/{patient_id}", headers=request_headers, timeout=5, max_retries=2, backoff_seconds=0.5
+        )
 
         if response.status_code == 200:
             return response.json()
         elif response.status_code == 404:
             logger.info("Patient not found")
             return None
-        elif response.status_code in (400, 401, 403):
-            logger.info(f"PDS Client Error: Status = {response.status_code} - Body {response.text}")
-            msg = "Client error occurred while calling PDS"
-            raise UnhandledResponseError(response=response.json(), message=msg)
-        elif response.status_code in (500, 502, 503, 504):
-            logger.error(f"PDS Server Error: Status = {response.status_code} - Body {response.text}")
-            msg = "Server error occurred while calling PDS"
-            raise UnhandledResponseError(response=response.json(), message=msg)
         else:
-            logger.error(f"PDS. Error response: {response.status_code} - {response.text}")
-            msg = "Downstream service failed to validate the patient"
-            raise UnhandledResponseError(response=response.json(), message=msg)
+            raise_error_response(response)

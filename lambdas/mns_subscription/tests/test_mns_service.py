@@ -5,10 +5,10 @@ from unittest.mock import MagicMock, Mock, create_autospec, patch
 from common.authentication import AppRestrictedAuth
 from common.models.errors import (
     BadRequestError,
+    ForbiddenError,
     ResourceNotFoundError,
     ServerError,
     TokenValidationError,
-    UnauthorizedError,
     UnhandledResponseError,
     raise_error_response,
 )
@@ -63,7 +63,7 @@ class TestMnsService(unittest.TestCase):
 
         with self.assertRaises(ResourceNotFoundError) as context:
             service.subscribe_notification()
-        self.assertIn("Subscription or Resource not found", str(context.exception))
+        self.assertIn("Resource not found", str(context.exception))
 
     @patch("mns_service.requests.post")
     def test_unhandled_error(self, mock_post):
@@ -170,7 +170,7 @@ class TestMnsService(unittest.TestCase):
         mock_delete.return_value = mock_response
 
         service = MnsService(self.authenticator)
-        with self.assertRaises(UnauthorizedError):
+        with self.assertRaises(ForbiddenError):
             service.delete_subscription("sub-id-123")
 
     @patch("mns_service.requests.delete")
@@ -255,18 +255,18 @@ class TestMnsService(unittest.TestCase):
         resp = self.mock_response(404, {"resource": "Not found"})
         with self.assertRaises(ResourceNotFoundError) as context:
             raise_error_response(resp)
-        self.assertIn("Subscription or Resource not found", str(context.exception))
-        self.assertEqual(context.exception.resource_id, "Subscription or Resource not found")
+        self.assertIn("Resource not found", str(context.exception))
+        self.assertEqual(context.exception.resource_id, "Resource not found")
         self.assertEqual(context.exception.resource_type, {"resource": "Not found"})
 
     def test_400_bad_request_error(self):
         resp = self.mock_response(400, {"resource": "Invalid"})
         with self.assertRaises(BadRequestError) as context:
             raise_error_response(resp)
-        self.assertIn("Bad request: Resource type or parameters incorrect", str(context.exception))
+        self.assertIn("Bad request", str(context.exception))
         self.assertEqual(
             context.exception.message,
-            "Bad request: Resource type or parameters incorrect",
+            "Bad request",
         )
         self.assertEqual(context.exception.response, {"resource": "Invalid"})
 

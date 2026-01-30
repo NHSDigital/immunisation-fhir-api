@@ -1,8 +1,12 @@
+import time
 import uuid
 from dataclasses import dataclass
 from enum import Enum
 
+import requests
+
 from common.clients import logger
+from common.models.constants import Constants
 
 
 class Code(str, Enum):
@@ -304,7 +308,7 @@ def raise_error_response(response):
         403: (ForbiddenError, "Forbidden: You do not have permission to access this resource"),
         500: (ServerError, "Internal Server Error"),
         404: (ResourceNotFoundError, "Resource not found"),
-        409: (ConflictError, "SQS Queue Already Subscribed, can't re-subscribe"),
+        409: (ConflictError, "Conflict: Resource already exists"),
         408: (ServerError, "Request Timeout"),
         429: (ServerError, "Too Many Requests"),
         503: (ServerError, "Service Unavailable"),
@@ -322,3 +326,25 @@ def raise_error_response(response):
     if response.status_code == 404:
         raise exception_class(resource_type=response.json(), resource_id=error_message)
     raise exception_class(response=response.json(), message=error_message)
+
+
+def request_with_retry_backoff(
+    url: str, headers: dict, *, timeout: int = 5, max_retries: int = 2, backoff_seconds: float = 0.5
+):
+    for request_attempt in range(max_retries + 1):
+        response = requests.get(url, headers=headers, timeout=timeout)
+
+        if response.status_code not in Constants.RETRYABLE_STATUS_CODES:
+            return response
+
+        if request_attempt < max_retries:
+            logger.info(
+                f"Retryable response. Status={response.status_code}. "
+                f"Attempt={request_attempt + 1}/{max_retries + 1}. Retrying..."
+            )
+
+            time.sleep(backoff_seconds * (2**request_attempt))
+            continue
+
+        # out of retries, return last response to be handled by caller
+        return response
