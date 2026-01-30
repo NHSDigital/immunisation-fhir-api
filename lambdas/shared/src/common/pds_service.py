@@ -1,10 +1,11 @@
 import uuid
 
-import requests
-
 from common.authentication import AppRestrictedAuth
 from common.clients import logger
-from common.models.errors import UnhandledResponseError
+from common.models.errors import (
+    raise_error_response,
+    request_with_retry_backoff,
+)
 
 
 class PdsService:
@@ -27,7 +28,9 @@ class PdsService:
             "X-Request-ID": str(uuid.uuid4()),
             "X-Correlation-ID": str(uuid.uuid4()),
         }
-        response = requests.get(f"{self.base_url}/{patient_id}", headers=request_headers, timeout=5)
+        response = request_with_retry_backoff(
+            f"{self.base_url}/{patient_id}", headers=request_headers, timeout=5, max_retries=2, backoff_seconds=0.5
+        )
 
         if response.status_code == 200:
             return response.json()
@@ -35,6 +38,4 @@ class PdsService:
             logger.info("Patient not found")
             return None
         else:
-            logger.error(f"PDS. Error response: {response.status_code} - {response.text}")
-            msg = "Downstream service failed to validate the patient"
-            raise UnhandledResponseError(response=response.json(), message=msg)
+            raise_error_response(response)

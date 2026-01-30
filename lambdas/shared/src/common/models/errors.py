@@ -1,6 +1,12 @@
+import time
 import uuid
 from dataclasses import dataclass
 from enum import Enum
+
+import requests
+
+from common.clients import logger
+from common.models.constants import Constants
 
 
 class Code(str, Enum):
@@ -157,6 +163,120 @@ class IdentifierDuplicationError(RuntimeError):
         )
 
 
+@dataclass
+class UnauthorizedError(RuntimeError):
+    response: dict | str
+    message: str
+
+    def __str__(self):
+        return f"{self.message}\n{self.response}"
+
+    @staticmethod
+    def to_operation_outcome() -> dict:
+        msg = "Unauthorized request"
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.forbidden,
+            diagnostics=msg,
+        )
+
+
+@dataclass
+class TokenValidationError(RuntimeError):
+    response: dict | str
+    message: str
+
+    def __str__(self):
+        return f"{self.message}\n{self.response}"
+
+    @staticmethod
+    def to_operation_outcome() -> dict:
+        msg = "Missing/Invalid Token"
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.invalid,
+            diagnostics=msg,
+        )
+
+
+@dataclass
+class ForbiddenError(Exception):
+    response: dict | str
+    message: str
+
+    def __str__(self):
+        return f"{self.message}\n{self.response}"
+
+    @staticmethod
+    def to_operation_outcome() -> dict:
+        msg = "Forbidden"
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.forbidden,
+            diagnostics=msg,
+        )
+
+
+@dataclass
+class ConflictError(RuntimeError):
+    response: dict | str
+    message: str
+
+    def __str__(self):
+        return f"{self.message}\n{self.response}"
+
+    @staticmethod
+    def to_operation_outcome() -> dict:
+        msg = "Conflict"
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.duplicate,
+            diagnostics=msg,
+        )
+
+
+@dataclass
+class BadRequestError(RuntimeError):
+    """Use when payload is missing required parameters"""
+
+    response: dict | str
+    message: str
+
+    def __str__(self):
+        return f"{self.message}\n{self.response}"
+
+    def to_operation_outcome(self) -> dict:
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.incomplete,
+            diagnostics=self.__str__(),
+        )
+
+
+@dataclass
+class ServerError(RuntimeError):
+    """Use when there is a server error"""
+
+    response: dict | str
+    message: str
+
+    def __str__(self):
+        return f"{self.message}\n{self.response}"
+
+    def to_operation_outcome(self) -> dict:
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.server_error,
+            diagnostics=self.__str__(),
+        )
+
+
 def create_operation_outcome(resource_id: str, severity: Severity, code: Code, diagnostics: str) -> dict:
     """Create an OperationOutcome object. Do not use `fhir.resource` library since it adds unnecessary validations"""
     return {
@@ -179,3 +299,52 @@ def create_operation_outcome(resource_id: str, severity: Severity, code: Code, d
             }
         ],
     }
+
+
+def raise_error_response(response):
+    error_mapping = {
+        401: (TokenValidationError, "Token validation failed for the request"),
+        400: (BadRequestError, "Bad request"),
+        403: (ForbiddenError, "Forbidden: You do not have permission to access this resource"),
+        500: (ServerError, "Internal Server Error"),
+        404: (ResourceNotFoundError, "Resource not found"),
+        409: (ConflictError, "Conflict: Resource already exists"),
+        408: (ServerError, "Request Timeout"),
+        429: (ServerError, "Too Many Requests"),
+        503: (ServerError, "Service Unavailable"),
+        502: (ServerError, "Bad Gateway"),
+        504: (ServerError, "Gateway Timeout"),
+    }
+
+    exception_class, error_message = error_mapping.get(
+        response.status_code,
+        (UnhandledResponseError, f"Unhandled error: {response.status_code}"),
+    )
+
+    logger.info(f"{error_message}. Status={response.status_code}. Body={response.text}")
+
+    if response.status_code == 404:
+        raise exception_class(resource_type=response.json(), resource_id=error_message)
+    raise exception_class(response=response.json(), message=error_message)
+
+
+def request_with_retry_backoff(
+    url: str, headers: dict, *, timeout: int = 5, max_retries: int = 2, backoff_seconds: float = 0.5
+):
+    for request_attempt in range(max_retries + 1):
+        response = requests.get(url, headers=headers, timeout=timeout)
+
+        if response.status_code not in Constants.RETRYABLE_STATUS_CODES:
+            break
+
+        if request_attempt < max_retries:
+            logger.info(
+                f"Retryable response. Status={response.status_code}. "
+                f"Attempt={request_attempt + 1}/{max_retries + 1}. Retrying..."
+            )
+
+            time.sleep(backoff_seconds * (2**request_attempt))
+            continue
+
+        # out of retries, return last response to be handled by caller
+    return response
