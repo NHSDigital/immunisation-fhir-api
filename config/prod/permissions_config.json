@@ -58,6 +58,7 @@
   {
     "supplier": "MEDICUS",
     "permissions": [
+      "FLU.CRUDS",
       "3IN1.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
