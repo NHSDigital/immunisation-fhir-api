@@ -2,6 +2,8 @@ import uuid
 from dataclasses import dataclass
 from enum import Enum
 
+from common.clients import logger
+
 
 class Code(str, Enum):
     forbidden = "forbidden"
@@ -298,22 +300,24 @@ def create_operation_outcome(resource_id: str, severity: Severity, code: Code, d
 def raise_error_response(response):
     error_mapping = {
         401: (TokenValidationError, "Token validation failed for the request"),
-        400: (
-            BadRequestError,
-            "Bad request: Resource type or parameters incorrect",
-        ),
-        403: (
-            UnauthorizedError,
-            "Forbidden: You do not have permission to access this resource",
-        ),
+        400: (BadRequestError, "Bad request"),
+        403: (ForbiddenError, "Forbidden: You do not have permission to access this resource"),
         500: (ServerError, "Internal Server Error"),
-        404: (ResourceNotFoundError, "Subscription or Resource not found"),
+        404: (ResourceNotFoundError, "Resource not found"),
         409: (ConflictError, "SQS Queue Already Subscribed, can't re-subscribe"),
+        408: (ServerError, "Request Timeout"),
+        429: (ServerError, "Too Many Requests"),
+        503: (ServerError, "Service Unavailable"),
+        502: (ServerError, "Bad Gateway"),
+        504: (ServerError, "Gateway Timeout"),
     }
+
     exception_class, error_message = error_mapping.get(
         response.status_code,
         (UnhandledResponseError, f"Unhandled error: {response.status_code}"),
     )
+
+    logger.info(f"{error_message}. Status={response.status_code}. Body={response.text}")
 
     if response.status_code == 404:
         raise exception_class(resource_type=response.json(), resource_id=error_message)
