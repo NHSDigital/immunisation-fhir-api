@@ -101,7 +101,7 @@ resource "aws_cloudwatch_event_rule" "shield_ddos_rule_regional" {
 resource "aws_cloudwatch_event_target" "shield_ddos_target_regional" {
   rule      = aws_cloudwatch_event_rule.shield_ddos_rule_regional.name
   target_id = "csoc-eventbus"
-  arn       = "arn:aws:events:eu-west-2:${var.csoc_account_id}:event-bus/shield-eventbus"
+  arn       = "arn:aws:events:${var.aws_region}:${var.csoc_account_id}:event-bus/shield-eventbus"
   role_arn  = aws_iam_role.eventbridge_forwarder_role.arn
 }
 

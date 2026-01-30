@@ -1,8 +1,8 @@
 data "aws_ec2_managed_prefix_list" "egress" {
   for_each = toset([
     "com.amazonaws.global.cloudfront.origin-facing",
-    "com.amazonaws.eu-west-2.dynamodb",
-    "com.amazonaws.eu-west-2.s3"
+    "com.amazonaws.${var.aws_region}.dynamodb",
+    "com.amazonaws.${var.aws_region}.s3"
   ])
 
   name = each.value

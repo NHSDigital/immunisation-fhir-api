@@ -39,7 +39,3 @@ def transform_supplier_permissions(mapping):
         "supplier_permissions": supplier_permissions,
         "ods_code_to_supplier": ods_code_to_supplier,
     }
-
-
-def transform_validation_rules(data) -> dict:
-    return {"validation_rules": data}

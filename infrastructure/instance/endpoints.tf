@@ -30,7 +30,7 @@ locals {
     # except for prod and ref, any other env uses PDS int environment
     "PDS_ENV"              = var.pds_environment
     "SPLUNK_FIREHOSE_NAME" = module.splunk.firehose_stream_name
-    "SQS_QUEUE_URL"        = "https://sqs.eu-west-2.amazonaws.com/${var.immunisation_account_id}/${local.short_prefix}-ack-metadata-queue.fifo"
+    "SQS_QUEUE_URL"        = "https://sqs.${var.aws_region}.amazonaws.com/${var.immunisation_account_id}/${local.short_prefix}-ack-metadata-queue.fifo"
     "REDIS_HOST"           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
     "REDIS_PORT"           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
   }

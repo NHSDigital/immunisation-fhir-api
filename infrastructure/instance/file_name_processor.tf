@@ -3,6 +3,8 @@ locals {
   filename_lambda_dir     = abspath("${path.root}/../../lambdas/filenameprocessor")
   filename_lambda_files   = fileset(local.filename_lambda_dir, "**")
   filename_lambda_dir_sha = sha1(join("", [for f in local.filename_lambda_files : filesha1("${local.filename_lambda_dir}/${f}")]))
+  filename_lambda_name    = "${local.short_prefix}-filenameproc-lambda"
+
   dps_bucket_name_for_extended_attribute = (
     var.environment == "prod"
     ? "nhsd-dspp-core-prod-extended-attributes-gdp"
@@ -79,7 +81,7 @@ resource "aws_ecr_repository_policy" "filenameprocessor_lambda_ECRImageRetreival
         ],
         "Condition" : {
           "StringLike" : {
-            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${var.immunisation_account_id}:function:${local.short_prefix}-filenameproc_lambda"
+            "aws:sourceArn" : "arn:aws:lambda:${var.aws_region}:${var.immunisation_account_id}:function:${local.filename_lambda_name}"
           }
         }
       }
@@ -89,7 +91,7 @@ resource "aws_ecr_repository_policy" "filenameprocessor_lambda_ECRImageRetreival
 
 # IAM Role for Lambda
 resource "aws_iam_role" "filenameprocessor_lambda_exec_role" {
-  name = "${local.short_prefix}-filenameproc-lambda-exec-role"
+  name = "${local.filename_lambda_name}-exec-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
@@ -105,7 +107,7 @@ resource "aws_iam_role" "filenameprocessor_lambda_exec_role" {
 
 # Policy for Lambda execution role
 resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
-  name = "${local.short_prefix}-filenameproc-lambda-exec-policy"
+  name = "${local.filename_lambda_name}-exec-policy"
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -116,7 +118,7 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-filenameproc_lambda:*"
+        Resource = "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/lambda/${local.filename_lambda_name}:*"
       },
       {
         Effect = "Allow"
@@ -186,7 +188,7 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
 
 # Policy for Lambda to interact with SQS
 resource "aws_iam_policy" "filenameprocessor_lambda_sqs_policy" {
-  name = "${local.short_prefix}-filenameproc-lambda-sqs-policy"
+  name = "${local.filename_lambda_name}-sqs-policy"
 
   policy = jsonencode({
     Version = "2012-10-17",
@@ -201,7 +203,7 @@ resource "aws_iam_policy" "filenameprocessor_lambda_sqs_policy" {
 }
 
 resource "aws_iam_policy" "filenameprocessor_lambda_kms_access_policy" {
-  name        = "${local.short_prefix}-filenameproc-lambda-kms-policy"
+  name        = "${local.filename_lambda_name}-kms-policy"
   description = "Allow Lambda to decrypt environment variables"
 
   policy = jsonencode({
@@ -268,7 +270,7 @@ resource "aws_iam_policy" "filenameprocessor_dps_extended_attribute_kms_policy" 
           "kms:GenerateDataKey",
           "kms:DescribeKey"
         ],
-        Resource = "arn:aws:kms:eu-west-2:${var.dspp_core_account_id}:key/*",
+        Resource = "arn:aws:kms:${var.aws_region}:${var.dspp_core_account_id}:key/*",
         "Condition" = {
           "ForAnyValue:StringEquals" = {
             "kms:ResourceAliases" = "alias/${var.dspp_kms_key_alias}"
@@ -311,7 +313,7 @@ resource "aws_iam_role_policy_attachment" "filenameprocessor_lambda_dynamo_acces
 
 # Lambda Function with Security Group and VPC.
 resource "aws_lambda_function" "file_processor_lambda" {
-  function_name = "${local.short_prefix}-filenameproc_lambda"
+  function_name = local.filename_lambda_name
   role          = aws_iam_role.filenameprocessor_lambda_exec_role.arn
   package_type  = "Image"
   image_uri     = module.file_processor_docker_image.image_uri
@@ -371,7 +373,7 @@ resource "aws_s3_bucket_notification" "datasources_lambda_notification" {
 }
 
 resource "aws_cloudwatch_log_group" "file_name_processor_log_group" {
-  name              = "/aws/lambda/${local.short_prefix}-filenameproc_lambda"
+  name              = "/aws/lambda/${local.filename_lambda_name}"
   retention_in_days = 30
 }
 
