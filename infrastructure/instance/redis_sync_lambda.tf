@@ -270,7 +270,7 @@ resource "aws_cloudwatch_log_metric_filter" "redis_sync_error_logs" {
 resource "aws_cloudwatch_metric_alarm" "redis_sync_error_alarm" {
   count = var.error_alarm_notifications_enabled ? 1 : 0
 
-  alarm_name          = local.redis_sync_lambda_name
+  alarm_name          = "${local.redis_sync_lambda_name}-error"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = 1
   metric_name         = "${local.short_prefix}-RedisSyncErrorLogs"
