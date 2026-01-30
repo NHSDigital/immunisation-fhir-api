@@ -4,7 +4,7 @@ from common.authentication import AppRestrictedAuth
 from common.clients import logger
 from common.models.errors import (
     raise_error_response,
-    requests_get_with_retries,
+    request_with_retry_backoff,
 )
 
 
@@ -28,7 +28,7 @@ class PdsService:
             "X-Request-ID": str(uuid.uuid4()),
             "X-Correlation-ID": str(uuid.uuid4()),
         }
-        response = requests_get_with_retries(
+        response = request_with_retry_backoff(
             f"{self.base_url}/{patient_id}", headers=request_headers, timeout=5, max_retries=2, backoff_seconds=0.5
         )
 
