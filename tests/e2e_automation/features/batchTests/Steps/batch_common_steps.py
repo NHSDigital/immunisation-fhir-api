@@ -8,7 +8,6 @@ from unittest import result
 import pandas as pd
 import pytest_check as check
 from pytest_bdd import given, parsers, then, when
-from features.conftest import context
 from src.dynamoDB.dynamo_db_helper import (
     fetch_batch_audit_table_detail,
     fetch_immunization_events_detail_by_IdentifierPK,

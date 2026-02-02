@@ -111,7 +111,7 @@ def wait_and_read_ack_file(
                     print("[COMPLETE] All expected ACK files received")
 
                     if expected_extensions == {".csv"}:
-                        return found_files[".csv"]
+                        return {"csv": found_files[".csv"]}
 
                     return {
                         "csv": found_files[".csv"],

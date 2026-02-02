@@ -75,7 +75,9 @@ def batch_file_with_additional_column_is_created(datatable, context):
 
 @then("file will be moved to destination bucket and inf ack file will be created for duplicate batch file upload")
 def file_will_be_moved_to_destination_bucket(context):
-    context.fileContent = wait_and_read_ack_file(context, "ack", duplicate_inf_files=True)
+    result = wait_and_read_ack_file(context, "ack", duplicate_inf_files=True)
+    assert result is not None, f"File not found in destination bucket after timeout:  {context.forwarded_prefix}"
+    context.fileContent = result["csv"]
     assert context.fileContent, f"File not found in destination bucket after timeout:  {context.forwarded_prefix}"
 
 
