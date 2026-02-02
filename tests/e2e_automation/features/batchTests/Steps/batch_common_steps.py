@@ -3,10 +3,12 @@ import json
 import os
 import re
 from datetime import datetime, timezone
+from unittest import result
 
 import pandas as pd
 import pytest_check as check
 from pytest_bdd import given, parsers, then, when
+from features.conftest import context
 from src.dynamoDB.dynamo_db_helper import (
     fetch_batch_audit_table_detail,
     fetch_immunization_events_detail_by_IdentifierPK,
@@ -21,6 +23,7 @@ from src.objectModels.batch.batch_file_builder import (
     generate_file_name,
     save_record_to_batch_files_directory,
 )
+from src.objectModels.batch.batch_report_object import BatchReport
 from utilities.batch_file_helper import (
     read_and_validate_bus_ack_file_content,
     validate_bus_ack_file_for_error,
@@ -97,7 +100,8 @@ def batch_file_upload_in_s3_bucket(context):
 
 @then("file will be moved to destination bucket and inf ack file will be created")
 def ack_file_will_be_moved_to_destination_bucket(context):
-    context.fileContent = wait_and_read_ack_file(context, "ack")
+    result = wait_and_read_ack_file(context, "ack")
+    context.fileContent = result["csv"] 
     assert context.fileContent, f"File not found in destination bucket after timeout:  {context.forwarded_prefix}"
 
 
@@ -107,17 +111,32 @@ def all_records_are_processed_successfully_in_the_inf_ack_file(context):
     assert all_valid, "One or more records failed validation checks"
 
 
-@then("bus ack file will be created")
+@then("bus ack files will be created")
 def file_will_be_moved_to_destination_bucket(context):
-    context.fileContent = wait_and_read_ack_file(context, "forwardedFile")
-    assert context.fileContent, f"File not found in destination bucket after timeout: {context.forwarded_prefix}"
+    result = wait_and_read_ack_file(context, "forwardedFile")
+    assert isinstance(result, dict), (f"Expected both CSV and JSON ACK files but got: {type(result)}" )
+    context.fileContent = result.get("csv")
+    context.fileContentJson = result.get("json")
+    assert context.fileContent, f"BUS Ack csv File not found in destination bucket after timeout: {context.forwarded_prefix}"
+    assert context.fileContentJson, f"BUS Ack JSON file not found in destination bucket after timeout: {context.forwarded_prefix}"
 
 
-@then("bus ack will not have any entry of successfully processed records")
+@then("CSV bus ack will not have any entry of successfully processed records")
 def all_records_are_processed_successfully_in_the_batch_file(context):
     file_rows = read_and_validate_bus_ack_file_content(context)
     all_valid = validate_bus_ack_file_for_successful_records(context, file_rows)
     assert all_valid, "One or more records failed validation checks"
+    
+@then("Json bus ack will only contain file metadata and no record entries")
+def json_bus_ack_will_only_contain_file_metadata_and_no_record_entries(context):    
+    json_content = context.fileContentJson
+    assert json_content is not None, "BUS Ack JSON content is None"
+    data = json.loads(json_content)
+    report = BatchReport(**data)
+
+    print(report.summary.totalRecords)
+    print(report.failures[0].operationOutcome)
+   # TO do
 
 
 @then("Audit table will have correct status, queue name and record count for the processed batch file")
@@ -208,7 +227,7 @@ def validate_imms_event_table_for_all_records_in_batch_file(context, operation: 
         validate_to_compare_batch_record_with_event_table_record(context, batch_record, created_event)
 
 
-@then("all records are rejected in the bus ack file and no imms id is generated")
+@then("all rejected records are listed in the csv bus ack file and no imms id is generated")
 def all_record_are_rejected_for_given_field_name(context):
     file_rows = read_and_validate_bus_ack_file_content(context)
     all_valid = validate_bus_ack_file_for_error(context, file_rows)
