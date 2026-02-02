@@ -328,23 +328,21 @@ def raise_error_response(response):
     raise exception_class(response=response.json(), message=error_message)
 
 
-def request_with_retry_backoff(
-    url: str, headers: dict, *, timeout: int = 5, max_retries: int = 2, backoff_seconds: float = 0.5
-):
-    for request_attempt in range(max_retries + 1):
-        response = requests.get(url, headers=headers, timeout=timeout)
+def request_with_retry_backoff(url: str, headers: dict):
+    """Makes an external request with retry and exponential backoff for retryable status codes."""
+    response = None
 
+    for request_attempt in range(Constants.API_CLIENTS_MAX_RETRIES + 1):
+        response = requests.get(url, headers=headers, timeout=Constants.API_CLIENTS_TIMEOUT_SECONDS)
         if response.status_code not in Constants.RETRYABLE_STATUS_CODES:
             break
 
-        if request_attempt < max_retries:
+        if request_attempt < Constants.API_CLIENTS_MAX_RETRIES:
             logger.info(
                 f"Retryable response. Status={response.status_code}. "
-                f"Attempt={request_attempt + 1}/{max_retries + 1}. Retrying..."
+                f"Attempt={request_attempt + 1}/{Constants.API_CLIENTS_MAX_RETRIES + 1}. Retrying..."
             )
 
-            time.sleep(backoff_seconds * (2**request_attempt))
-            continue
+            time.sleep(Constants.API_CLIENTS_BACKOFF_SECONDS * (2**request_attempt))
 
-        # out of retries, return last response to be handled by caller
     return response

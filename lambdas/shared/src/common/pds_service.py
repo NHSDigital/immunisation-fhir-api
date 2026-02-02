@@ -28,9 +28,7 @@ class PdsService:
             "X-Request-ID": str(uuid.uuid4()),
             "X-Correlation-ID": str(uuid.uuid4()),
         }
-        response = request_with_retry_backoff(
-            f"{self.base_url}/{patient_id}", headers=request_headers, timeout=5, max_retries=2, backoff_seconds=0.5
-        )
+        response = request_with_retry_backoff(f"{self.base_url}/{patient_id}", headers=request_headers)
 
         if response.status_code == 200:
             return response.json()

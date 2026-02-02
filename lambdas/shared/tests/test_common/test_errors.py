@@ -340,7 +340,7 @@ class TestRequestWithRetryBackoff(unittest.TestCase):
         # Ensure retryable codes include 429/5xx only (example)
         with patch.object(Constants, "RETRYABLE_STATUS_CODES", {429, 500, 502, 503, 504}):
             # Act
-            resp = request_with_retry_backoff("http://example.com", {}, max_retries=2, backoff_seconds=0.5)
+            resp = request_with_retry_backoff("http://example.com", {})
 
         # Assert
         self.assertEqual(resp.status_code, 400)
@@ -358,7 +358,7 @@ class TestRequestWithRetryBackoff(unittest.TestCase):
         ]
         with patch.object(Constants, "RETRYABLE_STATUS_CODES", {429, 500, 502, 503, 504}):
             # Act
-            resp = request_with_retry_backoff("http://example.com", {}, max_retries=2, backoff_seconds=0.5)
+            resp = request_with_retry_backoff("http://example.com", {})
 
         # Assert
         self.assertEqual(resp.status_code, 503)
@@ -376,7 +376,7 @@ class TestRequestWithRetryBackoff(unittest.TestCase):
         ]
         with patch.object(Constants, "RETRYABLE_STATUS_CODES", {429, 500, 502, 503, 504}):
             # Act
-            resp = request_with_retry_backoff("http://example.com", {}, max_retries=2, backoff_seconds=0.5)
+            resp = request_with_retry_backoff("http://example.com", {})
 
         # Assert
         self.assertEqual(resp.status_code, 200)
@@ -394,7 +394,9 @@ class TestRequestWithRetryBackoff(unittest.TestCase):
         ]
         with patch.object(Constants, "RETRYABLE_STATUS_CODES", {429, 500, 502, 503, 504}):
             # Act
-            request_with_retry_backoff("http://example.com", {}, max_retries=2, backoff_seconds=0.5)
+            request_with_retry_backoff("http://example.com", {})
 
         # Assert: 0.5, 1.0 for attempts 0 and 1
-        mock_sleep.assert_has_calls([call(0.5), call(1.0)])
+        mock_sleep.assert_has_calls(
+            [call(Constants.API_CLIENTS_BACKOFF_SECONDS), call(Constants.API_CLIENTS_BACKOFF_SECONDS * 2)]
+        )
