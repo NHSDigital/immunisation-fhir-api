@@ -211,8 +211,6 @@ def obtain_current_json_ack_content(message_id: str, temp_ack_file_key: str) -> 
             ack_data_dict["summary"]["ingestionTime"] = {}
             ack_data_dict["summary"]["ingestionTime"]["start"] = ingestion_start_time
             ack_data_dict["failures"] = []
-
-            print(json.dumps(ack_data_dict, indent=2))
         else:
             logger.error("error whilst obtaining current JSON ack content: %s", error)
             raise
@@ -249,7 +247,7 @@ def update_json_ack_file(
     """Updates the ack file with the new data row based on the given arguments"""
     ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.json')}"
     temp_ack_file_key = f"{TEMP_ACK_DIR}/{ack_filename}"
-    message_id = ack_data_rows[0]["MESSAGE_HEADER_ID"].split("^")[-1]
+    message_id = ack_data_rows[0]["MESSAGE_HEADER_ID"].split("^")[0]
     ack_data_dict = obtain_current_json_ack_content(message_id, temp_ack_file_key)
 
     for row in ack_data_rows:
@@ -262,8 +260,6 @@ def update_json_ack_file(
         json_data_row["operationOutcome"] = row["OPERATION_OUTCOME"]
 
         ack_data_dict["failures"].append(json_data_row)
-
-        # print(json.dumps(json_data_row, indent=2))
 
     # Upload ack_data_dict to S3
     json_bytes = BytesIO(json.dumps(ack_data_dict, indent=2).encode("utf-8"))
