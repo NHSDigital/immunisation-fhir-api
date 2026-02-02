@@ -29,6 +29,7 @@ class ScenarioContext:
         self.parsed_search__object = None
         self.created_event = None
         self.create_object = None
+        self.update_object = None
         self.Patient_fullUrl = None
         self.params = None
         self.soft_assertions = None
@@ -43,4 +44,6 @@ class ScenarioContext:
         self.supplier_ods_code = None
         self.working_directory = None
         self.fileContent = None
+        self.fileContentJson = None
+        self.forwarded_prefix = None
         self.delta_cache = None

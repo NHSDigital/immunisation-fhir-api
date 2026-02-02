@@ -1,7 +1,7 @@
 import pandas as pd
 from pytest_bdd import given, scenarios, then, when
 from src.objectModels.batch.batch_file_builder import build_batch_file
-from utilities.batch_file_helper import read_and_validate_bus_ack_file_content
+from utilities.batch_file_helper import read_and_validate_csv_bus_ack_file_content
 from utilities.enums import GenderCode
 from utilities.error_constants import ERROR_MAP
 
@@ -16,7 +16,7 @@ from features.APITests.steps.common_steps import (
 from features.APITests.steps.test_create_steps import validate_imms_delta_table_by_ImmsID
 from features.APITests.steps.test_update_steps import validate_delta_table_for_updated_event
 
-from .batch_common_steps import build_dataFrame_using_datatable, create_batch_file
+from .batch_common_steps import build_dataFrame_using_datatable, create_batch_file, json_bus_ack_will_only_contain_file_metadata_and_correct_failure_record_entries
 
 scenarios("batchTests/update_batch.feature")
 
@@ -156,11 +156,15 @@ def upload_batch_file_to_s3_for_update_with_mandatory_field_missing(context):
     create_batch_file(context)
 
 
-@then("bus ack will have error records for all the updated records in the batch file")
+@then("csv bus ack will have error records for all the updated records in the batch filefile")
 def all_records_are_processed_successfully_in_the_batch_file(context):
-    file_rows = read_and_validate_bus_ack_file_content(context, False, True)
+    file_rows = read_and_validate_csv_bus_ack_file_content(context, False, True)
     all_valid = validate_bus_ack_file_for_error_by_surname(context, file_rows)
     assert all_valid, "One or more records failed validation checks"
+    
+@then("json bus ack will have error records for all the updated records in the batch filefile")
+def json_bus_ack_will_have_error_records_for_all_updated_records_in_batch_file(context):
+    json_bus_ack_will_only_contain_file_metadata_and_correct_failure_record_entries(context) 
 
 
 def validate_bus_ack_file_for_error_by_surname(context, file_rows) -> bool:
