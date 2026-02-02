@@ -5,10 +5,8 @@ import uuid
 
 import requests
 
+from common.api_clients import raise_error_response
 from common.authentication import AppRestrictedAuth
-from common.models.errors import (
-    raise_error_response,
-)
 
 SQS_ARN = os.getenv("SQS_ARN")
 

@@ -2,6 +2,7 @@ import os
 import unittest
 from unittest.mock import MagicMock, Mock, create_autospec, patch
 
+from common.api_clients import raise_error_response
 from common.authentication import AppRestrictedAuth
 from common.models.errors import (
     BadRequestError,
@@ -10,7 +11,6 @@ from common.models.errors import (
     ServerError,
     TokenValidationError,
     UnhandledResponseError,
-    raise_error_response,
 )
 from mns_service import MNS_URL, MnsService
 
