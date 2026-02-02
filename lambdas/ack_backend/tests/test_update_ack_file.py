@@ -35,6 +35,7 @@ from utils.values_for_ack_backend_tests import DefaultValues, ValidValues
 
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from update_ack_file import (
+        complete_batch_file_process,
         create_ack_data,
         obtain_current_ack_content,
         obtain_current_json_ack_content,
@@ -67,12 +68,27 @@ class TestUpdateAckFile(unittest.TestCase):
 
         self.ack_bucket_patcher = patch("update_ack_file.ACK_BUCKET_NAME", BucketNames.DESTINATION)
         self.ack_bucket_patcher.start()
+        self.source_bucket_patcher = patch("update_ack_file.SOURCE_BUCKET_NAME", BucketNames.SOURCE)
+        self.source_bucket_patcher.start()
 
         self.get_ingestion_start_time_by_message_id_patcher = patch(
             "update_ack_file.get_ingestion_start_time_by_message_id"
         )
         self.mock_get_ingestion_start_time_by_message_id = self.get_ingestion_start_time_by_message_id_patcher.start()
         self.mock_get_ingestion_start_time_by_message_id.return_value = 3456
+
+        self.get_record_and_failure_count_patcher = patch("update_ack_file.get_record_count_and_failures_by_message_id")
+        self.mock_get_record_and_failure_count = self.get_record_and_failure_count_patcher.start()
+
+        self.update_audit_table_item_patcher = patch("update_ack_file.update_audit_table_item")
+        self.mock_update_audit_table_item = self.update_audit_table_item_patcher.start()
+
+        self.datetime_patcher = patch("update_ack_file.time")
+        self.mock_datetime = self.datetime_patcher.start()
+        self.mock_datetime.strftime.return_value = "7890"
+
+        self.generate_send_patcher = patch("update_ack_file.generate_and_send_logs")
+        self.mock_generate_send = self.generate_send_patcher.start()
 
     def tearDown(self) -> None:
         GenericTearDown(s3_client=self.s3_client)
@@ -394,12 +410,38 @@ class TestUpdateAckFile(unittest.TestCase):
         )
         self.assertEqual(result, existing_content)
 
-        """
-        then: fix the flow test (complete) to check that the JSON file has been read, summary updated, written and moved;
-        this might actually be worth a test in its own right, and put it in here.
-        NB we need something that checks, in complete() when the JSON file doesn't exist at all, that it's
-        created from scratch. I think that is again a test in its own right
-        """
+    def test_complete_batch_file_process_json_ack_file(self):
+        """Test that complete_batch_file_process completes and moves the JSON ack file."""
+        generate_sample_existing_json_ack_content()
+        self.s3_client.put_object(
+            Bucket=BucketNames.SOURCE,
+            Key=f"processing/{MOCK_MESSAGE_DETAILS.file_key}",
+            Body="dummy content",
+        )
+        update_ack_file(
+            file_key=MOCK_MESSAGE_DETAILS.file_key,
+            created_at_formatted_string=MOCK_MESSAGE_DETAILS.created_at_formatted_string,
+            ack_data_rows=[ValidValues.ack_data_failure_dict],
+        )
+        update_json_ack_file(
+            file_key=MOCK_MESSAGE_DETAILS.file_key,
+            created_at_formatted_string=MOCK_MESSAGE_DETAILS.created_at_formatted_string,
+            ack_data_rows=[ValidValues.ack_data_failure_dict],
+        )
+
+        self.mock_get_record_and_failure_count.return_value = 10, 1
+
+        complete_batch_file_process(
+            message_id=MOCK_MESSAGE_DETAILS.message_id,
+            supplier=MOCK_MESSAGE_DETAILS.supplier,
+            vaccine_type=MOCK_MESSAGE_DETAILS.vaccine_type,
+            created_at_formatted_string="20211120T12000000",
+            file_key=MOCK_MESSAGE_DETAILS.file_key,
+        )
+        result = obtain_current_json_ack_content(
+            MOCK_MESSAGE_DETAILS.message_id, MOCK_MESSAGE_DETAILS.archive_json_ack_file_key
+        )
+        self.assertEqual(result, ValidValues.json_ack_complete_content)
 
 
 if __name__ == "__main__":

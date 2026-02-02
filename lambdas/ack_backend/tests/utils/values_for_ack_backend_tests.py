@@ -276,6 +276,26 @@ class ValidValues:
         "failures": [],
     }
 
+    json_ack_complete_content = {
+        "system": "Immunisation FHIR API Batch Report",
+        "version": 1,
+        "generatedDate": "7890",
+        "filename": "TempAck/RSV_Vaccinations_v5_X26_20210730T12000000_BusAck_20211120T12000000",
+        "provider": "X26",
+        "messageHeaderId": "test_file_id",
+        "summary": {"totalRecords": 10, "success": 9, "failed": 1, "ingestionTime": {"start": 3456, "end": 7890}},
+        "failures": [
+            {
+                "rowId": "1",
+                "responseCode": "30002",
+                "responseDisplay": "Business Level Response Value - Processing Error",
+                "severity": "Fatal",
+                "localId": "test_system_uri^testabc",
+                "operationOutcome": "DIAGNOSTICS",
+            }
+        ],
+    }
+
     json_ack_data_failure_dict = (
         {
             "rowId": DefaultValues.row_id,

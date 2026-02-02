@@ -107,7 +107,6 @@ def complete_batch_file_process(
     move_file(SOURCE_BUCKET_NAME, f"{BATCH_FILE_PROCESSING_DIR}/{file_key}", f"{BATCH_FILE_ARCHIVE_DIR}/{file_key}")
 
     # finish JSON file
-    # TODO: need to abstract this out
     json_ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.json')}"
     temp_ack_file_key = f"{TEMP_ACK_DIR}/{json_ack_filename}"
     ack_data_dict = obtain_current_json_ack_content(message_id, temp_ack_file_key)

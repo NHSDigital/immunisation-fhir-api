@@ -58,7 +58,6 @@ def lambda_handler(event, _):
 
     update_ack_file(file_key, created_at_formatted_string, ack_data_rows)
 
-    # TODO: update json ack file on switch
     update_json_ack_file(file_key, created_at_formatted_string, ack_data_rows)
 
     if file_processing_complete:
