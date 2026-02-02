@@ -1,5 +1,7 @@
 import json
+
 from src.objectModels.batch.batch_report_object import BatchReport
+
 from utilities.error_constants import ERROR_MAP
 
 
@@ -251,14 +253,21 @@ def read_and_validate_csv_bus_ack_file_content(context, by_local_id: bool = True
 
     raise ValueError("You must select either by_local_id=True or by_row_number=True")
 
+
 def validate_json_bus_ack_file_structure_and_metadata(context):
     data = json.loads(context.fileContentJson)
     report = BatchReport(**data)
-    assert report.system == "Immunisation FHIR API Batch Report", f"Expected system 'Immunisation FHIR API Batch Report', got '{report.system}'"
+    assert report.system == "Immunisation FHIR API Batch Report", (
+        f"Expected system 'Immunisation FHIR API Batch Report', got '{report.system}'"
+    )
     assert report.version == 1, f"Expected version 1, got {report.version}"
-    assert report.filename == context.filename.replace(f".{context.file_extension}", ""), f"Expected filename '{context.filename}' without extension, got '{report.filename}'"
-    assert report.provider == context.ods_provider_code, f"Expected provider '{context.ods_provider_code}', got '{report.provider}'"
-    
+    assert report.filename == context.filename.replace(f".{context.file_extension}", ""), (
+        f"Expected filename '{context.filename}' without extension, got '{report.filename}'"
+    )
+    assert report.provider == context.ods_provider_code, (
+        f"Expected provider '{context.ods_provider_code}', got '{report.provider}'"
+    )
+
     expected_row_count = len(context.vaccine_df)
 
     expected_success_count = context.vaccine_df[
@@ -271,11 +280,18 @@ def validate_json_bus_ack_file_structure_and_metadata(context):
         | (context.vaccine_df["UNIQUE_ID"].str.strip() == "")
     ].shape[0]
 
-    assert report.summary.totalRecords == expected_row_count, f"Expected totalRecords {expected_row_count}, got {report.summary.totalRecords}"
-    assert report.summary.success == expected_success_count, f"Expected success count {expected_success_count}, got {report.summary.success}"
-    assert report.summary.failed == expected_failure_count, f"Expected failure count {expected_failure_count}, got {report.summary.failed}"
+    assert report.summary.totalRecords == expected_row_count, (
+        f"Expected totalRecords {expected_row_count}, got {report.summary.totalRecords}"
+    )
+    assert report.summary.success == expected_success_count, (
+        f"Expected success count {expected_success_count}, got {report.summary.success}"
+    )
+    assert report.summary.failed == expected_failure_count, (
+        f"Expected failure count {expected_failure_count}, got {report.summary.failed}"
+    )
 
-def validate_json_bus_ack_file_failure_records(context, expected_failure:bool = True):
+
+def validate_json_bus_ack_file_failure_records(context, expected_failure: bool = True):
     data = json.loads(context.fileContentJson)
     report = BatchReport(**data)
     failures = report.failures or []
@@ -286,16 +302,13 @@ def validate_json_bus_ack_file_failure_records(context, expected_failure:bool = 
             print(f"Found {len(failures)} failure records in BUS ACK file as not expected")
             return False
     else:
-        
         fail_mask = context.vaccine_df["UNIQUE_ID"].str.startswith("Fail-", na=False) | (
             context.vaccine_df["UNIQUE_ID"].str.strip() == ""
         )
         fail_df = context.vaccine_df[fail_mask]
 
         # Build expected localId values
-        expected_local_ids = set(
-            fail_df["UNIQUE_ID"].astype(str) + "^" + fail_df["UNIQUE_ID_URI"].astype(str)
-        )
+        expected_local_ids = set(fail_df["UNIQUE_ID"].astype(str) + "^" + fail_df["UNIQUE_ID_URI"].astype(str))
 
         overall_valid = True
 

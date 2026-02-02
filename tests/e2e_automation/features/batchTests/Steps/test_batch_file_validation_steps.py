@@ -90,9 +90,12 @@ def failed_inf_ack_file(context):
 @then("bus ack file will not be created")
 def file_will_not_be_moved_to_destination_bucket(context):
     result = wait_and_read_ack_file(context, "forwardedFile", timeout=10, duplicate_bus_files=True)
-    assert result is None, ( f"Unexpected BUS ACK file(s) found in destination bucket: {context.forwarded_prefix}")
+    assert result is None, f"Unexpected BUS ACK file(s) found in destination bucket: {context.forwarded_prefix}"
 
-@then(parsers.parse("Audit table will have '{status}', '{queue_name}' and '{error_details}' for the processed batch file"))
+
+@then(
+    parsers.parse("Audit table will have '{status}', '{queue_name}' and '{error_details}' for the processed batch file")
+)
 def validate_imms_audit_table(context, status, queue_name, error_details):
     table_query_response = fetch_batch_audit_table_detail(context.aws_profile_name, context.filename, context.S3_env)
 

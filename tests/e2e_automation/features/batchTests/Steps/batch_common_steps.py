@@ -3,6 +3,7 @@ import json
 import os
 import re
 from datetime import datetime, timezone
+
 import pandas as pd
 import pytest_check as check
 from pytest_bdd import given, parsers, then, when
@@ -99,7 +100,7 @@ def batch_file_upload_in_s3_bucket(context):
 @then("file will be moved to destination bucket and inf ack file will be created")
 def ack_file_will_be_moved_to_destination_bucket(context):
     result = wait_and_read_ack_file(context, "ack")
-    context.fileContent = result["csv"] 
+    context.fileContent = result["csv"]
     assert context.fileContent, f"File not found in destination bucket after timeout:  {context.forwarded_prefix}"
 
 
@@ -112,11 +113,15 @@ def all_records_are_processed_successfully_in_the_inf_ack_file(context):
 @then("bus ack files will be created")
 def file_will_be_moved_to_destination_bucket(context):
     result = wait_and_read_ack_file(context, "forwardedFile")
-    assert isinstance(result, dict), (f"Expected both CSV and JSON ACK files but got: {type(result)}" )
+    assert isinstance(result, dict), f"Expected both CSV and JSON ACK files but got: {type(result)}"
     context.fileContent = result.get("csv")
     context.fileContentJson = result.get("json")
-    assert context.fileContent, f"BUS Ack csv File not found in destination bucket after timeout: {context.forwarded_prefix}"
-    assert context.fileContentJson, f"BUS Ack JSON file not found in destination bucket after timeout: {context.forwarded_prefix}"
+    assert context.fileContent, (
+        f"BUS Ack csv File not found in destination bucket after timeout: {context.forwarded_prefix}"
+    )
+    assert context.fileContentJson, (
+        f"BUS Ack JSON file not found in destination bucket after timeout: {context.forwarded_prefix}"
+    )
 
 
 @then("CSV bus ack will not have any entry of successfully processed records")
@@ -124,17 +129,19 @@ def all_records_are_processed_successfully_in_the_batch_file(context):
     file_rows = read_and_validate_csv_bus_ack_file_content(context)
     all_valid = validate_bus_ack_file_for_successful_records(context, file_rows)
     assert all_valid, "One or more records failed validation checks"
-    
+
+
 @then("Json bus ack will only contain file metadata and no failure record entry")
-def json_bus_ack_will_only_contain_file_metadata_and_no_record_entries(context):    
+def json_bus_ack_will_only_contain_file_metadata_and_no_record_entries(context):
     json_content = context.fileContentJson
     assert json_content is not None, "BUS Ack JSON content is None"
     validate_json_bus_ack_file_structure_and_metadata(context)
     success = validate_json_bus_ack_file_failure_records(context, expected_failure=False)
     assert success, "Failed to validate JSON bus ack file failure records"
-    
+
+
 @then("Json bus ack will only contain file metadata and correct failure record entries")
-def json_bus_ack_will_only_contain_file_metadata_and_correct_failure_record_entries(context):    
+def json_bus_ack_will_only_contain_file_metadata_and_correct_failure_record_entries(context):
     json_content = context.fileContentJson
     assert json_content is not None, "BUS Ack JSON content is None"
     validate_json_bus_ack_file_structure_and_metadata(context)
