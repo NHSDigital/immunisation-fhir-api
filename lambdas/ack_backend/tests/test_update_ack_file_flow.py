@@ -75,3 +75,7 @@ class TestUpdateAckFileFlow(unittest.TestCase):
         # Assert: Only check audit table interactions
         self.mock_get_record_and_failure_count.assert_called_once_with(message_id)
         self.assertEqual(self.mock_update_audit_table_item.call_count, 2)
+
+        # TODO: add to this test: check the JSON ack file has been written out and that
+        # the fields have been correctly added to it.
+        # it'll involve putting a JSON object, calling complete_batch_file_process, reading it back.
