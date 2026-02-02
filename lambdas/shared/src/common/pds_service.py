@@ -2,7 +2,7 @@ import uuid
 
 from common.authentication import AppRestrictedAuth
 from common.clients import logger
-from common.models.errors import (
+from common.models.api_clients import (
     raise_error_response,
     request_with_retry_backoff,
 )
@@ -28,7 +28,7 @@ class PdsService:
             "X-Request-ID": str(uuid.uuid4()),
             "X-Correlation-ID": str(uuid.uuid4()),
         }
-        response = request_with_retry_backoff(f"{self.base_url}/{patient_id}", headers=request_headers)
+        response = request_with_retry_backoff("GET", f"{self.base_url}/{patient_id}", headers=request_headers)
 
         if response.status_code == 200:
             return response.json()
