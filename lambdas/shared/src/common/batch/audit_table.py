@@ -118,7 +118,7 @@ def get_ingestion_start_time_by_message_id(event_message_id: str) -> int:
         TableName=AUDIT_TABLE_NAME, Key={AuditTableKeys.MESSAGE_ID: {"S": event_message_id}}
     )
 
-    ingestion_start_time = audit_record.get("Item", {}).get(AuditTableKeys.INGESTION_START_TIME, {}).get("N")
+    ingestion_start_time = audit_record.get("Item", {}).get(AuditTableKeys.INGESTION_START_TIME, {}).get("S")
     return int(ingestion_start_time) if ingestion_start_time else 0
 
 
