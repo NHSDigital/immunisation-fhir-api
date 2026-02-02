@@ -106,21 +106,6 @@ class TestUpdateAckFile(unittest.TestCase):
         expected_ack_file_content = generate_expected_ack_content(incoming_messages, existing_file_content)
         self.assertEqual(expected_ack_file_content, actual_ack_file_content)
 
-    def validate_json_ack_file_content(
-        self,
-        incoming_messages: list[dict],
-        existing_file_content: str = ValidValues.json_ack_initial_content,
-    ) -> None:
-        """
-        Obtains the json ack file content and ensures that it matches the expected content (expected content is based
-        on the incoming messages).
-        """
-        actual_ack_file_content = obtain_current_json_ack_file_content(
-            self.s3_client, MOCK_MESSAGE_DETAILS.temp_json_ack_file_key
-        )
-        expected_ack_file_content = generate_expected_json_ack_content(incoming_messages, existing_file_content)
-        self.assertEqual(expected_ack_file_content, actual_ack_file_content)
-
     def test_update_ack_file(self):
         """Test that update_ack_file correctly creates the ack file when there was no existing ack file"""
 
@@ -192,80 +177,6 @@ class TestUpdateAckFile(unittest.TestCase):
                     Key=MOCK_MESSAGE_DETAILS.temp_ack_file_key,
                 )
 
-    def test_update_json_ack_file(self):
-        """Test that update_json_ack_file correctly creates the ack file when there was no existing ack file"""
-
-        test_cases = [
-            {
-                "description": "Single failure row",
-                "input_rows": [ValidValues.ack_data_failure_dict],
-                "expected_elements": [
-                    generate_expected_json_ack_file_element(
-                        success=False, imms_id=DefaultValues.imms_id, diagnostics="DIAGNOSTICS"
-                    )
-                ],
-            },
-            {
-                "description": "With multiple rows",
-                "input_rows": [
-                    {**ValidValues.ack_data_failure_dict, "IMMS_ID": "TEST_IMMS_ID_1"},
-                    ValidValues.ack_data_failure_dict,
-                    ValidValues.ack_data_failure_dict,
-                ],
-                "expected_elements": [
-                    generate_expected_json_ack_file_element(
-                        success=False,
-                        imms_id="TEST_IMMS_ID_1",
-                        diagnostics="DIAGNOSTICS",
-                    ),
-                    generate_expected_json_ack_file_element(success=False, imms_id="", diagnostics="DIAGNOSTICS"),
-                    generate_expected_json_ack_file_element(success=False, imms_id="", diagnostics="DIAGNOSTICS"),
-                ],
-            },
-            {
-                "description": "Multiple rows With different diagnostics",
-                "input_rows": [
-                    {
-                        **ValidValues.ack_data_failure_dict,
-                        "OPERATION_OUTCOME": "Error 1",
-                    },
-                    {
-                        **ValidValues.ack_data_failure_dict,
-                        "OPERATION_OUTCOME": "Error 2",
-                    },
-                    {
-                        **ValidValues.ack_data_failure_dict,
-                        "OPERATION_OUTCOME": "Error 3",
-                    },
-                ],
-                "expected_elements": [
-                    generate_expected_json_ack_file_element(success=False, imms_id="", diagnostics="Error 1"),
-                    generate_expected_json_ack_file_element(success=False, imms_id="", diagnostics="Error 2"),
-                    generate_expected_json_ack_file_element(success=False, imms_id="", diagnostics="Error 3"),
-                ],
-            },
-        ]
-
-        for test_case in test_cases:
-            with self.subTest(test_case["description"]):
-                update_json_ack_file(
-                    file_key=MOCK_MESSAGE_DETAILS.file_key,
-                    created_at_formatted_string=MOCK_MESSAGE_DETAILS.created_at_formatted_string,
-                    ack_data_rows=test_case["input_rows"],
-                )
-
-                actual_ack_file_content = obtain_current_json_ack_file_content(
-                    self.s3_client, MOCK_MESSAGE_DETAILS.temp_json_ack_file_key
-                )
-                expected_ack_file_content = copy.deepcopy(ValidValues.json_ack_initial_content)
-                for element in test_case["expected_elements"]:
-                    expected_ack_file_content["failures"].append(element)
-                self.assertEqual(expected_ack_file_content, actual_ack_file_content)
-                self.s3_client.delete_object(
-                    Bucket=BucketNames.DESTINATION,
-                    Key=MOCK_MESSAGE_DETAILS.temp_json_ack_file_key,
-                )
-
     def test_update_ack_file_existing(self):
         """Test that update_ack_file correctly updates the ack file when there was an existing ack file"""
         # Mock existing content in the ack file
@@ -288,34 +199,6 @@ class TestUpdateAckFile(unittest.TestCase):
             generate_expected_ack_file_row(success=False, imms_id="", diagnostics="DIAGNOSTICS"),
         ]
         expected_ack_file_content = existing_content + "\n".join(expected_rows) + "\n"
-        self.assertEqual(expected_ack_file_content, actual_ack_file_content)
-
-    def test_update_json_ack_file_existing(self):
-        """Test that update_json_ack_file correctly updates the ack file when there was an existing ack file"""
-        # Mock existing content in the ack file
-        existing_content = generate_sample_existing_json_ack_content()
-        setup_existing_ack_file(
-            MOCK_MESSAGE_DETAILS.temp_json_ack_file_key, json.dumps(existing_content), self.s3_client
-        )
-
-        ack_data_rows = [
-            ValidValues.ack_data_failure_dict,
-        ]
-        update_json_ack_file(
-            file_key=MOCK_MESSAGE_DETAILS.file_key,
-            created_at_formatted_string=MOCK_MESSAGE_DETAILS.created_at_formatted_string,
-            ack_data_rows=ack_data_rows,
-        )
-
-        actual_ack_file_content = obtain_current_json_ack_file_content(
-            self.s3_client, MOCK_MESSAGE_DETAILS.temp_json_ack_file_key
-        )
-
-        expected_rows = [
-            generate_expected_json_ack_file_element(success=False, imms_id="", diagnostics="DIAGNOSTICS"),
-        ]
-        expected_ack_file_content = existing_content
-        expected_ack_file_content["failures"].append(expected_rows[0])
         self.assertEqual(expected_ack_file_content, actual_ack_file_content)
 
     def test_create_ack_data(self):
@@ -391,6 +274,123 @@ class TestUpdateAckFile(unittest.TestCase):
         setup_existing_ack_file(MOCK_MESSAGE_DETAILS.temp_ack_file_key, existing_content, self.s3_client)
         result = obtain_current_ack_content(MOCK_MESSAGE_DETAILS.temp_ack_file_key)
         self.assertEqual(result.getvalue(), existing_content)
+
+    def validate_json_ack_file_content(
+        self,
+        incoming_messages: list[dict],
+        existing_file_content: str = ValidValues.json_ack_initial_content,
+    ) -> None:
+        """
+        Obtains the json ack file content and ensures that it matches the expected content (expected content is based
+        on the incoming messages).
+        """
+        actual_ack_file_content = obtain_current_json_ack_file_content(
+            self.s3_client, MOCK_MESSAGE_DETAILS.temp_json_ack_file_key
+        )
+        expected_ack_file_content = generate_expected_json_ack_content(incoming_messages, existing_file_content)
+        self.assertEqual(expected_ack_file_content, actual_ack_file_content)
+
+    def test_update_json_ack_file(self):
+        """Test that update_json_ack_file correctly creates the ack file when there was no existing ack file"""
+
+        test_cases = [
+            {
+                "description": "Single failure row",
+                "input_rows": [ValidValues.ack_data_failure_dict],
+                "expected_elements": [
+                    generate_expected_json_ack_file_element(
+                        success=False, imms_id=DefaultValues.imms_id, diagnostics="DIAGNOSTICS"
+                    )
+                ],
+            },
+            {
+                "description": "With multiple rows",
+                "input_rows": [
+                    {**ValidValues.ack_data_failure_dict, "IMMS_ID": "TEST_IMMS_ID_1"},
+                    ValidValues.ack_data_failure_dict,
+                    ValidValues.ack_data_failure_dict,
+                ],
+                "expected_elements": [
+                    generate_expected_json_ack_file_element(
+                        success=False,
+                        imms_id="TEST_IMMS_ID_1",
+                        diagnostics="DIAGNOSTICS",
+                    ),
+                    generate_expected_json_ack_file_element(success=False, imms_id="", diagnostics="DIAGNOSTICS"),
+                    generate_expected_json_ack_file_element(success=False, imms_id="", diagnostics="DIAGNOSTICS"),
+                ],
+            },
+            {
+                "description": "Multiple rows With different diagnostics",
+                "input_rows": [
+                    {
+                        **ValidValues.ack_data_failure_dict,
+                        "OPERATION_OUTCOME": "Error 1",
+                    },
+                    {
+                        **ValidValues.ack_data_failure_dict,
+                        "OPERATION_OUTCOME": "Error 2",
+                    },
+                    {
+                        **ValidValues.ack_data_failure_dict,
+                        "OPERATION_OUTCOME": "Error 3",
+                    },
+                ],
+                "expected_elements": [
+                    generate_expected_json_ack_file_element(success=False, imms_id="", diagnostics="Error 1"),
+                    generate_expected_json_ack_file_element(success=False, imms_id="", diagnostics="Error 2"),
+                    generate_expected_json_ack_file_element(success=False, imms_id="", diagnostics="Error 3"),
+                ],
+            },
+        ]
+
+        for test_case in test_cases:
+            with self.subTest(test_case["description"]):
+                update_json_ack_file(
+                    file_key=MOCK_MESSAGE_DETAILS.file_key,
+                    created_at_formatted_string=MOCK_MESSAGE_DETAILS.created_at_formatted_string,
+                    ack_data_rows=test_case["input_rows"],
+                )
+
+                actual_ack_file_content = obtain_current_json_ack_file_content(
+                    self.s3_client, MOCK_MESSAGE_DETAILS.temp_json_ack_file_key
+                )
+                expected_ack_file_content = copy.deepcopy(ValidValues.json_ack_initial_content)
+                for element in test_case["expected_elements"]:
+                    expected_ack_file_content["failures"].append(element)
+                self.assertEqual(expected_ack_file_content, actual_ack_file_content)
+                self.s3_client.delete_object(
+                    Bucket=BucketNames.DESTINATION,
+                    Key=MOCK_MESSAGE_DETAILS.temp_json_ack_file_key,
+                )
+
+    def test_update_json_ack_file_existing(self):
+        """Test that update_json_ack_file correctly updates the ack file when there was an existing ack file"""
+        # Mock existing content in the ack file
+        existing_content = generate_sample_existing_json_ack_content()
+        setup_existing_ack_file(
+            MOCK_MESSAGE_DETAILS.temp_json_ack_file_key, json.dumps(existing_content), self.s3_client
+        )
+
+        ack_data_rows = [
+            ValidValues.ack_data_failure_dict,
+        ]
+        update_json_ack_file(
+            file_key=MOCK_MESSAGE_DETAILS.file_key,
+            created_at_formatted_string=MOCK_MESSAGE_DETAILS.created_at_formatted_string,
+            ack_data_rows=ack_data_rows,
+        )
+
+        actual_ack_file_content = obtain_current_json_ack_file_content(
+            self.s3_client, MOCK_MESSAGE_DETAILS.temp_json_ack_file_key
+        )
+
+        expected_rows = [
+            generate_expected_json_ack_file_element(success=False, imms_id="", diagnostics="DIAGNOSTICS"),
+        ]
+        expected_ack_file_content = existing_content
+        expected_ack_file_content["failures"].append(expected_rows[0])
+        self.assertEqual(expected_ack_file_content, actual_ack_file_content)
 
     def test_obtain_current_json_ack_content_file_no_existing(self):
         """Test that when the json ack file does not yet exist, obtain_current_json_ack_content returns the ack headers only."""

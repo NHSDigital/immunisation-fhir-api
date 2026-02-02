@@ -52,28 +52,12 @@ def obtain_current_ack_file_content(s3_client, temp_ack_file_key: str = MOCK_MES
     return retrieved_object["Body"].read().decode("utf-8")
 
 
-def obtain_current_json_ack_file_content(
-    s3_client, temp_ack_file_key: str = MOCK_MESSAGE_DETAILS.temp_ack_file_key
-) -> dict:
-    """Obtains the ack file content from the destination bucket."""
-    retrieved_object = s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=temp_ack_file_key)
-    return json.loads(retrieved_object["Body"].read().decode("utf-8"))
-
-
 def obtain_completed_ack_file_content(
     s3_client, complete_ack_file_key: str = MOCK_MESSAGE_DETAILS.archive_ack_file_key
 ) -> str:
     """Obtains the ack file content from the forwardedFile directory"""
     retrieved_object = s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=complete_ack_file_key)
     return retrieved_object["Body"].read().decode("utf-8")
-
-
-def obtain_completed_json_ack_file_content(
-    s3_client, complete_ack_file_key: str = MOCK_MESSAGE_DETAILS.archive_ack_file_key
-) -> dict:
-    """Obtains the ack file content from the forwardedFile directory"""
-    retrieved_object = s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=complete_ack_file_key)
-    return json.loads(retrieved_object["Body"].read().decode("utf-8"))
 
 
 def generate_expected_ack_file_row(
@@ -97,38 +81,9 @@ def generate_expected_ack_file_row(
         )
 
 
-def generate_expected_json_ack_file_element(
-    success: bool,
-    imms_id: str = MOCK_MESSAGE_DETAILS.imms_id,
-    diagnostics: str = None,
-    row_id: str = MOCK_MESSAGE_DETAILS.row_id,
-    local_id: str = MOCK_MESSAGE_DETAILS.local_id,
-    created_at_formatted_string: str = MOCK_MESSAGE_DETAILS.created_at_formatted_string,
-) -> dict:
-    """Create an ack element, containing the given message details."""
-    if success:
-        return None  # we no longer process success elements
-    else:
-        return {
-            "rowId": row_id.split("^")[-1],
-            "responseCode": "30002",
-            "responseDisplay": "Business Level Response Value - Processing Error",
-            "severity": "Fatal",
-            "localId": local_id,
-            "operationOutcome": "" if not diagnostics else diagnostics,
-        }
-
-
 def generate_sample_existing_ack_content() -> str:
     """Returns sample ack file content with a single success row."""
     return ValidValues.ack_headers + generate_expected_ack_file_row(success=True)
-
-
-def generate_sample_existing_json_ack_content() -> dict:
-    """Returns sample ack file content with a single failure row."""
-    sample_content = ValidValues.json_ack_initial_content
-    sample_content["failures"].append(generate_expected_json_ack_file_element(success=False))
-    return sample_content
 
 
 def generate_expected_ack_content(incoming_messages: list[dict], existing_content: str = ValidValues.ack_headers) -> str:
@@ -160,6 +115,68 @@ def generate_expected_ack_content(incoming_messages: list[dict], existing_conten
     return existing_content
 
 
+def validate_ack_file_content(
+    s3_client,
+    incoming_messages: list[dict],
+    existing_file_content: str = ValidValues.ack_headers,
+    is_complete: bool = False,
+) -> None:
+    """
+    Obtains the ack file content and ensures that it matches the expected content (expected content is based
+    on the incoming messages).
+    """
+    actual_ack_file_content = (
+        obtain_current_ack_file_content(s3_client) if not is_complete else (obtain_completed_ack_file_content(s3_client))
+    )
+    expected_ack_file_content = generate_expected_ack_content(incoming_messages, existing_file_content)
+    assert expected_ack_file_content == actual_ack_file_content
+
+
+def obtain_current_json_ack_file_content(
+    s3_client, temp_ack_file_key: str = MOCK_MESSAGE_DETAILS.temp_ack_file_key
+) -> dict:
+    """Obtains the ack file content from the destination bucket."""
+    retrieved_object = s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=temp_ack_file_key)
+    return json.loads(retrieved_object["Body"].read().decode("utf-8"))
+
+
+def obtain_completed_json_ack_file_content(
+    s3_client, complete_ack_file_key: str = MOCK_MESSAGE_DETAILS.archive_ack_file_key
+) -> dict:
+    """Obtains the ack file content from the forwardedFile directory"""
+    retrieved_object = s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=complete_ack_file_key)
+    return json.loads(retrieved_object["Body"].read().decode("utf-8"))
+
+
+def generate_expected_json_ack_file_element(
+    success: bool,
+    imms_id: str = MOCK_MESSAGE_DETAILS.imms_id,
+    diagnostics: str = None,
+    row_id: str = MOCK_MESSAGE_DETAILS.row_id,
+    local_id: str = MOCK_MESSAGE_DETAILS.local_id,
+    created_at_formatted_string: str = MOCK_MESSAGE_DETAILS.created_at_formatted_string,
+) -> dict:
+    """Create an ack element, containing the given message details."""
+    if success:
+        return None  # we no longer process success elements
+    else:
+        return {
+            "rowId": row_id.split("^")[-1],
+            "responseCode": "30002",
+            "responseDisplay": "Business Level Response Value - Processing Error",
+            "severity": "Fatal",
+            "localId": local_id,
+            "operationOutcome": "" if not diagnostics else diagnostics,
+        }
+
+
+def generate_sample_existing_json_ack_content() -> dict:
+    """Returns sample ack file content with a single failure row."""
+    sample_content = ValidValues.json_ack_initial_content
+    sample_content["failures"].append(generate_expected_json_ack_file_element(success=False))
+    return sample_content
+
+
 def generate_expected_json_ack_content(
     incoming_messages: list[dict], existing_content: str = ValidValues.json_ack_initial_content
 ) -> dict:
@@ -189,23 +206,6 @@ def generate_expected_json_ack_content(
         existing_content["failures"].append(ack_element)
 
     return existing_content
-
-
-def validate_ack_file_content(
-    s3_client,
-    incoming_messages: list[dict],
-    existing_file_content: str = ValidValues.ack_headers,
-    is_complete: bool = False,
-) -> None:
-    """
-    Obtains the ack file content and ensures that it matches the expected content (expected content is based
-    on the incoming messages).
-    """
-    actual_ack_file_content = (
-        obtain_current_ack_file_content(s3_client) if not is_complete else (obtain_completed_ack_file_content(s3_client))
-    )
-    expected_ack_file_content = generate_expected_ack_content(incoming_messages, existing_file_content)
-    assert expected_ack_file_content == actual_ack_file_content
 
 
 def validate_json_ack_file_content(
