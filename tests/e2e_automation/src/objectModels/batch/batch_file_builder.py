@@ -3,7 +3,6 @@ import random
 import re
 import uuid
 from typing import Any, Dict, Optional
-
 from src.objectModels.batch.batch_data_object import BatchVaccinationRecord
 from src.objectModels.patient_loader import load_patient_by_id
 from utilities.date_helper import generate_date

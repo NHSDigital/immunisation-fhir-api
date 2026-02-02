@@ -3,8 +3,6 @@ import json
 import os
 import re
 from datetime import datetime, timezone
-from unittest import result
-
 import pandas as pd
 import pytest_check as check
 from pytest_bdd import given, parsers, then, when
@@ -22,12 +20,13 @@ from src.objectModels.batch.batch_file_builder import (
     generate_file_name,
     save_record_to_batch_files_directory,
 )
-from src.objectModels.batch.batch_report_object import BatchReport
 from utilities.batch_file_helper import (
-    read_and_validate_bus_ack_file_content,
+    read_and_validate_csv_bus_ack_file_content,
     validate_bus_ack_file_for_error,
     validate_bus_ack_file_for_successful_records,
     validate_inf_ack_file,
+    validate_json_bus_ack_file_failure_records,
+    validate_json_bus_ack_file_structure_and_metadata,
 )
 from utilities.batch_S3_buckets import upload_file_to_S3, wait_and_read_ack_file, wait_for_file_to_move_archive
 from utilities.enums import ActionFlag, ActionMap, Operation
@@ -122,20 +121,25 @@ def file_will_be_moved_to_destination_bucket(context):
 
 @then("CSV bus ack will not have any entry of successfully processed records")
 def all_records_are_processed_successfully_in_the_batch_file(context):
-    file_rows = read_and_validate_bus_ack_file_content(context)
+    file_rows = read_and_validate_csv_bus_ack_file_content(context)
     all_valid = validate_bus_ack_file_for_successful_records(context, file_rows)
     assert all_valid, "One or more records failed validation checks"
     
-@then("Json bus ack will only contain file metadata and no record entries")
+@then("Json bus ack will only contain file metadata and no failure record entry")
 def json_bus_ack_will_only_contain_file_metadata_and_no_record_entries(context):    
     json_content = context.fileContentJson
     assert json_content is not None, "BUS Ack JSON content is None"
-    data = json.loads(json_content)
-    report = BatchReport(**data)
-
-    print(report.summary.totalRecords)
-    print(report.failures[0].operationOutcome)
-   # TO do
+    validate_json_bus_ack_file_structure_and_metadata(context)
+    success = validate_json_bus_ack_file_failure_records(context, expected_failure=False)
+    assert success, "Failed to validate JSON bus ack file failure records"
+    
+@then("Json bus ack will only contain file metadata and correct failure record entries")
+def json_bus_ack_will_only_contain_file_metadata_and_correct_failure_record_entries(context):    
+    json_content = context.fileContentJson
+    assert json_content is not None, "BUS Ack JSON content is None"
+    validate_json_bus_ack_file_structure_and_metadata(context)
+    success = validate_json_bus_ack_file_failure_records(context, expected_failure=True)
+    assert success, "Failed to validate JSON bus ack file failure records"
 
 
 @then("Audit table will have correct status, queue name and record count for the processed batch file")
@@ -228,7 +232,7 @@ def validate_imms_event_table_for_all_records_in_batch_file(context, operation: 
 
 @then("all rejected records are listed in the csv bus ack file and no imms id is generated")
 def all_record_are_rejected_for_given_field_name(context):
-    file_rows = read_and_validate_bus_ack_file_content(context)
+    file_rows = read_and_validate_csv_bus_ack_file_content(context)
     all_valid = validate_bus_ack_file_for_error(context, file_rows)
     assert all_valid, "One or more records failed validation checks"
 

@@ -16,6 +16,7 @@ Scenario: Verify that full dataset vaccination record will be created through ba
     And inf ack file has success status for processed batch file
     And bus ack files will be created
     And CSV bus ack will not have any entry of successfully processed records
+    And Json bus ack will only contain file metadata and no failure record entry
     And Audit table will have correct status, queue name and record count for the processed batch file
     And The imms event table will be populated with the correct data for 'created' event for records in batch file
     And The delta table will be populated with the correct data for all created records in batch file
@@ -35,7 +36,7 @@ Scenario: Verify that minimum dataset vaccination record will be created through
     And inf ack file has success status for processed batch file
     And bus ack files will be created
     And CSV bus ack will not have any entry of successfully processed records
-    And Json bus ack will only contain file metadata and no record entries
+    And Json bus ack will only contain file metadata and no failure record entry
     And Audit table will have correct status, queue name and record count for the processed batch file
     And The imms event table will be populated with the correct data for 'created' event for records in batch file
     And The delta table will be populated with the correct data for all created records in batch file
@@ -53,6 +54,7 @@ Scenario: Verify that vaccination record will be get rejected if date_and_time i
     And inf ack file has success status for processed batch file
     And bus ack files will be created
     And all rejected records are listed in the csv bus ack file and no imms id is generated
+    And Json bus ack will only contain file metadata and correct failure record entries
     And Audit table will have correct status, queue name and record count for the processed batch file
 
 @vaccine_type_6IN1  @supplier_name_EMIS
@@ -68,6 +70,7 @@ Scenario: verify that vaccination record will be get rejected if recorded_date i
     And inf ack file has success status for processed batch file
     And bus ack files will be created
     And all rejected records are listed in the csv bus ack file and no imms id is generated
+    And Json bus ack will only contain file metadata and correct failure record entries
     And Audit table will have correct status, queue name and record count for the processed batch file
 
 @vaccine_type_4IN1  @supplier_name_TPP
@@ -81,6 +84,7 @@ Scenario: verify that vaccination record will be get rejected if expiry_date is 
     And inf ack file has success status for processed batch file
     And bus ack files will be created
     And all rejected records are listed in the csv bus ack file and no imms id is generated
+    And Json bus ack will only contain file metadata and correct failure record entries
     And Audit table will have correct status, queue name and record count for the processed batch file
 
 @vaccine_type_FLU  @supplier_name_MAVIS
@@ -96,6 +100,7 @@ Scenario: verify that vaccination record will be get rejected if Person date of 
     And inf ack file has success status for processed batch file
     And bus ack files will be created
     And all rejected records are listed in the csv bus ack file and no imms id is generated
+    And Json bus ack will only contain file metadata and correct failure record entries
     And Audit table will have correct status, queue name and record count for the processed batch file
 
 @vaccine_type_FLU  @supplier_name_MAVIS
@@ -119,6 +124,7 @@ Scenario: verify that vaccination record will be get rejected if Person nhs numb
     And inf ack file has success status for processed batch file
     And bus ack files will be created
     And all rejected records are listed in the csv bus ack file and no imms id is generated
+    And Json bus ack will only contain file metadata and correct failure record entries
     And Audit table will have correct status, queue name and record count for the processed batch file
 
 @vaccine_type_BCG  @supplier_name_TPP
@@ -132,6 +138,7 @@ Scenario: verify that vaccination record will be get successful if performer is 
     And inf ack file has success status for processed batch file
     And bus ack files will be created
     And CSV bus ack will not have any entry of successfully processed records
+    And Json bus ack will only contain file metadata and no failure record entry
     And Audit table will have correct status, queue name and record count for the processed batch file
     And The imms event table will be populated with the correct data for 'created' event for records in batch file
     And The delta table will be populated with the correct data for all created records in batch file
@@ -156,6 +163,7 @@ Scenario: verify that vaccination record will be get successful with different v
     And inf ack file has success status for processed batch file
     And bus ack files will be created
     And CSV bus ack will not have any entry of successfully processed records
+    And Json bus ack will only contain file metadata and no failure record entry
     And Audit table will have correct status, queue name and record count for the processed batch file
     And The imms event table will be populated with the correct data for 'created' event for records in batch file
     And The delta table will be populated with the correct data for all created records in batch file
@@ -188,6 +196,7 @@ Scenario: verify that vaccination record will be get rejected if mandatory field
     And inf ack file has success status for processed batch file
     And bus ack files will be created
     And all rejected records are listed in the csv bus ack file and no imms id is generated
+    And Json bus ack will only contain file metadata and correct failure record entries
     And Audit table will have correct status, queue name and record count for the processed batch file
 
 @delete_cleanup_batch @vaccine_type_HIB  @supplier_name_EMIS
@@ -202,6 +211,7 @@ Scenario: verify that vaccination record will be successful if mandatory field f
     And inf ack file has success status for processed batch file
     And bus ack files will be created
     And CSV bus ack will not have any entry of successfully processed records
+    And Json bus ack will only contain file metadata and no failure record entry
     And Audit table will have correct status, queue name and record count for the processed batch file
     And The imms event table will be populated with the correct data for 'created' event for records in batch file
     And The delta table will be populated with the correct data for all created records in batch file
@@ -220,6 +230,7 @@ Scenario: verify that vaccination record will be get successful if action flag h
     And inf ack file has success status for processed batch file
     And bus ack files will be created
     And CSV bus ack will not have any entry of successfully processed records
+    And Json bus ack will only contain file metadata and no failure record entry
     And Audit table will have correct status, queue name and record count for the processed batch file
     And The imms event table will be populated with the correct data for 'created' event for records in batch file
     And The delta table will be populated with the correct data for all created records in batch file
@@ -248,6 +259,7 @@ Scenario: verify that vaccination record will be get rejected if non mandatory f
     And inf ack file has success status for processed batch file
     And bus ack files will be created
     And all rejected records are listed in the csv bus ack file and no imms id is generated
+    And Json bus ack will only contain file metadata and correct failure record entries
     And Audit table will have correct status, queue name and record count for the processed batch file
 
 @delete_cleanup_batch @vaccine_type_3IN1  @supplier_name_TPP
@@ -273,6 +285,7 @@ Scenario: verify that vaccination record will be get successful if non mandatory
     And inf ack file has success status for processed batch file
     And bus ack files will be created
     And CSV bus ack will not have any entry of successfully processed records
+    And Json bus ack will only contain file metadata and no failure record entry
     And Audit table will have correct status, queue name and record count for the processed batch file
     And The imms event table will be populated with the correct data for 'created' event for records in batch file
     And The delta table will be populated with the correct data for all created records in batch file

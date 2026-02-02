@@ -16,6 +16,7 @@ Scenario: Update immunization event for a patient through batch file
     And inf ack file has success status for processed batch file
     And bus ack files will be created
     And CSV bus ack will not have any entry of successfully processed records
+    And Json bus ack will only contain file metadata and no failure record entry
     And Audit table will have correct status, queue name and record count for the processed batch file
     And The imms event table will be populated with the correct data for 'updated' event for records in batch file
     And The delta table will be populated with the correct data for all created records in batch file 
@@ -31,6 +32,7 @@ Scenario: Verify that the API vaccination record will be successful updated by b
     And inf ack file has success status for processed batch file
     And bus ack files will be created
     And CSV bus ack will not have any entry of successfully processed records
+    And Json bus ack will only contain file metadata and no failure record entry
     And Audit table will have correct status, queue name and record count for the processed batch file
     And The imms event table will be populated with the correct data for 'updated' event for records in batch file
     And The delta table will be populated with the correct data for all updated records in batch file
@@ -45,6 +47,7 @@ Scenario: Verify that the batch vaccination record will be successful updated by
     And inf ack file has success status for processed batch file
     And bus ack files will be created
     And CSV bus ack will not have any entry of successfully processed records
+    And Json bus ack will only contain file metadata and no failure record entry
     And Audit table will have correct status, queue name and record count for the processed batch file
     And The imms event table will be populated with the correct data for 'created' event for records in batch file
     And The delta table will be populated with the correct data for all created records in batch file
@@ -59,5 +62,6 @@ Scenario: Verify that the API vaccination record will be successful updated and 
     Then file will be moved to destination bucket and inf ack file will be created
     And inf ack file has success status for processed batch file
     And bus ack files will be created
-    And bus ack will have error records for all the updated records in the batch file
+    And csv bus ack will have error records for all the updated records in the batch file
+    And json bus ack will have error records for all the updated records in the batch file
     And The delta and imms event table will be populated with the correct data for api created event
