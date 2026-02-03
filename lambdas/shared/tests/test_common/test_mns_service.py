@@ -148,7 +148,7 @@ class TestMnsService(unittest.TestCase):
         result = service.delete_subscription("sub-id-123")
         self.assertTrue(result)
         mock_delete.assert_called_with(
-            method="DELETE", url=f"{MNS_URL}/sub-id-123", headers=service.request_headers, timeout=5
+            method="DELETE", url=f"{MNS_URL}/sub-id-123", headers=service.request_headers, timeout=15
         )
 
     @patch("common.mns_service.requests.request")
