@@ -3,16 +3,16 @@ import unittest
 from unittest.mock import MagicMock, Mock, create_autospec, patch
 
 from common.api_clients.authentication import AppRestrictedAuth
-from common.api_clients.mns_service import MNS_URL, MnsService
-from common.api_clients.retry import raise_error_response
-from common.models.errors import (
+from common.api_clients.errors import (
     BadRequestError,
     ForbiddenError,
     ResourceNotFoundError,
     ServerError,
     TokenValidationError,
     UnhandledResponseError,
+    raise_error_response,
 )
+from common.api_clients.mns_service import MNS_URL, MnsService
 
 SQS_ARN = "arn:aws:sqs:eu-west-2:123456789012:my-queue"
 
@@ -256,8 +256,8 @@ class TestMnsService(unittest.TestCase):
         with self.assertRaises(ResourceNotFoundError) as context:
             raise_error_response(resp)
         self.assertIn("Resource not found", str(context.exception))
-        self.assertEqual(context.exception.resource_id, "Resource not found")
-        self.assertEqual(context.exception.resource_type, {"resource": "Not found"})
+        self.assertEqual(context.exception.message, "Resource not found")
+        self.assertEqual(context.exception.response, {"resource": "Not found"})
 
     def test_400_bad_request_error(self):
         resp = self.mock_response(400, {"resource": "Invalid"})

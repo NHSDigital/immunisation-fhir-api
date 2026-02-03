@@ -1,8 +1,15 @@
 import unittest
 from unittest.mock import MagicMock, call, patch
 
-from common.api_clients.retry import Constants, raise_error_response, request_with_retry_backoff
-from common.models import errors
+from common.api_clients.constants import Constants
+from common.api_clients.errors import (
+    BadRequestError,
+    ForbiddenError,
+    ServerError,
+    UnhandledResponseError,
+    raise_error_response,
+)
+from common.api_clients.retry import request_with_retry_backoff
 
 
 class TestRaiseErrorResponse(unittest.TestCase):
@@ -13,62 +20,44 @@ class TestRaiseErrorResponse(unittest.TestCase):
         response.json.return_value = json_data if json_data is not None else {"error": "something"}
         return response
 
-    @patch("common.api_clients.retry.logger")
+    @patch("common.api_clients.errors.logger")
     def test_400_raises_bad_request_error(self, mock_logger):
         response = self._make_response(400, text="bad request")
 
-        with self.assertRaises(errors.BadRequestError) as ctx:
+        with self.assertRaises(BadRequestError) as ctx:
             raise_error_response(response)
 
         self.assertIn("Bad request", str(ctx.exception))
         mock_logger.info.assert_called_once()
 
-    @patch("common.api_clients.retry.logger")
+    @patch("common.api_clients.errors.logger")
     def test_403_raises_forbidden_error(self, mock_logger):
         response = self._make_response(403, text="forbidden")
 
-        with self.assertRaises(errors.ForbiddenError) as ctx:
+        with self.assertRaises(ForbiddenError) as ctx:
             raise_error_response(response)
 
         self.assertIn("Forbidden", str(ctx.exception))
         mock_logger.info.assert_called_once()
 
-    @patch("common.api_clients.retry.logger")
+    @patch("common.api_clients.errors.logger")
     def test_500_raises_server_error(self, mock_logger):
         response = self._make_response(500, text="server error")
 
-        with self.assertRaises(errors.ServerError) as ctx:
+        with self.assertRaises(ServerError) as ctx:
             raise_error_response(response)
 
         self.assertIn("Internal Server Error", str(ctx.exception))
         mock_logger.info.assert_called_once()
 
-    @patch("common.api_clients.retry.logger")
+    @patch("common.api_clients.errors.logger")
     def test_unhandled_status_raises_unhandled_response_error(self, mock_logger):
         response = self._make_response(418, text="I'm a teapot")
 
-        with self.assertRaises(errors.UnhandledResponseError) as ctx:
+        with self.assertRaises(UnhandledResponseError) as ctx:
             raise_error_response(response)
 
         self.assertIn("Unhandled error: 418", str(ctx.exception))
-        mock_logger.info.assert_called_once()
-
-    @patch("common.api_clients.retry.logger")
-    def test_404_uses_resource_not_found_error_constructor(self, mock_logger):
-        """
-        This validates the special-case 404 block:
-            raise exception_class(resource_type=response.json(), resource_id=error_message)
-        """
-        response_json = {"resource": "Patient"}
-        response = self._make_response(404, text="not found", json_data=response_json)
-
-        with self.assertRaises(errors.ResourceNotFoundError) as ctx:
-            raise_error_response(response)
-
-        # Here we validate the exception received those specific args
-        exc = ctx.exception
-        self.assertEqual(exc.resource_type, response_json)
-        self.assertEqual(exc.resource_id, "Resource not found")
         mock_logger.info.assert_called_once()
 
 

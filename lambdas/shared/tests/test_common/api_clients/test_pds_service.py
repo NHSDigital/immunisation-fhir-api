@@ -5,8 +5,8 @@ import responses
 from responses import matchers
 
 from common.api_clients.authentication import AppRestrictedAuth
+from common.api_clients.errors import BadRequestError
 from common.api_clients.pds_service import PdsService
-from common.models.errors import BadRequestError
 
 
 class TestPdsService(unittest.TestCase):

@@ -252,25 +252,6 @@ class BadRequestError(RuntimeError):
         )
 
 
-@dataclass
-class ServerError(RuntimeError):
-    """Use when there is a server error"""
-
-    response: dict | str
-    message: str
-
-    def __str__(self):
-        return f"{self.message}\n{self.response}"
-
-    def to_operation_outcome(self) -> dict:
-        return create_operation_outcome(
-            resource_id=str(uuid.uuid4()),
-            severity=Severity.error,
-            code=Code.server_error,
-            diagnostics=self.__str__(),
-        )
-
-
 def create_operation_outcome(resource_id: str, severity: Severity, code: Code, diagnostics: str) -> dict:
     """Create an OperationOutcome object. Do not use `fhir.resource` library since it adds unnecessary validations"""
     return {
