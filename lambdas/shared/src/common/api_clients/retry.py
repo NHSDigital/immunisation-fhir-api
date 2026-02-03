@@ -43,7 +43,12 @@ def raise_error_response(response):
 
 
 def request_with_retry_backoff(
-    method: str, url: str, headers: dict, timeout: int = Constants.DEFAULT_API_CLIENTS_TIMEOUT, data: dict | None = None
+    method: str,
+    url: str,
+    headers: dict | None = None,
+    timeout: int = Constants.DEFAULT_API_CLIENTS_TIMEOUT,
+    max_retries: int = Constants.API_CLIENTS_MAX_RETRIES,
+    data: dict | None = None,
 ) -> requests.Response:
     """
     Makes an external request with retry and exponential backoff for retryable status codes.
@@ -54,6 +59,8 @@ def request_with_retry_backoff(
         method (str): HTTP method (e.g. 'GET', 'POST', 'PUT', 'DELETE').
         url (str): The URL to send the request to.
         headers (dict): Headers to include in the request.
+        timeout (int): Timeout for the request in seconds.
+        max_retries (int): Maximum number of retries for retryable status codes.
         data (dict | None): Optional data to include in the request body.
     """
     response = None
@@ -65,7 +72,7 @@ def request_with_retry_backoff(
         "timeout": timeout,
     }
 
-    for request_attempt in range(Constants.API_CLIENTS_MAX_RETRIES + 1):
+    for request_attempt in range(max_retries + 1):
         if data is not None:
             api_request_kwargs["data"] = data
 
@@ -73,10 +80,10 @@ def request_with_retry_backoff(
         if response.status_code not in Constants.RETRYABLE_STATUS_CODES:
             break
 
-        if request_attempt < Constants.API_CLIENTS_MAX_RETRIES:
+        if request_attempt < max_retries:
             logger.info(
                 f"Retryable response. Status={response.status_code}. "
-                f"Attempt={request_attempt + 1}/{Constants.API_CLIENTS_MAX_RETRIES + 1}. Retrying..."
+                f"Attempt={request_attempt + 1}/{max_retries + 1}. Retrying..."
             )
 
             time.sleep(Constants.API_CLIENTS_BACKOFF_SECONDS * (2**request_attempt))
