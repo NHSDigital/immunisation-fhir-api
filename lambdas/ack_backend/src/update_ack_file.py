@@ -113,6 +113,7 @@ def complete_batch_file_process(
 
     generated_date = time.strftime("%Y-%m-%dT%H:%M:%S.000Z")
     ack_data_dict["generatedDate"] = generated_date
+    ack_data_dict["provider"] = supplier
     ack_data_dict["summary"]["totalRecords"] = total_ack_rows_processed
     ack_data_dict["summary"]["success"] = successful_record_count
     ack_data_dict["summary"]["failed"] = total_failures
@@ -191,10 +192,6 @@ def obtain_current_json_ack_content(message_id: str, temp_ack_file_key: str) -> 
 
             ingestion_start_time = get_ingestion_start_time_by_message_id(message_id)
             raw_ack_filename = temp_ack_file_key.split(".")[0]
-            try:
-                provider = temp_ack_file_key.split("_")[3]
-            except IndexError:
-                provider = "unknown"
 
             # Generate the initial fields
             ack_data_dict = {}
@@ -202,8 +199,8 @@ def obtain_current_json_ack_content(message_id: str, temp_ack_file_key: str) -> 
             ack_data_dict["version"] = 1  # TO FIX
 
             ack_data_dict["generatedDate"] = ""  # will be filled on completion
+            ack_data_dict["provider"] = ""  # will be filled on completion
             ack_data_dict["filename"] = raw_ack_filename
-            ack_data_dict["provider"] = provider
             ack_data_dict["messageHeaderId"] = message_id
 
             ack_data_dict["summary"] = {}
