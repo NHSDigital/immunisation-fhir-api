@@ -3,7 +3,6 @@ from constants import RedisCacheKey
 from transform_configs import (
     transform_supplier_permissions,
     transform_vaccine_map,
-    transform_validation_rules,
 )
 
 """
@@ -18,8 +17,6 @@ def transform_map(data, file_type) -> dict:
         return transform_supplier_permissions(data)
     if file_type == RedisCacheKey.DISEASE_MAPPING_FILE_KEY:
         return transform_vaccine_map(data)
-    if file_type == RedisCacheKey.VALIDATION_RULES_FILE_KEY:
-        return transform_validation_rules(data)
 
     logger.info("No specific transformation defined for file type: %s", file_type)
     return data  # Default case, return data as is if no transformation is defined
