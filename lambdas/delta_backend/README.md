@@ -8,9 +8,9 @@ This project is designed to convert FHIR-compliant JSON data (e.g., Immunization
 
 | File Name                   | What It Does                                                                                                                 |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| **`converter.py`**          | 🧠 The main brain — applies the schema, runs conversions, handles errors.                                                    |
+| **`converter.py`**          | The main brain — applies the schema, runs conversions, handles errors.                                                       |
 | **`conversion_layout.py`**  | A plain Python list that defines which fields you want, and how they should be formatted (e.g. date format, renaming rules). |
-| **`delta.py`**              | Holds the function called by AWS Lambda                                                                                      |
+| **`delta.py`**              | Holds the function called by AWS Lambda.                                                                                     |
 | **`extractor.py`**          | Tailored functionality to extract target fields from immunization record received by the delta handler.                      |
 | **`exception_messages.py`** | Holds reusable error messages and codes for clean debugging and validation feedback.                                         |
 | **`log_firehose.py`**       | Firehose logging functionality.                                                                                              |
