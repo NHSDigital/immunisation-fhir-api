@@ -189,7 +189,7 @@ def validate_imms_delta_table_by_ImmsID(context):
     assert item, f"Item not found in response for ImmsID: {context.ImmsID}"
 
     validate_imms_delta_record_with_created_event(
-        context, create_obj, item, Operation.created.value, ActionFlag.created.value
+        context, create_obj, item[0], Operation.created.value, ActionFlag.created.value
     )
 
 

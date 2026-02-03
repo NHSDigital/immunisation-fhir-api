@@ -33,7 +33,13 @@ variable "service" {
 }
 
 variable "aws_region" {
+  type    = string
   default = "eu-west-2"
+
+  validation {
+    condition     = var.aws_region == "eu-west-2"
+    error_message = "AWS Region must be set to eu-west-2."
+  }
 }
 
 variable "pds_environment" {
