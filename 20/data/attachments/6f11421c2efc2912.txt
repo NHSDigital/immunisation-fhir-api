@@ -1,2 +1,0 @@
-❌ Step failed! **I have created a valid vaccination record through API** 
- Error: Exceeded 30 redirects.
