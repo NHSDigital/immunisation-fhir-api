@@ -24,7 +24,7 @@ See https://nhsd-confluence.digital.nhs.uk/display/APM/Glossary.
 | `delta_backend`          | **Imms Sync** – Lambda function that reacts to events in the Immunisation Event Data Store (IEDS).                                                                                      |
 | `filenameprocessor`      | **Imms Batch** – Validates and processes new batch file events.                                                                                                                         |
 | `id_sync`                | **Imms Cross-cutting** – Handles [MNS](https://digital.nhs.uk/developer/api-catalogue/multicast-notification-service) NHS Number Change events and applies updates to affected records. |
-| `mesh_processor`         | **Imms Batch** – Triggered when new files our received via MESH. Moves them into the Imms Batch processing system.                                                                      |
+| `mesh_processor`         | **Imms Batch** – Triggered when new files are received via MESH. Moves them into the Imms Batch processing system.                                                                      |
 | `mns_subscription`       | **Imms Cross-cutting** – Simple helper Lambda which sets up our required MNS subscription. Used in pipelines in DEV.                                                                    |
 | `recordforwarder`        | **Imms Batch** – Consumes from the stream and applies the processed batch file row operations (CUD) to IEDS.                                                                            |
 | `recordprocessor`        | **Imms Batch** – ECS Task - **not** a Lambda function - responsible for processing batch file rows and forwarding to the stream.                                                        |
@@ -39,7 +39,7 @@ Due to the timing of the project's inception, Azure pipelines have been inherite
 the Apigee proxy and sandbox. The new way to manage and deploy said resources is [Proxygen](https://digital.nhs.uk/developer/api-catalogue/proxy-generator).
 
 In future a migration plan will be provided by the API Management team so we can move to the new process and use purely
-GitHub Actions for our entire pipeline
+GitHub Actions for our entire pipeline.
 
 | Folder    | Description                                                                                                                     |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------- |
