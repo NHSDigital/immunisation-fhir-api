@@ -21,9 +21,7 @@ from utils.mock_environment_variables import (
 )
 from utils.utils_for_ack_backend_tests import (
     MOCK_MESSAGE_DETAILS,
-    generate_expected_ack_content,
     generate_expected_ack_file_row,
-    generate_expected_json_ack_content,
     generate_expected_json_ack_file_element,
     generate_sample_existing_ack_content,
     generate_sample_existing_json_ack_content,
@@ -92,19 +90,6 @@ class TestUpdateAckFile(unittest.TestCase):
 
     def tearDown(self) -> None:
         GenericTearDown(s3_client=self.s3_client)
-
-    def validate_ack_file_content(
-        self,
-        incoming_messages: list[dict],
-        existing_file_content: str = ValidValues.ack_headers,
-    ) -> None:
-        """
-        Obtains the ack file content and ensures that it matches the expected content (expected content is based
-        on the incoming messages).
-        """
-        actual_ack_file_content = obtain_current_ack_file_content(self.s3_client)
-        expected_ack_file_content = generate_expected_ack_content(incoming_messages, existing_file_content)
-        self.assertEqual(expected_ack_file_content, actual_ack_file_content)
 
     def test_update_ack_file(self):
         """Test that update_ack_file correctly creates the ack file when there was no existing ack file"""
@@ -274,21 +259,6 @@ class TestUpdateAckFile(unittest.TestCase):
         setup_existing_ack_file(MOCK_MESSAGE_DETAILS.temp_ack_file_key, existing_content, self.s3_client)
         result = obtain_current_ack_content(MOCK_MESSAGE_DETAILS.temp_ack_file_key)
         self.assertEqual(result.getvalue(), existing_content)
-
-    def validate_json_ack_file_content(
-        self,
-        incoming_messages: list[dict],
-        existing_file_content: str = ValidValues.json_ack_initial_content,
-    ) -> None:
-        """
-        Obtains the json ack file content and ensures that it matches the expected content (expected content is based
-        on the incoming messages).
-        """
-        actual_ack_file_content = obtain_current_json_ack_file_content(
-            self.s3_client, MOCK_MESSAGE_DETAILS.temp_json_ack_file_key
-        )
-        expected_ack_file_content = generate_expected_json_ack_content(incoming_messages, existing_file_content)
-        self.assertEqual(expected_ack_file_content, actual_ack_file_content)
 
     def test_update_json_ack_file(self):
         """Test that update_json_ack_file correctly creates the ack file when there was no existing ack file"""
