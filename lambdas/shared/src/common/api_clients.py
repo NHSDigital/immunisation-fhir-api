@@ -43,7 +43,17 @@ def raise_error_response(response):
 
 
 def request_with_retry_backoff(method: str, url: str, headers: dict, data: dict | None = None) -> requests.Response:
-    """Makes an external request with retry and exponential backoff for retryable status codes."""
+    """
+    Makes an external request with retry and exponential backoff for retryable status codes.
+    Retries only for status codes in Constants.RETRYABLE_STATUS_CODES (e.g. 429/5xx),
+    up to Constants.API_CLIENTS_MAX_RETRIES. Returns the final Response for the caller
+    to handle (success or last failure after retries).
+    Args:
+        method (str): HTTP method (e.g. 'GET', 'POST', 'PUT', 'DELETE').
+        url (str): The URL to send the request to.
+        headers (dict): Headers to include in the request.
+        data (dict | None): Optional data to include in the request body.
+    """
     response = None
 
     api_request_kwargs = {
