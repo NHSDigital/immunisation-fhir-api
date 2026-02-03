@@ -4,10 +4,10 @@ Operations related to PDS (Patient Demographic Service)
 
 import tempfile
 
-from common.authentication import AppRestrictedAuth, Service
+from common.api_clients.authentication import AppRestrictedAuth, Service
+from common.api_clients.pds_service import PdsService
 from common.cache import Cache
 from common.clients import get_secrets_manager_client, logger
-from common.pds_service import PdsService
 from exceptions.id_sync_exception import IdSyncException
 from os_vars import get_pds_env
 
