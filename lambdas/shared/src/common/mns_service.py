@@ -43,7 +43,7 @@ class MnsService:
 
     def subscribe_notification(self) -> dict | None:
         response = requests.request(
-            "POST", MNS_URL, headers=self.request_headers, data=json.dumps(self.subscription_payload)
+            "POST", MNS_URL, headers=self.request_headers, timeout=15, data=json.dumps(self.subscription_payload)
         )
         if response.status_code in (200, 201):
             return response.json()
@@ -51,7 +51,7 @@ class MnsService:
             raise_error_response(response)
 
     def get_subscription(self) -> dict | None:
-        response = request_with_retry_backoff("GET", MNS_URL, headers=self.request_headers)
+        response = request_with_retry_backoff("GET", MNS_URL, headers=self.request_headers, timeout=10)
         logging.info(f"GET {MNS_URL}")
         logging.debug(f"Headers: {self.request_headers}")
 
@@ -89,7 +89,7 @@ class MnsService:
     def delete_subscription(self, subscription_id: str) -> str:
         """Delete the subscription by ID."""
         url = f"{MNS_URL}/{subscription_id}"
-        response = request_with_retry_backoff("DELETE", url, headers=self.request_headers)
+        response = request_with_retry_backoff("DELETE", url, headers=self.request_headers, timeout=10)
         if response.status_code == 204:
             logging.info(f"Deleted subscription {subscription_id}")
             return "Subscription Successfully Deleted..."

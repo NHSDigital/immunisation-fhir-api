@@ -42,7 +42,9 @@ def raise_error_response(response):
     raise exception_class(response=response.json(), message=error_message)
 
 
-def request_with_retry_backoff(method: str, url: str, headers: dict, data: dict | None = None) -> requests.Response:
+def request_with_retry_backoff(
+    method: str, url: str, headers: dict, timeout: int = Constants.DEFAULT_API_CLIENTS_TIMEOUT, data: dict | None = None
+) -> requests.Response:
     """
     Makes an external request with retry and exponential backoff for retryable status codes.
     Retries only for status codes in Constants.RETRYABLE_STATUS_CODES (e.g. 429/5xx),
@@ -60,7 +62,7 @@ def request_with_retry_backoff(method: str, url: str, headers: dict, data: dict 
         "method": method,
         "url": url,
         "headers": headers,
-        "timeout": Constants.API_CLIENTS_TIMEOUT_SECONDS,
+        "timeout": timeout,
     }
 
     for request_attempt in range(Constants.API_CLIENTS_MAX_RETRIES + 1):
