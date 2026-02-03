@@ -1,0 +1,16 @@
+
+ Search Get parameters - 
+ patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number|9449304424&-immunization.target=ABC&-date.from=2026-02-03&_include=Immunization:patient
+400
+400
+
+ Error Response - 
+ resourceType='OperationOutcome' id='dc570d8f-a94b-4ec6-bf35-9ab8f0eddb48' meta=Meta(profile=['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']) issue=[Issue(severity='error', code='invalid', details=Details(coding=[Coding(system='https://fhir.nhs.uk/Codesystem/http-error-codes', code='INVALID')]), diagnostics='-immunization.target must be one or more of the following: ROTAVIRUS, RSV, SHINGLES, 6IN1, MMR, FLU, 3IN1, PERTUSSIS, MENB, HIB, MMRV, BCG, MENACWY, 4IN1, COVID, PNEUMOCOCCAL, HPV, HEPB')]
+
+ Search Post request - 
+ patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number|9449304424&-immunization.target=ABC&-date.from=2026-02-03&_include=Immunization:patient
+400
+400
+
+ Error Response - 
+ resourceType='OperationOutcome' id='13613cf2-d44d-48f1-99ec-495b7fbf1f73' meta=Meta(profile=['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']) issue=[Issue(severity='error', code='invalid', details=Details(coding=[Coding(system='https://fhir.nhs.uk/Codesystem/http-error-codes', code='INVALID')]), diagnostics='-immunization.target must be one or more of the following: ROTAVIRUS, RSV, SHINGLES, 6IN1, MMR, FLU, 3IN1, PERTUSSIS, MENB, HIB, MMRV, BCG, MENACWY, 4IN1, COVID, PNEUMOCOCCAL, HPV, HEPB')]
