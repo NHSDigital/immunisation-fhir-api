@@ -2,9 +2,9 @@ import os
 import unittest
 from unittest.mock import MagicMock, Mock, create_autospec, patch
 
+from common.api_clients.authentication import AppRestrictedAuth
 from common.api_clients.mns_service import MNS_URL, MnsService
 from common.api_clients.retry import raise_error_response
-from common.authentication import AppRestrictedAuth
 from common.models.errors import (
     BadRequestError,
     ForbiddenError,
