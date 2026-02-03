@@ -270,7 +270,7 @@ class ValidValues:
         "version": 1,
         "generatedDate": "",
         "filename": "TempAck/RSV_Vaccinations_v5_X26_20210730T12000000_BusAck_20211120T12000000",
-        "provider": "X26",
+        "provider": "",
         "messageHeaderId": "test_file_id",
         "summary": {"ingestionTime": {"start": 3456}},
         "failures": [],
@@ -281,7 +281,7 @@ class ValidValues:
         "version": 1,
         "generatedDate": "7890",
         "filename": "TempAck/RSV_Vaccinations_v5_X26_20210730T12000000_BusAck_20211120T12000000",
-        "provider": "X26",
+        "provider": "RAVS",
         "messageHeaderId": "test_file_id",
         "summary": {"totalRecords": 10, "success": 9, "failed": 1, "ingestionTime": {"start": 3456, "end": 7890}},
         "failures": [
