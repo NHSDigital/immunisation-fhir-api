@@ -2,9 +2,9 @@ import os
 import unittest
 from unittest.mock import MagicMock, Mock, create_autospec, patch
 
-from common.api_clients import raise_error_response
+from common.api_clients.mns_service import MNS_URL, MnsService
+from common.api_clients.retry import raise_error_response
 from common.authentication import AppRestrictedAuth
-from common.mns_service import MNS_URL, MnsService
 from common.models.errors import (
     BadRequestError,
     ForbiddenError,
@@ -17,7 +17,7 @@ from common.models.errors import (
 SQS_ARN = "arn:aws:sqs:eu-west-2:123456789012:my-queue"
 
 
-@patch("common.mns_service.SQS_ARN", SQS_ARN)
+@patch("common.api_clients.mns_service.SQS_ARN", SQS_ARN)
 class TestMnsService(unittest.TestCase):
     def setUp(self):
         # Common mock setup
@@ -27,7 +27,7 @@ class TestMnsService(unittest.TestCase):
         self.mock_cache = Mock()
         self.sqs = SQS_ARN
 
-    @patch("common.mns_service.requests.request")
+    @patch("common.api_clients.mns_service.requests.request")
     def test_successful_subscription(self, mock_request):
         # Arrange GET to return no subscription found
         mock_get_response = MagicMock()
@@ -52,7 +52,7 @@ class TestMnsService(unittest.TestCase):
         self.assertEqual(mock_request.call_count, 2)
         self.authenticator.get_access_token.assert_called_once()
 
-    @patch("common.mns_service.requests.request")
+    @patch("common.api_clients.mns_service.requests.request")
     def test_not_found_subscription(self, mock_request):
         mock_response = MagicMock()
         mock_response.status_code = 404
@@ -64,7 +64,7 @@ class TestMnsService(unittest.TestCase):
             service.subscribe_notification()
         self.assertIn("Resource not found", str(context.exception))
 
-    @patch("common.mns_service.requests.request")
+    @patch("common.api_clients.mns_service.requests.request")
     def test_unhandled_error(self, mock_request):
         mock_response = MagicMock()
         mock_response.status_code = 500
@@ -79,7 +79,7 @@ class TestMnsService(unittest.TestCase):
         self.assertIn("Internal Server Error", str(context.exception))
 
     @patch.dict(os.environ, {"SQS_ARN": "arn:aws:sqs:eu-west-2:123456789012:my-queue"})
-    @patch("common.mns_service.requests.request")
+    @patch("common.api_clients.mns_service.requests.request")
     def test_get_subscription_success(self, mock_get):
         """Should return the resource dict when a matching subscription exists."""
         # Arrange a bundle with a matching entry
@@ -93,7 +93,7 @@ class TestMnsService(unittest.TestCase):
         self.assertIsNotNone(result2)
         self.assertEqual(result2["channel"]["endpoint"], SQS_ARN)
 
-    @patch("common.mns_service.requests.request")
+    @patch("common.api_clients.mns_service.requests.request")
     def test_get_subscription_no_match(self, mock_get):
         """Should return None when no subscription matches."""
         mock_response = MagicMock()
@@ -105,7 +105,7 @@ class TestMnsService(unittest.TestCase):
         result = service.get_subscription()
         self.assertIsNone(result)
 
-    @patch("common.mns_service.requests.request")
+    @patch("common.api_clients.mns_service.requests.request")
     def test_get_subscription_401(self, mock_get):
         """Should raise TokenValidationError for 401."""
         mock_response = MagicMock()
@@ -117,7 +117,7 @@ class TestMnsService(unittest.TestCase):
         with self.assertRaises(TokenValidationError):
             service.get_subscription()
 
-    @patch("common.mns_service.requests.request")
+    @patch("common.api_clients.mns_service.requests.request")
     def test_check_subscription_creates_if_not_found(self, mock_request):
         """If GET finds nothing, POST is called and returned."""
         # Arrange GET returns no match
@@ -138,7 +138,7 @@ class TestMnsService(unittest.TestCase):
         self.assertEqual(result, {"subscriptionId": "abc123"})
         self.assertEqual(mock_request.call_count, 2)
 
-    @patch("common.mns_service.requests.request")
+    @patch("common.api_clients.mns_service.requests.request")
     def test_delete_subscription_success(self, mock_delete):
         mock_response = MagicMock()
         mock_response.status_code = 204
@@ -151,7 +151,7 @@ class TestMnsService(unittest.TestCase):
             method="DELETE", url=f"{MNS_URL}/sub-id-123", headers=service.request_headers, timeout=10
         )
 
-    @patch("common.mns_service.requests.request")
+    @patch("common.api_clients.mns_service.requests.request")
     def test_delete_subscription_401(self, mock_delete):
         mock_response = MagicMock()
         mock_response.status_code = 401
@@ -162,7 +162,7 @@ class TestMnsService(unittest.TestCase):
         with self.assertRaises(TokenValidationError):
             service.delete_subscription("sub-id-123")
 
-    @patch("common.mns_service.requests.request")
+    @patch("common.api_clients.mns_service.requests.request")
     def test_delete_subscription_403(self, mock_delete):
         mock_response = MagicMock()
         mock_response.status_code = 403
@@ -173,7 +173,7 @@ class TestMnsService(unittest.TestCase):
         with self.assertRaises(ForbiddenError):
             service.delete_subscription("sub-id-123")
 
-    @patch("common.mns_service.requests.request")
+    @patch("common.api_clients.mns_service.requests.request")
     def test_delete_subscription_404(self, mock_delete):
         mock_response = MagicMock()
         mock_response.status_code = 404
@@ -184,7 +184,7 @@ class TestMnsService(unittest.TestCase):
         with self.assertRaises(ResourceNotFoundError):
             service.delete_subscription("sub-id-123")
 
-    @patch("common.mns_service.requests.request")
+    @patch("common.api_clients.mns_service.requests.request")
     def test_delete_subscription_500(self, mock_delete):
         mock_response = MagicMock()
         mock_response.status_code = 500
@@ -195,7 +195,7 @@ class TestMnsService(unittest.TestCase):
         with self.assertRaises(ServerError):
             service.delete_subscription("sub-id-123")
 
-    @patch("common.mns_service.requests.request")
+    @patch("common.api_clients.mns_service.requests.request")
     def test_delete_subscription_unhandled(self, mock_delete):
         mock_response = MagicMock()
         mock_response.status_code = 418  # Unhandled status code

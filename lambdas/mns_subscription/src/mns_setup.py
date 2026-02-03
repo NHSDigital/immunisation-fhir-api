@@ -3,9 +3,9 @@ import logging
 import boto3
 from botocore.config import Config
 
+from common.api_clients.mns_service import MnsService
 from common.authentication import AppRestrictedAuth, Service
 from common.cache import Cache
-from common.mns_service import MnsService
 
 logging.basicConfig(level=logging.INFO)
 

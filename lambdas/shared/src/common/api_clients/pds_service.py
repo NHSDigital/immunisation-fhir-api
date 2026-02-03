@@ -1,6 +1,6 @@
 import uuid
 
-from common.api_clients import (
+from common.api_clients.retry import (
     raise_error_response,
     request_with_retry_backoff,
 )

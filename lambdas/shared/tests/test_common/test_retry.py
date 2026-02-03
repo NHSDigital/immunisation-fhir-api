@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock, call, patch
 
-from common.api_clients import Constants, raise_error_response, request_with_retry_backoff
+from common.api_clients.retry import Constants, raise_error_response, request_with_retry_backoff
 from common.models import errors
 
 
@@ -13,7 +13,7 @@ class TestRaiseErrorResponse(unittest.TestCase):
         response.json.return_value = json_data if json_data is not None else {"error": "something"}
         return response
 
-    @patch("common.api_clients.logger")
+    @patch("common.api_clients.retry.logger")
     def test_400_raises_bad_request_error(self, mock_logger):
         response = self._make_response(400, text="bad request")
 
@@ -23,7 +23,7 @@ class TestRaiseErrorResponse(unittest.TestCase):
         self.assertIn("Bad request", str(ctx.exception))
         mock_logger.info.assert_called_once()
 
-    @patch("common.api_clients.logger")
+    @patch("common.api_clients.retry.logger")
     def test_403_raises_forbidden_error(self, mock_logger):
         response = self._make_response(403, text="forbidden")
 
@@ -33,7 +33,7 @@ class TestRaiseErrorResponse(unittest.TestCase):
         self.assertIn("Forbidden", str(ctx.exception))
         mock_logger.info.assert_called_once()
 
-    @patch("common.api_clients.logger")
+    @patch("common.api_clients.retry.logger")
     def test_500_raises_server_error(self, mock_logger):
         response = self._make_response(500, text="server error")
 
@@ -43,7 +43,7 @@ class TestRaiseErrorResponse(unittest.TestCase):
         self.assertIn("Internal Server Error", str(ctx.exception))
         mock_logger.info.assert_called_once()
 
-    @patch("common.api_clients.logger")
+    @patch("common.api_clients.retry.logger")
     def test_unhandled_status_raises_unhandled_response_error(self, mock_logger):
         response = self._make_response(418, text="I'm a teapot")
 
@@ -53,7 +53,7 @@ class TestRaiseErrorResponse(unittest.TestCase):
         self.assertIn("Unhandled error: 418", str(ctx.exception))
         mock_logger.info.assert_called_once()
 
-    @patch("common.api_clients.logger")
+    @patch("common.api_clients.retry.logger")
     def test_404_uses_resource_not_found_error_constructor(self, mock_logger):
         """
         This validates the special-case 404 block:

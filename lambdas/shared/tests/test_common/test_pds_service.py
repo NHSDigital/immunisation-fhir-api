@@ -4,9 +4,9 @@ from unittest.mock import create_autospec
 import responses
 from responses import matchers
 
+from common.api_clients.pds_service import PdsService
 from common.authentication import AppRestrictedAuth
 from common.models.errors import BadRequestError
-from common.pds_service import PdsService
 
 
 class TestPdsService(unittest.TestCase):

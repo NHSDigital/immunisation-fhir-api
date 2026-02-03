@@ -5,7 +5,7 @@ import uuid
 
 import requests
 
-from common.api_clients import raise_error_response, request_with_retry_backoff
+from common.api_clients.retry import raise_error_response, request_with_retry_backoff
 from common.authentication import AppRestrictedAuth
 
 SQS_ARN = os.getenv("SQS_ARN")
