@@ -1,10 +1,9 @@
 locals {
-  delta_lambda_dir = abspath("${path.root}/../../lambdas/delta_backend")
-  delta_files      = fileset(local.delta_lambda_dir, "**")
-  delta_dir_sha    = sha1(join("", [for f in local.delta_files : filesha1("${local.delta_lambda_dir}/${f}")]))
-  function_name    = "delta"
-  dlq_name         = "delta-dlq"
-  sns_name         = "delta-sns"
+  delta_lambda_dir  = abspath("${path.root}/../../lambdas/delta_backend")
+  delta_files       = fileset(local.delta_lambda_dir, "**")
+  delta_dir_sha     = sha1(join("", [for f in local.delta_files : filesha1("${local.delta_lambda_dir}/${f}")]))
+  delta_lambda_name = "${local.short_prefix}-delta-lambda"
+  dlq_name          = "delta-dlq"
 }
 
 resource "aws_ecr_repository" "delta_lambda_repository" {
@@ -71,7 +70,7 @@ resource "aws_ecr_repository_policy" "delta_lambda_ECRImageRetreival_policy" {
         ],
         "Condition" : {
           "StringLike" : {
-            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${var.immunisation_account_id}:function:${local.short_prefix}-${local.function_name}"
+            "aws:sourceArn" : "arn:aws:lambda:${var.aws_region}:${var.immunisation_account_id}:function:${local.delta_lambda_name}"
           }
         }
       }
@@ -101,33 +100,29 @@ data "aws_iam_policy_document" "delta_policy_document" {
 }
 
 resource "aws_iam_role" "delta_lambda_role" {
-  name               = "${local.short_prefix}-${local.function_name}-role"
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": "sts:AssumeRole",
-      "Principal": {
-        "Service": "lambda.amazonaws.com"
+  name = "${local.delta_lambda_name}-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect = "Allow",
+      Sid    = "",
+      Principal = {
+        Service = "lambda.amazonaws.com"
       },
-      "Effect": "Allow",
-      "Sid": ""
-    }
-  ]
-}
-EOF
+      Action = "sts:AssumeRole"
+    }]
+  })
 }
 
 resource "aws_iam_role_policy" "lambda_role_policy" {
-  name   = "${local.prefix}-${local.function_name}-policy"
+  name   = "${local.prefix}-delta-policy"
   role   = aws_iam_role.delta_lambda_role.id
   policy = data.aws_iam_policy_document.delta_policy_document.json
 }
 
 
 resource "aws_lambda_function" "delta_sync_lambda" {
-  function_name = "${local.short_prefix}-${local.function_name}"
+  function_name = local.delta_lambda_name
   role          = aws_iam_role.delta_lambda_role.arn
   package_type  = "Image"
   architectures = ["x86_64"]
@@ -168,7 +163,7 @@ resource "aws_sqs_queue" "dlq" {
 }
 
 resource "aws_cloudwatch_log_group" "delta_lambda" {
-  name              = "/aws/lambda/${local.short_prefix}-${local.function_name}"
+  name              = "/aws/lambda/${local.delta_lambda_name}"
   retention_in_days = 30
 }
 
@@ -190,7 +185,7 @@ resource "aws_cloudwatch_log_metric_filter" "delta_error_logs" {
 resource "aws_cloudwatch_metric_alarm" "delta_error_alarm" {
   count = var.error_alarm_notifications_enabled ? 1 : 0
 
-  alarm_name          = "${local.short_prefix}-delta-lambda-error"
+  alarm_name          = "${local.delta_lambda_name}-error"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = 1
   metric_name         = "${local.short_prefix}-DeltaErrorLogs"
