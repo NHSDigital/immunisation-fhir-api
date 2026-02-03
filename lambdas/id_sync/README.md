@@ -2,12 +2,12 @@
 
 ## Overview
 
-**Id Sync** is an AWS Lambda function designed to trigger from SQS. It receives a list of NHS Numbers and checks for changes in PDS. If change found, it updates the Events Table..
+**Id Sync** is an AWS Lambda function designed to trigger from SQS. It receives a list of NHS Numbers and checks for changes in PDS. If change found, it updates the Events Table.
 
 ## Features
 
 - **SQS Event Driven:** Automatically triggered by SQS event.
-- **DynamoDb Integration:** Reviews contents of DynbamoDb Events table and updates where required..
+- **DynamoDb Integration:** Reviews contents of DynamoDb Events table and updates where required.
 - **Logging:** Provides detailed logging for monitoring and troubleshooting.
 
 ## How It Works
