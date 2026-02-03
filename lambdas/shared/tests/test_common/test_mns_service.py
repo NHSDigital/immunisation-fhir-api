@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, Mock, create_autospec, patch
 
 from common.api_clients import raise_error_response
 from common.authentication import AppRestrictedAuth
+from common.mns_service import MNS_URL, MnsService
 from common.models.errors import (
     BadRequestError,
     ForbiddenError,
@@ -12,12 +13,11 @@ from common.models.errors import (
     TokenValidationError,
     UnhandledResponseError,
 )
-from mns_service import MNS_URL, MnsService
 
 SQS_ARN = "arn:aws:sqs:eu-west-2:123456789012:my-queue"
 
 
-@patch("mns_service.SQS_ARN", SQS_ARN)
+@patch("common.mns_service.SQS_ARN", SQS_ARN)
 class TestMnsService(unittest.TestCase):
     def setUp(self):
         # Common mock setup
@@ -27,20 +27,20 @@ class TestMnsService(unittest.TestCase):
         self.mock_cache = Mock()
         self.sqs = SQS_ARN
 
-    @patch("mns_service.requests.post")
-    @patch("mns_service.requests.get")
-    def test_successful_subscription(self, mock_get, mock_post):
+    @patch("common.mns_service.requests.request")
+    def test_successful_subscription(self, mock_request):
         # Arrange GET to return no subscription found
         mock_get_response = MagicMock()
         mock_get_response.status_code = 200
         mock_get_response.json.return_value = {"entry": []}
-        mock_get.return_value = mock_get_response
 
-        # Arrange
-        mock_response = MagicMock()
-        mock_response.status_code = 201
-        mock_response.json.return_value = {"subscriptionId": "abc123"}
-        mock_post.return_value = mock_response
+        # Arrange POST to return created subscription
+        mock_post_response = MagicMock()
+        mock_post_response.status_code = 201
+        mock_post_response.json.return_value = {"subscriptionId": "abc123"}
+
+        # Mock returns GET response first, then POST response
+        mock_request.side_effect = [mock_get_response, mock_post_response]
 
         service = MnsService(self.authenticator)
 
@@ -49,15 +49,14 @@ class TestMnsService(unittest.TestCase):
 
         # Assert
         self.assertEqual(result, {"subscriptionId": "abc123"})
-        mock_post.assert_called_once()
-        mock_get.assert_called_once()
+        self.assertEqual(mock_request.call_count, 2)
         self.authenticator.get_access_token.assert_called_once()
 
-    @patch("mns_service.requests.post")
-    def test_not_found_subscription(self, mock_post):
+    @patch("common.mns_service.requests.request")
+    def test_not_found_subscription(self, mock_request):
         mock_response = MagicMock()
         mock_response.status_code = 404
-        mock_post.return_value = mock_response
+        mock_request.return_value = mock_response
 
         service = MnsService(self.authenticator)
 
@@ -65,12 +64,12 @@ class TestMnsService(unittest.TestCase):
             service.subscribe_notification()
         self.assertIn("Resource not found", str(context.exception))
 
-    @patch("mns_service.requests.post")
-    def test_unhandled_error(self, mock_post):
+    @patch("common.mns_service.requests.request")
+    def test_unhandled_error(self, mock_request):
         mock_response = MagicMock()
         mock_response.status_code = 500
         mock_response.json.return_value = {"error": "Server error"}
-        mock_post.return_value = mock_response
+        mock_request.return_value = mock_response
 
         service = MnsService(self.authenticator)
 
@@ -80,7 +79,7 @@ class TestMnsService(unittest.TestCase):
         self.assertIn("Internal Server Error", str(context.exception))
 
     @patch.dict(os.environ, {"SQS_ARN": "arn:aws:sqs:eu-west-2:123456789012:my-queue"})
-    @patch("mns_service.requests.get")
+    @patch("common.mns_service.requests.request")
     def test_get_subscription_success(self, mock_get):
         """Should return the resource dict when a matching subscription exists."""
         # Arrange a bundle with a matching entry
@@ -94,7 +93,7 @@ class TestMnsService(unittest.TestCase):
         self.assertIsNotNone(result2)
         self.assertEqual(result2["channel"]["endpoint"], SQS_ARN)
 
-    @patch("mns_service.requests.get")
+    @patch("common.mns_service.requests.request")
     def test_get_subscription_no_match(self, mock_get):
         """Should return None when no subscription matches."""
         mock_response = MagicMock()
@@ -106,7 +105,7 @@ class TestMnsService(unittest.TestCase):
         result = service.get_subscription()
         self.assertIsNone(result)
 
-    @patch("mns_service.requests.get")
+    @patch("common.mns_service.requests.request")
     def test_get_subscription_401(self, mock_get):
         """Should raise TokenValidationError for 401."""
         mock_response = MagicMock()
@@ -118,29 +117,28 @@ class TestMnsService(unittest.TestCase):
         with self.assertRaises(TokenValidationError):
             service.get_subscription()
 
-    @patch("mns_service.requests.post")
-    @patch("mns_service.requests.get")
-    def test_check_subscription_creates_if_not_found(self, mock_get, mock_post):
+    @patch("common.mns_service.requests.request")
+    def test_check_subscription_creates_if_not_found(self, mock_request):
         """If GET finds nothing, POST is called and returned."""
         # Arrange GET returns no match
         mock_get_response = MagicMock()
         mock_get_response.status_code = 200
         mock_get_response.json.return_value = {"entry": []}
-        mock_get.return_value = mock_get_response
 
         # Arrange POST returns a new subscription
         mock_post_response = MagicMock()
         mock_post_response.status_code = 201
         mock_post_response.json.return_value = {"subscriptionId": "abc123"}
-        mock_post.return_value = mock_post_response
+
+        # Mock returns GET response first, then POST response
+        mock_request.side_effect = [mock_get_response, mock_post_response]
 
         service = MnsService(self.authenticator)
         result = service.check_subscription()
         self.assertEqual(result, {"subscriptionId": "abc123"})
-        mock_get.assert_called_once()
-        mock_post.assert_called_once()
+        self.assertEqual(mock_request.call_count, 2)
 
-    @patch("mns_service.requests.delete")
+    @patch("common.mns_service.requests.request")
     def test_delete_subscription_success(self, mock_delete):
         mock_response = MagicMock()
         mock_response.status_code = 204
@@ -149,9 +147,11 @@ class TestMnsService(unittest.TestCase):
         service = MnsService(self.authenticator)
         result = service.delete_subscription("sub-id-123")
         self.assertTrue(result)
-        mock_delete.assert_called_with(f"{MNS_URL}/sub-id-123", headers=service.request_headers, timeout=10)
+        mock_delete.assert_called_with(
+            method="DELETE", url=f"{MNS_URL}/sub-id-123", headers=service.request_headers, timeout=5
+        )
 
-    @patch("mns_service.requests.delete")
+    @patch("common.mns_service.requests.request")
     def test_delete_subscription_401(self, mock_delete):
         mock_response = MagicMock()
         mock_response.status_code = 401
@@ -162,7 +162,7 @@ class TestMnsService(unittest.TestCase):
         with self.assertRaises(TokenValidationError):
             service.delete_subscription("sub-id-123")
 
-    @patch("mns_service.requests.delete")
+    @patch("common.mns_service.requests.request")
     def test_delete_subscription_403(self, mock_delete):
         mock_response = MagicMock()
         mock_response.status_code = 403
@@ -173,7 +173,7 @@ class TestMnsService(unittest.TestCase):
         with self.assertRaises(ForbiddenError):
             service.delete_subscription("sub-id-123")
 
-    @patch("mns_service.requests.delete")
+    @patch("common.mns_service.requests.request")
     def test_delete_subscription_404(self, mock_delete):
         mock_response = MagicMock()
         mock_response.status_code = 404
@@ -184,7 +184,7 @@ class TestMnsService(unittest.TestCase):
         with self.assertRaises(ResourceNotFoundError):
             service.delete_subscription("sub-id-123")
 
-    @patch("mns_service.requests.delete")
+    @patch("common.mns_service.requests.request")
     def test_delete_subscription_500(self, mock_delete):
         mock_response = MagicMock()
         mock_response.status_code = 500
@@ -195,7 +195,7 @@ class TestMnsService(unittest.TestCase):
         with self.assertRaises(ServerError):
             service.delete_subscription("sub-id-123")
 
-    @patch("mns_service.requests.delete")
+    @patch("common.mns_service.requests.request")
     def test_delete_subscription_unhandled(self, mock_delete):
         mock_response = MagicMock()
         mock_response.status_code = 418  # Unhandled status code
