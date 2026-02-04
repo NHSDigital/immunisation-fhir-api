@@ -236,6 +236,7 @@ def update_ack_file(
 
 
 def update_json_ack_file(
+    message_id: str,
     file_key: str,
     created_at_formatted_string: str,
     ack_data_rows: list,
@@ -243,7 +244,6 @@ def update_json_ack_file(
     """Updates the ack file with the new data row based on the given arguments"""
     ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.json')}"
     temp_ack_file_key = f"{TEMP_ACK_DIR}/{ack_filename}"
-    message_id = ack_data_rows[0]["MESSAGE_HEADER_ID"].split("^")[0]
     ack_data_dict = obtain_current_json_ack_content(message_id, temp_ack_file_key)
 
     for row in ack_data_rows:
