@@ -1,0 +1,1 @@
+✅ Step Passed: **Send a search request with POST method with valid NHS Number '9449304424' and invalid Disease Type 'ABC'

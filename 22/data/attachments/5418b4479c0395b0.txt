@@ -1,0 +1,10 @@
+
+ Search Get parameters - 
+ patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number|9728403348&-immunization.target=FLU&-date.from=2025-01-01&-date.to=2025-06-04&_include=Immunization:patient
+200
+200
+
+ Search Get parameters - 
+ patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number|9728403348&-immunization.target=FLU&-date.from=2025-01-01&-date.to=2025-06-04&_include=Immunization:patient
+200
+200
