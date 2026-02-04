@@ -1,1 +1,0 @@
-✅ Step Passed: **The terms are mapped to the respective text fields in imms delta table

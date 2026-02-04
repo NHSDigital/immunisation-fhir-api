@@ -1,0 +1,1 @@
+✅ Step Passed: **batch file is created for below data where mandatory fields for site, location, action flag, primary source and unique identifiers are missing

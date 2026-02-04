@@ -1,1 +1,0 @@
-✅ Step Passed: **The request will be unsuccessful with the status code '400'
