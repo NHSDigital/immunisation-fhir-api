@@ -1,11 +1,9 @@
 # Define the directory containing the Docker image and calculate its SHA-256 hash for triggering redeployments
 locals {
-  ack_lambda_dir = abspath("${path.root}/../../lambdas/ack_backend")
-
-  ack_lambda_files = fileset(local.ack_lambda_dir, "**")
-
+  ack_lambda_dir     = abspath("${path.root}/../../lambdas/ack_backend")
+  ack_lambda_files   = fileset(local.ack_lambda_dir, "**")
   ack_lambda_dir_sha = sha1(join("", [for f in local.ack_lambda_files : filesha1("${local.ack_lambda_dir}/${f}")]))
-  ack_lambda_name    = "${local.short_prefix}-ack_lambda"
+  ack_lambda_name    = "${local.short_prefix}-ack-lambda"
 }
 
 
@@ -20,7 +18,7 @@ resource "aws_ecr_repository" "ack_lambda_repository" {
 # Module for building and pushing Docker image to ECR
 module "ack_processor_docker_image" {
   source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version          = "8.1.2"
+  version          = "8.5.0"
   docker_file_path = "./ack_backend/Dockerfile"
   create_ecr_repo  = false
   ecr_repo         = aws_ecr_repository.ack_lambda_repository.name
@@ -72,7 +70,7 @@ resource "aws_ecr_repository_policy" "ack_lambda_ECRImageRetreival_policy" {
         ],
         "Condition" : {
           "StringLike" : {
-            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${var.immunisation_account_id}:function:${local.short_prefix}-ack-lambda"
+            "aws:sourceArn" : "arn:aws:lambda:${var.aws_region}:${var.immunisation_account_id}:function:${local.ack_lambda_name}"
           }
         }
       }
@@ -82,7 +80,7 @@ resource "aws_ecr_repository_policy" "ack_lambda_ECRImageRetreival_policy" {
 
 # IAM Role for Lambda
 resource "aws_iam_role" "ack_lambda_exec_role" {
-  name = "${local.short_prefix}-ack-lambda-exec-role"
+  name = "${local.ack_lambda_name}-exec-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
@@ -98,7 +96,7 @@ resource "aws_iam_role" "ack_lambda_exec_role" {
 
 # Policy for Lambda execution role
 resource "aws_iam_policy" "ack_lambda_exec_policy" {
-  name = "${local.short_prefix}-ack-lambda-exec-policy"
+  name = "${local.ack_lambda_name}-exec-policy"
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -109,7 +107,7 @@ resource "aws_iam_policy" "ack_lambda_exec_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "arn:aws:logs:eu-west-2:${var.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-ack-lambda:*"
+        Resource = "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/lambda/${local.ack_lambda_name}:*"
       },
       {
         Effect = "Allow"
@@ -145,7 +143,7 @@ resource "aws_iam_policy" "ack_lambda_exec_policy" {
           "sqs:DeleteMessage",
           "sqs:GetQueueAttributes"
         ],
-      Resource = "arn:aws:sqs:eu-west-2:${var.immunisation_account_id}:${local.short_prefix}-ack-metadata-queue.fifo" },
+      Resource = "arn:aws:sqs:${var.aws_region}:${var.immunisation_account_id}:${local.short_prefix}-ack-metadata-queue.fifo" },
       {
         "Effect" : "Allow",
         "Action" : [
@@ -159,7 +157,7 @@ resource "aws_iam_policy" "ack_lambda_exec_policy" {
 }
 
 resource "aws_cloudwatch_log_group" "ack_lambda_log_group" {
-  name              = "/aws/lambda/${local.short_prefix}-ack-lambda"
+  name              = "/aws/lambda/${local.ack_lambda_name}"
   retention_in_days = 30
 }
 
@@ -200,7 +198,7 @@ resource "aws_iam_role_policy_attachment" "lambda_kms_policy_attachment" {
 
 # Lambda Function with Security Group and VPC.
 resource "aws_lambda_function" "ack_processor_lambda" {
-  function_name = "${local.short_prefix}-ack-lambda"
+  function_name = local.ack_lambda_name
   role          = aws_iam_role.ack_lambda_exec_role.arn
   package_type  = "Image"
   image_uri     = module.ack_processor_docker_image.image_uri

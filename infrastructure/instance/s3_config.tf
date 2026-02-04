@@ -56,17 +56,6 @@ resource "aws_s3_bucket_policy" "batch_data_source_bucket_policy" {
   })
 }
 
-# resource "aws_s3_bucket_server_side_encryption_configuration" "s3_batch_source_encryption" {
-#   bucket = aws_s3_bucket.batch_data_source_bucket.bucket
-#
-#   rule {
-#     apply_server_side_encryption_by_default {
-#       kms_master_key_id = data.aws_kms_key.existing_s3_encryption_key.arn
-#       sse_algorithm     = "aws:kms"
-#     }
-#   }
-# }
-
 resource "aws_s3_bucket_versioning" "source_versioning" {
   bucket = aws_s3_bucket.batch_data_source_bucket.bucket
   versioning_configuration {
@@ -145,17 +134,25 @@ resource "aws_s3_bucket_replication_configuration" "replication" {
     priority = strcontains(var.sub_environment, "blue") ? 0 : 1
     status   = "Enabled"
 
-    filter {
-      prefix = ""
+    filter {}
+
+    delete_marker_replication {
+      status = "Disabled"
     }
 
     destination {
-      bucket        = aws_s3_bucket.batch_data_source_bucket.arn
-      storage_class = "STANDARD"
+      bucket = aws_s3_bucket.batch_data_source_bucket.arn
 
       replication_time {
         status = "Enabled"
         time {
+          minutes = 15
+        }
+      }
+
+      metrics {
+        status = "Enabled"
+        event_threshold {
           minutes = 15
         }
       }
@@ -167,17 +164,25 @@ resource "aws_s3_bucket_replication_configuration" "replication" {
     priority = strcontains(var.sub_environment, "blue") ? 1 : 0
     status   = "Disabled"
 
-    filter {
-      prefix = ""
+    filter {}
+
+    delete_marker_replication {
+      status = "Disabled"
     }
 
     destination {
-      bucket        = strcontains(aws_s3_bucket.batch_data_source_bucket.arn, "blue") ? replace(aws_s3_bucket.batch_data_source_bucket.arn, "blue", "green") : replace(aws_s3_bucket.batch_data_source_bucket.arn, "green", "blue")
-      storage_class = "STANDARD"
+      bucket = strcontains(aws_s3_bucket.batch_data_source_bucket.arn, "blue") ? replace(aws_s3_bucket.batch_data_source_bucket.arn, "blue", "green") : replace(aws_s3_bucket.batch_data_source_bucket.arn, "green", "blue")
 
       replication_time {
         status = "Enabled"
         time {
+          minutes = 15
+        }
+      }
+
+      metrics {
+        status = "Enabled"
+        event_threshold {
           minutes = 15
         }
       }

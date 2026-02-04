@@ -1,26 +1,28 @@
 """Functions for uploading the data to the ack file"""
 
+import os
 import time
+from datetime import datetime
 from io import BytesIO, StringIO
 
 from botocore.exceptions import ClientError
 
-from audit_table import (
-    change_audit_table_status_to_processed,
-    get_record_count_and_failures_by_message_id,
-    set_audit_record_success_count_and_end_time,
-)
 from common.aws_s3_utils import move_file
+from common.batch.audit_table import get_record_count_and_failures_by_message_id, update_audit_table_item
 from common.clients import get_s3_client, logger
-from common.models.batch_constants import ACK_BUCKET_NAME, SOURCE_BUCKET_NAME
+from common.log_decorator import generate_and_send_logs
+from common.models.batch_constants import ACK_BUCKET_NAME, SOURCE_BUCKET_NAME, AuditTableKeys, FileStatus
 from constants import (
     ACK_HEADERS,
     BATCH_FILE_ARCHIVE_DIR,
     BATCH_FILE_PROCESSING_DIR,
     COMPLETED_ACK_DIR,
+    DEFAULT_STREAM_NAME,
+    LAMBDA_FUNCTION_NAME_PREFIX,
     TEMP_ACK_DIR,
 )
-from logging_decorators import complete_batch_file_process_logging_decorator
+
+STREAM_NAME = os.getenv("SPLUNK_FIREHOSE_NAME", DEFAULT_STREAM_NAME)
 
 
 def create_ack_data(
@@ -58,7 +60,6 @@ def create_ack_data(
     }
 
 
-@complete_batch_file_process_logging_decorator
 def complete_batch_file_process(
     message_id: str,
     supplier: str,
@@ -68,20 +69,31 @@ def complete_batch_file_process(
 ) -> dict:
     """Mark the batch file as processed. This involves moving the ack and original file to destinations and updating
     the audit table status"""
+    start_time = time.time()
+
     ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.csv')}"
 
     move_file(ACK_BUCKET_NAME, f"{TEMP_ACK_DIR}/{ack_filename}", f"{COMPLETED_ACK_DIR}/{ack_filename}")
     move_file(SOURCE_BUCKET_NAME, f"{BATCH_FILE_PROCESSING_DIR}/{file_key}", f"{BATCH_FILE_ARCHIVE_DIR}/{file_key}")
 
     total_ack_rows_processed, total_failures = get_record_count_and_failures_by_message_id(message_id)
-    change_audit_table_status_to_processed(file_key, message_id)
+    update_audit_table_item(
+        file_key=file_key, message_id=message_id, attrs_to_update={AuditTableKeys.STATUS: FileStatus.PROCESSED}
+    )
 
     # Consider creating time utils and using datetime instead of time
     ingestion_end_time = time.strftime("%Y%m%dT%H%M%S00", time.gmtime())
     successful_record_count = total_ack_rows_processed - total_failures
-    set_audit_record_success_count_and_end_time(file_key, message_id, successful_record_count, ingestion_end_time)
+    update_audit_table_item(
+        file_key=file_key,
+        message_id=message_id,
+        attrs_to_update={
+            AuditTableKeys.RECORDS_SUCCEEDED: successful_record_count,
+            AuditTableKeys.INGESTION_END_TIME: ingestion_end_time,
+        },
+    )
 
-    return {
+    result = {
         "message_id": message_id,
         "file_key": file_key,
         "supplier": supplier,
@@ -90,6 +102,29 @@ def complete_batch_file_process(
         "success_count": successful_record_count,
         "failure_count": total_failures,
     }
+
+    log_batch_file_process(
+        start_time=start_time,
+        result=result,
+        function_name=f"{LAMBDA_FUNCTION_NAME_PREFIX}_complete_batch_file_process",
+    )
+
+    return result
+
+
+def log_batch_file_process(start_time: float, result: dict, function_name: str) -> None:
+    """Logs the batch file processing completion to Splunk"""
+    base_log_data = {
+        "function_name": function_name,
+        "date_time": str(datetime.now()),
+        **result,
+    }
+    additional_log_data = {
+        "status": "success",
+        "statusCode": 200,
+        "message": "Record processing complete",
+    }
+    generate_and_send_logs(STREAM_NAME, start_time, base_log_data, additional_log_data)
 
 
 def obtain_current_ack_content(temp_ack_file_key: str) -> StringIO:

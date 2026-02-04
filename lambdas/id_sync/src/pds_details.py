@@ -4,10 +4,10 @@ Operations related to PDS (Patient Demographic Service)
 
 import tempfile
 
-from common.authentication import AppRestrictedAuth, Service
+from common.api_clients.authentication import AppRestrictedAuth, Service
+from common.api_clients.pds_service import PdsService
 from common.cache import Cache
-from common.clients import logger, secrets_manager_client
-from common.pds_service import PdsService
+from common.clients import get_secrets_manager_client, logger
 from exceptions.id_sync_exception import IdSyncException
 from os_vars import get_pds_env
 
@@ -21,7 +21,7 @@ def pds_get_patient_details(nhs_number: str) -> dict:
         cache = Cache(directory=safe_tmp_dir)
         authenticator = AppRestrictedAuth(
             service=Service.PDS,
-            secret_manager_client=secrets_manager_client,
+            secret_manager_client=get_secrets_manager_client(),
             environment=pds_env,
             cache=cache,
         )

@@ -386,8 +386,8 @@ class TestLoggingDecorators(unittest.TestCase):
             patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
             patch(
-                "update_ack_file.change_audit_table_status_to_processed"
-            ) as mock_change_audit_table_status_to_processed,  # noqa: E999
+                "update_ack_file.update_audit_table_item",
+            ) as mock_update_audit_table_item,  # noqa: E999
             patch("ack_processor.increment_records_failed_count"),  # noqa: E999
         ):  # noqa: E999
             result = lambda_handler(generate_event(messages), context={})
@@ -413,7 +413,7 @@ class TestLoggingDecorators(unittest.TestCase):
                 call(self.stream_name, last_logger_info_call_args),
             ]
         )
-        mock_change_audit_table_status_to_processed.assert_not_called()
+        mock_update_audit_table_item.assert_not_called()
 
     def test_splunk_update_ack_file_logged(self):
         """Tests that update_ack_file is logged if we have sent acks for the whole file"""
@@ -425,16 +425,13 @@ class TestLoggingDecorators(unittest.TestCase):
 
         with (  # noqa: E999
             patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+            patch("update_ack_file.datetime") as mock_datetime,
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
             patch("update_ack_file.get_record_count_and_failures_by_message_id", return_value=(99, 2)),
-            patch(
-                "update_ack_file.change_audit_table_status_to_processed"
-            ) as mock_change_audit_table_status_to_processed,  # noqa: E999
-            patch(
-                "update_ack_file.set_audit_record_success_count_and_end_time"
-            ) as mock_set_records_succeeded_count_and_end_time,  # noqa: E999
+            patch("update_ack_file.update_audit_table_item") as mock_update_audit_table_item,  # noqa: E999
             patch("ack_processor.increment_records_failed_count"),  # noqa: E999
         ):  # noqa: E999
+            mock_datetime.now.return_value = ValidValues.fixed_datetime
             result = lambda_handler(generate_event(messages, include_eof_message=True), context={})
 
         self.assertEqual(result, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
@@ -467,8 +464,8 @@ class TestLoggingDecorators(unittest.TestCase):
                 call(self.stream_name, last_logger_info_call_args),
             ]
         )
-        mock_change_audit_table_status_to_processed.assert_called()
-        mock_set_records_succeeded_count_and_end_time.assert_called()
+
+        self.assertEqual(mock_update_audit_table_item.call_count, 2)
 
 
 if __name__ == "__main__":

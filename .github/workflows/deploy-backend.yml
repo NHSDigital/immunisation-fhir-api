@@ -34,7 +34,7 @@ on:
         default: true
       environment:
         type: choice
-        description: Select the backend environment
+        description: Select the AWS backend environment
         options:
           - dev
           - preprod
@@ -60,7 +60,7 @@ jobs:
       name: ${{ inputs.environment }}
     steps:
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
 
       - name: Connect to AWS
         uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708
@@ -97,7 +97,7 @@ jobs:
       name: ${{ inputs.environment }}
     steps:
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
 
       - uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708
         with:
@@ -129,7 +129,7 @@ jobs:
         if: ${{ inputs.environment == 'dev' && inputs.create_mns_subscription }}
         run: pip install poetry==2.1.4
 
-      - uses: actions/setup-python@v6.1.0
+      - uses: actions/setup-python@v6.2.0
         if: ${{ inputs.environment == 'dev' && inputs.create_mns_subscription }}
         with:
           python-version: 3.11
