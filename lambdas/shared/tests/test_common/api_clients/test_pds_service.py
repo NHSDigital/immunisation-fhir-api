@@ -4,9 +4,9 @@ from unittest.mock import create_autospec
 import responses
 from responses import matchers
 
-from common.authentication import AppRestrictedAuth
-from common.models.errors import UnhandledResponseError
-from common.pds_service import PdsService
+from common.api_clients.authentication import AppRestrictedAuth
+from common.api_clients.errors import BadRequestError
+from common.api_clients.pds_service import PdsService
 
 
 class TestPdsService(unittest.TestCase):
@@ -56,10 +56,10 @@ class TestPdsService(unittest.TestCase):
     def test_get_patient_details_error(self):
         """it should raise exception if PDS responded with error"""
         patient_id = "900000009"
-        response = {"msg": "an-error"}
+        response = {"BadRequest": "Some error occurred"}
         responses.add(responses.GET, f"{self.base_url}/{patient_id}", status=400, json=response)
 
-        with self.assertRaises(UnhandledResponseError) as e:
+        with self.assertRaises(BadRequestError) as e:
             # When
             self.pds_service.get_patient_details(patient_id)
 
