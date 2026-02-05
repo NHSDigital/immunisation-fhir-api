@@ -270,7 +270,7 @@ class ValidValues:
         "version": 1,
         "generatedDate": "",
         "filename": "RSV_Vaccinations_v5_X26_20210730T12000000",
-        "provider": "",
+        "provider": "RAVS",
         "messageHeaderId": "test_file_id",
         "summary": {"ingestionTime": {"start": 3456}},
         "failures": [],

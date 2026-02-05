@@ -58,7 +58,7 @@ def lambda_handler(event, _):
 
     update_ack_file(file_key, created_at_formatted_string, ack_data_rows)
 
-    update_json_ack_file(message_id, file_key, created_at_formatted_string, ack_data_rows)
+    update_json_ack_file(message_id, supplier, file_key, created_at_formatted_string, ack_data_rows)
 
     if file_processing_complete:
         complete_batch_file_process(message_id, supplier, vaccine_type, created_at_formatted_string, file_key)

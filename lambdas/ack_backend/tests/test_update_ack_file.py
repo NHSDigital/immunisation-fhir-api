@@ -318,6 +318,7 @@ class TestUpdateAckFile(unittest.TestCase):
             with self.subTest(test_case["description"]):
                 update_json_ack_file(
                     message_id=MOCK_MESSAGE_DETAILS.message_id,
+                    supplier=MOCK_MESSAGE_DETAILS.supplier,
                     file_key=MOCK_MESSAGE_DETAILS.file_key,
                     created_at_formatted_string=MOCK_MESSAGE_DETAILS.created_at_formatted_string,
                     ack_data_rows=test_case["input_rows"],
@@ -348,6 +349,7 @@ class TestUpdateAckFile(unittest.TestCase):
         ]
         update_json_ack_file(
             message_id=MOCK_MESSAGE_DETAILS.message_id,
+            supplier=MOCK_MESSAGE_DETAILS.supplier,
             file_key=MOCK_MESSAGE_DETAILS.file_key,
             created_at_formatted_string=MOCK_MESSAGE_DETAILS.created_at_formatted_string,
             ack_data_rows=ack_data_rows,
@@ -367,7 +369,7 @@ class TestUpdateAckFile(unittest.TestCase):
     def test_obtain_current_json_ack_content_file_no_existing(self):
         """Test that when the json ack file does not yet exist, obtain_current_json_ack_content returns the ack headers only."""
         result = obtain_current_json_ack_content(
-            MOCK_MESSAGE_DETAILS.message_id, MOCK_MESSAGE_DETAILS.temp_json_ack_file_key
+            MOCK_MESSAGE_DETAILS.message_id, MOCK_MESSAGE_DETAILS.supplier, MOCK_MESSAGE_DETAILS.temp_json_ack_file_key
         )
         self.assertEqual(result, ValidValues.json_ack_initial_content)
 
@@ -378,7 +380,7 @@ class TestUpdateAckFile(unittest.TestCase):
             MOCK_MESSAGE_DETAILS.temp_json_ack_file_key, json.dumps(existing_content), self.s3_client
         )
         result = obtain_current_json_ack_content(
-            MOCK_MESSAGE_DETAILS.message_id, MOCK_MESSAGE_DETAILS.temp_json_ack_file_key
+            MOCK_MESSAGE_DETAILS.message_id, MOCK_MESSAGE_DETAILS.supplier, MOCK_MESSAGE_DETAILS.temp_json_ack_file_key
         )
         self.assertEqual(result, existing_content)
 
@@ -397,6 +399,7 @@ class TestUpdateAckFile(unittest.TestCase):
         )
         update_json_ack_file(
             message_id=MOCK_MESSAGE_DETAILS.message_id,
+            supplier=MOCK_MESSAGE_DETAILS.supplier,
             file_key=MOCK_MESSAGE_DETAILS.file_key,
             created_at_formatted_string=MOCK_MESSAGE_DETAILS.created_at_formatted_string,
             ack_data_rows=[ValidValues.ack_data_failure_dict],
@@ -412,7 +415,9 @@ class TestUpdateAckFile(unittest.TestCase):
             file_key=MOCK_MESSAGE_DETAILS.file_key,
         )
         result = obtain_current_json_ack_content(
-            MOCK_MESSAGE_DETAILS.message_id, MOCK_MESSAGE_DETAILS.archive_json_ack_file_key
+            MOCK_MESSAGE_DETAILS.message_id,
+            MOCK_MESSAGE_DETAILS.supplier,
+            MOCK_MESSAGE_DETAILS.archive_json_ack_file_key,
         )
         self.assertEqual(result, ValidValues.json_ack_complete_content)
 
@@ -427,6 +432,7 @@ class TestUpdateAckFile(unittest.TestCase):
         # Should not raise an exception
         update_json_ack_file(
             message_id=MOCK_MESSAGE_DETAILS.message_id,
+            supplier=MOCK_MESSAGE_DETAILS.supplier,
             file_key=MOCK_MESSAGE_DETAILS.file_key,
             created_at_formatted_string=MOCK_MESSAGE_DETAILS.created_at_formatted_string,
             ack_data_rows=[],
