@@ -1,6 +1,7 @@
 environment                       = "prod"
 immunisation_account_id           = "664418956997"
 dspp_core_account_id              = "232116723729"
+mns_account_id                    = "758334270304"
 pds_environment                   = "prod"
 error_alarm_notifications_enabled = true
 
