@@ -242,4 +242,8 @@ ERROR_MAP = {
         "code": "INVARIANT",
         "diagnostics": "Validation errors: Immunization resource version:<version> in the request headers is invalid.",
     },
+    "duplicate": {
+        "code": "DUPLICATE",
+        "diagnostics": "The provided identifier: <identifier> is duplicated",
+    }
 }

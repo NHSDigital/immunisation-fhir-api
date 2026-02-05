@@ -65,3 +65,16 @@ Scenario: Verify that the API vaccination record will be successful updated and 
     And csv bus ack will have error records for all the updated records in the batch file
     And json bus ack will have error records for all the updated records in the batch file
     And The delta and imms event table will be populated with the correct data for api created event
+
+@smoke
+@Delete_cleanUp @vaccine_type_HIB @patient_id_Random @supplier_name_EMIS
+Scenario: Verify that batch file record will ne unsuccessful if uses same or missing any unique identifier field
+    Given I have created a valid vaccination record through API, where unique_id and unique_id_uri will be same as batch file record
+    When batch file created for below data as full dataset and record has same or missing unique identifier for API record
+    And batch file is uploaded in s3 bucket
+    Then file will be moved to destination bucket and inf ack file will be created
+    And inf ack file has success status for processed batch file
+    And bus ack files will be created
+    And csv bus ack will have error records for all the updated records in the batch file
+    And json bus ack will have error records for all the updated records in the batch file
+    And The delta and imms event table will be populated with the correct data for api created event
