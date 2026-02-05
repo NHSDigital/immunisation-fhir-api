@@ -189,7 +189,7 @@ class ImmunizationBatchRepository:
         except botocore.exceptions.ClientError as error:
             # Either resource didn't exist or it has already been deleted. See ConditionExpression in the request
             if error.response["Error"]["Code"] == "ConditionalCheckFailedException":
-                raise ResourceNotFoundError(resource_type="Immunization", resource_id=imms_id)
+                raise ResourceNotFoundError(resource_type="Immunization", resource_id=identifier)
             else:
                 raise UnhandledResponseError(
                     message=f"Unhandled error from dynamodb: {error.response['Error']['Code']}",
