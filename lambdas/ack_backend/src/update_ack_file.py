@@ -191,7 +191,7 @@ def obtain_current_json_ack_content(message_id: str, temp_ack_file_key: str) -> 
             logger.info("No existing JSON ack file found in S3 - creating new file")
 
             ingestion_start_time = get_ingestion_start_time_by_message_id(message_id)
-            raw_ack_filename = temp_ack_file_key.split("/")[-1].split(".")[0]
+            raw_ack_filename = temp_ack_file_key.split("/")[-1].split(".")[0].split("_BusAck")[0]
 
             # Generate the initial fields
             ack_data_dict = {}
