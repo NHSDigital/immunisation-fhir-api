@@ -179,7 +179,6 @@ def generate_sample_existing_json_ack_content(message_id: str = "test_file_id") 
     return sample_content
 
 
-# TODO: take supplier and summary counts as arguments
 def generate_expected_json_ack_content(
     incoming_messages: list[dict], existing_content: str = ValidValues.json_ack_initial_content
 ) -> dict:
