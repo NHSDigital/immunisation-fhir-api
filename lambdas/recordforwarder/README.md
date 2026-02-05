@@ -1,6 +1,14 @@
 # About
 
-This document describes the environment setup for the recordforwarder Lambda.
+This document describes the purpose and environment setup for the recordforwarder Lambda.
+
+## Overview
+
+The Record Forwarder Lambda consumes from an AWS Kinesis Stream, and is responsible for applying updates to the Immunisation
+Event Data Store. It will receive up to 100 records per batch. Each record will have been processed and formatted as a
+FHIR Immunization by the ECS Record Processor in the prior batch step.
+
+The Record Forwarder Lambda will then execute the requested operation (Create, Update or Delete) on the given record.
 
 ## Setting up the recordforwarder lambda
 

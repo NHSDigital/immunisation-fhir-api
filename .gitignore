@@ -29,7 +29,6 @@ openapi.json
 **/.vscode/**/*
 !**/.vscode/settings.json.default
 
-devtools/volume/
 **/.coverage
 **/test-results.xml
 allure-results/

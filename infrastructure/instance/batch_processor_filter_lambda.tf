@@ -17,7 +17,7 @@ resource "aws_ecr_repository" "batch_processor_filter_lambda_repository" {
 # Module for building and pushing Docker image to ECR
 module "batch_processor_filter_docker_image" {
   source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version          = "8.4.0"
+  version          = "8.5.0"
   docker_file_path = "./batch_processor_filter/Dockerfile"
 
   create_ecr_repo = false
