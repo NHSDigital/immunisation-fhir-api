@@ -257,7 +257,7 @@ def validate_json_bus_ack_file_structure_and_metadata(context):
     assert report.system == "Immunisation FHIR API Batch Report", f"Expected system 'Immunisation FHIR API Batch Report', got '{report.system}'"
     assert report.version == 1, f"Expected version 1, got {report.version}"
     assert report.filename == context.filename.replace(f".{context.file_extension}", ""), f"Expected filename '{context.filename}' without extension, got '{report.filename}'"
-    assert report.provider == context.ods_provider_code, f"Expected provider '{context.ods_provider_code}', got '{report.provider}'"
+    assert report.provider == context.supplier_name, f"Expected provider '{context.supplier_name}', got '{report.provider}'"
     
     expected_row_count = len(context.vaccine_df)
 
