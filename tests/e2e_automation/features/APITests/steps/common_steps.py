@@ -213,7 +213,13 @@ def validate_imms_event_table_by_operation(context, operation: Operation):
 @then(parsers.parse("The Response JSONs should contain correct error message for Imms_id '{errorName}'"))
 def validateForbiddenAccess(context, errorName):
     error_response = parse_error_response(context.response.json())
-    validate_error_response(error_response, errorName, imms_id=context.ImmsID)
+    if errorName == "duplicate":
+        identifier = (
+            f"{context.immunization_object.identifier[0].system}#{context.immunization_object.identifier[0].value}"
+        )
+        validate_error_response(error_response, errorName, identifier=identifier)
+    else:
+        validate_error_response(error_response, errorName, imms_id=context.ImmsID)
     print(f"\n Error Response - \n {error_response}")
 
 

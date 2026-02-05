@@ -56,6 +56,7 @@ Scenario: Verify that VACCINATION_PROCEDURE_TERM, VACCINE_PRODUCT_TERM, SITE_OF_
     And The location key and Etag in header will contain the Immunization Id and version
     And The terms are mapped to correct instance of coding.display fields in imms delta table
 
+@smoke
 @Delete_cleanUp @vaccine_type_PERTUSSIS @patient_id_Random @supplier_name_EMIS
 Scenario: Verify that VACCINATION_PROCEDURE_TERM, VACCINE_PRODUCT_TERM, SITE_OF_VACCINATION_TERM, ROUTE_OF_VACCINATION_TERM fields are mapped to coding.display in imms delta table in case of only one instance of coding
     Given Valid json payload is created where vaccination terms has one instance of coding with no text or value string field
@@ -64,6 +65,7 @@ Scenario: Verify that VACCINATION_PROCEDURE_TERM, VACCINE_PRODUCT_TERM, SITE_OF_
     And The location key and Etag in header will contain the Immunization Id and version
     And The terms are mapped to correct coding.display fields in imms delta table
 
+@smoke
 @Delete_cleanUp @vaccine_type_HIB @patient_id_Random @supplier_name_TPP
 Scenario: Verify that VACCINATION_PROCEDURE_TERM, VACCINE_PRODUCT_TERM, SITE_OF_VACCINATION_TERM, ROUTE_OF_VACCINATION_TERM fields are blank in imms delta table if no text or value string or display field is present
     Given Valid json payload is created where vaccination terms has no text or value string or display field
@@ -72,6 +74,7 @@ Scenario: Verify that VACCINATION_PROCEDURE_TERM, VACCINE_PRODUCT_TERM, SITE_OF_
     And The location key and Etag in header will contain the Immunization Id and version
     And The terms are blank in imms delta table 
 
+@smoke
 Scenario Outline:  Verify that the POST Create API for different supplier fails on access denied
     Given Valid token is generated for the '<Supplier>'
     And Valid json payload is created with Patient '<Patient>' and vaccine_type '<vaccine_type>'
@@ -94,6 +97,7 @@ Scenario:  Verify that the POST Create API for invalid but Mod11 compliant NHS N
     And The imms event table will be populated with the correct data for 'created' event
     And The delta table will be populated with the correct data for created event
 
+@smoke
 @supplier_name_Postman_Auth @vaccine_type_RSV @patient_id_Random
 Scenario Outline:  Verify that the POST Create API will fail if doseNumberPositiveInt is not valid
     Given Valid json payload is created where doseNumberPositiveInt is '<doseNumberPositiveInt>'
@@ -106,7 +110,7 @@ Scenario Outline:  Verify that the POST Create API will fail if doseNumberPositi
       | 0                     | doseNumberPositiveInt_PositiveInteger       |
       | 10                    | doseNumberPositiveInt_ValidRange            |
 
-
+@smoke
 @Delete_cleanUp @supplier_name_Postman_Auth @vaccine_type_RSV @patient_id_Random
 Scenario: Verify that the POST Create API will be successful if all date field has valid past date
     Given Valid json payload is created where date fields has past date
@@ -157,6 +161,7 @@ Scenario Outline: Verify that the POST Create API will fail if patient's data of
         | empty                 | invalid_DateOfBirth   |
         | none                  | missing_DateOfBirth   |
 
+@smoke
 @supplier_name_Postman_Auth @vaccine_type_RSV @patient_id_Random
 Scenario Outline: Verify that the POST Create API will fail if expiration date has invalid formatted date
     Given Valid json payload is created where expiration date has invalid '<Date>' date
@@ -169,6 +174,7 @@ Scenario Outline: Verify that the POST Create API will fail if expiration date h
         | nonexistent           |
         | empty                 |
 
+@smoke
 @supplier_name_Postman_Auth @vaccine_type_RSV @patient_id_Random
 Scenario Outline: Verify that the POST Create API will fail if nhs number is invalid
     Given Valid json payload is created where Nhs number is invalid '<invalid_NhsNumber>' 
@@ -180,6 +186,7 @@ Scenario Outline: Verify that the POST Create API will fail if nhs number is inv
     |1234567890         |invalid_mod11_nhsnumber    |
     |12345678           |invalid_nhsnumber_length   |
 
+@smoke
 @supplier_name_Postman_Auth @vaccine_type_RSV @patient_id_Random
 Scenario Outline: Verify that the POST Create API will fail if patient forename is invalid  
     Given Valid json payload is created where patient forename is '<forename>'
@@ -194,6 +201,7 @@ Scenario Outline: Verify that the POST Create API will fail if patient forename 
     | single_value_max_len  | max_len_forename  |
     | max_len_array         | max_item_forename |
 
+@smoke
 @supplier_name_Postman_Auth @vaccine_type_RSV @patient_id_Random
 Scenario Outline: Verify that the POST Create API will fail if patient surname is invalid  
     Given Valid json payload is created where patient surname is '<surname>'
@@ -207,6 +215,7 @@ Scenario Outline: Verify that the POST Create API will fail if patient surname i
     | white_space    | empty_surname   |
     | name_length_36 | max_len_surname |
 
+@smoke
 @supplier_name_Postman_Auth @vaccine_type_RSV @patient_id_Random
 Scenario: Verify that the POST Create API will fail if patient name is empty
     Given Valid json payload is created where patient name is empty
@@ -228,5 +237,16 @@ Scenario Outline: Verify that the POST Create API will fail if patient gender is
     | gender_code   | invalid_gender   |
     | missing       | missing_gender   |
 
-
-
+@smoke
+@Delete_cleanUp @supplier_name_TPP @vaccine_type_BCG @patient_id_Random
+Scenario:  Verify that the POST Create API will fail when exiting Unique Id and no_unique_id_uri is used in the request
+    Given Valid json payload is created
+    When Trigger the post create request
+    Then The request will be successful with the status code '201'
+    And The location key and Etag in header will contain the Immunization Id and version
+    And The X-Request-ID and X-Correlation-ID keys in header will populate correctly
+    And The imms event table will be populated with the correct data for 'created' event
+    And The delta table will be populated with the correct data for created event
+    When Trigger another post create request with same unique_id and unique_id_uri
+    Then The request will be unsuccessful with the status code '422'
+    And The Response JSONs should contain correct error message for 'duplicate'

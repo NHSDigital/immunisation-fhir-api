@@ -7,10 +7,12 @@ from utilities.error_constants import ERROR_MAP
 
 from features.APITests.steps.common_steps import (
     The_request_will_have_status_code,
+    Trigger_the_post_create_request,
     send_update_for_immunization_event,
     valid_json_payload_is_created,
     validate_etag_in_header,
     validate_imms_event_table_by_operation,
+    validateCreateLocation,
     validVaccinationRecordIsCreated,
 )
 from features.APITests.steps.test_create_steps import validate_imms_delta_table_by_ImmsID
@@ -39,6 +41,18 @@ def valid_batch_file_is_created_with_details(datatable, context):
 @given("I have created a valid vaccination record through API")
 def create_valid_vaccination_record_through_api(context):
     validVaccinationRecordIsCreated(context)
+    print(f"Created Immunization record with ImmsID: {context.ImmsID}")
+
+
+@given(
+    "I have created a valid vaccination record through API, where unique_id and unique_id_uri will be same as batch file record"
+)
+def create_valid_vaccination_record_with_same_unique_id_as_batch_file(context):
+    valid_json_payload_is_created(context)
+    context.immunization_object.identifier[0].value = "Fail-duplicate-duplicate"
+    Trigger_the_post_create_request(context)
+    The_request_will_have_status_code(context, 201)
+    validateCreateLocation(context)
     print(f"Created Immunization record with ImmsID: {context.ImmsID}")
 
 
@@ -160,14 +174,14 @@ def upload_batch_file_to_s3_for_update_with_mandatory_field_missing(context):
     create_batch_file(context)
 
 
-@then("csv bus ack will have error records for all the updated records in the batch filefile")
+@then("csv bus ack will have error records for all the updated records in the batch file")
 def all_records_are_processed_successfully_in_the_batch_file(context):
     file_rows = read_and_validate_csv_bus_ack_file_content(context, False, True)
     all_valid = validate_bus_ack_file_for_error_by_surname(context, file_rows)
     assert all_valid, "One or more records failed validation checks"
 
 
-@then("json bus ack will have error records for all the updated records in the batch filefile")
+@then("json bus ack will have error records for all the updated records in the batch file")
 def json_bus_ack_will_have_error_records_for_all_updated_records_in_batch_file(context):
     json_bus_ack_will_only_contain_file_metadata_and_correct_failure_record_entries(context)
 
@@ -239,3 +253,34 @@ def validate_bus_ack_file_for_error_by_surname(context, file_rows) -> bool:
             overall_valid = overall_valid and row_valid
 
     return overall_valid
+
+
+@when(
+    "batch file created for below data as full dataset and record has same or missing unique identifier for API record"
+)
+def valid_batch_file_is_created_with_same_or_missing_unique_identifier_as_api_record(context):
+    record = build_batch_file(context)
+    base_df = pd.DataFrame([record.dict()])
+
+    # Fill in the base fields from the API object
+    base_fields = {
+        "NHS_NUMBER": context.create_object.contained[1].identifier[0].value,
+        "PERSON_FORENAME": context.create_object.contained[1].name[0].given[0],
+        "PERSON_SURNAME": context.create_object.contained[1].name[0].family,
+        "PERSON_GENDER_CODE": context.create_object.contained[1].gender,
+        "PERSON_DOB": context.create_object.contained[1].birthDate.replace("-", ""),
+        "PERSON_POSTCODE": context.create_object.contained[1].address[0].postalCode,
+        "ACTION_FLAG": "NEW",
+        "UNIQUE_ID": context.create_object.identifier[0].value,
+        "UNIQUE_ID_URI": context.create_object.identifier[0].system,
+    }
+
+    for col, val in base_fields.items():
+        base_df.loc[0, col] = val
+
+    context.vaccine_df = pd.concat([base_df] * 3, ignore_index=True)
+
+    context.vaccine_df.loc[1, ["UNIQUE_ID", "PERSON_SURNAME", "ACTION_FLAG"]] = [" ", "no_unique_id", "UPDATE"]
+    context.vaccine_df.loc[2, ["UNIQUE_ID_URI", "PERSON_SURNAME", "ACTION_FLAG"]] = [" ", "no_unique_id_uri", "UPDATE"]
+
+    create_batch_file(context)

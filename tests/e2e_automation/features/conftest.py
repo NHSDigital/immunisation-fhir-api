@@ -149,7 +149,7 @@ def pytest_bdd_after_scenario(request, feature, scenario):
                     f"Failed to delete {imms_id}: expected 204, got {response.status_code}. Response: {response.text}"
                 )
 
-            print("✅ All IMMS_IDs deleted successfully.")
+            print("All IMMS_IDs deleted successfully.")
 
     else:
-        print(" No IMMS_ID column or no values present as test failed due to an exception - skipping delete cleanup.")
+        print(" No IMMS_ID column or no values present as test failed due to as exception — skipping delete cleanup.")
