@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional, Tuple
 
 from common.clients import get_dynamodb_client, logger
@@ -118,8 +119,16 @@ def get_ingestion_start_time_by_message_id(event_message_id: str) -> int:
         TableName=AUDIT_TABLE_NAME, Key={AuditTableKeys.MESSAGE_ID: {"S": event_message_id}}
     )
 
-    ingestion_start_time = audit_record.get("Item", {}).get(AuditTableKeys.INGESTION_START_TIME, {}).get("S")
-    return int(ingestion_start_time) if ingestion_start_time else 0
+    ingestion_start_time_str = audit_record.get("Item", {}).get(AuditTableKeys.INGESTION_START_TIME, {}).get("S")
+    if not ingestion_start_time_str:
+        return 0
+    try:
+        ingestion_start_time = int(
+            (datetime.strptime(ingestion_start_time_str, "%Y%m%dT%H%M%S00") - datetime(1970, 1, 1)).total_seconds()
+        )
+    except ValueError:
+        return 0
+    return ingestion_start_time
 
 
 def get_record_count_and_failures_by_message_id(event_message_id: str) -> tuple[int, int]:
