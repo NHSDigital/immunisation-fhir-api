@@ -264,8 +264,8 @@ def validate_json_bus_ack_file_structure_and_metadata(context):
     assert report.filename == context.filename.replace(f".{context.file_extension}", ""), (
         f"Expected filename '{context.filename}' without extension, got '{report.filename}'"
     )
-    assert report.provider == context.ods_provider_code, (
-        f"Expected provider '{context.ods_provider_code}', got '{report.provider}'"
+    assert report.provider == context.supplier_name, (
+        f"Expected provider '{context.supplier_name}', got '{report.provider}'"
     )
 
     expected_row_count = len(context.vaccine_df)
