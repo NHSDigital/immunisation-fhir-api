@@ -23,18 +23,36 @@ resource "aws_sqs_queue_redrive_allow_policy" "id_sync_queue_redrive_allow_polic
 
 data "aws_iam_policy_document" "id_sync_sqs_policy" {
   statement {
-    sid    = "id-sync-queue SQS statement"
+    sid    = "mns-allow-send"
     effect = "Allow"
 
     principals {
       type        = "AWS"
-      identifiers = ["*"]
+      identifiers = ["arn:aws:iam::${var.mns_account_id}:role/nhs-mns-events-lambda-delivery"]
     }
 
     actions = [
       "sqs:SendMessage",
-      "sqs:ReceiveMessage"
     ]
+
+    resources = [
+      aws_sqs_queue.id_sync_queue.arn
+    ]
+  }
+
+  statement {
+    sid    = "id-sync-allow-receive"
+    effect = "Allow"
+
+    principals {
+      type        = "AWS"
+      identifiers = [aws_iam_role.id_sync_lambda_exec_role.arn]
+    }
+
+    actions = [
+      "sqs:ReceiveMessage",
+    ]
+
     resources = [
       aws_sqs_queue.id_sync_queue.arn
     ]
