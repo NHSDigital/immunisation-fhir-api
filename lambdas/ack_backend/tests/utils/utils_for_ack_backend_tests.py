@@ -226,15 +226,11 @@ def validate_json_ack_file_content(
         if not is_complete
         else obtain_completed_json_ack_file_content(s3_client, MOCK_MESSAGE_DETAILS.archive_json_ack_file_key)
     )
-    expected_ack_file_content = generate_expected_json_ack_content(incoming_messages, existing_file_content)
+    existing_file_content_copy = deepcopy(existing_file_content)
+    expected_ack_file_content = generate_expected_json_ack_content(incoming_messages, existing_file_content_copy)
 
-    # in order for this to work, we need to disregard generated_date and ingestion time.
-    # TODO: we should fill 'provider' in generate_expected_json_ack_content() if we're complete.
+    # NB: disregard real-time generated fields
     actual_ack_file_content["generatedDate"] = expected_ack_file_content["generatedDate"]
     actual_ack_file_content["summary"]["ingestionTime"] = expected_ack_file_content["summary"]["ingestionTime"]
-    actual_ack_file_content["provider"] = expected_ack_file_content["provider"]
-
-    # print(expected_ack_file_content)
-    # print(actual_ack_file_content)
 
     assert expected_ack_file_content == actual_ack_file_content

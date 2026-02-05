@@ -109,11 +109,10 @@ def complete_batch_file_process(
     # finish JSON file
     json_ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.json')}"
     temp_ack_file_key = f"{TEMP_ACK_DIR}/{json_ack_filename}"
-    ack_data_dict = obtain_current_json_ack_content(message_id, temp_ack_file_key)
+    ack_data_dict = obtain_current_json_ack_content(message_id, supplier, temp_ack_file_key)
 
     generated_date = time.strftime("%Y-%m-%dT%H:%M:%S.000Z")
     ack_data_dict["generatedDate"] = generated_date
-    ack_data_dict["provider"] = supplier
     ack_data_dict["summary"]["totalRecords"] = total_ack_rows_processed
     ack_data_dict["summary"]["success"] = successful_record_count
     ack_data_dict["summary"]["failed"] = total_failures
@@ -178,7 +177,7 @@ def obtain_current_ack_content(temp_ack_file_key: str) -> StringIO:
     return accumulated_csv_content
 
 
-def obtain_current_json_ack_content(message_id: str, temp_ack_file_key: str) -> dict:
+def obtain_current_json_ack_content(message_id: str, supplier: str, temp_ack_file_key: str) -> dict:
     """Returns the current ack file content if the file exists, or else initialises the content with the ack headers."""
     try:
         # If ack file exists in S3 download the contents
@@ -199,7 +198,7 @@ def obtain_current_json_ack_content(message_id: str, temp_ack_file_key: str) -> 
             ack_data_dict["version"] = 1  # TO FIX
 
             ack_data_dict["generatedDate"] = ""  # will be filled on completion
-            ack_data_dict["provider"] = ""  # will be filled on completion
+            ack_data_dict["provider"] = supplier
             ack_data_dict["filename"] = raw_ack_filename
             ack_data_dict["messageHeaderId"] = message_id
 
@@ -237,6 +236,7 @@ def update_ack_file(
 
 def update_json_ack_file(
     message_id: str,
+    supplier: str,
     file_key: str,
     created_at_formatted_string: str,
     ack_data_rows: list,
@@ -244,7 +244,7 @@ def update_json_ack_file(
     """Updates the ack file with the new data row based on the given arguments"""
     ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.json')}"
     temp_ack_file_key = f"{TEMP_ACK_DIR}/{ack_filename}"
-    ack_data_dict = obtain_current_json_ack_content(message_id, temp_ack_file_key)
+    ack_data_dict = obtain_current_json_ack_content(message_id, supplier, temp_ack_file_key)
 
     for row in ack_data_rows:
         json_data_row = {}
