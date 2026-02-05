@@ -138,11 +138,12 @@ class TestAckProcessor(unittest.TestCase):
 
         self.assertDictEqual(actual_counts, expected_counts)
 
-    # TODO: modify these for json_ack_file_content
     def test_lambda_handler_main_multiple_records(self):
         """Test lambda handler with multiple records."""
         # Set up an audit entry which does not yet have record_count recorded
         add_audit_entry_to_table(self.dynamodb_client, "row")
+        existing_json_file_content = deepcopy(ValidValues.json_ack_initial_content)
+        existing_json_file_content["messageHeaderId"] = "row"
         # First array of messages. Rows 1 to 3
         array_of_messages_one = [
             {
@@ -207,12 +208,23 @@ class TestAckProcessor(unittest.TestCase):
             ],
             existing_file_content=ValidValues.ack_headers,
         )
+        validate_json_ack_file_content(
+            self.s3_client,
+            [
+                *array_of_messages_one,
+                *array_of_messages_two,
+                *array_of_messages_three,
+            ],
+            existing_file_content=existing_json_file_content,
+        )
         self.assert_audit_entry_counts_equal("row", expected_entry_counts)
 
     def test_lambda_handler_main(self):
         """Test lambda handler with consistent ack_file_name and message_template."""
         # Set up an audit entry which does not yet have record_count recorded
         add_audit_entry_to_table(self.dynamodb_client, "row")
+        existing_json_file_content = deepcopy(ValidValues.json_ack_initial_content)
+        existing_json_file_content["messageHeaderId"] = "row"
         test_cases = [
             {
                 "description": "Multiple messages: all with diagnostics (failure messages)",
@@ -254,10 +266,15 @@ class TestAckProcessor(unittest.TestCase):
                     },
                 )
                 validate_ack_file_content(self.s3_client, test_case["messages"])
+                validate_json_ack_file_content(self.s3_client, test_case["messages"], existing_json_file_content)
 
                 self.s3_client.delete_object(
                     Bucket=BucketNames.DESTINATION,
                     Key=MOCK_MESSAGE_DETAILS.temp_ack_file_key,
+                )
+                self.s3_client.delete_object(
+                    Bucket=BucketNames.DESTINATION,
+                    Key=MOCK_MESSAGE_DETAILS.temp_json_ack_file_key,
                 )
 
     def test_lambda_handler_updates_ack_file_but_does_not_mark_complete_when_records_still_remaining(self):
