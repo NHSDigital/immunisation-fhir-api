@@ -189,7 +189,6 @@ def validate_bus_ack_file_for_error(context, file_rows) -> bool:
 
 
 def read_and_validate_csv_bus_ack_file_content(context, by_local_id: bool = True, by_row_number: bool = False) -> dict:
-    # Prevent invalid combinations
     if by_local_id and by_row_number:
         raise ValueError("Choose only one mode: by_local_id OR by_row_number")
 
@@ -291,78 +290,89 @@ def validate_json_bus_ack_file_structure_and_metadata(context):
     )
 
 
-def validate_json_bus_ack_file_failure_records(context, expected_failure: bool = True):
+def validate_json_bus_ack_file_failure_records(
+    context, expected_failure: bool = True, use_username_for_error_lookup: bool = False
+):
     data = json.loads(context.fileContentJson)
     report = BatchReport(**data)
     failures = report.failures or []
+
     if not expected_failure:
-        if not failures or len(failures) == 0:
+        if not failures:
             return True
-        else:
-            print(f"Found {len(failures)} failure records in BUS ACK file as not expected")
-            return False
-    else:
-        fail_mask = context.vaccine_df["UNIQUE_ID"].str.startswith("Fail-", na=False) | (
-            context.vaccine_df["UNIQUE_ID"].str.strip() == ""
-        )
-        fail_df = context.vaccine_df[fail_mask]
+        print(f"Found {len(failures)} failure records in BUS ACK file as not expected")
+        return False
 
-        # Build expected localId values
-        expected_local_ids = set(fail_df["UNIQUE_ID"].astype(str) + "^" + fail_df["UNIQUE_ID_URI"].astype(str))
+    fail_mask = context.vaccine_df["UNIQUE_ID"].str.startswith("Fail-", na=False) | (
+        context.vaccine_df["UNIQUE_ID"].str.strip() == ""
+    )
+    fail_df = context.vaccine_df[fail_mask]
 
-        overall_valid = True
+    expected_local_ids = set(fail_df["UNIQUE_ID"].astype(str) + "^" + fail_df["UNIQUE_ID_URI"].astype(str))
 
-        for failure in failures:
-            row_valid = True
+    overall_valid = True
 
-            row_id = failure.rowId
-            response_code = failure.responseCode
-            response_display = failure.responseDisplay
-            severity = failure.severity
-            local_id = failure.localId
-            operation_outcome = failure.operationOutcome
+    for failure in failures:
+        row_valid = True
 
-            # --- Validate localId exists ---
-            if local_id not in expected_local_ids:
-                print(f"Failure rowId {row_id}: localId '{local_id}' not expected")
+        row_id = failure.rowId
+        local_id = failure.localId
+        operation_outcome = failure.operationOutcome
+
+        if local_id not in expected_local_ids:
+            print(f"Failure rowId {row_id}: localId '{local_id}' not expected")
+            row_valid = False
+
+        if failure.responseCode != "30002":
+            print(f"Failure rowId {row_id}: responseCode != '30002'")
+            row_valid = False
+
+        if failure.responseDisplay != "Business Level Response Value - Processing Error":
+            print(f"Failure rowId {row_id}: responseDisplay incorrect")
+            row_valid = False
+
+        if failure.severity != "Fatal":
+            print(f"Failure rowId {row_id}: severity != 'Fatal'")
+            row_valid = False
+
+        try:
+            df_row = context.vaccine_df.loc[row_id - 2]
+            expected_error = get_expected_error(df_row, use_username_for_error_lookup)
+
+            expected_diagnostic = ERROR_MAP.get(expected_error, {}).get("diagnostics")
+
+            # Duplicate case
+            if expected_error == "duplicate" and expected_diagnostic:
+                expected_diagnostic = expected_diagnostic.replace(
+                    "<identifier>",
+                    f"{context.immunization_object.identifier[0].system}#"
+                    f"{context.immunization_object.identifier[0].value}",
+                )
+
+            if operation_outcome != expected_diagnostic:
+                print(
+                    f"Failure rowId {row_id}: operationOutcome mismatch. "
+                    f"Expected '{expected_diagnostic}', got '{operation_outcome}'"
+                )
                 row_valid = False
 
-            # --- Validate fixed fields ---
-            if response_code != "30002":
-                print(f"Failure rowId {row_id}: responseCode != '30002'")
-                row_valid = False
+        except Exception as e:
+            print(f"Failure rowId {row_id}: error resolving expected diagnostics: {e}")
+            row_valid = False
 
-            if response_display != "Business Level Response Value - Processing Error":
-                print(f"Failure rowId {row_id}: responseDisplay incorrect")
-                row_valid = False
+        overall_valid = overall_valid and row_valid
 
-            if severity != "Fatal":
-                print(f"Failure rowId {row_id}: severity != 'Fatal'")
-                row_valid = False
+    return overall_valid
 
-            try:
-                df_row = context.vaccine_df.loc[row_id - 2]
-                prefix = str(df_row["UNIQUE_ID"]).strip()
 
-                if prefix in ["", " ", "nan"]:
-                    expected_error = df_row["PERSON_SURNAME"]
-                else:
-                    parts = prefix.split("-")
-                    expected_error = parts[2] if len(parts) > 2 else "invalid_prefix_format"
+def get_expected_error(df_row, use_surname: bool):
+    prefix = str(df_row["UNIQUE_ID"]).strip()
 
-                expected_diagnostic = ERROR_MAP.get(expected_error, {}).get("diagnostics")
+    if prefix in ["", " ", "nan"]:
+        return df_row.get("PERSON_SURNAME", "").strip()
 
-                if operation_outcome != expected_diagnostic:
-                    print(
-                        f"Failure rowId {row_id}: operationOutcome mismatch. "
-                        f"Expected '{expected_diagnostic}', got '{operation_outcome}'"
-                    )
-                    row_valid = False
+    if use_surname:
+        return str(df_row.get("PERSON_SURNAME", "")).strip()
 
-            except Exception as e:
-                print(f"Failure rowId {row_id}: error resolving expected diagnostics: {e}")
-                row_valid = False
-
-            overall_valid = overall_valid and row_valid
-
-        return overall_valid
+    parts = prefix.split("-")
+    return parts[2] if len(parts) > 2 else "invalid_prefix_format"
