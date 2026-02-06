@@ -1,0 +1,5 @@
+❌ Step failed! **The occurrenceDateTime of the immunization events should be within the Date From and Date To range** 
+ Error: No entries found in the search response.
+assert []
+ +  where [] = FHIRImmunizationResponse(resourceType='Bundle', type='searchset', link=[Link(relation='self', url='https://internal-de...hs-number%7C9728403348&-date.from=2025-01-01&-date.to=2025-06-04&_include=Immunization%3Apatient')], entry=[], total=0).entry
+ +    where FHIRImmunizationResponse(resourceType='Bundle', type='searchset', link=[Link(relation='self', url='https://internal-de...hs-number%7C9728403348&-date.from=2025-01-01&-date.to=2025-06-04&_include=Immunization%3Apatient')], entry=[], total=0) = <utilities.context.ScenarioContext object at 0x7fcbc4a32910>.parsed_search_object

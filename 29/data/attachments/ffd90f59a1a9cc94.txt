@@ -1,0 +1,8 @@
+
+ Read Request is https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4-pr-1168/Immunization/12828c67-3816-4b8d-a834-2b557a38f651?_summary
+404
+404
+
+ Error Response - 
+ resourceType='OperationOutcome' id='737c3e1d-9276-4178-a3a9-44997b5eb6c7' meta=Meta(profile=['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']) issue=[Issue(severity='error', code='not-found', details=Details(coding=[Coding(system='https://fhir.nhs.uk/Codesystem/http-error-codes', code='NOT-FOUND')]), diagnostics='Immunization resource does not exist. ID: 12828c67-3816-4b8d-a834-2b557a38f651')]
+ No IMMS_ID column or no values present as test failed due to as exception — skipping delete cleanup.
