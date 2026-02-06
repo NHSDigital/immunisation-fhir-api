@@ -56,7 +56,7 @@ Feature: Create the immunization event for a patient through batch file and upda
 
     @Delete_cleanUp @vaccine_type_RSV @patient_id_Random @supplier_name_RAVS
     Scenario: Verify that the API vaccination record will be successful updated and batch file will fail upload due to mandatory field missing
-        Given I have created a valid vaccination record through API
+        Given I have created a valid vaccination record through API, where mandatory fields will be missing in batch file record
         When Update to above vaccination record is made through batch file upload with mandatory field missing
         And batch file is uploaded in s3 bucket
         Then file will be moved to destination bucket and inf ack file will be created
@@ -68,7 +68,7 @@ Feature: Create the immunization event for a patient through batch file and upda
 
     @smoke
     @Delete_cleanUp @vaccine_type_HIB @patient_id_Random @supplier_name_EMIS
-    Scenario: Verify that batch file record will ne unsuccessful if uses same or missing any unique identifier field
+    Scenario: Verify that batch file record will be unsuccessful if batch file has same or missing unique identifier fields
         Given I have created a valid vaccination record through API, where unique_id and unique_id_uri will be same as batch file record
         When batch file created for below data as full dataset and record has same or missing unique identifier for API record
         And batch file is uploaded in s3 bucket
