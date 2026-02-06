@@ -1,0 +1,3 @@
+❌ Step failed! **json bus ack will have error records for all the updated records in the batch file** 
+ Error: Failed to validate JSON bus ack file failure records
+assert False
