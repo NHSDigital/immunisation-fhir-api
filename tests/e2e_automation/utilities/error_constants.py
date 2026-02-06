@@ -245,5 +245,5 @@ ERROR_MAP = {
     "duplicate": {
         "code": "DUPLICATE",
         "diagnostics": "The provided identifier: <identifier> is duplicated",
-    }
+    },
 }

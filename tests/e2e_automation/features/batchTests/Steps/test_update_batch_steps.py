@@ -1,10 +1,12 @@
 import uuid
+
 import pandas as pd
 from pytest_bdd import given, scenarios, then, when
 from src.objectModels.batch.batch_file_builder import build_batch_file
 from utilities.batch_file_helper import read_and_validate_csv_bus_ack_file_content
 from utilities.enums import GenderCode
 from utilities.error_constants import ERROR_MAP
+
 from features.APITests.steps.common_steps import (
     The_request_will_have_status_code,
     Trigger_the_post_create_request,
@@ -12,14 +14,20 @@ from features.APITests.steps.common_steps import (
     valid_json_payload_is_created,
     validate_etag_in_header,
     validate_imms_event_table_by_operation,
-    validVaccinationRecordIsCreated,
     validateCreateLocation,
+    validVaccinationRecordIsCreated,
 )
 from features.APITests.steps.test_create_steps import validate_imms_delta_table_by_ImmsID
 from features.APITests.steps.test_update_steps import validate_delta_table_for_updated_event
-from .batch_common_steps import build_dataFrame_using_datatable, create_batch_file, json_bus_ack_will_only_contain_file_metadata_and_correct_failure_record_entries
+
+from .batch_common_steps import (
+    build_dataFrame_using_datatable,
+    create_batch_file,
+    json_bus_ack_will_only_contain_file_metadata_and_correct_failure_record_entries,
+)
 
 scenarios("batchTests/update_batch.feature")
+
 
 @given("batch file is created for below data as full dataset and each record has a valid update record in the same file")
 def valid_batch_file_is_created_with_details(datatable, context):
@@ -31,12 +39,16 @@ def valid_batch_file_is_created_with_details(datatable, context):
     context.expected_version = 2
     create_batch_file(context)
 
+
 @given("I have created a valid vaccination record through API")
 def create_valid_vaccination_record_through_api(context):
     validVaccinationRecordIsCreated(context)
     print(f"Created Immunization record with ImmsID: {context.ImmsID}")
-    
-@given("I have created a valid vaccination record through API, where unique_id and unique_id_uri will be same as batch file record")
+
+
+@given(
+    "I have created a valid vaccination record through API, where unique_id and unique_id_uri will be same as batch file record"
+)
 def create_valid_vaccination_record_with_same_unique_id_as_batch_file(context):
     valid_json_payload_is_created(context)
     context.immunization_object.identifier[0].value = f"Fail-duplicate{str(uuid.uuid4())}-duplicate"
@@ -163,10 +175,11 @@ def all_records_are_processed_successfully_in_the_batch_file(context):
     file_rows = read_and_validate_csv_bus_ack_file_content(context, False, True)
     all_valid = validate_bus_ack_file_for_error_by_surname(context, file_rows)
     assert all_valid, "One or more records failed validation checks"
-    
+
+
 @then("json bus ack will have error records for all the updated records in the batch file")
 def json_bus_ack_will_have_error_records_for_all_updated_records_in_batch_file(context):
-    json_bus_ack_will_only_contain_file_metadata_and_correct_failure_record_entries(context) 
+    json_bus_ack_will_only_contain_file_metadata_and_correct_failure_record_entries(context)
 
 
 def validate_bus_ack_file_for_error_by_surname(context, file_rows) -> bool:
@@ -227,7 +240,10 @@ def validate_bus_ack_file_for_error_by_surname(context, file_rows) -> bool:
             overall_valid = overall_valid and row_valid
     return overall_valid
 
-@when("batch file created for below data as full dataset and record has same or missing unique identifier for API record")
+
+@when(
+    "batch file created for below data as full dataset and record has same or missing unique identifier for API record"
+)
 def valid_batch_file_is_created_with_same_or_missing_unique_identifier_as_api_record(context):
     record = build_batch_file(context)
     base_df = pd.DataFrame([record.dict()])
@@ -244,7 +260,7 @@ def valid_batch_file_is_created_with_same_or_missing_unique_identifier_as_api_re
     for col, val in base_fields.items():
         base_df.loc[0, col] = val
     context.vaccine_df = pd.concat([base_df] * 3, ignore_index=True)
-    context.vaccine_df.loc[0, ["PERSON_SURNAME", "ACTION_FLAG"]] = [ "duplicate", "New"]
+    context.vaccine_df.loc[0, ["PERSON_SURNAME", "ACTION_FLAG"]] = ["duplicate", "New"]
     context.vaccine_df.loc[1, ["UNIQUE_ID", "PERSON_SURNAME", "ACTION_FLAG"]] = [" ", "no_unique_id", "UPDATE"]
     context.vaccine_df.loc[2, ["UNIQUE_ID_URI", "PERSON_SURNAME", "ACTION_FLAG"]] = [" ", "no_unique_id_uri", "UPDATE"]
     create_batch_file(context)

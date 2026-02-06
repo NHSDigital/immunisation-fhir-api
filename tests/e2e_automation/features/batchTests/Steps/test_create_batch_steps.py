@@ -1,6 +1,7 @@
 from pytest_bdd import given, scenarios
 from src.objectModels.batch.batch_file_builder import get_batch_date
 from utilities.text_helper import get_text
+
 from .batch_common_steps import build_dataFrame_using_datatable, create_batch_file, ignore_if_local_run
 
 scenarios("batchTests/create_batch.feature")
@@ -120,7 +121,9 @@ def valid_batch_file_is_created_with_different_values_gender(datatable, context)
     create_batch_file(context)
 
 
-@given("batch file is created for below data where mandatory fields for site, location, action flag, primary source and unique identifiers are missing")
+@given(
+    "batch file is created for below data where mandatory fields for site, location, action flag, primary source and unique identifiers are missing"
+)
 @ignore_if_local_run
 def valid_batch_file_is_created_with_missing_mandatory_fields(datatable, context):
     build_dataFrame_using_datatable(datatable, context)

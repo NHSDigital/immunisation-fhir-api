@@ -315,7 +315,8 @@ def create_request_with_invalid_gender(context, gender):
 def create_request_with_empty_nam(context):
     valid_json_payload_is_created(context)
     context.immunization_object.contained[1].name = None
-    
+
+
 @when("Trigger another post create request with same unique_id and unique_id_uri")
 def trigger_post_create_with_same_unique_id(context):
     valid_json_payload_is_created(context)

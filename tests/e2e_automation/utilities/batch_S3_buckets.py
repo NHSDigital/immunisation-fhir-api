@@ -47,12 +47,7 @@ def wait_for_file_to_move_archive(context, timeout=120, interval=5):
 
 
 def wait_and_read_ack_file(
-    context,
-    folderName: str,
-    timeout=120,
-    interval=5,
-    duplicate_bus_files=False,
-    duplicate_inf_files=False
+    context, folderName: str, timeout=120, interval=5, duplicate_bus_files=False, duplicate_inf_files=False
 ):
     s3 = boto3.client("s3")
     destination_bucket = f"immunisation-batch-{context.S3_env}-data-destinations"
@@ -77,10 +72,7 @@ def wait_and_read_ack_file(
 
     while elapsed < timeout:
         try:
-            response = s3.list_objects_v2(
-                Bucket=destination_bucket,
-                Prefix=forwarded_prefix
-            )
+            response = s3.list_objects_v2(Bucket=destination_bucket, Prefix=forwarded_prefix)
             contents = response.get("Contents", [])
 
             if not contents:
@@ -113,10 +105,7 @@ def wait_and_read_ack_file(
                     if expected_extensions == {".csv"}:
                         return {"csv": found_files[".csv"]}
 
-                    return {
-                        "csv": found_files[".csv"],
-                        "json": found_files[".json"]
-                    }
+                    return {"csv": found_files[".csv"], "json": found_files[".json"]}
 
             time.sleep(interval)
             elapsed += interval

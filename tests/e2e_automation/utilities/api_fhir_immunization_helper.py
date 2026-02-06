@@ -112,7 +112,9 @@ def validate_error_response(error_response, errorName: str, imms_id: str = "", v
             expected_diagnostics = ERROR_MAP.get("invalid_etag", {}).get("diagnostics", "").replace("<version>", version)
             fields_to_compare.append(("Diagnostics", expected_diagnostics, error_response.issue[0].diagnostics))
         case "duplicate":
-            expected_diagnostics = ERROR_MAP.get("duplicate", {}).get("diagnostics", "").replace("<identifier>", identifier)
+            expected_diagnostics = (
+                ERROR_MAP.get("duplicate", {}).get("diagnostics", "").replace("<identifier>", identifier)
+            )
             fields_to_compare.append(("Diagnostics", expected_diagnostics, error_response.issue[0].diagnostics))
         case _:
             actual_diagnostics = (

@@ -1,13 +1,16 @@
 import uuid
+
 from pytest_bdd import parsers, scenarios, then, when
 from src.dynamoDB.dynamo_db_helper import (
     fetch_immunization_int_delta_detail_by_immsID,
-    validate_imms_delta_record_with_created_event,)
+    validate_imms_delta_record_with_created_event,
+)
 from src.objectModels.api_immunization_builder import convert_to_update
 from utilities.api_fhir_immunization_helper import parse_error_response, validate_error_response
 from utilities.api_get_header import get_update_url_header
 from utilities.date_helper import generate_date
 from utilities.enums import ActionFlag, Operation
+
 from .common_steps import (
     send_update_for_immunization_event,
     trigger_the_updated_request,
@@ -39,7 +42,9 @@ def validate_delta_table_for_updated_event(context):
     )
 
 
-@when(parsers.parse("Send a update for Immunization event created with occurrenceDateTime being updated to '{DateText}'"))
+@when(
+    parsers.parse("Send a update for Immunization event created with occurrenceDateTime being updated to '{DateText}'")
+)
 def send_update_for_immunization_event_with_occurrenceDateTime(context, DateText):
     get_update_url_header(context, str(context.expected_version))
     context.update_object = convert_to_update(context.immunization_object, context.ImmsID)
@@ -55,7 +60,9 @@ def send_update_for_immunization_event_with_recorded_date_update(context, DateTe
     trigger_the_updated_request(context)
 
 
-@when(parsers.parse("Send a update for Immunization event created with patient date of bith being updated to '{DateText}'"))
+@when(
+    parsers.parse("Send a update for Immunization event created with patient date of bith being updated to '{DateText}'")
+)
 def send_update_for_immunization_event_with_dob_update(context, DateText):
     get_update_url_header(context, str(context.expected_version))
     context.update_object = convert_to_update(context.immunization_object, context.ImmsID)

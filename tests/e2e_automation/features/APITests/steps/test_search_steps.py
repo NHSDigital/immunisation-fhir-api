@@ -1,9 +1,9 @@
 import uuid
 from datetime import datetime
 from urllib.parse import parse_qs
+
 import pytest_check as check
 from pytest_bdd import parsers, scenarios, then, when
-from features.conftest import context
 from src.objectModels.api_search_object import convert_to_form_data, set_request_data
 from utilities.api_fhir_immunization_helper import (
     find_entry_by_Imms_id,
@@ -14,6 +14,7 @@ from utilities.api_fhir_immunization_helper import (
 from utilities.api_get_header import get_search_get_url_header, get_search_post_url_header
 from utilities.date_helper import iso_to_compact
 from utilities.http_requests_session import http_requests_session
+
 from .common_steps import normalize_param
 
 scenarios("APITests/search.feature")
@@ -74,9 +75,21 @@ def TriggerSearchPostRequest(context):
     print(f"\n Search Post Response - \n {context.response.json()}")
 
 
-@when(parsers.parse("Send a search request with GET method with invalid NHS Number '{NHSNumber}' and valid Disease Type '{DiseaseType}'"))
-@when(parsers.parse("Send a search request with GET method with valid NHS Number '{NHSNumber}' and invalid Disease Type '{DiseaseType}'"))
-@when(parsers.parse("Send a search request with GET method with invalid NHS Number '{NHSNumber}' and invalid Disease Type '{DiseaseType}'"))
+@when(
+    parsers.parse(
+        "Send a search request with GET method with invalid NHS Number '{NHSNumber}' and valid Disease Type '{DiseaseType}'"
+    )
+)
+@when(
+    parsers.parse(
+        "Send a search request with GET method with valid NHS Number '{NHSNumber}' and invalid Disease Type '{DiseaseType}'"
+    )
+)
+@when(
+    parsers.parse(
+        "Send a search request with GET method with invalid NHS Number '{NHSNumber}' and invalid Disease Type '{DiseaseType}'"
+    )
+)
 def send_invalid_param_get_request(context, NHSNumber, DiseaseType):
     get_search_get_url_header(context)
     NHSNumber = normalize_param(NHSNumber)
@@ -88,9 +101,21 @@ def send_invalid_param_get_request(context, NHSNumber, DiseaseType):
     context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
 
 
-@when(parsers.parse("Send a search request with POST method with invalid NHS Number '{NHSNumber}' and valid Disease Type '{DiseaseType}'"))
-@when(parsers.parse("Send a search request with POST method with valid NHS Number '{NHSNumber}' and invalid Disease Type '{DiseaseType}'"))
-@when(parsers.parse("Send a search request with POST method with invalid NHS Number '{NHSNumber}' and invalid Disease Type '{DiseaseType}'"))
+@when(
+    parsers.parse(
+        "Send a search request with POST method with invalid NHS Number '{NHSNumber}' and valid Disease Type '{DiseaseType}'"
+    )
+)
+@when(
+    parsers.parse(
+        "Send a search request with POST method with valid NHS Number '{NHSNumber}' and invalid Disease Type '{DiseaseType}'"
+    )
+)
+@when(
+    parsers.parse(
+        "Send a search request with POST method with invalid NHS Number '{NHSNumber}' and invalid Disease Type '{DiseaseType}'"
+    )
+)
 def send_invalid_param_post_request(context, NHSNumber, DiseaseType):
     get_search_post_url_header(context)
 
@@ -104,9 +129,21 @@ def send_invalid_param_post_request(context, NHSNumber, DiseaseType):
     context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
 
 
-@when(parsers.parse("Send a search request with GET method with invalid Date From '{DateFrom}' and valid Date To '{DateTo}'"))
-@when(parsers.parse("Send a search request with GET method with valid Date From '{DateFrom}' and invalid Date To '{DateTo}'"))
-@when(parsers.parse("Send a search request with GET method with invalid Date From '{DateFrom}' and invalid Date To '{DateTo}'"))
+@when(
+    parsers.parse(
+        "Send a search request with GET method with invalid Date From '{DateFrom}' and valid Date To '{DateTo}'"
+    )
+)
+@when(
+    parsers.parse(
+        "Send a search request with GET method with valid Date From '{DateFrom}' and invalid Date To '{DateTo}'"
+    )
+)
+@when(
+    parsers.parse(
+        "Send a search request with GET method with invalid Date From '{DateFrom}' and invalid Date To '{DateTo}'"
+    )
+)
 def send_invalid_date_get_request(context, DateFrom, DateTo):
     get_search_get_url_header(context)
     context.params = convert_to_form_data(set_request_data(9001066569, context.vaccine_type, DateFrom, DateTo))
@@ -114,9 +151,21 @@ def send_invalid_date_get_request(context, DateFrom, DateTo):
     context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
 
 
-@when(parsers.parse("Send a search request with POST method with invalid Date From '{DateFrom}' and valid Date To '{DateTo}'"))
-@when(parsers.parse("Send a search request with POST method with valid Date From '{DateFrom}' and invalid Date To '{DateTo}'"))
-@when(parsers.parse("Send a search request with POST method with invalid Date From '{DateFrom}' and invalid Date To '{DateTo}'"))
+@when(
+    parsers.parse(
+        "Send a search request with POST method with invalid Date From '{DateFrom}' and valid Date To '{DateTo}'"
+    )
+)
+@when(
+    parsers.parse(
+        "Send a search request with POST method with valid Date From '{DateFrom}' and invalid Date To '{DateTo}'"
+    )
+)
+@when(
+    parsers.parse(
+        "Send a search request with POST method with invalid Date From '{DateFrom}' and invalid Date To '{DateTo}'"
+    )
+)
 def send_invalid_param_post_request_with_dates(context, DateFrom, DateTo):
     get_search_post_url_header(context)
     context.request = convert_to_form_data(set_request_data(9001066569, context.vaccine_type, DateFrom, DateTo))

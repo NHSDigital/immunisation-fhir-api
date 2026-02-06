@@ -1,12 +1,15 @@
 import pandas as pd
 from pytest_bdd import given, scenarios, then, when
 from src.objectModels.batch.batch_file_builder import build_batch_file
+
 from features.APITests.steps.common_steps import validate_imms_event_table_by_operation, validVaccinationRecordIsCreated
 from features.APITests.steps.test_create_steps import validate_imms_delta_table_by_ImmsID
 from features.APITests.steps.test_delete_steps import validate_imms_delta_table_by_deleted_ImmsID
+
 from .batch_common_steps import build_dataFrame_using_datatable, create_batch_file, ignore_if_local_run
 
 scenarios("batchTests/delete_batch.feature")
+
 
 @given("batch file is created for below data as full dataset and each record has a valid delete record in the same file")
 @ignore_if_local_run

@@ -134,11 +134,9 @@ def pytest_bdd_after_scenario(request, feature, scenario):
     if "delete_cleanup_batch" in tags:
         if "IMMS_ID" in context.vaccine_df.columns and context.vaccine_df["IMMS_ID"].notna().any():
             get_tokens(context, context.supplier_name)
-            
+
             context.vaccine_df["IMMS_ID_CLEAN"] = (
-                context.vaccine_df["IMMS_ID"]
-                .astype(str)
-                .str.replace("Immunization#", "", regex=False)
+                context.vaccine_df["IMMS_ID"].astype(str).str.replace("Immunization#", "", regex=False)
             )
 
             for imms_id in context.vaccine_df["IMMS_ID_CLEAN"].dropna().unique():
@@ -148,12 +146,10 @@ def pytest_bdd_after_scenario(request, feature, scenario):
                 response = http_requests_session.delete(delete_url, headers=context.headers)
 
                 assert response.status_code == 204, (
-                    f"Failed to delete {imms_id}: expected 204, got {response.status_code}. "
-                    f"Response: {response.text}"
+                    f"Failed to delete {imms_id}: expected 204, got {response.status_code}. Response: {response.text}"
                 )
 
             print("All IMMS_IDs deleted successfully.")
 
     else:
         print(" No IMMS_ID column or no values present as test failed due to as exception — skipping delete cleanup.")
-
