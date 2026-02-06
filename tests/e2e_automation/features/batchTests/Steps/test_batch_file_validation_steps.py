@@ -98,7 +98,6 @@ def file_will_not_be_moved_to_destination_bucket(context):
 )
 def validate_imms_audit_table(context, status, queue_name, error_details):
     table_query_response = fetch_batch_audit_table_detail(context.aws_profile_name, context.filename, context.S3_env)
-
     assert isinstance(table_query_response, list) and table_query_response, (
         f"Item not found in response for filename: {context.filename}"
     )

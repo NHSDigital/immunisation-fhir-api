@@ -74,7 +74,6 @@ def ignore_local_run_set_test_data(func):
                 context.vaccine_df = pd.DataFrame()  # fallback to empty
 
             return None
-
         return func(*args, **kwargs)
 
     return wrapper
@@ -152,7 +151,6 @@ def json_bus_ack_will_only_contain_file_metadata_and_correct_failure_record_entr
 @then("Audit table will have correct status, queue name and record count for the processed batch file")
 def validate_imms_audit_table(context):
     table_query_response = fetch_batch_audit_table_detail(context.aws_profile_name, context.filename, context.S3_env)
-
     assert isinstance(table_query_response, list) and table_query_response, (
         f"Item not found in response for filename: {context.filename}"
     )
