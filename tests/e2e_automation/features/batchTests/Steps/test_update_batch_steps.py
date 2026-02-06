@@ -74,7 +74,7 @@ def create_valid_vaccination_record_with_same_unique_id_as_batch_file(context):
 )
 def create_valid_vaccination_record_with_missing_mandatory_fields(context):
     valid_json_payload_is_created(context)
-    context.immunization_object.contained[1].identifier[
+    context.immunization_object.contained[0].identifier[
         0
     ].value = f"Fail-missing-mandatory-fields{str(uuid.uuid4())}-missing"
     Trigger_the_post_create_request(context)
