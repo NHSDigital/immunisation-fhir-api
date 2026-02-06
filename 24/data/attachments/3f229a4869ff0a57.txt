@@ -1,0 +1,2 @@
+❌ Step failed! **json bus ack will have error records for all the updated records in the batch file** 
+ Error: 'dict' object has no attribute 'rowId'

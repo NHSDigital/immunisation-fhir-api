@@ -1,0 +1,1 @@
+✅ Step Passed: **I have created a valid vaccination record through API, where unique_id and unique_id_uri will be same as batch file record

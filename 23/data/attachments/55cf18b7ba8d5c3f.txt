@@ -1,1 +1,0 @@
-✅ Step Passed: **bus ack will not have any entry of successfully processed records
