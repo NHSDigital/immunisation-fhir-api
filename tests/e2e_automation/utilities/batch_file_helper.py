@@ -336,7 +336,7 @@ def validate_json_bus_ack_file_failure_records(
             row_valid = False
 
         try:
-            df_row = context.vaccine_df.loc[row_id - 2]
+            df_row = context.vaccine_df.loc[int(row_id) - 1]
             expected_error = get_expected_error(df_row, use_username_for_error_lookup)
 
             expected_diagnostic = ERROR_MAP.get(expected_error, {}).get("diagnostics")
