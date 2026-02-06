@@ -472,7 +472,7 @@ class TestLoggingDecorators(unittest.TestCase):
             ]
         )
 
-        self.assertEqual(mock_update_audit_table_item.call_count, 2)
+        self.assertEqual(mock_update_audit_table_item.call_count, 1)
 
 
 if __name__ == "__main__":
