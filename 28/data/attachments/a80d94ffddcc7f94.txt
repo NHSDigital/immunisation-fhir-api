@@ -1,0 +1,2 @@
+❌ Step failed! **json bus ack will have error records for all the updated records in the batch file** 
+ Error: Expected success count 17, got 0
