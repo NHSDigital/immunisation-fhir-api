@@ -1,15 +1,12 @@
 import pandas as pd
 from pytest_bdd import given, scenarios, then, when
 from src.objectModels.batch.batch_file_builder import build_batch_file
-
 from features.APITests.steps.common_steps import validate_imms_event_table_by_operation, validVaccinationRecordIsCreated
 from features.APITests.steps.test_create_steps import validate_imms_delta_table_by_ImmsID
 from features.APITests.steps.test_delete_steps import validate_imms_delta_table_by_deleted_ImmsID
-
 from .batch_common_steps import build_dataFrame_using_datatable, create_batch_file, ignore_if_local_run
 
 scenarios("batchTests/delete_batch.feature")
-
 
 @given("batch file is created for below data as full dataset and each record has a valid delete record in the same file")
 @ignore_if_local_run
@@ -72,7 +69,6 @@ def upload_batch_file_to_s3_for_update_with_mandatory_field_missing(context):
     # Build base record
     record = build_batch_file(context)
     context.vaccine_df = pd.DataFrame([record.dict()])
-
     base_fields = {
         "NHS_NUMBER": context.create_object.contained[1].identifier[0].value,
         "PERSON_FORENAME": context.create_object.contained[1].name[0].given[0],
@@ -85,7 +81,6 @@ def upload_batch_file_to_s3_for_update_with_mandatory_field_missing(context):
         "UNIQUE_ID_URI": context.create_object.identifier[0].system,
     }
     context.vaccine_df.loc[0, list(base_fields.keys())] = list(base_fields.values())
-
     create_batch_file(context)
     context.vaccine_df.loc[0, "IMMS_ID"] = context.ImmsID
 
