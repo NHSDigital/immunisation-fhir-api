@@ -10,7 +10,7 @@ import requests
 from common.clients import logger
 from common.models.errors import UnhandledResponseError
 
-from .cache import Cache
+from ..cache import Cache
 
 
 class Service(Enum):
