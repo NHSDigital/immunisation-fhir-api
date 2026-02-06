@@ -27,6 +27,7 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from common.batch.audit_table import (
         NOTHING_TO_UPDATE_ERROR_MESSAGE,
         create_audit_table_item,
+        get_ingestion_start_time_by_message_id,
         get_record_count_and_failures_by_message_id,
         increment_records_failed_count,
         update_audit_table_item,
@@ -300,6 +301,50 @@ class TestAuditTable(TestCase):
 
         self.assertEqual(record_count, 0)
         self.assertEqual(failed_count, 0)
+
+    def test_get_ingestion_start_time_by_message_id_returns_the_ingestion_start_time(self):
+        """Test that get_ingestion_start_time_by_message_id retrieves the integer value of the ingestion start time"""
+        ravs_rsv_test_file = FileDetails("RSV", "RAVS", "X26")
+        expected_table_entry = {
+            **MockFileDetails.rsv_ravs.audit_table_entry,
+            "status": {"S": FileStatus.PREPROCESSED},
+            "ingestion_start_time": {"S": "20260130T16093500"},
+        }
+
+        dynamodb_client.put_item(TableName=AUDIT_TABLE_NAME, Item=expected_table_entry)
+
+        ingestion_start_time = get_ingestion_start_time_by_message_id(ravs_rsv_test_file.message_id)
+
+        self.assertEqual(ingestion_start_time, 1769789375)
+
+    def test_get_ingestion_start_time_by_message_id_returns_zero_if_values_not_set(self):
+        """Test that if the ingestion start time has not yet been set on the audit item then zero is returned"""
+        ravs_rsv_test_file = FileDetails("RSV", "RAVS", "X26")
+        expected_table_entry = {
+            **MockFileDetails.rsv_ravs.audit_table_entry,
+            "status": {"S": FileStatus.PREPROCESSED},
+        }
+
+        dynamodb_client.put_item(TableName=AUDIT_TABLE_NAME, Item=expected_table_entry)
+
+        ingestion_start_time = get_ingestion_start_time_by_message_id(ravs_rsv_test_file.message_id)
+
+        self.assertEqual(ingestion_start_time, 0)
+
+    def test_get_ingestion_start_time_by_message_id_returns_zero_if_format_invalid(self):
+        """Test that if the ingestion start time has been set with an invalid value then zero is returned"""
+        ravs_rsv_test_file = FileDetails("RSV", "RAVS", "X26")
+        expected_table_entry = {
+            **MockFileDetails.rsv_ravs.audit_table_entry,
+            "status": {"S": FileStatus.PREPROCESSED},
+            "ingestion_start_time": {"S": "1769789375"},
+        }
+
+        dynamodb_client.put_item(TableName=AUDIT_TABLE_NAME, Item=expected_table_entry)
+
+        ingestion_start_time = get_ingestion_start_time_by_message_id(ravs_rsv_test_file.message_id)
+
+        self.assertEqual(ingestion_start_time, 0)
 
     def test_increment_records_failed_count(self):
         """Checks audit table correctly increments the records_failed count"""
