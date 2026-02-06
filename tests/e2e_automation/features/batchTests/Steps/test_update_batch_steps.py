@@ -17,8 +17,12 @@ from features.APITests.steps.common_steps import (
     validateCreateLocation,
     validVaccinationRecordIsCreated,
 )
-from features.APITests.steps.test_create_steps import validate_imms_delta_table_by_ImmsID
-from features.APITests.steps.test_update_steps import validate_delta_table_for_updated_event
+from features.APITests.steps.test_create_steps import (
+    validate_imms_delta_table_by_ImmsID,
+)
+from features.APITests.steps.test_update_steps import (
+    validate_delta_table_for_updated_event,
+)
 
 from .batch_common_steps import (
     build_dataFrame_using_datatable,
@@ -158,7 +162,10 @@ def upload_batch_file_to_s3_for_update_with_mandatory_field_missing(context):
         12: {"UNIQUE_ID": " ", "PERSON_SURNAME": "no_unique_id"},
         13: {"UNIQUE_ID_URI": " ", "PERSON_SURNAME": "no_unique_id_uri"},
         14: {"PRIMARY_SOURCE": " ", "PERSON_SURNAME": "no_primary_source"},
-        15: {"VACCINATION_PROCEDURE_CODE": " ", "PERSON_SURNAME": "empty_procedure_code"},
+        15: {
+            "VACCINATION_PROCEDURE_CODE": " ",
+            "PERSON_SURNAME": "empty_procedure_code",
+        },
         16: {"PRIMARY_SOURCE": "test", "PERSON_SURNAME": "no_primary_source"},
         17: {"ACTION_FLAG": "", "PERSON_SURNAME": "invalid_action_flag"},
         18: {"ACTION_FLAG": " ", "PERSON_SURNAME": "invalid_action_flag"},
@@ -197,6 +204,11 @@ def validate_bus_ack_file_for_error_by_surname(context, file_rows) -> bool:
         surname = str(row.get("PERSON_SURNAME", "")).strip()
         expected_error = surname
         expected_diagnostic = ERROR_MAP.get(expected_error, {}).get("diagnostics")
+        if expected_error == "duplicate" and expected_diagnostic:
+            expected_diagnostic = expected_diagnostic.replace(
+                "<identifier>",
+                f"{context.immunization_object.identifier[0].system}#{context.immunization_object.identifier[0].value}",
+            )
         for row_data in row_data_list:
             i = row_data["row"]
             fields = row_data["fields"]
@@ -244,7 +256,9 @@ def validate_bus_ack_file_for_error_by_surname(context, file_rows) -> bool:
 @when(
     "batch file created for below data as full dataset and record has same or missing unique identifier for API record"
 )
-def valid_batch_file_is_created_with_same_or_missing_unique_identifier_as_api_record(context):
+def valid_batch_file_is_created_with_same_or_missing_unique_identifier_as_api_record(
+    context,
+):
     record = build_batch_file(context)
     base_df = pd.DataFrame([record.dict()])
     base_fields = {
@@ -261,6 +275,14 @@ def valid_batch_file_is_created_with_same_or_missing_unique_identifier_as_api_re
         base_df.loc[0, col] = val
     context.vaccine_df = pd.concat([base_df] * 3, ignore_index=True)
     context.vaccine_df.loc[0, ["PERSON_SURNAME", "ACTION_FLAG"]] = ["duplicate", "New"]
-    context.vaccine_df.loc[1, ["UNIQUE_ID", "PERSON_SURNAME", "ACTION_FLAG"]] = [" ", "no_unique_id", "UPDATE"]
-    context.vaccine_df.loc[2, ["UNIQUE_ID_URI", "PERSON_SURNAME", "ACTION_FLAG"]] = [" ", "no_unique_id_uri", "UPDATE"]
+    context.vaccine_df.loc[1, ["UNIQUE_ID", "PERSON_SURNAME", "ACTION_FLAG"]] = [
+        " ",
+        "no_unique_id",
+        "UPDATE",
+    ]
+    context.vaccine_df.loc[2, ["UNIQUE_ID_URI", "PERSON_SURNAME", "ACTION_FLAG"]] = [
+        " ",
+        "no_unique_id_uri",
+        "UPDATE",
+    ]
     create_batch_file(context)
