@@ -3,7 +3,11 @@ import uuid
 import pandas as pd
 from pytest_bdd import given, scenarios, then, when
 from src.objectModels.batch.batch_file_builder import build_batch_file
-from utilities.batch_file_helper import read_and_validate_csv_bus_ack_file_content
+from utilities.batch_file_helper import (
+    read_and_validate_csv_bus_ack_file_content,
+    validate_json_bus_ack_file_failure_records,
+    validate_json_bus_ack_file_structure_and_metadata,
+)
 from utilities.enums import GenderCode
 from utilities.error_constants import ERROR_MAP
 
@@ -27,7 +31,6 @@ from features.APITests.steps.test_update_steps import (
 from .batch_common_steps import (
     build_dataFrame_using_datatable,
     create_batch_file,
-    json_bus_ack_will_only_contain_file_metadata_and_correct_failure_record_entries,
 )
 
 scenarios("batchTests/update_batch.feature")
@@ -186,7 +189,13 @@ def all_records_are_processed_successfully_in_the_batch_file(context):
 
 @then("json bus ack will have error records for all the updated records in the batch file")
 def json_bus_ack_will_have_error_records_for_all_updated_records_in_batch_file(context):
-    json_bus_ack_will_only_contain_file_metadata_and_correct_failure_record_entries(context)
+    json_content = context.fileContentJson
+    assert json_content is not None, "BUS Ack JSON content is None"
+    validate_json_bus_ack_file_structure_and_metadata(context)
+    success = validate_json_bus_ack_file_failure_records(
+        context, expected_failure=True, use_username_for_error_lookup=True
+    )
+    assert success, "Failed to validate JSON bus ack file failure records"
 
 
 def validate_bus_ack_file_for_error_by_surname(context, file_rows) -> bool:
