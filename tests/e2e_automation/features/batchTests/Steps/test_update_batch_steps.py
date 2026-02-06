@@ -1,3 +1,4 @@
+import uuid
 import pandas as pd
 from pytest_bdd import given, scenarios, then, when
 from src.objectModels.batch.batch_file_builder import build_batch_file
@@ -42,7 +43,7 @@ def create_valid_vaccination_record_through_api(context):
 @given("I have created a valid vaccination record through API, where unique_id and unique_id_uri will be same as batch file record")
 def create_valid_vaccination_record_with_same_unique_id_as_batch_file(context):
     valid_json_payload_is_created(context)
-    context.immunization_object.identifier[0].value = "Fail-duplicate-duplicate"
+    context.immunization_object.identifier[0].value = f"Fail-duplicate{str(uuid.uuid4())}-duplicate"
     Trigger_the_post_create_request(context)
     The_request_will_have_status_code(context, 201)
     validateCreateLocation(context)
