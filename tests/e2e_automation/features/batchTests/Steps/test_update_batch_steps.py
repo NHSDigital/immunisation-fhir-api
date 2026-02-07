@@ -36,9 +36,7 @@ from .batch_common_steps import (
 scenarios("batchTests/update_batch.feature")
 
 
-@given(
-    "batch file is created for below data as full dataset and each record has a valid update record in the same file"
-)
+@given("batch file is created for below data as full dataset and each record has a valid update record in the same file")
 def valid_batch_file_is_created_with_details(datatable, context):
     build_dataFrame_using_datatable(datatable, context)
     df_new = context.vaccine_df.copy()
@@ -60,9 +58,7 @@ def create_valid_vaccination_record_through_api(context):
 )
 def create_valid_vaccination_record_with_same_unique_id_as_batch_file(context):
     valid_json_payload_is_created(context)
-    context.immunization_object.identifier[0].value = (
-        f"Fail-duplicate{str(uuid.uuid4())}-duplicate"
-    )
+    context.immunization_object.identifier[0].value = f"Fail-duplicate{str(uuid.uuid4())}-duplicate"
     Trigger_the_post_create_request(context)
     The_request_will_have_status_code(context, 201)
     validateCreateLocation(context)
@@ -74,9 +70,7 @@ def create_valid_vaccination_record_with_same_unique_id_as_batch_file(context):
 )
 def create_valid_vaccination_record_with_missing_mandatory_fields(context):
     valid_json_payload_is_created(context)
-    context.immunization_object.identifier[0].value = (
-        f"Fail-missing-mandatory-fields-{str(uuid.uuid4())}-duplicate"
-    )
+    context.immunization_object.identifier[0].value = f"Fail-missing-mandatory-fields-{str(uuid.uuid4())}-duplicate"
     Trigger_the_post_create_request(context)
     The_request_will_have_status_code(context, 201)
     validateCreateLocation(context)
@@ -114,20 +108,14 @@ def upload_batch_file_to_s3_for_update(context):
     create_batch_file(context)
 
 
-@then(
-    "The delta and imms event table will be populated with the correct data for api created event"
-)
-@given(
-    "The delta and imms event table will be populated with the correct data for api created event"
-)
+@then("The delta and imms event table will be populated with the correct data for api created event")
+@given("The delta and imms event table will be populated with the correct data for api created event")
 def validate_imms_delta_table_for_api_created_event(context):
     validate_imms_event_table_by_operation(context, "created")
     validate_imms_delta_table_by_ImmsID(context)
 
 
-@when(
-    "Send a update for Immunization event created with vaccination detail being updated through API request"
-)
+@when("Send a update for Immunization event created with vaccination detail being updated through API request")
 def send_update_for_immunization_event_with_vaccination_detail_updated(context):
     valid_json_payload_is_created(context)
     row = context.vaccine_df.loc[0]
@@ -136,15 +124,11 @@ def send_update_for_immunization_event_with_vaccination_detail_updated(context):
     context.immunization_object.contained[1].name[0].family = row["PERSON_SURNAME"]
     reverse_gender_map = {v.value: v.name for v in GenderCode}
     code = row["PERSON_GENDER_CODE"]
-    context.immunization_object.contained[1].gender = reverse_gender_map.get(
-        code, "unknown"
-    )
-    context.immunization_object.contained[1].birthDate = (
-        f"{row['PERSON_DOB'][:4]}-{row['PERSON_DOB'][4:6]}-{row['PERSON_DOB'][6:]}"
-    )
-    context.immunization_object.contained[1].address[0].postalCode = row[
-        "PERSON_POSTCODE"
-    ]
+    context.immunization_object.contained[1].gender = reverse_gender_map.get(code, "unknown")
+    context.immunization_object.contained[
+        1
+    ].birthDate = f"{row['PERSON_DOB'][:4]}-{row['PERSON_DOB'][4:6]}-{row['PERSON_DOB'][6:]}"
+    context.immunization_object.contained[1].address[0].postalCode = row["PERSON_POSTCODE"]
     context.immunization_object.identifier[0].value = row["UNIQUE_ID"]
     context.immunization_object.identifier[0].system = row["UNIQUE_ID_URI"]
     send_update_for_immunization_event(context)
@@ -158,9 +142,7 @@ def api_request_will_be_successful_and_tables_will_be_updated_correctly(context)
     validate_delta_table_for_updated_event(context)
 
 
-@when(
-    "records for same event are uploaded via batch file with missing mandatory fields and duplicated record"
-)
+@when("records for same event are uploaded via batch file with missing mandatory fields and duplicated record")
 def upload_batch_file_to_s3_for_update_with_mandatory_field_missing(context):
     # Build base record
     record = build_batch_file(context)
@@ -177,9 +159,7 @@ def upload_batch_file_to_s3_for_update_with_mandatory_field_missing(context):
         "UNIQUE_ID_URI": context.create_object.identifier[0].system,
     }
     context.vaccine_df.loc[0, list(base_fields.keys())] = list(base_fields.values())
-    context.vaccine_df = pd.concat(
-        [context.vaccine_df.loc[[0]]] * 20, ignore_index=True
-    )
+    context.vaccine_df = pd.concat([context.vaccine_df.loc[[0]]] * 20, ignore_index=True)
     missing_cases = {
         0: {"SITE_CODE": "", "PERSON_SURNAME": "empty_site_code"},
         1: {"SITE_CODE_TYPE_URI": "", "PERSON_SURNAME": "empty_site_code_uri"},
@@ -212,18 +192,14 @@ def upload_batch_file_to_s3_for_update_with_mandatory_field_missing(context):
     create_batch_file(context)
 
 
-@then(
-    "csv bus ack will have error records for all the updated records in the batch file"
-)
+@then("csv bus ack will have error records for all the updated records in the batch file")
 def all_records_are_processed_successfully_in_the_batch_file(context):
     file_rows = read_and_validate_csv_bus_ack_file_content(context, False, True)
     all_valid = validate_bus_ack_file_for_error_by_surname(context, file_rows)
     assert all_valid, "One or more records failed validation checks"
 
 
-@then(
-    "json bus ack will have error records for all the updated records in the batch file"
-)
+@then("json bus ack will have error records for all the updated records in the batch file")
 def json_bus_ack_will_have_error_records_for_all_updated_records_in_batch_file(context):
     json_content = context.fileContentJson
     assert json_content is not None, "BUS Ack JSON content is None"
@@ -243,9 +219,7 @@ def validate_bus_ack_file_for_error_by_surname(context, file_rows) -> bool:
         bus_ack_row_number = batch_idx + 2
         row_data_list = file_rows.get(bus_ack_row_number)
         if not row_data_list:
-            print(
-                f"Batch row {batch_idx}: No BUS ACK entry found for row number {bus_ack_row_number}"
-            )
+            print(f"Batch row {batch_idx}: No BUS ACK entry found for row number {bus_ack_row_number}")
             overall_valid = False
             continue
         surname = str(row.get("PERSON_SURNAME", "")).strip()
