@@ -75,7 +75,9 @@ def batch_file_with_additional_column_is_created(datatable, context):
 
 @then("file will be moved to destination bucket and inf ack file will be created for duplicate batch file upload")
 def file_will_be_moved_to_destination_bucket(context):
-    context.fileContent = wait_and_read_ack_file(context, "ack", duplicate_inf_files=True)
+    result = wait_and_read_ack_file(context, "ack", duplicate_inf_files=True)
+    assert result is not None, f"File not found in destination bucket after timeout:  {context.forwarded_prefix}"
+    context.fileContent = result["csv"]
     assert context.fileContent, f"File not found in destination bucket after timeout:  {context.forwarded_prefix}"
 
 
@@ -87,8 +89,8 @@ def failed_inf_ack_file(context):
 
 @then("bus ack file will not be created")
 def file_will_not_be_moved_to_destination_bucket(context):
-    context.fileContent = wait_and_read_ack_file(context, "forwardedFile", timeout=10, duplicate_bus_files=True)
-    assert context.fileContent is None, f"File found in destination bucket: {context.forwarded_prefix}"
+    result = wait_and_read_ack_file(context, "forwardedFile", timeout=10, duplicate_bus_files=True)
+    assert result is None, f"Unexpected BUS ACK file(s) found in destination bucket: {context.forwarded_prefix}"
 
 
 @then(
@@ -96,7 +98,6 @@ def file_will_not_be_moved_to_destination_bucket(context):
 )
 def validate_imms_audit_table(context, status, queue_name, error_details):
     table_query_response = fetch_batch_audit_table_detail(context.aws_profile_name, context.filename, context.S3_env)
-
     assert isinstance(table_query_response, list) and table_query_response, (
         f"Item not found in response for filename: {context.filename}"
     )

@@ -97,7 +97,7 @@ def is_valid_nhs_number(nhs_number: str) -> bool:
     return check_digit == digits[9]
 
 
-def validate_error_response(error_response, errorName: str, imms_id: str = "", version: str = ""):
+def validate_error_response(error_response, errorName: str, imms_id: str = "", version: str = "", identifier: str = ""):
     uuid_obj = uuid.UUID(error_response.id, version=4)
     check.is_true(isinstance(uuid_obj, uuid.UUID), f"Id is not UUID {error_response.id}")
 
@@ -110,6 +110,11 @@ def validate_error_response(error_response, errorName: str, imms_id: str = "", v
 
         case "invalid_etag":
             expected_diagnostics = ERROR_MAP.get("invalid_etag", {}).get("diagnostics", "").replace("<version>", version)
+            fields_to_compare.append(("Diagnostics", expected_diagnostics, error_response.issue[0].diagnostics))
+        case "duplicate":
+            expected_diagnostics = (
+                ERROR_MAP.get("duplicate", {}).get("diagnostics", "").replace("<identifier>", identifier)
+            )
             fields_to_compare.append(("Diagnostics", expected_diagnostics, error_response.issue[0].diagnostics))
         case _:
             actual_diagnostics = (
