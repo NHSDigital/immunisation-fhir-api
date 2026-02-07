@@ -54,18 +54,6 @@ def create_valid_vaccination_record_through_api(context):
 
 
 @given(
-    "I have created a valid vaccination record through API, where unique_id and unique_id_uri will be same as batch file record"
-)
-def create_valid_vaccination_record_with_same_unique_id_as_batch_file(context):
-    valid_json_payload_is_created(context)
-    context.immunization_object.identifier[0].value = f"Fail-duplicate{str(uuid.uuid4())}-duplicate"
-    Trigger_the_post_create_request(context)
-    The_request_will_have_status_code(context, 201)
-    validateCreateLocation(context)
-    print(f"Created Immunization record with ImmsID: {context.ImmsID}")
-
-
-@given(
     "vaccination record exists in the API where batch file includes update records  for missing mandatory fields and a duplicate entry"
 )
 def create_valid_vaccination_record_with_missing_mandatory_fields(context):
@@ -272,38 +260,3 @@ def validate_bus_ack_file_for_error_by_surname(context, file_rows) -> bool:
                 row_valid = False
             overall_valid = overall_valid and row_valid
     return overall_valid
-
-
-@when(
-    "batch file created for below data as full dataset and record has same or missing unique identifier for API record"
-)
-def valid_batch_file_is_created_with_same_or_missing_unique_identifier_as_api_record(
-    context,
-):
-    record = build_batch_file(context)
-    base_df = pd.DataFrame([record.dict()])
-    base_fields = {
-        "NHS_NUMBER": context.create_object.contained[1].identifier[0].value,
-        "PERSON_FORENAME": context.create_object.contained[1].name[0].given[0],
-        "PERSON_SURNAME": context.create_object.contained[1].name[0].family,
-        "PERSON_GENDER_CODE": context.create_object.contained[1].gender,
-        "PERSON_DOB": context.create_object.contained[1].birthDate.replace("-", ""),
-        "PERSON_POSTCODE": context.create_object.contained[1].address[0].postalCode,
-        "UNIQUE_ID": context.create_object.identifier[0].value,
-        "UNIQUE_ID_URI": context.create_object.identifier[0].system,
-    }
-    for col, val in base_fields.items():
-        base_df.loc[0, col] = val
-    context.vaccine_df = pd.concat([base_df] * 3, ignore_index=True)
-    context.vaccine_df.loc[0, ["PERSON_SURNAME", "ACTION_FLAG"]] = ["duplicate", "New"]
-    context.vaccine_df.loc[1, ["UNIQUE_ID", "PERSON_SURNAME", "ACTION_FLAG"]] = [
-        " ",
-        "no_unique_id",
-        "UPDATE",
-    ]
-    context.vaccine_df.loc[2, ["UNIQUE_ID_URI", "PERSON_SURNAME", "ACTION_FLAG"]] = [
-        " ",
-        "no_unique_id_uri",
-        "UPDATE",
-    ]
-    create_batch_file(context)
