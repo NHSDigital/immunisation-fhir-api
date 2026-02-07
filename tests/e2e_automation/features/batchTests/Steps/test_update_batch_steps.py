@@ -70,12 +70,12 @@ def create_valid_vaccination_record_with_same_unique_id_as_batch_file(context):
 
 
 @given(
-    "I have created a valid vaccination record through API, where mandatory fields will be missing in batch file record"
+    "vaccination record exists in the API where batch file includes update records  for missing mandatory fields and a duplicate entry"
 )
 def create_valid_vaccination_record_with_missing_mandatory_fields(context):
     valid_json_payload_is_created(context)
     context.immunization_object.identifier[0].value = (
-        f"Fail-missing-mandatory-fields{str(uuid.uuid4())}-missing"
+        f"Fail-missing-mandatory-fields-{str(uuid.uuid4())}-duplicate"
     )
     Trigger_the_post_create_request(context)
     The_request_will_have_status_code(context, 201)
@@ -159,7 +159,7 @@ def api_request_will_be_successful_and_tables_will_be_updated_correctly(context)
 
 
 @when(
-    "Update to above vaccination record is made through batch file upload with mandatory field missing"
+    "records for same event are uploaded via batch file with missing mandatory fields and duplicated record"
 )
 def upload_batch_file_to_s3_for_update_with_mandatory_field_missing(context):
     # Build base record
@@ -178,7 +178,7 @@ def upload_batch_file_to_s3_for_update_with_mandatory_field_missing(context):
     }
     context.vaccine_df.loc[0, list(base_fields.keys())] = list(base_fields.values())
     context.vaccine_df = pd.concat(
-        [context.vaccine_df.loc[[0]]] * 19, ignore_index=True
+        [context.vaccine_df.loc[[0]]] * 20, ignore_index=True
     )
     missing_cases = {
         0: {"SITE_CODE": "", "PERSON_SURNAME": "empty_site_code"},
@@ -203,6 +203,7 @@ def upload_batch_file_to_s3_for_update_with_mandatory_field_missing(context):
         16: {"PRIMARY_SOURCE": "test", "PERSON_SURNAME": "no_primary_source"},
         17: {"ACTION_FLAG": "", "PERSON_SURNAME": "invalid_action_flag"},
         18: {"ACTION_FLAG": " ", "PERSON_SURNAME": "invalid_action_flag"},
+        19: {"ACTION_FLAG": "New", "PERSON_SURNAME": "duplicate"},
     }
     # Apply all missing-field modifications
     for row_idx, updates in missing_cases.items():
