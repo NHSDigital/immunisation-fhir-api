@@ -286,7 +286,7 @@ class ValidValues:
         "summary": {"totalRecords": 10, "success": 9, "failed": 1, "ingestionTime": {"start": 3456, "end": 7890}},
         "failures": [
             {
-                "rowId": "1",
+                "rowId": 1,
                 "responseCode": "30002",
                 "responseDisplay": "Business Level Response Value - Processing Error",
                 "severity": "Fatal",

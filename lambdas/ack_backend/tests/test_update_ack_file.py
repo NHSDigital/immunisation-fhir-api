@@ -85,6 +85,10 @@ class TestUpdateAckFile(unittest.TestCase):
         self.mock_datetime = self.datetime_patcher.start()
         self.mock_datetime.strftime.return_value = "7890"
 
+        self.generated_date_patcher = patch("update_ack_file._generated_date")
+        self.mock_generated_date = self.generated_date_patcher.start()
+        self.mock_generated_date.return_value = "7890"
+
         self.generate_send_patcher = patch("update_ack_file.generate_and_send_logs")
         self.mock_generate_send = self.generate_send_patcher.start()
 
@@ -364,12 +368,16 @@ class TestUpdateAckFile(unittest.TestCase):
         ]
         expected_ack_file_content = existing_content
         expected_ack_file_content["failures"].append(expected_rows[0])
+
         self.assertEqual(expected_ack_file_content, actual_ack_file_content)
 
     def test_obtain_current_json_ack_content_file_no_existing(self):
         """Test that when the json ack file does not yet exist, obtain_current_json_ack_content returns the ack headers only."""
         result = obtain_current_json_ack_content(
-            MOCK_MESSAGE_DETAILS.message_id, MOCK_MESSAGE_DETAILS.supplier, MOCK_MESSAGE_DETAILS.temp_json_ack_file_key
+            MOCK_MESSAGE_DETAILS.message_id,
+            MOCK_MESSAGE_DETAILS.supplier,
+            MOCK_MESSAGE_DETAILS.file_key,
+            MOCK_MESSAGE_DETAILS.temp_json_ack_file_key,
         )
         self.assertEqual(result, ValidValues.json_ack_initial_content)
 
@@ -380,7 +388,10 @@ class TestUpdateAckFile(unittest.TestCase):
             MOCK_MESSAGE_DETAILS.temp_json_ack_file_key, json.dumps(existing_content), self.s3_client
         )
         result = obtain_current_json_ack_content(
-            MOCK_MESSAGE_DETAILS.message_id, MOCK_MESSAGE_DETAILS.supplier, MOCK_MESSAGE_DETAILS.temp_json_ack_file_key
+            MOCK_MESSAGE_DETAILS.message_id,
+            MOCK_MESSAGE_DETAILS.supplier,
+            MOCK_MESSAGE_DETAILS.file_key,
+            MOCK_MESSAGE_DETAILS.temp_json_ack_file_key,
         )
         self.assertEqual(result, existing_content)
 
@@ -417,6 +428,7 @@ class TestUpdateAckFile(unittest.TestCase):
         result = obtain_current_json_ack_content(
             MOCK_MESSAGE_DETAILS.message_id,
             MOCK_MESSAGE_DETAILS.supplier,
+            MOCK_MESSAGE_DETAILS.file_key,
             MOCK_MESSAGE_DETAILS.archive_json_ack_file_key,
         )
         self.assertEqual(result, ValidValues.json_ack_complete_content)

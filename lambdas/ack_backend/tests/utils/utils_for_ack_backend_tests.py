@@ -162,7 +162,7 @@ def generate_expected_json_ack_file_element(
         return None  # we no longer process success elements
     else:
         return {
-            "rowId": row_id.split("^")[-1],
+            "rowId": int(row_id.split("^")[-1]),
             "responseCode": "30002",
             "responseDisplay": "Business Level Response Value - Processing Error",
             "severity": "Fatal",
