@@ -87,7 +87,7 @@ class TestUpdateAckFile(unittest.TestCase):
 
         self.generated_date_patcher = patch("update_ack_file._generated_date")
         self.mock_generated_date = self.generated_date_patcher.start()
-        self.mock_generated_date.return_value = "7890"
+        self.mock_generated_date.return_value = "2026-02-09T17:26:00.000Z"
 
         self.generate_send_patcher = patch("update_ack_file.generate_and_send_logs")
         self.mock_generate_send = self.generate_send_patcher.start()
