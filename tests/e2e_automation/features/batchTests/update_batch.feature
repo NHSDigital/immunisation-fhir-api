@@ -54,23 +54,11 @@ Feature: Create the immunization event for a patient through batch file and upda
         When Send a update for Immunization event created with vaccination detail being updated through API request
         Then Api request will be successful and tables will be updated correctly
 
-    @Delete_cleanUp @vaccine_type_RSV @patient_id_Random @supplier_name_RAVS
-    Scenario: Verify that the API vaccination record will be successful updated and batch file will fail upload due to mandatory field missing
-        Given I have created a valid vaccination record through API, where mandatory fields will be missing in batch file record
-        When Update to above vaccination record is made through batch file upload with mandatory field missing
-        And batch file is uploaded in s3 bucket
-        Then file will be moved to destination bucket and inf ack file will be created
-        And inf ack file has success status for processed batch file
-        And bus ack files will be created
-        And csv bus ack will have error records for all the updated records in the batch file
-        And json bus ack will have error records for all the updated records in the batch file
-        And The delta and imms event table will be populated with the correct data for api created event
-
     @smoke
-    @Delete_cleanUp @vaccine_type_HIB @patient_id_Random @supplier_name_EMIS
-    Scenario: Verify that batch file record will be unsuccessful if batch file has same or missing unique identifier fields
-        Given I have created a valid vaccination record through API, where unique_id and unique_id_uri will be same as batch file record
-        When batch file created for below data as full dataset and record has same or missing unique identifier for API record
+    @Delete_cleanUp @vaccine_type_RSV @patient_id_Random @supplier_name_RAVS
+    Scenario: Verify API succeeds while batch upload fails due to missing mandatory fields and duplicate record
+        Given vaccination record exists in the API where batch file includes update records  for missing mandatory fields and a duplicate entry
+        When records for same event are uploaded via batch file with missing mandatory fields and duplicated record
         And batch file is uploaded in s3 bucket
         Then file will be moved to destination bucket and inf ack file will be created
         And inf ack file has success status for processed batch file

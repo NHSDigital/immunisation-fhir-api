@@ -54,25 +54,11 @@ def create_valid_vaccination_record_through_api(context):
 
 
 @given(
-    "I have created a valid vaccination record through API, where unique_id and unique_id_uri will be same as batch file record"
-)
-def create_valid_vaccination_record_with_same_unique_id_as_batch_file(context):
-    valid_json_payload_is_created(context)
-    context.immunization_object.identifier[0].value = f"Fail-duplicate{str(uuid.uuid4())}-duplicate"
-    Trigger_the_post_create_request(context)
-    The_request_will_have_status_code(context, 201)
-    validateCreateLocation(context)
-    print(f"Created Immunization record with ImmsID: {context.ImmsID}")
-
-
-@given(
-    "I have created a valid vaccination record through API, where mandatory fields will be missing in batch file record"
+    "vaccination record exists in the API where batch file includes update records  for missing mandatory fields and a duplicate entry"
 )
 def create_valid_vaccination_record_with_missing_mandatory_fields(context):
     valid_json_payload_is_created(context)
-    context.immunization_object.contained[1].identifier[
-        0
-    ].value = f"Fail-missing-mandatory-fields{str(uuid.uuid4())}-missing"
+    context.immunization_object.identifier[0].value = f"Fail-missing-mandatory-fields-{str(uuid.uuid4())}-duplicate"
     Trigger_the_post_create_request(context)
     The_request_will_have_status_code(context, 201)
     validateCreateLocation(context)
@@ -144,7 +130,7 @@ def api_request_will_be_successful_and_tables_will_be_updated_correctly(context)
     validate_delta_table_for_updated_event(context)
 
 
-@when("Update to above vaccination record is made through batch file upload with mandatory field missing")
+@when("records for same event are uploaded via batch file with missing mandatory fields and duplicated record")
 def upload_batch_file_to_s3_for_update_with_mandatory_field_missing(context):
     # Build base record
     record = build_batch_file(context)
@@ -161,7 +147,7 @@ def upload_batch_file_to_s3_for_update_with_mandatory_field_missing(context):
         "UNIQUE_ID_URI": context.create_object.identifier[0].system,
     }
     context.vaccine_df.loc[0, list(base_fields.keys())] = list(base_fields.values())
-    context.vaccine_df = pd.concat([context.vaccine_df.loc[[0]]] * 19, ignore_index=True)
+    context.vaccine_df = pd.concat([context.vaccine_df.loc[[0]]] * 20, ignore_index=True)
     missing_cases = {
         0: {"SITE_CODE": "", "PERSON_SURNAME": "empty_site_code"},
         1: {"SITE_CODE_TYPE_URI": "", "PERSON_SURNAME": "empty_site_code_uri"},
@@ -185,6 +171,7 @@ def upload_batch_file_to_s3_for_update_with_mandatory_field_missing(context):
         16: {"PRIMARY_SOURCE": "test", "PERSON_SURNAME": "no_primary_source"},
         17: {"ACTION_FLAG": "", "PERSON_SURNAME": "invalid_action_flag"},
         18: {"ACTION_FLAG": " ", "PERSON_SURNAME": "invalid_action_flag"},
+        19: {"ACTION_FLAG": "New", "PERSON_SURNAME": "duplicate"},
     }
     # Apply all missing-field modifications
     for row_idx, updates in missing_cases.items():
@@ -273,38 +260,3 @@ def validate_bus_ack_file_for_error_by_surname(context, file_rows) -> bool:
                 row_valid = False
             overall_valid = overall_valid and row_valid
     return overall_valid
-
-
-@when(
-    "batch file created for below data as full dataset and record has same or missing unique identifier for API record"
-)
-def valid_batch_file_is_created_with_same_or_missing_unique_identifier_as_api_record(
-    context,
-):
-    record = build_batch_file(context)
-    base_df = pd.DataFrame([record.dict()])
-    base_fields = {
-        "NHS_NUMBER": context.create_object.contained[1].identifier[0].value,
-        "PERSON_FORENAME": context.create_object.contained[1].name[0].given[0],
-        "PERSON_SURNAME": context.create_object.contained[1].name[0].family,
-        "PERSON_GENDER_CODE": context.create_object.contained[1].gender,
-        "PERSON_DOB": context.create_object.contained[1].birthDate.replace("-", ""),
-        "PERSON_POSTCODE": context.create_object.contained[1].address[0].postalCode,
-        "UNIQUE_ID": context.create_object.identifier[0].value,
-        "UNIQUE_ID_URI": context.create_object.identifier[0].system,
-    }
-    for col, val in base_fields.items():
-        base_df.loc[0, col] = val
-    context.vaccine_df = pd.concat([base_df] * 3, ignore_index=True)
-    context.vaccine_df.loc[0, ["PERSON_SURNAME", "ACTION_FLAG"]] = ["duplicate", "New"]
-    context.vaccine_df.loc[1, ["UNIQUE_ID", "PERSON_SURNAME", "ACTION_FLAG"]] = [
-        " ",
-        "no_unique_id",
-        "UPDATE",
-    ]
-    context.vaccine_df.loc[2, ["UNIQUE_ID_URI", "PERSON_SURNAME", "ACTION_FLAG"]] = [
-        " ",
-        "no_unique_id_uri",
-        "UPDATE",
-    ]
-    create_batch_file(context)
