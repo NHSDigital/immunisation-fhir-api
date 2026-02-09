@@ -17,7 +17,10 @@ class BatchAuditRepository:
         | Key(AuditTableKeys.STATUS).eq(FileStatus.PREPROCESSED)
         | Key(AuditTableKeys.STATUS).eq(FileStatus.PROCESSING)
     )
-    _PROCESSING_AND_FAILED_STATUSES = {FileStatus.PROCESSING, FileStatus.FAILED}
+    # VED-1059: Record Forwarder Lambda consumes from the Kinesis stream at a slower rate than events come in. So there
+    # are negligible gains in starting the next file once preprocessing is complete. Hence, why we also include
+    # FileStatus.PREPROCESSED in this list and wait until a file is fully processed before picking up the next.
+    _PROCESSING_AND_FAILED_STATUSES = {FileStatus.PROCESSING, FileStatus.PREPROCESSED, FileStatus.FAILED}
 
     def __init__(self):
         self._batch_audit_table = get_dynamodb_table(AUDIT_TABLE_NAME)
