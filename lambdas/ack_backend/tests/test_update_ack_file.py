@@ -35,7 +35,7 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from update_ack_file import (
         complete_batch_file_process,
         create_ack_data,
-        obtain_current_ack_content,
+        obtain_current_csv_ack_content,
         obtain_current_json_ack_content,
         update_csv_ack_file,
         update_json_ack_file,
@@ -252,16 +252,16 @@ class TestUpdateAckFile(unittest.TestCase):
                 )
                 self.assertEqual(result, test_case["expected_result"])
 
-    def test_obtain_current_ack_content_file_no_existing(self):
-        """Test that when the ack file does not yet exist, obtain_current_ack_content returns the ack headers only."""
-        result = obtain_current_ack_content(MOCK_MESSAGE_DETAILS.temp_ack_file_key)
+    def test_obtain_current_csv_ack_content_file_no_existing(self):
+        """Test that when the ack file does not yet exist, obtain_current_csv_ack_content returns the ack headers only."""
+        result = obtain_current_csv_ack_content(MOCK_MESSAGE_DETAILS.temp_ack_file_key)
         self.assertEqual(result.getvalue(), ValidValues.ack_headers)
 
-    def test_obtain_current_ack_content_file_exists(self):
+    def test_obtain_current_csv_ack_content_file_exists(self):
         """Test that the existing ack file content is retrieved and new rows are added."""
         existing_content = generate_sample_existing_ack_content()
         setup_existing_ack_file(MOCK_MESSAGE_DETAILS.temp_ack_file_key, existing_content, self.s3_client)
-        result = obtain_current_ack_content(MOCK_MESSAGE_DETAILS.temp_ack_file_key)
+        result = obtain_current_csv_ack_content(MOCK_MESSAGE_DETAILS.temp_ack_file_key)
         self.assertEqual(result.getvalue(), existing_content)
 
     def test_update_json_ack_file(self):

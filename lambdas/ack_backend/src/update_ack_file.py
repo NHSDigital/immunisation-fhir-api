@@ -216,7 +216,7 @@ def log_batch_file_process(start_time: float, result: dict, function_name: str) 
     generate_and_send_logs(STREAM_NAME, start_time, base_log_data, additional_log_data)
 
 
-def obtain_current_ack_content(temp_ack_file_key: str) -> StringIO:
+def obtain_current_csv_ack_content(temp_ack_file_key: str) -> StringIO:
     """Returns the current ack file content if the file exists, or else initialises the content with the ack headers."""
     try:
         # If ack file exists in S3 download the contents
@@ -271,7 +271,7 @@ def update_csv_ack_file(
     """Updates the ack file with the new data row based on the given arguments"""
     ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.csv')}"
     temp_ack_file_key = f"{TEMP_ACK_DIR}/{ack_filename}"
-    accumulated_csv_content = obtain_current_ack_content(temp_ack_file_key)
+    accumulated_csv_content = obtain_current_csv_ack_content(temp_ack_file_key)
 
     for row in ack_data_rows:
         data_row_str = [str(item) for item in row.values()]
