@@ -18,7 +18,7 @@ class IngestionTime(BaseModel):
 
 class Summary(BaseModel):
     totalRecords: int
-    success: int
+    succeeded: int
     failed: int
     ingestionTime: IngestionTime
 

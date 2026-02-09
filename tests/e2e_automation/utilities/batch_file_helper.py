@@ -282,8 +282,8 @@ def validate_json_bus_ack_file_structure_and_metadata(context):
     assert report.summary.totalRecords == expected_row_count, (
         f"Expected totalRecords {expected_row_count}, got {report.summary.totalRecords}"
     )
-    assert report.summary.success == expected_success_count, (
-        f"Expected success count {expected_success_count}, got {report.summary.success}"
+    assert report.summary.succeeded == expected_success_count, (
+        f"Expected success count {expected_success_count}, got {report.summary.succeeded}"
     )
     assert report.summary.failed == expected_failure_count, (
         f"Expected failure count {expected_failure_count}, got {report.summary.failed}"
