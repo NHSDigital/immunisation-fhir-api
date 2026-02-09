@@ -78,7 +78,7 @@ class TestUpdateAckFileFlow(unittest.TestCase):
 
         # Assert: Only check audit table interactions
         self.mock_get_record_and_failure_count.assert_called_once_with(message_id)
-        self.assertEqual(self.mock_update_audit_table_item.call_count, 2)
+        self.assertEqual(self.mock_update_audit_table_item.call_count, 1)
 
     def test_source_file_moved_when_ack_process_complete(self):
         """VED-167 - Test that the source file has been moved correctly"""

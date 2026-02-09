@@ -3,7 +3,8 @@
 import json
 import os
 import time
-from datetime import datetime
+from copy import deepcopy
+from datetime import datetime, timezone
 from io import BytesIO, StringIO
 
 from botocore.exceptions import ClientError
@@ -26,6 +27,8 @@ from constants import (
     ACK_HEADERS,
     BATCH_FILE_ARCHIVE_DIR,
     BATCH_FILE_PROCESSING_DIR,
+    BATCH_REPORT_TITLE,
+    BATCH_REPORT_VERSION,
     COMPLETED_ACK_DIR,
     DEFAULT_STREAM_NAME,
     LAMBDA_FUNCTION_NAME_PREFIX,
@@ -33,6 +36,49 @@ from constants import (
 )
 
 STREAM_NAME = os.getenv("SPLUNK_FIREHOSE_NAME", DEFAULT_STREAM_NAME)
+
+
+@staticmethod
+def _generated_date() -> str:
+    # generated_date = time.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+    return datetime.now(timezone.utc).isoformat()[:-13] + ".000Z"
+
+
+@staticmethod
+def _make_ack_data_dict_identifier_information(
+    supplier: str, raw_ack_filename: str, message_id: str, ingestion_start_time: int
+) -> dict:
+    ack_data_dict = {}
+    ack_data_dict["system"] = BATCH_REPORT_TITLE
+    ack_data_dict["version"] = BATCH_REPORT_VERSION
+
+    ack_data_dict["generatedDate"] = ""  # will be filled on completion
+    ack_data_dict["provider"] = supplier
+    ack_data_dict["filename"] = raw_ack_filename
+    ack_data_dict["messageHeaderId"] = message_id
+
+    ack_data_dict["summary"] = {}
+    ack_data_dict["summary"]["ingestionTime"] = {}
+    ack_data_dict["summary"]["ingestionTime"]["start"] = ingestion_start_time
+    ack_data_dict["failures"] = []
+    return ack_data_dict
+
+
+@staticmethod
+def _add_ack_data_dict_summary(
+    existing_ack_data_dict: dict,
+    total_ack_rows_processed: int,
+    successful_record_count: int,
+    total_failures: int,
+    ingestion_end_time_seconds: int,
+) -> dict:
+    ack_data_dict = deepcopy(existing_ack_data_dict)
+    ack_data_dict["generatedDate"] = _generated_date()
+    ack_data_dict["summary"]["totalRecords"] = total_ack_rows_processed
+    ack_data_dict["summary"]["success"] = successful_record_count
+    ack_data_dict["summary"]["failed"] = total_failures
+    ack_data_dict["summary"]["ingestionTime"]["end"] = ingestion_end_time_seconds
+    return ack_data_dict
 
 
 def create_ack_data(
@@ -88,35 +134,33 @@ def complete_batch_file_process(
     move_file(SOURCE_BUCKET_NAME, f"{BATCH_FILE_PROCESSING_DIR}/{file_key}", f"{BATCH_FILE_ARCHIVE_DIR}/{file_key}")
 
     total_ack_rows_processed, total_failures = get_record_count_and_failures_by_message_id(message_id)
-    update_audit_table_item(
-        file_key=file_key, message_id=message_id, attrs_to_update={AuditTableKeys.STATUS: FileStatus.PROCESSED}
-    )
+    successful_record_count = total_ack_rows_processed - total_failures
 
     # Consider creating time utils and using datetime instead of time
     time_now = time.gmtime(time.time())
     ingestion_end_time = time.strftime("%Y%m%dT%H%M%S00", time_now)
-    ingestion_end_time_seconds = int(time.strftime("%s", time_now))
-    successful_record_count = total_ack_rows_processed - total_failures
     update_audit_table_item(
         file_key=file_key,
         message_id=message_id,
         attrs_to_update={
             AuditTableKeys.RECORDS_SUCCEEDED: successful_record_count,
             AuditTableKeys.INGESTION_END_TIME: ingestion_end_time,
+            AuditTableKeys.STATUS: FileStatus.PROCESSED,
         },
     )
 
     # finish JSON file
     json_ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.json')}"
     temp_ack_file_key = f"{TEMP_ACK_DIR}/{json_ack_filename}"
-    ack_data_dict = obtain_current_json_ack_content(message_id, supplier, temp_ack_file_key)
+    ack_data_dict = obtain_current_json_ack_content(message_id, supplier, file_key, temp_ack_file_key)
 
-    generated_date = time.strftime("%Y-%m-%dT%H:%M:%S.000Z")
-    ack_data_dict["generatedDate"] = generated_date
-    ack_data_dict["summary"]["totalRecords"] = total_ack_rows_processed
-    ack_data_dict["summary"]["success"] = successful_record_count
-    ack_data_dict["summary"]["failed"] = total_failures
-    ack_data_dict["summary"]["ingestionTime"]["end"] = ingestion_end_time_seconds
+    ack_data_dict = _add_ack_data_dict_summary(
+        ack_data_dict,
+        total_ack_rows_processed,
+        successful_record_count,
+        total_failures,
+        int(time.strftime("%s", time_now)),
+    )
 
     # Upload ack_data_dict to S3
     json_bytes = BytesIO(json.dumps(ack_data_dict, indent=2).encode("utf-8"))
@@ -164,7 +208,7 @@ def obtain_current_ack_content(temp_ack_file_key: str) -> StringIO:
         existing_ack_file = get_s3_client().get_object(Bucket=ACK_BUCKET_NAME, Key=temp_ack_file_key)
         existing_content = existing_ack_file["Body"].read().decode("utf-8")
     except ClientError as error:
-        # If ack file does not exist in S3 create a new file containing the headers only
+        # If ack file does not exist in S3 create a new file containing the identifier information
         if error.response["Error"]["Code"] in ("404", "NoSuchKey"):
             logger.info("No existing ack file found in S3 - creating new file")
             existing_content = "|".join(ACK_HEADERS) + "\n"
@@ -177,40 +221,31 @@ def obtain_current_ack_content(temp_ack_file_key: str) -> StringIO:
     return accumulated_csv_content
 
 
-def obtain_current_json_ack_content(message_id: str, supplier: str, temp_ack_file_key: str) -> dict:
+def obtain_current_json_ack_content(message_id: str, supplier: str, file_key: str, temp_ack_file_key: str) -> dict:
     """Returns the current ack file content if the file exists, or else initialises the content with the ack headers."""
     try:
         # If ack file exists in S3 download the contents
         existing_ack_file = get_s3_client().get_object(Bucket=ACK_BUCKET_NAME, Key=temp_ack_file_key)
-        existing_content = existing_ack_file["Body"].read().decode("utf-8")
-        ack_data_dict = json.loads(existing_content)
     except ClientError as error:
         # If ack file does not exist in S3 create a new file containing the headers only
         if error.response["Error"]["Code"] in ("404", "NoSuchKey"):
             logger.info("No existing JSON ack file found in S3 - creating new file")
 
             ingestion_start_time = get_ingestion_start_time_by_message_id(message_id)
-            raw_ack_filename = temp_ack_file_key.split("/")[-1].split(".")[0].split("_BusAck")[0]
+            raw_ack_filename = file_key.split(".")[0]
 
             # Generate the initial fields
-            ack_data_dict = {}
-            ack_data_dict["system"] = "Immunisation FHIR API Batch Report"
-            ack_data_dict["version"] = 1  # TO FIX
-
-            ack_data_dict["generatedDate"] = ""  # will be filled on completion
-            ack_data_dict["provider"] = supplier
-            ack_data_dict["filename"] = raw_ack_filename
-            ack_data_dict["messageHeaderId"] = message_id
-
-            ack_data_dict["summary"] = {}
-            ack_data_dict["summary"]["ingestionTime"] = {}
-            ack_data_dict["summary"]["ingestionTime"]["start"] = ingestion_start_time
-            ack_data_dict["failures"] = []
+            return _make_ack_data_dict_identifier_information(
+                supplier,
+                raw_ack_filename,
+                message_id,
+                ingestion_start_time,
+            )
         else:
             logger.error("error whilst obtaining current JSON ack content: %s", error)
             raise
 
-    return ack_data_dict
+    return json.loads(existing_ack_file["Body"].read().decode("utf-8"))
 
 
 def update_ack_file(
@@ -244,11 +279,11 @@ def update_json_ack_file(
     """Updates the ack file with the new data row based on the given arguments"""
     ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.json')}"
     temp_ack_file_key = f"{TEMP_ACK_DIR}/{ack_filename}"
-    ack_data_dict = obtain_current_json_ack_content(message_id, supplier, temp_ack_file_key)
+    ack_data_dict = obtain_current_json_ack_content(message_id, supplier, file_key, temp_ack_file_key)
 
     for row in ack_data_rows:
         json_data_row = {}
-        json_data_row["rowId"] = row["MESSAGE_HEADER_ID"].split("^")[-1]
+        json_data_row["rowId"] = int(row["MESSAGE_HEADER_ID"].split("^")[-1])
         json_data_row["responseCode"] = row["RESPONSE_CODE"]
         json_data_row["responseDisplay"] = row["RESPONSE_DISPLAY"]
         json_data_row["severity"] = row["ISSUE_SEVERITY"]
