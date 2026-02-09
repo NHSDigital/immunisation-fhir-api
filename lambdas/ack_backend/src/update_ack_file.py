@@ -38,13 +38,11 @@ from constants import (
 STREAM_NAME = os.getenv("SPLUNK_FIREHOSE_NAME", DEFAULT_STREAM_NAME)
 
 
-@staticmethod
 def _generated_date() -> str:
     # generated_date = time.strftime("%Y-%m-%dT%H:%M:%S.000Z")
     return datetime.now(timezone.utc).isoformat()[:-13] + ".000Z"
 
 
-@staticmethod
 def _make_ack_data_dict_identifier_information(
     supplier: str, raw_ack_filename: str, message_id: str, ingestion_start_time: int
 ) -> dict:
@@ -64,7 +62,6 @@ def _make_ack_data_dict_identifier_information(
     return ack_data_dict
 
 
-@staticmethod
 def _add_ack_data_dict_summary(
     existing_ack_data_dict: dict,
     total_ack_rows_processed: int,
@@ -79,6 +76,17 @@ def _add_ack_data_dict_summary(
     ack_data_dict["summary"]["failed"] = total_failures
     ack_data_dict["summary"]["ingestionTime"]["end"] = ingestion_end_time_seconds
     return ack_data_dict
+
+
+def _make_json_ack_file_row(ack_file_row: dict) -> dict:
+    json_ack_file_row = {}
+    json_ack_file_row["rowId"] = int(ack_file_row["MESSAGE_HEADER_ID"].split("^")[-1])
+    json_ack_file_row["responseCode"] = ack_file_row["RESPONSE_CODE"]
+    json_ack_file_row["responseDisplay"] = ack_file_row["RESPONSE_DISPLAY"]
+    json_ack_file_row["severity"] = ack_file_row["ISSUE_SEVERITY"]
+    json_ack_file_row["localId"] = ack_file_row["LOCAL_ID"]
+    json_ack_file_row["operationOutcome"] = ack_file_row["OPERATION_OUTCOME"]
+    return json_ack_file_row
 
 
 def create_ack_data(
@@ -282,15 +290,7 @@ def update_json_ack_file(
     ack_data_dict = obtain_current_json_ack_content(message_id, supplier, file_key, temp_ack_file_key)
 
     for row in ack_data_rows:
-        json_data_row = {}
-        json_data_row["rowId"] = int(row["MESSAGE_HEADER_ID"].split("^")[-1])
-        json_data_row["responseCode"] = row["RESPONSE_CODE"]
-        json_data_row["responseDisplay"] = row["RESPONSE_DISPLAY"]
-        json_data_row["severity"] = row["ISSUE_SEVERITY"]
-        json_data_row["localId"] = row["LOCAL_ID"]
-        json_data_row["operationOutcome"] = row["OPERATION_OUTCOME"]
-
-        ack_data_dict["failures"].append(json_data_row)
+        ack_data_dict["failures"].append(_make_json_ack_file_row(row))
 
     # Upload ack_data_dict to S3
     json_bytes = BytesIO(json.dumps(ack_data_dict, indent=2).encode("utf-8"))
