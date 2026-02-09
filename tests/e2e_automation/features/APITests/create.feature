@@ -239,7 +239,7 @@ Scenario Outline: Verify that the POST Create API will fail if patient gender is
 
 @smoke
 @Delete_cleanUp @supplier_name_TPP @vaccine_type_BCG @patient_id_Random
-Scenario:  Verify that the POST Create API will fail when exiting Unique Id and no_unique_id_uri is used in the request
+Scenario:  Verify that the POST Create API will fail when existing Unique Id and Unique Id URI is used in the request
     Given Valid json payload is created
     When Trigger the post create request
     Then The request will be successful with the status code '201'
