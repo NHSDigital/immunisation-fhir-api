@@ -37,7 +37,7 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
         create_ack_data,
         obtain_current_ack_content,
         obtain_current_json_ack_content,
-        update_ack_file,
+        update_csv_ack_file,
         update_json_ack_file,
     )
 
@@ -95,8 +95,8 @@ class TestUpdateAckFile(unittest.TestCase):
     def tearDown(self) -> None:
         GenericTearDown(s3_client=self.s3_client)
 
-    def test_update_ack_file(self):
-        """Test that update_ack_file correctly creates the ack file when there was no existing ack file"""
+    def test_update_csv_ack_file(self):
+        """Test that update_csv_ack_file correctly creates the ack file when there was no existing ack file"""
 
         test_cases = [
             {
@@ -151,7 +151,7 @@ class TestUpdateAckFile(unittest.TestCase):
 
         for test_case in test_cases:
             with self.subTest(test_case["description"]):
-                update_ack_file(
+                update_csv_ack_file(
                     file_key=MOCK_MESSAGE_DETAILS.file_key,
                     created_at_formatted_string=MOCK_MESSAGE_DETAILS.created_at_formatted_string,
                     ack_data_rows=test_case["input_rows"],
@@ -176,7 +176,7 @@ class TestUpdateAckFile(unittest.TestCase):
             ValidValues.ack_data_success_dict,
             ValidValues.ack_data_failure_dict,
         ]
-        update_ack_file(
+        update_csv_ack_file(
             file_key=MOCK_MESSAGE_DETAILS.file_key,
             created_at_formatted_string=MOCK_MESSAGE_DETAILS.created_at_formatted_string,
             ack_data_rows=ack_data_rows,
@@ -403,7 +403,7 @@ class TestUpdateAckFile(unittest.TestCase):
             Key=f"processing/{MOCK_MESSAGE_DETAILS.file_key}",
             Body="dummy content",
         )
-        update_ack_file(
+        update_csv_ack_file(
             file_key=MOCK_MESSAGE_DETAILS.file_key,
             created_at_formatted_string=MOCK_MESSAGE_DETAILS.created_at_formatted_string,
             ack_data_rows=[ValidValues.ack_data_failure_dict],

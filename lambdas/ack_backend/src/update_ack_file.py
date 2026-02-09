@@ -263,7 +263,7 @@ def obtain_current_json_ack_content(message_id: str, supplier: str, file_key: st
     return json.loads(existing_ack_file["Body"].read().decode("utf-8"))
 
 
-def update_ack_file(
+def update_csv_ack_file(
     file_key: str,
     created_at_formatted_string: str,
     ack_data_rows: list,
