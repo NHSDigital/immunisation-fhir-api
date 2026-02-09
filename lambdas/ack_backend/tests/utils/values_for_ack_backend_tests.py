@@ -279,11 +279,11 @@ class ValidValues:
     json_ack_complete_content = {
         "system": "Immunisation FHIR API Batch Report",
         "version": 1,
-        "generatedDate": "7890",
+        "generatedDate": "2026-02-09T17:26:00.000Z",
         "filename": "RSV_Vaccinations_v5_X26_20210730T12000000",
         "provider": "RAVS",
         "messageHeaderId": "test_file_id",
-        "summary": {"totalRecords": 10, "success": 9, "failed": 1, "ingestionTime": {"start": 3456, "end": 7890}},
+        "summary": {"totalRecords": 10, "succeeded": 9, "failed": 1, "ingestionTime": {"start": 3456, "end": 7890}},
         "failures": [
             {
                 "rowId": 1,

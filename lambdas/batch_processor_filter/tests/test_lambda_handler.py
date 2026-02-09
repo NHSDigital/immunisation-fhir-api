@@ -204,6 +204,10 @@ class TestLambdaHandler(TestCase):
                 FileStatus.PROCESSING,
             ),
             (
+                "Event is already processing (preprocessed status) for supplier + vacc type queue",
+                FileStatus.PREPROCESSED,
+            ),
+            (
                 "There is a failed event to be checked in supplier + vacc type queue",
                 FileStatus.FAILED,
             ),

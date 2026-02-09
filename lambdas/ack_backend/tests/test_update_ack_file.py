@@ -35,9 +35,9 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from update_ack_file import (
         complete_batch_file_process,
         create_ack_data,
-        obtain_current_ack_content,
+        obtain_current_csv_ack_content,
         obtain_current_json_ack_content,
-        update_ack_file,
+        update_csv_ack_file,
         update_json_ack_file,
     )
 
@@ -87,7 +87,7 @@ class TestUpdateAckFile(unittest.TestCase):
 
         self.generated_date_patcher = patch("update_ack_file._generated_date")
         self.mock_generated_date = self.generated_date_patcher.start()
-        self.mock_generated_date.return_value = "7890"
+        self.mock_generated_date.return_value = "2026-02-09T17:26:00.000Z"
 
         self.generate_send_patcher = patch("update_ack_file.generate_and_send_logs")
         self.mock_generate_send = self.generate_send_patcher.start()
@@ -95,8 +95,8 @@ class TestUpdateAckFile(unittest.TestCase):
     def tearDown(self) -> None:
         GenericTearDown(s3_client=self.s3_client)
 
-    def test_update_ack_file(self):
-        """Test that update_ack_file correctly creates the ack file when there was no existing ack file"""
+    def test_update_csv_ack_file(self):
+        """Test that update_csv_ack_file correctly creates the ack file when there was no existing ack file"""
 
         test_cases = [
             {
@@ -151,7 +151,7 @@ class TestUpdateAckFile(unittest.TestCase):
 
         for test_case in test_cases:
             with self.subTest(test_case["description"]):
-                update_ack_file(
+                update_csv_ack_file(
                     file_key=MOCK_MESSAGE_DETAILS.file_key,
                     created_at_formatted_string=MOCK_MESSAGE_DETAILS.created_at_formatted_string,
                     ack_data_rows=test_case["input_rows"],
@@ -176,7 +176,7 @@ class TestUpdateAckFile(unittest.TestCase):
             ValidValues.ack_data_success_dict,
             ValidValues.ack_data_failure_dict,
         ]
-        update_ack_file(
+        update_csv_ack_file(
             file_key=MOCK_MESSAGE_DETAILS.file_key,
             created_at_formatted_string=MOCK_MESSAGE_DETAILS.created_at_formatted_string,
             ack_data_rows=ack_data_rows,
@@ -252,16 +252,16 @@ class TestUpdateAckFile(unittest.TestCase):
                 )
                 self.assertEqual(result, test_case["expected_result"])
 
-    def test_obtain_current_ack_content_file_no_existing(self):
-        """Test that when the ack file does not yet exist, obtain_current_ack_content returns the ack headers only."""
-        result = obtain_current_ack_content(MOCK_MESSAGE_DETAILS.temp_ack_file_key)
+    def test_obtain_current_csv_ack_content_file_no_existing(self):
+        """Test that when the ack file does not yet exist, obtain_current_csv_ack_content returns the ack headers only."""
+        result = obtain_current_csv_ack_content(MOCK_MESSAGE_DETAILS.temp_ack_file_key)
         self.assertEqual(result.getvalue(), ValidValues.ack_headers)
 
-    def test_obtain_current_ack_content_file_exists(self):
+    def test_obtain_current_csv_ack_content_file_exists(self):
         """Test that the existing ack file content is retrieved and new rows are added."""
         existing_content = generate_sample_existing_ack_content()
         setup_existing_ack_file(MOCK_MESSAGE_DETAILS.temp_ack_file_key, existing_content, self.s3_client)
-        result = obtain_current_ack_content(MOCK_MESSAGE_DETAILS.temp_ack_file_key)
+        result = obtain_current_csv_ack_content(MOCK_MESSAGE_DETAILS.temp_ack_file_key)
         self.assertEqual(result.getvalue(), existing_content)
 
     def test_update_json_ack_file(self):
@@ -403,7 +403,7 @@ class TestUpdateAckFile(unittest.TestCase):
             Key=f"processing/{MOCK_MESSAGE_DETAILS.file_key}",
             Body="dummy content",
         )
-        update_ack_file(
+        update_csv_ack_file(
             file_key=MOCK_MESSAGE_DETAILS.file_key,
             created_at_formatted_string=MOCK_MESSAGE_DETAILS.created_at_formatted_string,
             ack_data_rows=[ValidValues.ack_data_failure_dict],
