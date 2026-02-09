@@ -47,7 +47,7 @@ resource "aws_iam_role_policy" "mns_outbound_events_eb_pipe_source_policy" {
 }
 
 resource "aws_iam_role_policy" "mns_outbound_events_eb_pipe_target_policy" {
-  role = aws_iam_role.example.id
+  role = aws_iam_role.mns_outbound_events_eb_pipe.id
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -70,7 +70,7 @@ resource "aws_pipes_pipe" "mns_outbound_events" {
     aws_iam_role_policy.mns_outbound_events_eb_pipe_target_policy
   ]
   name     = "${local.resource_scope}-mns-outbound-events"
-  role_arn = aws_iam_role.mns_outbound_events.arn
+  role_arn = aws_iam_role.mns_outbound_events_eb_pipe.arn
   source   = aws_dynamodb_table.events-dynamodb-table.stream_arn
   target   = aws_sqs_queue.mns_outbound_events.arn
 }
