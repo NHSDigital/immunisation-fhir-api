@@ -75,7 +75,7 @@ def _add_ack_data_dict_summary(
     ack_data_dict = deepcopy(existing_ack_data_dict)
     ack_data_dict["generatedDate"] = _generated_date()
     ack_data_dict["summary"]["totalRecords"] = total_ack_rows_processed
-    ack_data_dict["summary"]["success"] = successful_record_count
+    ack_data_dict["summary"]["succeeded"] = successful_record_count
     ack_data_dict["summary"]["failed"] = total_failures
     ack_data_dict["summary"]["ingestionTime"]["end"] = ingestion_end_time_seconds
     return ack_data_dict

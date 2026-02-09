@@ -380,7 +380,7 @@ class TestAckProcessor(unittest.TestCase):
         }
         # Include summary counts in expected JSON content
         existing_json_ack_content["summary"]["totalRecords"] = int(expected_entry_counts["record_count"])
-        existing_json_ack_content["summary"]["success"] = int(expected_entry_counts["records_succeeded"])
+        existing_json_ack_content["summary"]["succeeded"] = int(expected_entry_counts["records_succeeded"])
         existing_json_ack_content["summary"]["failed"] = int(expected_entry_counts["records_failed"])
 
         response = lambda_handler(event=test_event, context={})
