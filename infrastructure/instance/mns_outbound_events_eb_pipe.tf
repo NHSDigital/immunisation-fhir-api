@@ -73,6 +73,13 @@ resource "aws_pipes_pipe" "mns_outbound_events" {
   role_arn = aws_iam_role.mns_outbound_events_eb_pipe.arn
   source   = aws_dynamodb_table.events-dynamodb-table.stream_arn
   target   = aws_sqs_queue.mns_outbound_events.arn
+
+  source_parameters {
+    dynamodb_stream_parameters {
+      starting_position = "TRIM_HORIZON"
+    }
+  }
 }
 
 # TODO - look into adding filter for DPS events
+# TODO - include error logs
