@@ -24,7 +24,7 @@ class Summary(BaseModel):
 
 
 class FailureDetail(BaseModel):
-    rowId: str
+    rowId: int
     responseCode: str
     responseDisplay: str
     severity: str
