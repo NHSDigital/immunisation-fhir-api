@@ -84,14 +84,14 @@ def _add_ack_data_dict_summary(
     return ack_data_dict
 
 
-def _make_json_ack_file_row(ack_file_row: dict) -> dict:
+def _make_json_ack_data_row(ack_data_row: dict) -> dict:
     return {
-        "rowId": int(ack_file_row["MESSAGE_HEADER_ID"].split("^")[-1]),
-        "responseCode": ack_file_row["RESPONSE_CODE"],
-        "responseDisplay": ack_file_row["RESPONSE_DISPLAY"],
-        "severity": ack_file_row["ISSUE_SEVERITY"],
-        "localId": ack_file_row["LOCAL_ID"],
-        "operationOutcome": ack_file_row["OPERATION_OUTCOME"],
+        "rowId": int(ack_data_row["MESSAGE_HEADER_ID"].split("^")[-1]),
+        "responseCode": ack_data_row["RESPONSE_CODE"],
+        "responseDisplay": ack_data_row["RESPONSE_DISPLAY"],
+        "severity": ack_data_row["ISSUE_SEVERITY"],
+        "localId": ack_data_row["LOCAL_ID"],
+        "operationOutcome": ack_data_row["OPERATION_OUTCOME"],
     }
 
 
@@ -296,7 +296,7 @@ def update_json_ack_file(
     ack_data_dict = obtain_current_json_ack_content(message_id, supplier, file_key, temp_ack_file_key)
 
     for row in ack_data_rows:
-        ack_data_dict["failures"].append(_make_json_ack_file_row(row))
+        ack_data_dict["failures"].append(_make_json_ack_data_row(row))
 
     # Upload ack_data_dict to S3
     json_bytes = BytesIO(json.dumps(ack_data_dict, indent=2).encode("utf-8"))
