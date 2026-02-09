@@ -38,7 +38,6 @@ Feature: Validate the file level and columns validations for vaccination batch f
         And bus ack file will not be created
         And Audit table will have 'Not processed - Duplicate', 'MAVIS_HPV' and 'None' for the processed batch file
 
-    @smoke
     @vaccine_type_FLU  @supplier_name_MAVIS
     Scenario: verify that vaccination file will be rejected if file is empty
         Given Empty batch file is created
