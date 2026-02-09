@@ -39,7 +39,6 @@ STREAM_NAME = os.getenv("SPLUNK_FIREHOSE_NAME", DEFAULT_STREAM_NAME)
 
 
 def _generated_date() -> str:
-    # generated_date = time.strftime("%Y-%m-%dT%H:%M:%S.000Z")
     return datetime.now(timezone.utc).isoformat()[:-13] + ".000Z"
 
 
