@@ -3,6 +3,7 @@ locals {
   mesh_processor_lambda_dir     = abspath("${path.root}/../../lambdas/mesh_processor")
   mesh_processor_lambda_files   = fileset(local.mesh_processor_lambda_dir, "**")
   mesh_processor_lambda_dir_sha = sha1(join("", [for f in local.mesh_processor_lambda_files : filesha1("${local.mesh_processor_lambda_dir}/${f}")]))
+  mesh_processor_lambda_name    = "${local.short_prefix}-mesh-processor-lambda"
   # This should match the prefix used in the global Terraform
   mesh_module_prefix = "imms-${var.environment}-mesh"
 }
@@ -25,7 +26,7 @@ resource "aws_ecr_repository" "mesh_file_converter_lambda_repository" {
   image_scanning_configuration {
     scan_on_push = true
   }
-  name         = "${local.short_prefix}-mesh_processor-repo"
+  name         = "${local.short_prefix}-mesh-processor-repo"
   force_delete = local.is_temp
 }
 
@@ -34,7 +35,7 @@ module "mesh_processor_docker_image" {
   count = var.create_mesh_processor ? 1 : 0
 
   source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version          = "8.2.0"
+  version          = "8.5.0"
   docker_file_path = "./mesh_processor/Dockerfile"
 
   create_ecr_repo = false
@@ -89,7 +90,7 @@ resource "aws_ecr_repository_policy" "mesh_processor_lambda_ECRImageRetreival_po
         ],
         "Condition" : {
           "StringLike" : {
-            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${var.immunisation_account_id}:function:${local.short_prefix}-mesh_processor_lambda"
+            "aws:sourceArn" : "arn:aws:lambda:${var.aws_region}:${var.immunisation_account_id}:function:${local.mesh_processor_lambda_name}"
           }
         }
       }
@@ -101,7 +102,7 @@ resource "aws_ecr_repository_policy" "mesh_processor_lambda_ECRImageRetreival_po
 resource "aws_iam_role" "mesh_processor_lambda_exec_role" {
   count = var.create_mesh_processor ? 1 : 0
 
-  name = "${local.short_prefix}-mesh_processor-lambda-exec-role"
+  name = "${local.mesh_processor_lambda_name}-exec-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
@@ -119,7 +120,7 @@ resource "aws_iam_role" "mesh_processor_lambda_exec_role" {
 resource "aws_iam_policy" "mesh_processor_lambda_exec_policy" {
   count = var.create_mesh_processor ? 1 : 0
 
-  name = "${local.short_prefix}-mesh_processor-lambda-exec-policy"
+  name = "${local.mesh_processor_lambda_name}-exec-policy"
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -130,7 +131,7 @@ resource "aws_iam_policy" "mesh_processor_lambda_exec_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-mesh_processor_lambda:*"
+        Resource = "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/lambda/${local.mesh_processor_lambda_name}:*"
       },
       {
         Effect = "Allow"
@@ -167,7 +168,7 @@ resource "aws_iam_policy" "mesh_processor_lambda_exec_policy" {
 resource "aws_iam_policy" "mesh_processor_lambda_kms_access_policy" {
   count = var.create_mesh_processor ? 1 : 0
 
-  name        = "${local.short_prefix}-mesh_processor-lambda-kms-policy"
+  name        = "${local.mesh_processor_lambda_name}-kms-policy"
   description = "Allow Lambda to decrypt environment variables"
 
   policy = jsonencode({
@@ -209,7 +210,7 @@ resource "aws_iam_role_policy_attachment" "mesh_processor_lambda_kms_policy_atta
 resource "aws_lambda_function" "mesh_file_converter_lambda" {
   count = var.create_mesh_processor ? 1 : 0
 
-  function_name = "${local.short_prefix}-mesh_processor_lambda"
+  function_name = local.mesh_processor_lambda_name
   role          = aws_iam_role.mesh_processor_lambda_exec_role[0].arn
   package_type  = "Image"
   image_uri     = module.mesh_processor_docker_image[0].image_uri
@@ -255,7 +256,7 @@ resource "aws_s3_bucket_notification" "mesh_datasources_lambda_notification" {
 resource "aws_cloudwatch_log_group" "mesh_file_converter_log_group" {
   count = var.create_mesh_processor ? 1 : 0
 
-  name              = "/aws/lambda/${local.short_prefix}-mesh_processor_lambda"
+  name              = "/aws/lambda/${local.mesh_processor_lambda_name}"
   retention_in_days = 30
 }
 
@@ -276,7 +277,7 @@ resource "aws_cloudwatch_log_metric_filter" "mesh_processor_error_logs" {
 resource "aws_cloudwatch_metric_alarm" "mesh_processor_error_alarm" {
   count = var.create_mesh_processor && var.error_alarm_notifications_enabled ? 1 : 0
 
-  alarm_name          = "${local.short_prefix}-mesh-processor-lambda-error"
+  alarm_name          = "${local.mesh_processor_lambda_name}-error"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = 1
   metric_name         = "${local.short_prefix}-MeshProcessorErrorLogs"

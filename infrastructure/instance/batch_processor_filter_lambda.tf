@@ -3,6 +3,7 @@ locals {
   batch_processor_filter_lambda_dir     = abspath("${path.root}/../../lambdas/batch_processor_filter")
   batch_processor_filter_lambda_files   = fileset(local.batch_processor_filter_lambda_dir, "**")
   batch_processor_filter_lambda_dir_sha = sha1(join("", [for f in local.batch_processor_filter_lambda_files : filesha1("${local.batch_processor_filter_lambda_dir}/${f}")]))
+  batch_processor_filter_lambda_name    = "${local.short_prefix}-batch-processor-filter-lambda"
 }
 
 resource "aws_ecr_repository" "batch_processor_filter_lambda_repository" {
@@ -16,7 +17,7 @@ resource "aws_ecr_repository" "batch_processor_filter_lambda_repository" {
 # Module for building and pushing Docker image to ECR
 module "batch_processor_filter_docker_image" {
   source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version          = "8.2.0"
+  version          = "8.5.0"
   docker_file_path = "./batch_processor_filter/Dockerfile"
 
   create_ecr_repo = false
@@ -69,7 +70,7 @@ resource "aws_ecr_repository_policy" "batch_processor_filter_lambda_ECRImageRetr
         ],
         "Condition" : {
           "StringLike" : {
-            "aws:sourceArn" : "arn:aws:lambda:${var.aws_region}:${var.immunisation_account_id}:function:${local.short_prefix}-batch-processor-filter-lambda"
+            "aws:sourceArn" : "arn:aws:lambda:${var.aws_region}:${var.immunisation_account_id}:function:${local.batch_processor_filter_lambda_name}"
           }
         }
       }
@@ -79,7 +80,7 @@ resource "aws_ecr_repository_policy" "batch_processor_filter_lambda_ECRImageRetr
 
 # IAM Role for Lambda
 resource "aws_iam_role" "batch_processor_filter_lambda_exec_role" {
-  name = "${local.short_prefix}-batch-processor-filter-lambda-exec-role"
+  name = "${local.batch_processor_filter_lambda_name}-exec-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
@@ -95,7 +96,7 @@ resource "aws_iam_role" "batch_processor_filter_lambda_exec_role" {
 
 # Policy for Lambda execution role
 resource "aws_iam_policy" "batch_processor_filter_lambda_exec_policy" {
-  name = "${local.short_prefix}-batch-processor-filter-lambda-exec-policy"
+  name = "${local.batch_processor_filter_lambda_name}-exec-policy"
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -106,7 +107,7 @@ resource "aws_iam_policy" "batch_processor_filter_lambda_exec_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-batch-processor-filter-lambda:*"
+        Resource = "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/lambda/${local.batch_processor_filter_lambda_name}:*"
       },
       {
         Effect = "Allow",
@@ -157,7 +158,7 @@ resource "aws_iam_policy" "batch_processor_filter_lambda_exec_policy" {
 
 # Policy for Lambda to interact with SQS
 resource "aws_iam_policy" "batch_processor_filter_lambda_sqs_policy" {
-  name = "${local.short_prefix}-batch-processor-filter-lambda-sqs-policy"
+  name = "${local.batch_processor_filter_lambda_name}-sqs-policy"
 
   policy = jsonencode({
     Version = "2012-10-17",
@@ -183,7 +184,7 @@ resource "aws_iam_policy" "batch_processor_filter_lambda_sqs_policy" {
 }
 
 resource "aws_iam_policy" "batch_processor_filter_lambda_kms_access_policy" {
-  name        = "${local.short_prefix}-batch-processor-filter-lambda-kms-policy"
+  name        = "${local.batch_processor_filter_lambda_name}-kms-policy"
   description = "Allow Lambda to decrypt environment variables"
 
   policy = jsonencode({
@@ -261,7 +262,7 @@ resource "aws_iam_role_policy_attachment" "batch_processor_filter_lambda_dynamo_
 
 # Lambda Function with Security Group and VPC.
 resource "aws_lambda_function" "batch_processor_filter_lambda" {
-  function_name = "${local.short_prefix}-batch-processor-filter-lambda"
+  function_name = local.batch_processor_filter_lambda_name
   role          = aws_iam_role.batch_processor_filter_lambda_exec_role.arn
   package_type  = "Image"
   image_uri     = module.batch_processor_filter_docker_image.image_uri
@@ -293,7 +294,7 @@ resource "aws_lambda_function" "batch_processor_filter_lambda" {
 }
 
 resource "aws_cloudwatch_log_group" "batch_processor_filter_lambda_log_group" {
-  name              = "/aws/lambda/${local.short_prefix}-batch-processor-filter-lambda"
+  name              = "/aws/lambda/${local.batch_processor_filter_lambda_name}"
   retention_in_days = 30
 }
 
@@ -322,7 +323,7 @@ resource "aws_cloudwatch_log_metric_filter" "batch_processor_filter_error_logs" 
 resource "aws_cloudwatch_metric_alarm" "batch_processor_filter_error_alarm" {
   count = var.error_alarm_notifications_enabled ? 1 : 0
 
-  alarm_name          = "${local.short_prefix}-batch-processor-filter-lambda-error"
+  alarm_name          = "${local.batch_processor_filter_lambda_name}-error"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = 1
   metric_name         = "${local.short_prefix}-BatchProcessorFilterErrorLogs"

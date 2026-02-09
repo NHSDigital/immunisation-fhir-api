@@ -5,7 +5,7 @@ locals {
   redis_sync_lambda_files = fileset(local.redis_sync_lambda_dir, "**")
 
   redis_sync_lambda_dir_sha = sha1(join("", [for f in local.redis_sync_lambda_files : filesha1("${local.redis_sync_lambda_dir}/${f}")]))
-  redis_sync_lambda_name    = "${local.short_prefix}-redis_sync_lambda"
+  redis_sync_lambda_name    = "${local.short_prefix}-redis-sync-lambda"
 }
 
 resource "aws_ecr_repository" "redis_sync_lambda_repository" {
@@ -19,7 +19,7 @@ resource "aws_ecr_repository" "redis_sync_lambda_repository" {
 # Module for building and pushing Docker image to ECR
 module "redis_sync_docker_image" {
   source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version          = "8.2.0"
+  version          = "8.5.0"
   docker_file_path = "./redis_sync/Dockerfile"
   create_ecr_repo  = false
   ecr_repo         = aws_ecr_repository.redis_sync_lambda_repository.name
@@ -71,7 +71,7 @@ resource "aws_ecr_repository_policy" "redis_sync_lambda_ECRImageRetreival_policy
         ],
         Condition : {
           StringLike : {
-            "aws:sourceArn" : aws_lambda_function.redis_sync_lambda.arn
+            "aws:sourceArn" : "arn:aws:lambda:${var.aws_region}:${var.immunisation_account_id}:function:${local.redis_sync_lambda_name}"
           }
         }
       }
@@ -81,7 +81,7 @@ resource "aws_ecr_repository_policy" "redis_sync_lambda_ECRImageRetreival_policy
 
 # IAM Role for Lambda
 resource "aws_iam_role" "redis_sync_lambda_exec_role" {
-  name = "${local.short_prefix}-redis-sync-lambda-exec-role"
+  name = "${local.redis_sync_lambda_name}-exec-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
@@ -97,7 +97,7 @@ resource "aws_iam_role" "redis_sync_lambda_exec_role" {
 
 # Policy for Lambda execution role
 resource "aws_iam_policy" "redis_sync_lambda_exec_policy" {
-  name = "${local.short_prefix}-redis-sync-lambda-exec-policy"
+  name = "${local.redis_sync_lambda_name}-exec-policy"
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -108,7 +108,7 @@ resource "aws_iam_policy" "redis_sync_lambda_exec_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-redis_sync_lambda:*"
+        Resource = "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/lambda/${local.redis_sync_lambda_name}:*"
       },
       {
         Effect = "Allow"
@@ -169,7 +169,7 @@ resource "aws_iam_policy" "redis_sync_lambda_exec_policy" {
         Effect = "Allow"
         Action = "lambda:InvokeFunction"
         Resource = [
-          "arn:aws:lambda:${var.aws_region}:${var.immunisation_account_id}:function:imms-${var.sub_environment}-redis_sync_lambda",
+          "arn:aws:lambda:${var.aws_region}:${var.immunisation_account_id}:function:${local.redis_sync_lambda_name}}",
         ]
       }
     ]
@@ -177,7 +177,7 @@ resource "aws_iam_policy" "redis_sync_lambda_exec_policy" {
 }
 
 resource "aws_iam_policy" "redis_sync_lambda_kms_access_policy" {
-  name        = "${local.short_prefix}-redis-sync-lambda-kms-policy"
+  name        = "${local.redis_sync_lambda_name}-kms-policy"
   description = "Allow Lambda to decrypt environment variables"
 
   policy = jsonencode({
@@ -219,7 +219,7 @@ resource "aws_iam_role_policy_attachment" "redis_sync_lambda_kms_policy_attachme
 
 # Lambda Function with Security Group and VPC.
 resource "aws_lambda_function" "redis_sync_lambda" {
-  function_name = "${local.short_prefix}-redis_sync_lambda"
+  function_name = local.redis_sync_lambda_name
   role          = aws_iam_role.redis_sync_lambda_exec_role.arn
   package_type  = "Image"
   image_uri     = module.redis_sync_docker_image.image_uri
@@ -233,11 +233,10 @@ resource "aws_lambda_function" "redis_sync_lambda" {
 
   environment {
     variables = {
-      CONFIG_BUCKET_NAME          = local.config_bucket_name
-      REDIS_HOST                  = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
-      REDIS_PORT                  = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
-      REDIS_SYNC_PROC_LAMBDA_NAME = "imms-${var.sub_environment}-redis_sync_lambda"
-      SPLUNK_FIREHOSE_NAME        = module.splunk.firehose_stream_name
+      CONFIG_BUCKET_NAME   = local.config_bucket_name
+      REDIS_HOST           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
+      REDIS_PORT           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
+      SPLUNK_FIREHOSE_NAME = module.splunk.firehose_stream_name
     }
   }
   kms_key_arn = data.aws_kms_key.existing_lambda_encryption_key.arn
@@ -249,7 +248,7 @@ resource "aws_lambda_function" "redis_sync_lambda" {
 }
 
 resource "aws_cloudwatch_log_group" "redis_sync_log_group" {
-  name              = "/aws/lambda/${local.short_prefix}-redis_sync_lambda"
+  name              = "/aws/lambda/${local.redis_sync_lambda_name}"
   retention_in_days = 30
 }
 
@@ -270,7 +269,7 @@ resource "aws_cloudwatch_log_metric_filter" "redis_sync_error_logs" {
 resource "aws_cloudwatch_metric_alarm" "redis_sync_error_alarm" {
   count = var.error_alarm_notifications_enabled ? 1 : 0
 
-  alarm_name          = "${local.short_prefix}-redis-sync-lambda-error"
+  alarm_name          = "${local.redis_sync_lambda_name}-error"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = 1
   metric_name         = "${local.short_prefix}-RedisSyncErrorLogs"

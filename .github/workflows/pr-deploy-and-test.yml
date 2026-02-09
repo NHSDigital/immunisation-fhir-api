@@ -13,18 +13,26 @@ jobs:
       environment: dev
       sub_environment: pr-${{github.event.pull_request.number}}
 
-  run-e2e-tests:
+  run-e2e-automation-tests:
     needs: [deploy-pr-backend]
     strategy:
       matrix:
         apigee_environment_name: [internal-dev, internal-dev-sandbox]
-    uses: ./.github/workflows/run-e2e-tests.yml
+        include:
+          - apigee_environment_name: internal-dev
+            required_test_suite: smoke
+          - apigee_environment_name: internal-dev-sandbox
+            required_test_suite: sandbox
+    uses: ./.github/workflows/run-e2e-automation-tests.yml
     with:
       apigee_environment: ${{ matrix.apigee_environment_name }}
       environment: dev
       sub_environment: pr-${{github.event.pull_request.number}}
+      service_under_test: all
+      suite_to_run: ${{ matrix.required_test_suite }}
     secrets:
       APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
       APIGEE_BASIC_AUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}
       APIGEE_OTP_KEY: ${{ secrets.APIGEE_OTP_KEY }}
+      CIS2_E2E_USERNAME: ${{ secrets.CIS2_E2E_USERNAME }}
       STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}

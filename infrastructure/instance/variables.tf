@@ -1,13 +1,30 @@
-variable "environment" {}
-
-variable "sub_environment" {
-  description = "The value is set in the makefile"
+variable "environment" {
+  type        = string
+  description = "Environment (AWS Account) name - dev, preprod or prod"
 }
 
-variable "immunisation_account_id" {}
-variable "dspp_core_account_id" {}
+variable "sub_environment" {
+  type        = string
+  description = "Sub-environment name, e.g. internal-dev, internal-qa. The value is set in the Makefile"
+}
+
+variable "immunisation_account_id" {
+  type        = string
+  description = "Immunisation AWS Account ID"
+}
+variable "dspp_core_account_id" {
+  type        = string
+  description = "DSPP Core AWS Account ID"
+}
 variable "csoc_account_id" {
-  default = "693466633220"
+  type        = string
+  description = "CSOC AWS Account ID - destination for forwarded logs"
+  default     = "693466633220"
+}
+variable "mns_account_id" {
+  type        = string
+  description = "MNS AWS account ID - trusted source for MNS notifications"
+  default     = "631615744739"
 }
 
 variable "dspp_submission_s3_bucket_name" {
@@ -23,26 +40,37 @@ variable "dspp_submission_kms_key_alias" {
 }
 
 variable "create_mesh_processor" {
+  type    = bool
   default = false
 }
 
 variable "project_name" {
+  type    = string
   default = "immunisation"
 }
 
 variable "project_short_name" {
+  type    = string
   default = "imms"
 }
 
 variable "service" {
+  type    = string
   default = "fhir-api"
 }
 
 variable "aws_region" {
+  type    = string
   default = "eu-west-2"
+
+  validation {
+    condition     = var.aws_region == "eu-west-2"
+    error_message = "AWS Region must be set to eu-west-2."
+  }
 }
 
 variable "pds_environment" {
+  type    = string
   default = "int"
 }
 
@@ -60,7 +88,9 @@ variable "error_alarm_notifications_enabled" {
 }
 
 variable "has_sub_environment_scope" {
-  default = false
+  description = "True if the sub-environment is a standalone environment, e.g. internal-dev. False if it is part of a blue-green split, e.g. int-green."
+  type        = bool
+  default     = false
 }
 
 locals {
