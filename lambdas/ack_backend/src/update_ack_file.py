@@ -46,20 +46,20 @@ def _generated_date() -> str:
 def _make_ack_data_dict_identifier_information(
     supplier: str, raw_ack_filename: str, message_id: str, ingestion_start_time: int
 ) -> dict:
-    ack_data_dict = {}
-    ack_data_dict["system"] = BATCH_REPORT_TITLE
-    ack_data_dict["version"] = BATCH_REPORT_VERSION
-
-    ack_data_dict["generatedDate"] = ""  # will be filled on completion
-    ack_data_dict["provider"] = supplier
-    ack_data_dict["filename"] = raw_ack_filename
-    ack_data_dict["messageHeaderId"] = message_id
-
-    ack_data_dict["summary"] = {}
-    ack_data_dict["summary"]["ingestionTime"] = {}
-    ack_data_dict["summary"]["ingestionTime"]["start"] = ingestion_start_time
-    ack_data_dict["failures"] = []
-    return ack_data_dict
+    return {
+        "system": BATCH_REPORT_TITLE,
+        "version": BATCH_REPORT_VERSION,
+        "generatedDate": "",  # will be filled on completion
+        "provider": supplier,
+        "filename": raw_ack_filename,
+        "messageHeaderId": message_id,
+        "summary": {
+            "ingestionTime": {
+                "start": ingestion_start_time,
+            }
+        },
+        "failures": [],
+    }
 
 
 def _add_ack_data_dict_summary(
@@ -71,22 +71,29 @@ def _add_ack_data_dict_summary(
 ) -> dict:
     ack_data_dict = deepcopy(existing_ack_data_dict)
     ack_data_dict["generatedDate"] = _generated_date()
-    ack_data_dict["summary"]["totalRecords"] = total_ack_rows_processed
-    ack_data_dict["summary"]["succeeded"] = successful_record_count
-    ack_data_dict["summary"]["failed"] = total_failures
-    ack_data_dict["summary"]["ingestionTime"]["end"] = ingestion_end_time_seconds
+    ack_data_dict_summary_ingestion_time = {
+        "start": ack_data_dict["summary"]["ingestionTime"]["start"],
+        "end": ingestion_end_time_seconds,
+    }
+    ack_data_dict_summary = {
+        "totalRecords": total_ack_rows_processed,
+        "succeeded": successful_record_count,
+        "failed": total_failures,
+        "ingestionTime": ack_data_dict_summary_ingestion_time,
+    }
+    ack_data_dict["summary"] = ack_data_dict_summary
     return ack_data_dict
 
 
 def _make_json_ack_file_row(ack_file_row: dict) -> dict:
-    json_ack_file_row = {}
-    json_ack_file_row["rowId"] = int(ack_file_row["MESSAGE_HEADER_ID"].split("^")[-1])
-    json_ack_file_row["responseCode"] = ack_file_row["RESPONSE_CODE"]
-    json_ack_file_row["responseDisplay"] = ack_file_row["RESPONSE_DISPLAY"]
-    json_ack_file_row["severity"] = ack_file_row["ISSUE_SEVERITY"]
-    json_ack_file_row["localId"] = ack_file_row["LOCAL_ID"]
-    json_ack_file_row["operationOutcome"] = ack_file_row["OPERATION_OUTCOME"]
-    return json_ack_file_row
+    return {
+        "rowId": int(ack_file_row["MESSAGE_HEADER_ID"].split("^")[-1]),
+        "responseCode": ack_file_row["RESPONSE_CODE"],
+        "responseDisplay": ack_file_row["RESPONSE_DISPLAY"],
+        "severity": ack_file_row["ISSUE_SEVERITY"],
+        "localId": ack_file_row["LOCAL_ID"],
+        "operationOutcome": ack_file_row["OPERATION_OUTCOME"],
+    }
 
 
 def create_ack_data(
