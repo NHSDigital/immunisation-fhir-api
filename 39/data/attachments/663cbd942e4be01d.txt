@@ -1,1 +1,0 @@
-✅ Step Passed: **Valid vaccination record is created with Patient 'Random' and vaccine_type '4IN1'
