@@ -8,7 +8,6 @@ from convert_message_to_ack_row import convert_message_to_ack_row
 from logging_decorators import ack_lambda_handler_logging_decorator
 from update_ack_file import (
     complete_batch_file_process,
-    update_csv_ack_file,
     update_json_ack_file,
 )
 
@@ -55,8 +54,6 @@ def lambda_handler(event, _):
 
             ack_data_rows.append(convert_message_to_ack_row(message, created_at_formatted_string))
             increment_records_failed_count(message_id)
-
-    update_csv_ack_file(file_key, created_at_formatted_string, ack_data_rows)
 
     update_json_ack_file(message_id, supplier, file_key, created_at_formatted_string, ack_data_rows)
 

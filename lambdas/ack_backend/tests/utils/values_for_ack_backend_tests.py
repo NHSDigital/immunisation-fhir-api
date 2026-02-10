@@ -100,12 +100,6 @@ class MessageDetails:
     ):
         self.name = f"{vaccine_type.upper()}/ {supplier.upper()} {operation_requested} message"
         self.file_key = f"{vaccine_type}_Vaccinations_v5_{ods_code}_20210730T12000000.csv"
-        self.temp_ack_file_key = (
-            f"TempAck/{vaccine_type}_Vaccinations_v5_{ods_code}_20210730T12000000_BusAck_20211120T12000000.csv"
-        )
-        self.archive_ack_file_key = (
-            f"forwardedFile/{vaccine_type}_Vaccinations_v5_{ods_code}_20210730T12000000_BusAck_20211120T12000000.csv"
-        )
         self.temp_json_ack_file_key = (
             f"TempAck/{vaccine_type}_Vaccinations_v5_{ods_code}_20210730T12000000_BusAck_20211120T12000000.json"
         )
@@ -243,12 +237,6 @@ class ValidValues:
         "statusCode": 500,
         "diagnostics": "DIAGNOSTICS MESSAGE",
     }
-
-    ack_headers = (
-        "MESSAGE_HEADER_ID|HEADER_RESPONSE_CODE|ISSUE_SEVERITY|ISSUE_CODE|ISSUE_DETAILS_CODE|RESPONSE_TYPE|"
-        "RESPONSE_CODE|RESPONSE_DISPLAY|RECEIVED_TIME|MAILBOX_FROM|LOCAL_ID|IMMS_ID|OPERATION_OUTCOME"
-        "|MESSAGE_DELIVERY\n"
-    )
 
     upload_ack_file_expected_log = {
         "function_name": "ack_processor_complete_batch_file_process",

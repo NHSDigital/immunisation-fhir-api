@@ -5,7 +5,7 @@ import os
 import time
 from copy import deepcopy
 from datetime import datetime, timezone
-from io import BytesIO, StringIO
+from io import BytesIO
 
 from botocore.exceptions import ClientError
 
@@ -24,7 +24,6 @@ from common.models.batch_constants import (
     FileStatus,
 )
 from constants import (
-    ACK_HEADERS,
     BATCH_FILE_ARCHIVE_DIR,
     BATCH_FILE_PROCESSING_DIR,
     BATCH_REPORT_TITLE,
@@ -141,10 +140,6 @@ def complete_batch_file_process(
     the audit table status"""
     start_time = time.time()
 
-    # finish CSV file
-    ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.csv')}"
-
-    move_file(ACK_BUCKET_NAME, f"{TEMP_ACK_DIR}/{ack_filename}", f"{COMPLETED_ACK_DIR}/{ack_filename}")
     move_file(SOURCE_BUCKET_NAME, f"{BATCH_FILE_PROCESSING_DIR}/{file_key}", f"{BATCH_FILE_ARCHIVE_DIR}/{file_key}")
 
     total_ack_rows_processed, total_failures = get_record_count_and_failures_by_message_id(message_id)
@@ -215,26 +210,6 @@ def log_batch_file_process(start_time: float, result: dict, function_name: str) 
     generate_and_send_logs(STREAM_NAME, start_time, base_log_data, additional_log_data)
 
 
-def obtain_current_csv_ack_content(temp_ack_file_key: str) -> StringIO:
-    """Returns the current ack file content if the file exists, or else initialises the content with the ack headers."""
-    try:
-        # If ack file exists in S3 download the contents
-        existing_ack_file = get_s3_client().get_object(Bucket=ACK_BUCKET_NAME, Key=temp_ack_file_key)
-        existing_content = existing_ack_file["Body"].read().decode("utf-8")
-    except ClientError as error:
-        # If ack file does not exist in S3 create a new file containing the identifier information
-        if error.response["Error"]["Code"] in ("404", "NoSuchKey"):
-            logger.info("No existing ack file found in S3 - creating new file")
-            existing_content = "|".join(ACK_HEADERS) + "\n"
-        else:
-            logger.error("error whilst obtaining current ack content: %s", error)
-            raise
-
-    accumulated_csv_content = StringIO()
-    accumulated_csv_content.write(existing_content)
-    return accumulated_csv_content
-
-
 def obtain_current_json_ack_content(message_id: str, supplier: str, file_key: str, temp_ack_file_key: str) -> dict:
     """Returns the current ack file content if the file exists, or else initialises the content with the ack headers."""
     try:
@@ -260,27 +235,6 @@ def obtain_current_json_ack_content(message_id: str, supplier: str, file_key: st
             raise
 
     return json.loads(existing_ack_file["Body"].read().decode("utf-8"))
-
-
-def update_csv_ack_file(
-    file_key: str,
-    created_at_formatted_string: str,
-    ack_data_rows: list,
-) -> None:
-    """Updates the ack file with the new data row based on the given arguments"""
-    ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.csv')}"
-    temp_ack_file_key = f"{TEMP_ACK_DIR}/{ack_filename}"
-    accumulated_csv_content = obtain_current_csv_ack_content(temp_ack_file_key)
-
-    for row in ack_data_rows:
-        data_row_str = [str(item) for item in row.values()]
-        cleaned_row = "|".join(data_row_str).replace(" |", "|").replace("| ", "|").strip()
-        accumulated_csv_content.write(cleaned_row + "\n")
-
-    csv_file_like_object = BytesIO(accumulated_csv_content.getvalue().encode("utf-8"))
-
-    get_s3_client().upload_fileobj(csv_file_like_object, ACK_BUCKET_NAME, temp_ack_file_key)
-    logger.info("Ack file updated to %s: %s", ACK_BUCKET_NAME, temp_ack_file_key)
 
 
 def update_json_ack_file(
