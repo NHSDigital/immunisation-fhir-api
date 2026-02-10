@@ -48,6 +48,12 @@ class TestLoggingDecorators(unittest.TestCase):
         self.ack_bucket_patcher = patch("update_ack_file.ACK_BUCKET_NAME", BucketNames.DESTINATION)
         self.ack_bucket_patcher.start()
 
+        self.get_ingestion_start_time_by_message_id_patcher = patch(
+            "update_ack_file.get_ingestion_start_time_by_message_id"
+        )
+        self.mock_get_ingestion_start_time_by_message_id = self.get_ingestion_start_time_by_message_id_patcher.start()
+        self.mock_get_ingestion_start_time_by_message_id.return_value = 3456
+
     def tearDown(self):
         GenericTearDown(self.s3_client)
 
@@ -99,10 +105,10 @@ class TestLoggingDecorators(unittest.TestCase):
     def expected_lambda_handler_logs(self, success: bool, number_of_rows, ingestion_complete=False, diagnostics=None):
         """Returns the expected logs for the lambda handler function."""
         # Mocking of timings is such that the time taken is 2 seconds for each row,
-        # plus 2 seconds for the handler if it succeeds (i.e. it calls update_ack_file) or 1 second if it doesn't;
-        # plus an extra second if ingestion is complete
+        # plus 2 seconds for the handler if it succeeds (i.e. it calls update_*_ack_file) or 1 second if it doesn't;
+        # plus an extra 2 seconds if ingestion is complete
         if success:
-            time_taken = f"{number_of_rows * 2 + 3}.0s" if ingestion_complete else f"{number_of_rows * 2 + 1}.0s"
+            time_taken = f"{number_of_rows * 2 + 4}.0s" if ingestion_complete else f"{number_of_rows * 2 + 1}.0s"
         else:
             time_taken = f"{number_of_rows * 2 + 1}.0s"
 
@@ -429,6 +435,7 @@ class TestLoggingDecorators(unittest.TestCase):
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
             patch("update_ack_file.get_record_count_and_failures_by_message_id", return_value=(99, 2)),
             patch("update_ack_file.update_audit_table_item") as mock_update_audit_table_item,  # noqa: E999
+            patch("update_ack_file.move_file"),  # noqa: E999
             patch("ack_processor.increment_records_failed_count"),  # noqa: E999
         ):  # noqa: E999
             mock_datetime.now.return_value = ValidValues.fixed_datetime
@@ -443,7 +450,7 @@ class TestLoggingDecorators(unittest.TestCase):
         expected_secondlast_logger_info_data = {
             **ValidValues.upload_ack_file_expected_log,
             "message_id": "test",
-            "time_taken": "1.0s",
+            "time_taken": "2.0s",
         }
         expected_last_logger_info_data = self.expected_lambda_handler_logs(
             success=True, number_of_rows=99, ingestion_complete=True
@@ -465,7 +472,7 @@ class TestLoggingDecorators(unittest.TestCase):
             ]
         )
 
-        self.assertEqual(mock_update_audit_table_item.call_count, 2)
+        self.assertEqual(mock_update_audit_table_item.call_count, 1)
 
 
 if __name__ == "__main__":

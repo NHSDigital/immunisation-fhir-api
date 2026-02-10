@@ -106,6 +106,12 @@ class MessageDetails:
         self.archive_ack_file_key = (
             f"forwardedFile/{vaccine_type}_Vaccinations_v5_{ods_code}_20210730T12000000_BusAck_20211120T12000000.csv"
         )
+        self.temp_json_ack_file_key = (
+            f"TempAck/{vaccine_type}_Vaccinations_v5_{ods_code}_20210730T12000000_BusAck_20211120T12000000.json"
+        )
+        self.archive_json_ack_file_key = (
+            f"forwardedFile/{vaccine_type}_Vaccinations_v5_{ods_code}_20210730T12000000_BusAck_20211120T12000000.json"
+        )
         self.vaccine_type = vaccine_type
         self.ods_code = ods_code
         self.supplier = supplier
@@ -258,6 +264,48 @@ class ValidValues:
         "statusCode": 200,
         "message": "Record processing complete",
     }
+
+    json_ack_initial_content = {
+        "system": "Immunisation FHIR API Batch Report",
+        "version": 1,
+        "generatedDate": "",
+        "filename": "RSV_Vaccinations_v5_X26_20210730T12000000",
+        "provider": "RAVS",
+        "messageHeaderId": "test_file_id",
+        "summary": {"ingestionTime": {"start": 3456}},
+        "failures": [],
+    }
+
+    json_ack_complete_content = {
+        "system": "Immunisation FHIR API Batch Report",
+        "version": 1,
+        "generatedDate": "2026-02-09T17:26:00.000Z",
+        "filename": "RSV_Vaccinations_v5_X26_20210730T12000000",
+        "provider": "RAVS",
+        "messageHeaderId": "test_file_id",
+        "summary": {"totalRecords": 10, "succeeded": 9, "failed": 1, "ingestionTime": {"start": 3456, "end": 7890}},
+        "failures": [
+            {
+                "rowId": 1,
+                "responseCode": "30002",
+                "responseDisplay": "Business Level Response Value - Processing Error",
+                "severity": "Fatal",
+                "localId": "test_system_uri^testabc",
+                "operationOutcome": "DIAGNOSTICS",
+            }
+        ],
+    }
+
+    json_ack_data_failure_dict = (
+        {
+            "rowId": DefaultValues.row_id,
+            "responseCode": "30002",
+            "responseDisplay": "Business Level Response Value - Processing Error",
+            "severity": "Fatal",
+            "localId": DefaultValues.local_id,
+            "operationOutcome": "DIAGNOSTICS",
+        },
+    )
 
 
 class InvalidValues:

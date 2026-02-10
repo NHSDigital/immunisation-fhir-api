@@ -72,7 +72,6 @@ def upload_batch_file_to_s3_for_update_with_mandatory_field_missing(context):
     # Build base record
     record = build_batch_file(context)
     context.vaccine_df = pd.DataFrame([record.dict()])
-
     base_fields = {
         "NHS_NUMBER": context.create_object.contained[1].identifier[0].value,
         "PERSON_FORENAME": context.create_object.contained[1].name[0].given[0],
@@ -85,7 +84,6 @@ def upload_batch_file_to_s3_for_update_with_mandatory_field_missing(context):
         "UNIQUE_ID_URI": context.create_object.identifier[0].system,
     }
     context.vaccine_df.loc[0, list(base_fields.keys())] = list(base_fields.values())
-
     create_batch_file(context)
     context.vaccine_df.loc[0, "IMMS_ID"] = context.ImmsID
 
