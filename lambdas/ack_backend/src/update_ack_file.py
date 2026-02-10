@@ -83,7 +83,7 @@ def _add_ack_data_dict_summary(
     return ack_data_dict
 
 
-def _make_json_ack_data_row(ack_data_row: dict) -> dict:
+def _make_ack_data_row(ack_data_row: dict) -> dict:
     return {
         "rowId": int(ack_data_row["MESSAGE_HEADER_ID"].split("^")[-1]),
         "responseCode": ack_data_row["RESPONSE_CODE"],
@@ -161,7 +161,7 @@ def complete_batch_file_process(
     # finish JSON file
     json_ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.json')}"
     temp_ack_file_key = f"{TEMP_ACK_DIR}/{json_ack_filename}"
-    ack_data_dict = obtain_current_json_ack_content(message_id, supplier, file_key, temp_ack_file_key)
+    ack_data_dict = obtain_current_ack_content(message_id, supplier, file_key, temp_ack_file_key)
 
     ack_data_dict = _add_ack_data_dict_summary(
         ack_data_dict,
@@ -210,7 +210,7 @@ def log_batch_file_process(start_time: float, result: dict, function_name: str) 
     generate_and_send_logs(STREAM_NAME, start_time, base_log_data, additional_log_data)
 
 
-def obtain_current_json_ack_content(message_id: str, supplier: str, file_key: str, temp_ack_file_key: str) -> dict:
+def obtain_current_ack_content(message_id: str, supplier: str, file_key: str, temp_ack_file_key: str) -> dict:
     """Returns the current ack file content if the file exists, or else initialises the content with the ack headers."""
     try:
         # If ack file exists in S3 download the contents
@@ -237,7 +237,7 @@ def obtain_current_json_ack_content(message_id: str, supplier: str, file_key: st
     return json.loads(existing_ack_file["Body"].read().decode("utf-8"))
 
 
-def update_json_ack_file(
+def update_ack_file(
     message_id: str,
     supplier: str,
     file_key: str,
@@ -247,10 +247,10 @@ def update_json_ack_file(
     """Updates the ack file with the new data row based on the given arguments"""
     ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.json')}"
     temp_ack_file_key = f"{TEMP_ACK_DIR}/{ack_filename}"
-    ack_data_dict = obtain_current_json_ack_content(message_id, supplier, file_key, temp_ack_file_key)
+    ack_data_dict = obtain_current_ack_content(message_id, supplier, file_key, temp_ack_file_key)
 
     for row in ack_data_rows:
-        ack_data_dict["failures"].append(_make_json_ack_data_row(row))
+        ack_data_dict["failures"].append(_make_ack_data_row(row))
 
     # Upload ack_data_dict to S3
     json_bytes = BytesIO(json.dumps(ack_data_dict, indent=2).encode("utf-8"))

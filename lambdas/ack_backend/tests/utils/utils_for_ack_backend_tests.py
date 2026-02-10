@@ -47,23 +47,21 @@ def setup_existing_ack_file(file_key, file_content, s3_client):
     s3_client.put_object(Bucket=BucketNames.DESTINATION, Key=file_key, Body=file_content)
 
 
-def obtain_current_json_ack_file_content(
-    s3_client, temp_ack_file_key: str = MOCK_MESSAGE_DETAILS.temp_json_ack_file_key
-) -> dict:
+def obtain_current_ack_file_content(s3_client, temp_ack_file_key: str = MOCK_MESSAGE_DETAILS.temp_ack_file_key) -> dict:
     """Obtains the ack file content from the destination bucket."""
     retrieved_object = s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=temp_ack_file_key)
     return json.loads(retrieved_object["Body"].read().decode("utf-8"))
 
 
 def obtain_completed_json_ack_file_content(
-    s3_client, complete_ack_file_key: str = MOCK_MESSAGE_DETAILS.archive_json_ack_file_key
+    s3_client, complete_ack_file_key: str = MOCK_MESSAGE_DETAILS.archive_ack_file_key
 ) -> dict:
     """Obtains the ack file content from the forwardedFile directory"""
     retrieved_object = s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=complete_ack_file_key)
     return json.loads(retrieved_object["Body"].read().decode("utf-8"))
 
 
-def generate_expected_json_ack_file_element(
+def generate_expected_ack_file_element(
     success: bool,
     imms_id: str = MOCK_MESSAGE_DETAILS.imms_id,
     diagnostics: str = None,
@@ -85,18 +83,18 @@ def generate_expected_json_ack_file_element(
         }
 
 
-def generate_sample_existing_json_ack_content(message_id: str = "test_file_id") -> dict:
+def generate_sample_existing_ack_content(message_id: str = "test_file_id") -> dict:
     """Returns sample ack file content with a single failure row."""
-    sample_content = deepcopy(ValidValues.json_ack_initial_content)
+    sample_content = deepcopy(ValidValues.ack_initial_content)
     sample_content["messageHeaderId"] = message_id
-    sample_content["failures"].append(generate_expected_json_ack_file_element(success=False))
+    sample_content["failures"].append(generate_expected_ack_file_element(success=False))
     return sample_content
 
 
-def generate_expected_json_ack_content(
-    incoming_messages: list[dict], existing_content: str = ValidValues.json_ack_initial_content
+def generate_expected_ack_content(
+    incoming_messages: list[dict], existing_content: str = ValidValues.ack_initial_content
 ) -> dict:
-    """Returns the expected_json_ack_file_content based on the incoming messages"""
+    """Returns the expected_ack_file_content based on the incoming messages"""
     for message in incoming_messages:
         # Determine diagnostics based on the diagnostics value in the incoming message
         diagnostics_dictionary = message.get("diagnostics", {})
@@ -107,7 +105,7 @@ def generate_expected_json_ack_content(
         )
 
         # Create the ack row based on the incoming message details
-        ack_element = generate_expected_json_ack_file_element(
+        ack_element = generate_expected_ack_file_element(
             success=diagnostics == "",
             row_id=message.get("row_id", MOCK_MESSAGE_DETAILS.row_id),
             created_at_formatted_string=message.get(
@@ -124,10 +122,10 @@ def generate_expected_json_ack_content(
     return existing_content
 
 
-def validate_json_ack_file_content(
+def validate_ack_file_content(
     s3_client,
     incoming_messages: list[dict],
-    existing_file_content: str = ValidValues.json_ack_initial_content,
+    existing_file_content: str = ValidValues.ack_initial_content,
     is_complete: bool = False,
 ) -> None:
     """
@@ -135,12 +133,12 @@ def validate_json_ack_file_content(
     on the incoming messages).
     """
     actual_ack_file_content = (
-        obtain_current_json_ack_file_content(s3_client, MOCK_MESSAGE_DETAILS.temp_json_ack_file_key)
+        obtain_current_ack_file_content(s3_client, MOCK_MESSAGE_DETAILS.temp_ack_file_key)
         if not is_complete
-        else obtain_completed_json_ack_file_content(s3_client, MOCK_MESSAGE_DETAILS.archive_json_ack_file_key)
+        else obtain_completed_json_ack_file_content(s3_client, MOCK_MESSAGE_DETAILS.archive_ack_file_key)
     )
     existing_file_content_copy = deepcopy(existing_file_content)
-    expected_ack_file_content = generate_expected_json_ack_content(incoming_messages, existing_file_content_copy)
+    expected_ack_file_content = generate_expected_ack_content(incoming_messages, existing_file_content_copy)
 
     # NB: disregard real-time generated fields
     actual_ack_file_content["generatedDate"] = expected_ack_file_content["generatedDate"]

@@ -100,10 +100,10 @@ class MessageDetails:
     ):
         self.name = f"{vaccine_type.upper()}/ {supplier.upper()} {operation_requested} message"
         self.file_key = f"{vaccine_type}_Vaccinations_v5_{ods_code}_20210730T12000000.csv"
-        self.temp_json_ack_file_key = (
+        self.temp_ack_file_key = (
             f"TempAck/{vaccine_type}_Vaccinations_v5_{ods_code}_20210730T12000000_BusAck_20211120T12000000.json"
         )
-        self.archive_json_ack_file_key = (
+        self.archive_ack_file_key = (
             f"forwardedFile/{vaccine_type}_Vaccinations_v5_{ods_code}_20210730T12000000_BusAck_20211120T12000000.json"
         )
         self.vaccine_type = vaccine_type
@@ -253,7 +253,7 @@ class ValidValues:
         "message": "Record processing complete",
     }
 
-    json_ack_initial_content = {
+    ack_initial_content = {
         "system": "Immunisation FHIR API Batch Report",
         "version": 1,
         "generatedDate": "",
@@ -264,7 +264,7 @@ class ValidValues:
         "failures": [],
     }
 
-    json_ack_complete_content = {
+    ack_complete_content = {
         "system": "Immunisation FHIR API Batch Report",
         "version": 1,
         "generatedDate": "2026-02-09T17:26:00.000Z",
