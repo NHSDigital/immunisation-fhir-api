@@ -12,6 +12,7 @@ packages = [
 [tool.poetry.dependencies]
 python = "~3.11"
 aws-lambda-typing = "~2.20.0"
+coverage          = "^7.13.2"
 
 [build-system]
 requires = ["poetry-core >= 1.5.0"]
