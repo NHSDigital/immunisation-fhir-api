@@ -1,0 +1,17 @@
+
+ Search Get parameters - 
+ patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number|9449304424&-immunization.target=COVID&-date.from=2026-02-10&_include=Immunization:patient
+403
+403
+
+ Error Response - 
+ resourceType='OperationOutcome' id='f688c0be-5b49-4e38-8b9c-a5b9c2b04fc1' meta=Meta(profile=['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']) issue=[Issue(severity='error', code='forbidden', details=Details(coding=[Coding(system='https://fhir.nhs.uk/Codesystem/http-error-codes', code='FORBIDDEN')]), diagnostics='Unauthorized request for vaccine type')]
+
+ Search Post request - 
+ patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number|9449304424&-immunization.target=COVID&-date.from=2026-02-10&_include=Immunization:patient
+403
+403
+
+ Error Response - 
+ resourceType='OperationOutcome' id='9fe03866-caf7-44a6-b3e3-9e7fda9bdcb2' meta=Meta(profile=['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']) issue=[Issue(severity='error', code='forbidden', details=Details(coding=[Coding(system='https://fhir.nhs.uk/Codesystem/http-error-codes', code='FORBIDDEN')]), diagnostics='Unauthorized request for vaccine type')]
+ No IMMS_ID column or no values present as test failed due to as exception — skipping delete cleanup.

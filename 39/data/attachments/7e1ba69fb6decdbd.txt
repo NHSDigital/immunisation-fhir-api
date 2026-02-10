@@ -1,0 +1,1 @@
+✅ Step Passed: **I send an unauthenticated request to the API

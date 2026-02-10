@@ -1,0 +1,17 @@
+
+ Search Get parameters - 
+ patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number|9449304424&-immunization.target=FLu&-date.from=2026-02-10&_include=Immunization:patient
+400
+400
+
+ Error Response - 
+ resourceType='OperationOutcome' id='2dba9a03-c765-4df8-87ed-a6226ad4aaca' meta=Meta(profile=['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']) issue=[Issue(severity='error', code='invalid', details=Details(coding=[Coding(system='https://fhir.nhs.uk/Codesystem/http-error-codes', code='INVALID')]), diagnostics='-immunization.target must be one or more of the following: ROTAVIRUS, RSV, SHINGLES, 6IN1, MMR, FLU, 3IN1, PERTUSSIS, MENB, HIB, MMRV, BCG, MENACWY, 4IN1, COVID, PNEUMOCOCCAL, HPV, HEPB')]
+
+ Search Post request - 
+ patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number|9449304424&-immunization.target=FLu&-date.from=2026-02-10&_include=Immunization:patient
+400
+400
+
+ Error Response - 
+ resourceType='OperationOutcome' id='1a398ead-c020-4274-88e1-ebd662ef0638' meta=Meta(profile=['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']) issue=[Issue(severity='error', code='invalid', details=Details(coding=[Coding(system='https://fhir.nhs.uk/Codesystem/http-error-codes', code='INVALID')]), diagnostics='-immunization.target must be one or more of the following: ROTAVIRUS, RSV, SHINGLES, 6IN1, MMR, FLU, 3IN1, PERTUSSIS, MENB, HIB, MMRV, BCG, MENACWY, 4IN1, COVID, PNEUMOCOCCAL, HPV, HEPB')]
+ No IMMS_ID column or no values present as test failed due to as exception — skipping delete cleanup.
