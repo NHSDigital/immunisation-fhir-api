@@ -132,18 +132,24 @@ def pytest_bdd_after_scenario(request, feature, scenario):
             print("Skipping delete: ImmsID is None")
 
     if "delete_cleanup_batch" in tags:
-        get_tokens(context, context.supplier_name)
-        context.vaccine_df["IMMS_ID_CLEAN"] = (
-            context.vaccine_df["IMMS_ID"].astype(str).str.replace("Immunization#", "", regex=False)
-        )
+        if "IMMS_ID" in context.vaccine_df.columns and context.vaccine_df["IMMS_ID"].notna().any():
+            get_tokens(context, context.supplier_name)
 
-        for imms_id in context.vaccine_df["IMMS_ID_CLEAN"].dropna().unique():
-            delete_url = f"{context.url}/{imms_id}"
-            print(f"Sending DELETE request to: {delete_url}")
-            response = http_requests_session.delete(delete_url, headers=context.headers)
-
-            assert response.status_code == 204, (
-                f" Failed to delete {imms_id}: expected 204, got {response.status_code}. Response: {response.text}"
+            context.vaccine_df["IMMS_ID_CLEAN"] = (
+                context.vaccine_df["IMMS_ID"].astype(str).str.replace("Immunization#", "", regex=False)
             )
 
-        print("✅ All IMMS_IDs deleted successfully.")
+            for imms_id in context.vaccine_df["IMMS_ID_CLEAN"].dropna().unique():
+                delete_url = f"{context.url}/{imms_id}"
+                print(f"Sending DELETE request to: {delete_url}")
+
+                response = http_requests_session.delete(delete_url, headers=context.headers)
+
+                assert response.status_code == 204, (
+                    f"Failed to delete {imms_id}: expected 204, got {response.status_code}. Response: {response.text}"
+                )
+
+            print("All IMMS_IDs deleted successfully.")
+
+    else:
+        print(" No IMMS_ID column or no values present as test failed due to as exception — skipping delete cleanup.")

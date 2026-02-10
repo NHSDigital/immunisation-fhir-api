@@ -59,7 +59,6 @@ def TriggerSearchGetRequest(context):
     )
     print(f"\n Search Get Parameters - \n {context.params}")
     context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
-
     print(f"\n Search Get Response - \n {context.response.json()}")
 
 
@@ -73,7 +72,6 @@ def TriggerSearchPostRequest(context):
     )
     print(f"\n Search Post Request - \n {context.request}")
     context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
-
     print(f"\n Search Post Response - \n {context.response.json()}")
 
 
@@ -94,10 +92,8 @@ def TriggerSearchPostRequest(context):
 )
 def send_invalid_param_get_request(context, NHSNumber, DiseaseType):
     get_search_get_url_header(context)
-
     NHSNumber = normalize_param(NHSNumber)
     DiseaseType = normalize_param(DiseaseType)
-
     context.params = convert_to_form_data(
         set_request_data(NHSNumber, DiseaseType, datetime.today().strftime("%Y-%m-%d"))
     )
@@ -150,10 +146,6 @@ def send_invalid_param_post_request(context, NHSNumber, DiseaseType):
 )
 def send_invalid_date_get_request(context, DateFrom, DateTo):
     get_search_get_url_header(context)
-
-    # DateFrom = normalize_param(DateFrom.lower())
-    # DateTo = normalize_param(DateTo.lower())
-
     context.params = convert_to_form_data(set_request_data(9001066569, context.vaccine_type, DateFrom, DateTo))
     print(f"\n Search Get parameters - \n {context.params}")
     context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
@@ -176,10 +168,6 @@ def send_invalid_date_get_request(context, DateFrom, DateTo):
 )
 def send_invalid_param_post_request_with_dates(context, DateFrom, DateTo):
     get_search_post_url_header(context)
-
-    # DateFrom = normalize_param(DateFrom.lower())
-    # DateTo = normalize_param(DateTo)
-
     context.request = convert_to_form_data(set_request_data(9001066569, context.vaccine_type, DateFrom, DateTo))
     print(f"\n Search Post request - \n {context.request}")
     context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
@@ -192,7 +180,6 @@ def send_invalid_param_post_request_with_dates(context, DateFrom, DateTo):
 )
 def send_valid_param_get_request(context, NHSNumber, vaccine_type, DateFrom, DateTo):
     get_search_get_url_header(context)
-
     context.params = convert_to_form_data(set_request_data(NHSNumber, vaccine_type, DateFrom, DateTo))
     print(f"\n Search Get parameters - \n {context.params}")
     context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
@@ -205,7 +192,6 @@ def send_valid_param_get_request(context, NHSNumber, vaccine_type, DateFrom, Dat
 )
 def send_valid_param_post_request(context, NHSNumber, vaccine_type, DateFrom, DateTo):
     get_search_post_url_header(context)
-
     context.request = convert_to_form_data(set_request_data(NHSNumber, vaccine_type, DateFrom, DateTo))
     print(f"\n Search Get parameters - \n {context.request}")
     context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
@@ -263,18 +249,13 @@ def send_valid_param_get_request_with_include_and_dates(context, NHSNumber, vacc
 def validateDateRange(context):
     data = context.response.json()
     context.parsed_search_object = parse_FHIR_immunization_response(data)
-
     params = getattr(context, "params", getattr(context, "request", {}))
-
     if isinstance(params, str):
         parsed = parse_qs(params)
         params = {k: v[0] for k, v in parsed.items()} if parsed else {}
-
     dateFrom = params.get("-date.from")
     dateTo = params.get("-date.to")
-
     assert context.parsed_search_object.entry, "No entries found in the search response."
-
     for entry in context.parsed_search_object.entry:
         if entry.resource.resourceType == "Immunization":
             occurrence_date = entry.resource.occurrenceDateTime
@@ -294,7 +275,6 @@ def validateDateRange(context):
 def validateImmsID(context):
     data = context.response.json()
     context.parsed_search_object = parse_FHIR_immunization_response(data)
-
     assert context.parsed_search_object.resourceType == "Bundle", (
         f"expected resourceType to be 'Bundle' but got {context.parsed_search_object.resourceType}"
     )
@@ -310,18 +290,12 @@ def validateImmsID(context):
     assert context.parsed_search_object.total >= 1, (
         f"expected total to be greater than or equal to 1 but got {context.parsed_search_object.total}"
     )
-
     context.created_event = find_entry_by_Imms_id(context.parsed_search_object, context.ImmsID)
-
     if context.created_event is None:
         raise AssertionError(f"No object found with Immunisation ID {context.ImmsID} in the search response.")
-
     patient_reference = getattr(context.created_event.resource.patient, "reference", None)
-
     if not patient_reference:
         raise ValueError("Patient reference is missing in the found event.")
-
-    # Assign to context for further usage
     context.Patient_fullUrl = patient_reference
 
 
@@ -338,13 +312,11 @@ def validateJsonImms(context):
 def validateJsonPat(context):
     response_patient_entry = find_patient_by_fullurl(context.parsed_search_object)
     assert response_patient_entry is not None, f"No Patient found with fullUrl {context.Patient_fullUrl}"
-
     response_patient = response_patient_entry.resource
     expected_nhs_number = context.create_object.contained[1].identifier[0].value
     actual_nhs_number = response_patient.identifier[0].value
     expected_system = context.create_object.contained[1].identifier[0].system
     actual_system = response_patient.identifier[0].system
-
     fields_to_compare = [
         ("fullUrl", context.Patient_fullUrl, response_patient_entry.fullUrl),
         ("resourceType", "Patient", response_patient.resourceType),
@@ -352,7 +324,6 @@ def validateJsonPat(context):
         ("identifier.system", expected_system, actual_system),
         ("identifier.value", expected_nhs_number, actual_nhs_number),
     ]
-
     for name, expected, actual in fields_to_compare:
         check.is_true(expected == actual, f"Expected {name}: {expected}, Actual {actual}")
 
@@ -361,14 +332,10 @@ def validateJsonPat(context):
 def validate_correct_immunization_event(context):
     data = context.response.json()
     context.parsed_search_object = parse_FHIR_immunization_response(data)
-
     context.created_event = context.parsed_search_object.entry[0] if context.parsed_search_object.entry else None
-
     if context.created_event is None:
         raise AssertionError(f"No object found with Immunisation ID {context.ImmsID} in the search response.")
-
     validateJsonImms(context)
-
     assert context.parsed_search_object.resourceType == "Bundle", (
         f"expected resourceType to be 'Bundle' but got {context.parsed_search_object.resourceType}"
     )
@@ -392,24 +359,18 @@ def validate_correct_immunization_event_with_elements(context):
     assert response.get("resourceType") == "Bundle", "resourceType should be 'Bundle'"
     assert response.get("type") == "searchset", "type should be 'searchset'"
     assert isinstance(response.get("entry"), list) and len(response["entry"]) > 0, " entry list is missing or empty"
-
-    # Link validation
     link = response.get("link", [{}])[0]
     link_url = link.get("url")
     assert link_url is not None, " link[0].url is missing"
     assert link_url.startswith(context.baseUrl), f"link[0].url should start with '{context.baseUrl}', got '{link_url}'"
-
-    # Entry resource validation
     resource = response["entry"][0].get("resource", {})
     assert resource.get("resourceType") == "Immunization", "resourceType should be 'Immunization'"
     assert "id" in resource, "resource.id is missing"
     assert "meta" in resource and "versionId" in resource["meta"], " meta.versionId is missing"
-
     assert resource["id"] == context.ImmsID, f"resource.id mismatch: expected '{context.ImmsID}', got '{resource['id']}'"
     assert str(resource["meta"]["versionId"]) == str(context.expected_version), (
         f"meta.versionId mismatch: expected '{context.expected_version}', got '{resource['meta']['versionId']}'"
     )
-
     assert response.get("total") == 1, "total should be 1"
 
 
@@ -419,13 +380,10 @@ def validate_empty_immunization_event(context):
     assert response.get("resourceType") == "Bundle", "resourceType should be 'Bundle'"
     assert response.get("type") == "searchset", "type should be 'searchset'"
     assert isinstance(response.get("entry"), list) and len(response["entry"]) == 0, " entry list should be empty"
-
-    # Link validation
     link = response.get("link", [{}])[0]
     link_url = link.get("url")
     assert link_url is not None, " link[0].url is missing"
     assert link_url == f"{context.baseUrl}/Immunization?identifier=None", (
         f"link[0].url should be '{context.baseUrl}/Immunization?identifier=None', got '{link_url}'"
     )
-
     assert response.get("total") == 0, "total should be 0"
