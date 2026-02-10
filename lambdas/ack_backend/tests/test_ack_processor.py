@@ -99,10 +99,10 @@ class TestAckProcessor(unittest.TestCase):
         """Helper function to check the ack and source files have not been moved as the processing is not yet
         complete"""
         if is_complete:
-            json_ack_file = self.s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=complete_ack_file_key)
+            ack_file = self.s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=complete_ack_file_key)
         else:
-            json_ack_file = self.s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=tmp_ack_file_key)
-        self.assertIsNotNone(json_ack_file["Body"].read())
+            ack_file = self.s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=tmp_ack_file_key)
+        self.assertIsNotNone(ack_file["Body"].read())
 
         full_src_file_key = f"archive/{source_file_key}" if is_complete else f"processing/{source_file_key}"
         src_file = self.s3_client.get_object(Bucket=BucketNames.SOURCE, Key=full_src_file_key)

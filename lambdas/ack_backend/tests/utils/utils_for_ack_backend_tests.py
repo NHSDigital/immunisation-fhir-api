@@ -53,7 +53,7 @@ def obtain_current_ack_file_content(s3_client, temp_ack_file_key: str = MOCK_MES
     return json.loads(retrieved_object["Body"].read().decode("utf-8"))
 
 
-def obtain_completed_json_ack_file_content(
+def obtain_completed_ack_file_content(
     s3_client, complete_ack_file_key: str = MOCK_MESSAGE_DETAILS.archive_ack_file_key
 ) -> dict:
     """Obtains the ack file content from the forwardedFile directory"""
@@ -135,7 +135,7 @@ def validate_ack_file_content(
     actual_ack_file_content = (
         obtain_current_ack_file_content(s3_client, MOCK_MESSAGE_DETAILS.temp_ack_file_key)
         if not is_complete
-        else obtain_completed_json_ack_file_content(s3_client, MOCK_MESSAGE_DETAILS.archive_ack_file_key)
+        else obtain_completed_ack_file_content(s3_client, MOCK_MESSAGE_DETAILS.archive_ack_file_key)
     )
     existing_file_content_copy = deepcopy(existing_file_content)
     expected_ack_file_content = generate_expected_ack_content(incoming_messages, existing_file_content_copy)

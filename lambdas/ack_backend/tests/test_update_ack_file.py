@@ -277,7 +277,7 @@ class TestUpdateAckFile(unittest.TestCase):
         )
         self.assertEqual(result, existing_content)
 
-    def test_complete_batch_file_process_json_ack_file(self):
+    def test_complete_batch_file_process_ack_file(self):
         """Test that complete_batch_file_process completes and moves the JSON ack file."""
         generate_sample_existing_ack_content()
         self.s3_client.put_object(

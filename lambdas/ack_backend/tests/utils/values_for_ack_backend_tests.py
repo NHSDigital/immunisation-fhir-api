@@ -284,17 +284,6 @@ class ValidValues:
         ],
     }
 
-    json_ack_data_failure_dict = (
-        {
-            "rowId": DefaultValues.row_id,
-            "responseCode": "30002",
-            "responseDisplay": "Business Level Response Value - Processing Error",
-            "severity": "Fatal",
-            "localId": DefaultValues.local_id,
-            "operationOutcome": "DIAGNOSTICS",
-        },
-    )
-
 
 class InvalidValues:
     """Invalid values for use in tests"""

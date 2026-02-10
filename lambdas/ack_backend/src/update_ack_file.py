@@ -159,8 +159,8 @@ def complete_batch_file_process(
     )
 
     # finish JSON file
-    json_ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.json')}"
-    temp_ack_file_key = f"{TEMP_ACK_DIR}/{json_ack_filename}"
+    ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.json')}"
+    temp_ack_file_key = f"{TEMP_ACK_DIR}/{ack_filename}"
     ack_data_dict = obtain_current_ack_content(message_id, supplier, file_key, temp_ack_file_key)
 
     ack_data_dict = _add_ack_data_dict_summary(
@@ -174,7 +174,7 @@ def complete_batch_file_process(
     # Upload ack_data_dict to S3
     json_bytes = BytesIO(json.dumps(ack_data_dict, indent=2).encode("utf-8"))
     get_s3_client().upload_fileobj(json_bytes, ACK_BUCKET_NAME, temp_ack_file_key)
-    move_file(ACK_BUCKET_NAME, f"{TEMP_ACK_DIR}/{json_ack_filename}", f"{COMPLETED_ACK_DIR}/{json_ack_filename}")
+    move_file(ACK_BUCKET_NAME, f"{TEMP_ACK_DIR}/{ack_filename}", f"{COMPLETED_ACK_DIR}/{ack_filename}")
 
     result = {
         "message_id": message_id,
