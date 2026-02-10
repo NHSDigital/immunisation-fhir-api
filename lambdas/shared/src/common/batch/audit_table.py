@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional, Tuple
 
 from common.clients import get_dynamodb_client, logger
@@ -109,6 +110,25 @@ def _build_audit_table_update_log_message(file_key: str, message_id: str, attrs_
         + " successfully updated in the audit table: "
         + list_of_updates_str
     )
+
+
+def get_ingestion_start_time_by_message_id(event_message_id: str) -> int:
+    """Retrieves ingestion start time by unique event message ID"""
+    # Required by JSON ack file
+    audit_record = dynamodb_client.get_item(
+        TableName=AUDIT_TABLE_NAME, Key={AuditTableKeys.MESSAGE_ID: {"S": event_message_id}}
+    )
+
+    ingestion_start_time_str = audit_record.get("Item", {}).get(AuditTableKeys.INGESTION_START_TIME, {}).get("S")
+    if not ingestion_start_time_str:
+        return 0
+    try:
+        ingestion_start_time = int(
+            (datetime.strptime(ingestion_start_time_str, "%Y%m%dT%H%M%S00") - datetime(1970, 1, 1)).total_seconds()
+        )
+    except ValueError:
+        return 0
+    return ingestion_start_time
 
 
 def get_record_count_and_failures_by_message_id(event_message_id: str) -> tuple[int, int]:

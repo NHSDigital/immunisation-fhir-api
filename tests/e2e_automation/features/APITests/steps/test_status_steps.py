@@ -36,10 +36,8 @@ def send_request_to_aws_backend(context: ScenarioContext) -> None:
     # Let exception be raised if expected env var is not present
     aws_domain_name: str = os.environ["AWS_DOMAIN_NAME"]
     backend_status_url = "https://" + aws_domain_name + "/status"
-
     with pytest.raises(requests.exceptions.ConnectionError) as e:
         requests.get(backend_status_url)
-
     context.response = str(e)
 
 
@@ -52,7 +50,6 @@ def send_unauthenticated_request_to_api(context: ScenarioContext) -> None:
 def check_status_response_healthy(context: ScenarioContext) -> None:
     status_response = context.response.json()
     assertion_failure_msg = f"Status response assertions failed. Res: {status_response}"
-
     assert status_response.get("status") == "pass", assertion_failure_msg
     assert status_response.get("checks", {}).get("healthcheck", {}).get("status") == "pass", assertion_failure_msg
 
