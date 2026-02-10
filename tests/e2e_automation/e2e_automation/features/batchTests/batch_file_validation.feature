@@ -82,6 +82,7 @@ Feature: Validate the file level and columns validations for vaccination batch f
         And bus ack file will not be created
         And Audit table will have 'Failed', 'SONAR_FLU' and 'File headers are invalid.' for the processed batch file
 
+
     @vaccine_type_3IN1  @supplier_name_TPP
     Scenario: verify that vaccination file will be rejected if one of the column name is invalid
         Given batch file is created with invalid column name for patient surname for below data
