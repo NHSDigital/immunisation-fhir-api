@@ -219,6 +219,7 @@ resource "aws_cloudwatch_log_group" "mns_publisher_lambda_log_group" {
 resource "aws_lambda_event_source_mapping" "delta_to_mns_trigger" {
   event_source_arn  = aws_dynamodb_table.delta-dynamodb-table.stream_arn
   function_name     = aws_lambda_function.mns_publisher_lambda.function_name
+  batch_size        = 10
   starting_position = "TRIM_HORIZON"
   destination_config {
     on_failure {
