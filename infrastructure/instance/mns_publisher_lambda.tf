@@ -1,4 +1,3 @@
-# Define the directory containing the Docker image and calculate its SHA-256 hash for triggering redeployments
 locals {
   mns_publisher_lambda_dir     = abspath("${path.root}/../../lambdas/mns_publisher")
   mns_publisher_lambda_files   = fileset(local.mns_publisher_lambda_dir, "**")
@@ -48,8 +47,7 @@ module "mns_publisher_docker_image" {
   }
 }
 
-# Define the lambdaECRImageRetreival policy
-resource "aws_ecr_repository_policy" "mns_publisher_lambda_ECRImageRetreival_policy" {
+resource "aws_ecr_repository_policy" "mns_publisher_lambda_ecr_image_retrieval_policy" {
   repository = aws_ecr_repository.mns_publisher_lambda_repository.name
 
   policy = jsonencode({

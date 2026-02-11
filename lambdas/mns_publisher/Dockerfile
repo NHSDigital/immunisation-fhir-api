@@ -5,7 +5,6 @@ RUN mkdir -p /home/appuser && \
     echo 'appuser:x:1001:' >> /etc/group && \
     chown -R 1001:1001 /home/appuser && pip install "poetry~=2.1.4"
 
-# Install Poetry dependencies
 # Copy mns_publisher Poetry files
 COPY ./mns_publisher/poetry.lock ./mns_publisher/pyproject.toml ./
 
