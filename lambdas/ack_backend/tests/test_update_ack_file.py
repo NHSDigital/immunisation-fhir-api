@@ -311,19 +311,23 @@ class TestUpdateAckFile(unittest.TestCase):
         self.assertEqual(result, ValidValues.ack_complete_content)
 
     def test_update_ack_file_with_empty_ack_data_rows(self):
-        """Test that update_ack_file correctly updates the ack file when given an empty list"""
+        """Test that update_ack_file does nothing when given an empty list"""
         # Mock existing content in the ack file
         existing_content = generate_sample_existing_ack_content()
         setup_existing_ack_file(MOCK_MESSAGE_DETAILS.temp_ack_file_key, json.dumps(existing_content), self.s3_client)
 
-        # Should not raise an exception
-        update_ack_file(
-            message_id=MOCK_MESSAGE_DETAILS.message_id,
-            supplier=MOCK_MESSAGE_DETAILS.supplier,
-            file_key=MOCK_MESSAGE_DETAILS.file_key,
-            created_at_formatted_string=MOCK_MESSAGE_DETAILS.created_at_formatted_string,
-            ack_data_rows=[],
-        )
+        # Should not call get_s3_client
+        with (  # noqa: E999
+            patch("update_ack_file.get_s3_client") as mock_get_s3_client,  # noqa: E999
+        ):  # noqa: E999
+            update_ack_file(
+                message_id=MOCK_MESSAGE_DETAILS.message_id,
+                supplier=MOCK_MESSAGE_DETAILS.supplier,
+                file_key=MOCK_MESSAGE_DETAILS.file_key,
+                created_at_formatted_string=MOCK_MESSAGE_DETAILS.created_at_formatted_string,
+                ack_data_rows=[],
+            )
+        mock_get_s3_client.assert_not_called()
 
 
 if __name__ == "__main__":
