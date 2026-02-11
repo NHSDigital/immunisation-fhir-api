@@ -1,0 +1,31 @@
+✅ Pipe-delimited file saved to: /home/runner/work/immunisation-fhir-api/immunisation-fhir-api/tests/e2e_automation/batch_files_directory/FLU_Vaccinations_v5_V0V8L_20260211T08442600.csv
+Batch file created: FLU_Vaccinations_v5_V0V8L_20260211T08442600.csv
+Upload successful: FLU_Vaccinations_v5_V0V8L_20260211T08442600.csv → immunisation-batch-internal-qa-data-sources
+Batch file uploaded to S3: FLU_Vaccinations_v5_V0V8L_20260211T08442600.csv
+Waiting for file in archive: s3://immunisation-batch-internal-qa-data-sources/archive/FLU_Vaccinations_v5_V0V8L_20260211T08442600.csv
+Still waiting... (0s)
+Still waiting... (5s)
+Still waiting... (10s)
+Still waiting... (15s)
+Still waiting... (20s)
+Still waiting... (25s)
+Still waiting... (30s)
+Still waiting... (35s)
+File found in archive: archive/FLU_Vaccinations_v5_V0V8L_20260211T08442600.csv
+Waiting for ACK files starting with 'ack/FLU_Vaccinations_v5_V0V8L_20260211T08442600' in bucket: immunisation-batch-internal-qa-data-destinations
+[MODE] Expecting ONLY CSV ACK file
+[FOUND] .csv file located: ack/FLU_Vaccinations_v5_V0V8L_20260211T08442600_InfAck_20260211T08442700.csv
+[SUCCESS] Loaded .csv file (299 bytes)
+[COMPLETE] All expected ACK files received
+Waiting for ACK files starting with 'forwardedFile/FLU_Vaccinations_v5_V0V8L_20260211T08442600' in bucket: immunisation-batch-internal-qa-data-destinations
+[MODE] Expecting BOTH CSV and JSON ACK files
+[FOUND] .csv file located: forwardedFile/FLU_Vaccinations_v5_V0V8L_20260211T08442600_BusAck_20260211T08442700.csv
+[SUCCESS] Loaded .csv file (1765 bytes)
+[FOUND] .json file located: forwardedFile/FLU_Vaccinations_v5_V0V8L_20260211T08442600_BusAck_20260211T08442700.json
+[SUCCESS] Loaded .json file (2197 bytes)
+[COMPLETE] All expected ACK files received
+Attempt 1: Found 1 items
+
+Found Audit detail for filename=FLU_Vaccinations_v5_V0V8L_20260211T08442600.csv
+
+ No IMMS_ID column or no values present as test failed due to as exception — skipping delete cleanup.
