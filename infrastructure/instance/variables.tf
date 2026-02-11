@@ -36,7 +36,7 @@ variable "dspp_submission_s3_bucket_name" {
 variable "dspp_submission_kms_key_alias" {
   description = "Alias of the DSPP (DPS) KMS key required to encrypt extended attributes files"
   type        = string
-  default     = "nhsd-dspp-core-ref-s3-submission-upload-key"
+  default     = "alias/nhsd-dspp-core-ref-s3-submission-upload-key"
 }
 
 variable "create_mesh_processor" {

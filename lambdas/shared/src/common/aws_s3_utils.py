@@ -22,15 +22,21 @@ def copy_file_to_external_bucket(
     destination_key: str,
     expected_bucket_owner: str,
     expected_source_bucket_owner: str,
+    sse_kms_key_id: str | None = None,
 ) -> None:
+    copy_params = {
+        "CopySource": {"Bucket": source_bucket, "Key": source_key},
+        "Bucket": destination_bucket,
+        "Key": destination_key,
+        "ExpectedBucketOwner": expected_bucket_owner,
+        "ExpectedSourceBucketOwner": expected_source_bucket_owner,
+    }
+
+    if sse_kms_key_id:
+        copy_params["SSEKMSKeyId"] = sse_kms_key_id
+
     s3_client = get_s3_client()
-    s3_client.copy_object(
-        CopySource={"Bucket": source_bucket, "Key": source_key},
-        Bucket=destination_bucket,
-        Key=destination_key,
-        ExpectedBucketOwner=expected_bucket_owner,
-        ExpectedSourceBucketOwner=expected_source_bucket_owner,
-    )
+    s3_client.copy_object(**copy_params)
 
 
 def delete_file(
