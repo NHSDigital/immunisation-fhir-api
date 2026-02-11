@@ -125,19 +125,13 @@ resource "aws_iam_policy" "mns_publisher_lambda_exec_policy" {
         "Resource" : "arn:aws:firehose:*:*:deliverystream/${module.splunk.firehose_stream_name}"
       },
       {
-        "Effect" : "Allow",
-        "Action" : [
-          "dynamodb:DescribeStream",
-          "dynamodb:GetRecords",
-          "dynamodb:GetShardIterator",
-          "dynamodb:ListStreams"
+        Effect = "Allow",
+        Action = [
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes"
         ],
-        "Resource" : aws_dynamodb_table.delta-dynamodb-table.stream_arn
-      },
-      {
-        "Effect" : "Allow",
-        "Action" : ["sqs:SendMessage"],
-        "Resource" : aws_sqs_queue.mns_publisher_dlq.arn
+        Resource = aws_sqs_queue.mns_outbound_events.arn
       }
     ]
   })
@@ -156,15 +150,7 @@ resource "aws_iam_policy" "mns_publisher_lambda_kms_access_policy" {
           "kms:Decrypt"
         ]
         Resource = data.aws_kms_key.existing_lambda_encryption_key.arn
-      },
-      {
-        "Effect" : "Allow",
-        "Action" : [
-          "kms:Decrypt",
-          "kms:GenerateDataKey"
-        ],
-        "Resource" : data.aws_kms_key.existing_dynamo_encryption_key.arn
-      },
+      }
     ]
   })
 }
@@ -214,22 +200,11 @@ resource "aws_cloudwatch_log_group" "mns_publisher_lambda_log_group" {
   retention_in_days = 30
 }
 
-resource "aws_lambda_event_source_mapping" "delta_to_mns_trigger" {
-  event_source_arn  = aws_dynamodb_table.delta-dynamodb-table.stream_arn
-  function_name     = aws_lambda_function.mns_publisher_lambda.function_name
-  batch_size        = 10
-  starting_position = "TRIM_HORIZON"
-  destination_config {
-    on_failure {
-      destination_arn = aws_sqs_queue.mns_publisher_dlq.arn
-    }
-  }
-  maximum_retry_attempts = 3
-}
-
-
-resource "aws_sqs_queue" "mns_publisher_dlq" {
-  name = "${local.short_prefix}-mns-publisher-dlq"
+resource "aws_lambda_event_source_mapping" "mns_outbound_event_sqs_to_lambda" {
+  event_source_arn = aws_sqs_queue.mns_outbound_events.arn
+  function_name    = aws_lambda_function.mns_publisher_lambda.arn
+  batch_size       = 10
+  enabled          = true
 }
 
 resource "aws_cloudwatch_log_metric_filter" "mns_publisher_error_logs" {
