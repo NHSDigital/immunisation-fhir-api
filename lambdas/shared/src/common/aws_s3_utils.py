@@ -33,6 +33,7 @@ def copy_file_to_external_bucket(
     }
 
     if sse_kms_key_id:
+        copy_params["ServerSideEncryption"] = "aws:kms"
         copy_params["SSEKMSKeyId"] = sse_kms_key_id
 
     s3_client = get_s3_client()
