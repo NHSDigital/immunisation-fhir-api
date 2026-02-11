@@ -1,1 +1,0 @@
-✅ Step Passed: **records for same event are uploaded via batch file with missing mandatory fields and duplicated record

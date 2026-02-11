@@ -1,0 +1,17 @@
+
+ Search Get parameters - 
+ patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number|9728403348&-immunization.target=COVID&_include=abc
+400
+400
+
+ Error Response - 
+ resourceType='OperationOutcome' id='66d6c25f-b3c3-42cf-a34c-5159f87a115f' meta=Meta(profile=['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']) issue=[Issue(severity='error', code='invalid', details=Details(coding=[Coding(system='https://fhir.nhs.uk/Codesystem/http-error-codes', code='INVALID')]), diagnostics="Search parameter _include may only be 'Immunization:patient' if provided.")]
+
+ Search Post parameters - 
+ patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number|9728403348&-immunization.target=COVID&_include=abc
+400
+400
+
+ Error Response - 
+ resourceType='OperationOutcome' id='63f9111b-23da-4e24-ae48-f5b2dcee18e7' meta=Meta(profile=['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']) issue=[Issue(severity='error', code='invalid', details=Details(coding=[Coding(system='https://fhir.nhs.uk/Codesystem/http-error-codes', code='INVALID')]), diagnostics="Search parameter _include may only be 'Immunization:patient' if provided.")]
+ No IMMS_ID column or no values present as test failed due to as exception — skipping delete cleanup.
