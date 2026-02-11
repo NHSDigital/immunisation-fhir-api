@@ -38,7 +38,7 @@ MOCK_ENVIRONMENT_DICT = {
     "SOURCE_BUCKET_NAME": BucketNames.SOURCE,
     "ACK_BUCKET_NAME": BucketNames.DESTINATION,
     "DPS_BUCKET_NAME": BucketNames.DPS_DESTINATION,
-    "DPS_BUCKET_KMS_KEY_ALIAS": "alias/nhsd-dspp-core-ref-s3-submission-upload-key",
+    "DPS_BUCKET_KMS_KEY_ARN": "arn:aws:kms:eu-west-2:123456789012:alias/nhsd-dspp-core-ref-s3-submission-upload-key",
     "ACCOUNT_ID": MOCK_ACCOUNT_ID,
     "DPS_ACCOUNT_ID": MOCK_ACCOUNT_ID,
     "QUEUE_URL": "https://sqs.eu-west-2.amazonaws.com/123456789012/imms-batch-file-created-queue.fifo",

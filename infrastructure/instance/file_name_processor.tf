@@ -316,18 +316,18 @@ resource "aws_lambda_function" "file_processor_lambda" {
 
   environment {
     variables = {
-      ACCOUNT_ID               = var.immunisation_account_id
-      DPS_ACCOUNT_ID           = var.dspp_core_account_id
-      SOURCE_BUCKET_NAME       = aws_s3_bucket.batch_data_source_bucket.bucket
-      ACK_BUCKET_NAME          = aws_s3_bucket.batch_data_destination_bucket.bucket
-      DPS_BUCKET_NAME          = var.dspp_submission_s3_bucket_name
-      DPS_BUCKET_KMS_KEY_ALIAS = var.dspp_submission_kms_key_alias
-      QUEUE_URL                = aws_sqs_queue.batch_file_created.url
-      REDIS_HOST               = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
-      REDIS_PORT               = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
-      SPLUNK_FIREHOSE_NAME     = module.splunk.firehose_stream_name
-      AUDIT_TABLE_NAME         = aws_dynamodb_table.audit-table.name
-      AUDIT_TABLE_TTL_DAYS     = 60
+      ACCOUNT_ID             = var.immunisation_account_id
+      DPS_ACCOUNT_ID         = var.dspp_core_account_id
+      SOURCE_BUCKET_NAME     = aws_s3_bucket.batch_data_source_bucket.bucket
+      ACK_BUCKET_NAME        = aws_s3_bucket.batch_data_destination_bucket.bucket
+      DPS_BUCKET_NAME        = var.dspp_submission_s3_bucket_name
+      DPS_BUCKET_KMS_KEY_ARN = "arn:aws:kms:${var.aws_region}:${var.dspp_core_account_id}:${var.dspp_submission_kms_key_alias}"
+      QUEUE_URL              = aws_sqs_queue.batch_file_created.url
+      REDIS_HOST             = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
+      REDIS_PORT             = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
+      SPLUNK_FIREHOSE_NAME   = module.splunk.firehose_stream_name
+      AUDIT_TABLE_NAME       = aws_dynamodb_table.audit-table.name
+      AUDIT_TABLE_TTL_DAYS   = 60
     }
   }
   kms_key_arn                    = data.aws_kms_key.existing_lambda_encryption_key.arn

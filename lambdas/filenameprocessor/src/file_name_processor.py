@@ -19,7 +19,7 @@ from common.log_decorator import logging_decorator
 from common.models.batch_constants import SOURCE_BUCKET_NAME, FileStatus
 from common.models.errors import UnhandledAuditTableError
 from constants import (
-    DPS_DESTINATION_BUCKET_KMS_KEY_ALIAS,
+    DPS_DESTINATION_BUCKET_KMS_KEY_ARN,
     DPS_DESTINATION_BUCKET_NAME,
     DPS_DESTINATION_PREFIX,
     ERROR_TYPE_TO_STATUS_CODE_MAP,
@@ -263,7 +263,7 @@ def handle_extended_attributes_file(
             dest_file_key,
             EXPECTED_DPS_DESTINATION_ACCOUNT,
             EXPECTED_SOURCE_BUCKET_ACCOUNT,
-            DPS_DESTINATION_BUCKET_KMS_KEY_ALIAS,
+            DPS_DESTINATION_BUCKET_KMS_KEY_ARN,
         )
 
         move_file(bucket_name, file_key, f"{EXTENDED_ATTRIBUTES_ARCHIVE_PREFIX}/{file_key}")
