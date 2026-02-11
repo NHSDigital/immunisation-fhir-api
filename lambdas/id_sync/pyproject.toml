@@ -26,7 +26,7 @@ python-stdnum = "^2.1"
 coverage = "^7.13.2"
 redis = "^4.6.0"
 cache = "^1.0.3"
-pyjwt = "^2.10.1"
+pyjwt = {extras = ["crypto"], version = "~2.11.0"}
 
 [tool.poetry.group.dev.dependencies]
 coverage = "^7.13.2"
