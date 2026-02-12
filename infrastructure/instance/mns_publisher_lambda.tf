@@ -150,6 +150,14 @@ resource "aws_iam_policy" "mns_publisher_lambda_kms_access_policy" {
           "kms:Decrypt"
         ]
         Resource = data.aws_kms_key.existing_lambda_encryption_key.arn
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt",
+          "kms:GenerateDataKey"
+        ]
+        Resource = aws_kms_key.mns_outbound_events.arn
       }
     ]
   })
