@@ -1,0 +1,595 @@
+{
+  "widgets": [
+    {
+      "type": "text",
+      "x": 0,
+      "y": 0,
+      "width": 24,
+      "height": 1,
+      "properties": {
+        "markdown": "# Core Health Metrics"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 2,
+      "width": 6,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          ["AWS/Lambda", "Invocations", { "region": "eu-west-2" }],
+          [".", "Errors", { "color": "#d62728", "region": "eu-west-2" }],
+          [
+            ".",
+            "ConcurrentExecutions",
+            { "region": "eu-west-2", "visible": false }
+          ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 300,
+        "title": "Invocations & Errors"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 18,
+      "y": 2,
+      "width": 2,
+      "height": 3,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/Lambda",
+            "Errors",
+            { "region": "eu-west-2", "color": "#d62728" }
+          ]
+        ],
+        "sparkline": true,
+        "view": "singleValue",
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 300
+      }
+    },
+    {
+      "type": "metric",
+      "x": 6,
+      "y": 2,
+      "width": 6,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/Lambda",
+            "Duration",
+            { "region": "eu-west-2", "color": "#ffbb78" }
+          ]
+        ],
+        "view": "timeSeries",
+        "stacked": true,
+        "region": "eu-west-2",
+        "title": "Duration",
+        "period": 300,
+        "stat": "Average"
+      }
+    },
+    {
+      "type": "text",
+      "x": 0,
+      "y": 21,
+      "width": 24,
+      "height": 1,
+      "properties": {
+        "markdown": "## Other"
+      }
+    },
+    {
+      "type": "alarm",
+      "x": 0,
+      "y": 29,
+      "width": 24,
+      "height": 5,
+      "properties": {
+        "title": "internal-dev",
+        "alarms": [
+          "arn:aws:cloudwatch:eu-west-2:345594581768:alarm:imms-internal-dev_get_imms memory alarm",
+          "arn:aws:cloudwatch:eu-west-2:345594581768:alarm:imms-internal-dev_create_imms memory alarm",
+          "arn:aws:cloudwatch:eu-west-2:345594581768:alarm:imms-internal-dev_delete_imms memory alarm",
+          "arn:aws:cloudwatch:eu-west-2:345594581768:alarm:imms-internal-dev_search_imms memory alarm",
+          "arn:aws:cloudwatch:eu-west-2:345594581768:alarm:imms-internal-dev_update_imms memory alarm",
+          "arn:aws:cloudwatch:eu-west-2:345594581768:alarm:imms-internal-dev-record-processor-task-error",
+          "arn:aws:cloudwatch:eu-west-2:345594581768:alarm:imms-internal-dev_create_imms-lambda-error",
+          "arn:aws:cloudwatch:eu-west-2:345594581768:alarm:imms-internal-dev-file-name-processor-lambda-error",
+          "arn:aws:cloudwatch:eu-west-2:345594581768:alarm:imms-internal-dev_delete_imms-lambda-error",
+          "arn:aws:cloudwatch:eu-west-2:345594581768:alarm:imms-internal-dev_get_status memory alarm",
+          "arn:aws:cloudwatch:eu-west-2:345594581768:alarm:imms-internal-dev-id-sync-lambda-error",
+          "arn:aws:cloudwatch:eu-west-2:345594581768:alarm:imms-internal-dev-redis-sync-lambda-error",
+          "arn:aws:cloudwatch:eu-west-2:345594581768:alarm:imms-internal-dev-delta-lambda-error",
+          "arn:aws:cloudwatch:eu-west-2:345594581768:alarm:imms-internal-dev_get_status-lambda-error",
+          "arn:aws:cloudwatch:eu-west-2:345594581768:alarm:imms-internal-dev_get_imms-lambda-error",
+          "arn:aws:cloudwatch:eu-west-2:345594581768:alarm:imms-internal-dev_update_imms-lambda-error",
+          "arn:aws:cloudwatch:eu-west-2:345594581768:alarm:imms-internal-dev_not_found-lambda-error",
+          "arn:aws:cloudwatch:eu-west-2:345594581768:alarm:imms-internal-dev_search_imms-lambda-error",
+          "arn:aws:cloudwatch:eu-west-2:345594581768:alarm:imms-internal-dev_not_found memory alarm",
+          "arn:aws:cloudwatch:eu-west-2:345594581768:alarm:imms-internal-dev-batch-processor-filter-lambda-error"
+        ]
+      }
+    },
+    {
+      "type": "text",
+      "x": 0,
+      "y": 1,
+      "width": 24,
+      "height": 1,
+      "properties": {
+        "markdown": "## Lambda"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 2,
+      "width": 6,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/Lambda",
+            "ConcurrentExecutions",
+            { "color": "#2ca02c", "region": "eu-west-2" }
+          ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "eu-west-2",
+        "stat": "Maximum",
+        "period": 300,
+        "title": "Max ConcurrentExecutions"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 9,
+      "width": 6,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/DynamoDB",
+            "SuccessfulRequestLatency",
+            "TableName",
+            "imms-internal-dev-delta",
+            "Operation",
+            "GetItem",
+            { "region": "eu-west-2" }
+          ],
+          [
+            "...",
+            "imms-internal-dev-imms-events",
+            ".",
+            ".",
+            { "region": "eu-west-2" }
+          ],
+          [
+            "...",
+            "imms-internal-qa-delta",
+            ".",
+            ".",
+            { "region": "eu-west-2" }
+          ],
+          [
+            "...",
+            "imms-internal-dev-delta",
+            ".",
+            "Query",
+            { "region": "eu-west-2" }
+          ],
+          [
+            "...",
+            "imms-internal-dev-imms-events",
+            ".",
+            ".",
+            { "region": "eu-west-2" }
+          ],
+          [
+            "...",
+            "imms-internal-qa-delta",
+            ".",
+            ".",
+            { "region": "eu-west-2" }
+          ],
+          [
+            "...",
+            "imms-internal-qa-imms-events",
+            ".",
+            "GetItem",
+            { "region": "eu-west-2" }
+          ],
+          ["...", "Query", { "region": "eu-west-2" }],
+          [
+            "...",
+            "immunisation-batch-internal-dev-audit-table",
+            ".",
+            ".",
+            { "region": "eu-west-2" }
+          ],
+          ["...", "GetItem", { "region": "eu-west-2" }],
+          [
+            "...",
+            "immunisation-batch-internal-qa-audit-table",
+            ".",
+            "Query",
+            { "region": "eu-west-2" }
+          ],
+          ["...", "GetItem", { "region": "eu-west-2" }]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "eu-west-2",
+        "period": 300,
+        "title": "Successful Read Requests (count)",
+        "stat": "SampleCount",
+        "yAxis": {
+          "left": {
+            "label": ""
+          }
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 18,
+      "y": 9,
+      "width": 6,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/DynamoDB",
+            "UserErrors",
+            "Operation",
+            "GetRecords",
+            { "color": "#d62728", "region": "eu-west-2" }
+          ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 300
+      }
+    },
+    {
+      "type": "metric",
+      "x": 6,
+      "y": 9,
+      "width": 6,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/DynamoDB",
+            "SuccessfulRequestLatency",
+            "TableName",
+            "imms-internal-dev-delta",
+            "Operation",
+            "GetItem"
+          ],
+          ["...", "imms-internal-dev-imms-events", ".", "."],
+          ["...", "immunisation-batch-internal-dev-audit-table", ".", "."],
+          ["...", "imms-internal-dev-delta", ".", "Query"],
+          ["...", "imms-internal-qa-imms-events", ".", "."],
+          ["...", "GetItem"],
+          ["...", "imms-internal-qa-delta", ".", "Query"],
+          ["...", "immunisation-batch-internal-qa-audit-table", ".", "."],
+          ["...", "GetItem"],
+          ["...", "imms-internal-dev-imms-events", ".", "Query"],
+          ["...", "immunisation-batch-internal-dev-audit-table", ".", "."]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "eu-west-2",
+        "period": 300,
+        "title": "Successful Read Requests (latency)",
+        "stat": "Average"
+      }
+    },
+    {
+      "type": "text",
+      "x": 0,
+      "y": 8,
+      "width": 24,
+      "height": 1,
+      "properties": {
+        "markdown": "## DynamoDB"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 22,
+      "width": 6,
+      "height": 6,
+      "properties": {
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [["AWS/ApiGateway", "DataProcessed"]],
+        "region": "eu-west-2",
+        "title": "ApiGateway - DataProcessed Across All APIs"
+      }
+    },
+    {
+      "type": "text",
+      "x": 0,
+      "y": 28,
+      "width": 24,
+      "height": 1,
+      "properties": {
+        "markdown": "# Alarms"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 6,
+      "y": 22,
+      "width": 6,
+      "height": 6,
+      "properties": {
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          [
+            "AWS/Kinesis",
+            "IncomingBytes",
+            "StreamName",
+            "imms-internal-dev-processingdata-stream"
+          ],
+          ["...", "imms-internal-qa-processingdata-stream"]
+        ],
+        "region": "eu-west-2",
+        "title": "Kinesis - IncomingBytes"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 22,
+      "width": 6,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/SQS",
+            "NumberOfMessagesSent",
+            "QueueName",
+            "imms-internal-dev-batch-file-created-queue.fifo",
+            { "region": "eu-west-2" }
+          ],
+          ["...", "imms-internal-dev-id-sync-queue", { "region": "eu-west-2" }],
+          ["...", "imms-internal-qa-id-sync-dlq", { "region": "eu-west-2" }],
+          ["...", "imms-internal-qa-delta-dlq", { "region": "eu-west-2" }],
+          [
+            "...",
+            "imms-internal-dev-metadata-queue.fifo",
+            { "region": "eu-west-2" }
+          ],
+          [
+            "...",
+            "imms-internal-qa-batch-file-created-queue.fifo",
+            { "region": "eu-west-2" }
+          ],
+          ["...", "imms-internal-qa-id-sync-queue", { "region": "eu-west-2" }],
+          ["...", "imms-internal-dev-id-sync-dlq", { "region": "eu-west-2" }],
+          [
+            "...",
+            "imms-internal-dev-ack-metadata-queue.fifo",
+            { "region": "eu-west-2" }
+          ],
+          ["...", "imms-internal-dev-delta-dlq", { "region": "eu-west-2" }],
+          [
+            "...",
+            "imms-internal-qa-ack-metadata-queue.fifo",
+            { "region": "eu-west-2" }
+          ],
+          [
+            "...",
+            "imms-internal-qa-metadata-queue.fifo",
+            { "region": "eu-west-2" }
+          ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "eu-west-2",
+        "title": "SQS Queues - NumberOfMessagesSent",
+        "period": 300,
+        "stat": "Sum"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 9,
+      "width": 6,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/DynamoDB",
+            "ConsumedReadCapacityUnits",
+            "TableName",
+            "imms-internal-qa-imms-events"
+          ],
+          ["...", "imms-internal-dev-delta"],
+          ["...", "imms-internal-dev-imms-events"],
+          ["...", "imms-internal-qa-delta"],
+          ["...", "immunisation-batch-internal-qa-audit-table"],
+          ["...", "immunisation-batch-internal-dev-audit-table"]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 300,
+        "title": "ConsumedReadCapacityUnits"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 15,
+      "width": 6,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/DynamoDB",
+            "ConsumedWriteCapacityUnits",
+            "TableName",
+            "immunisation-batch-internal-qa-audit-table"
+          ],
+          ["...", "imms-internal-dev-imms-events"],
+          ["...", "imms-internal-qa-imms-events"],
+          ["...", "imms-internal-dev-delta"],
+          ["...", "immunisation-batch-internal-dev-audit-table"],
+          ["...", "imms-internal-qa-delta"]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 300,
+        "title": "ConsumedWriteCapacityUnits"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 15,
+      "width": 6,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/DynamoDB",
+            "SuccessfulRequestLatency",
+            "TableName",
+            "imms-internal-qa-delta",
+            "Operation",
+            "GetItem",
+            { "region": "eu-west-2" }
+          ],
+          [
+            "...",
+            "imms-internal-dev-delta",
+            ".",
+            "PutItem",
+            { "region": "eu-west-2" }
+          ],
+          [
+            "...",
+            "imms-internal-dev-imms-events",
+            ".",
+            "UpdateItem",
+            { "region": "eu-west-2" }
+          ],
+          ["...", "PutItem", { "region": "eu-west-2" }],
+          [
+            "...",
+            "imms-internal-qa-delta",
+            ".",
+            ".",
+            { "region": "eu-west-2" }
+          ],
+          [
+            "...",
+            "imms-internal-qa-imms-events",
+            ".",
+            "UpdateItem",
+            { "region": "eu-west-2" }
+          ],
+          ["...", "PutItem", { "region": "eu-west-2" }],
+          [
+            "...",
+            "immunisation-batch-internal-dev-audit-table",
+            ".",
+            ".",
+            { "region": "eu-west-2" }
+          ],
+          ["...", "UpdateItem", { "region": "eu-west-2" }],
+          [
+            "...",
+            "immunisation-batch-internal-qa-audit-table",
+            ".",
+            "PutItem",
+            { "region": "eu-west-2" }
+          ],
+          ["...", "UpdateItem", { "region": "eu-west-2" }]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "eu-west-2",
+        "period": 300,
+        "title": "Successful Write Requests (count)",
+        "stat": "SampleCount",
+        "yAxis": {
+          "left": {
+            "label": ""
+          }
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 6,
+      "y": 15,
+      "width": 6,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/DynamoDB",
+            "SuccessfulRequestLatency",
+            "TableName",
+            "imms-internal-dev-delta",
+            "Operation",
+            "PutItem",
+            { "region": "eu-west-2" }
+          ],
+          [
+            "...",
+            "imms-internal-dev-imms-events",
+            ".",
+            "UpdateItem",
+            { "region": "eu-west-2" }
+          ],
+          [
+            "...",
+            "imms-internal-qa-delta",
+            ".",
+            "PutItem",
+            { "region": "eu-west-2" }
+          ],
+          [
+            "...",
+            "imms-internal-qa-imms-events",
+            ".",
+            ".",
+            { "region": "eu-west-2" }
+          ],
+          ["...", "UpdateItem", { "region": "eu-west-2" }]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "eu-west-2",
+        "period": 300,
+        "title": "Successful Write Requests (latency)",
+        "stat": "Average"
+      }
+    }
+  ]
+}
