@@ -56,6 +56,8 @@ resource "aws_dynamodb_table" "delta-dynamodb-table" {
   name                        = "imms-${local.resource_scope}-delta"
   billing_mode                = "PAY_PER_REQUEST"
   hash_key                    = "PK"
+  stream_enabled              = true
+  stream_view_type            = "NEW_IMAGE"
   deletion_protection_enabled = !local.is_temp
 
   attribute {
