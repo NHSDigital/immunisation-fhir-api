@@ -1,5 +1,7 @@
 resource "aws_kms_key" "mns_outbound_events" {
-  description = "KMS key for encrypting MNS outbound immunisation events in SQS"
+  description         = "KMS key for encrypting MNS outbound immunisation events in SQS"
+  key_usage           = "ENCRYPT_DECRYPT"
+  enable_key_rotation = true
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -40,14 +42,6 @@ resource "aws_kms_key" "mns_outbound_events" {
           "kms:Decrypt"
         ]
         Resource = "*"
-        Condition = {
-          StringEquals = {
-            "kms:EncryptionContext:aws:sqs:arn" = [
-              aws_sqs_queue.mns_outbound_events.arn,
-              aws_sqs_queue.mns_outbound_events_dlq.arn
-            ]
-          }
-        }
       },
       {
         Sid    = "AllowLambdaToDecrypt"
