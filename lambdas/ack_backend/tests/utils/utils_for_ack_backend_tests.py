@@ -86,7 +86,6 @@ def generate_expected_ack_file_element(
 def generate_sample_existing_ack_content(message_id: str = "test_file_id") -> dict:
     """Returns sample ack file content with a single failure row."""
     sample_content = deepcopy(ValidValues.ack_initial_content)
-    sample_content["messageHeaderId"] = message_id
     sample_content["failures"].append(generate_expected_ack_file_element(success=False))
     return sample_content
 
@@ -140,8 +139,9 @@ def validate_ack_file_content(
     existing_file_content_copy = deepcopy(existing_file_content)
     expected_ack_file_content = generate_expected_ack_content(incoming_messages, existing_file_content_copy)
 
-    # NB: disregard real-time generated fields
-    actual_ack_file_content["generatedDate"] = expected_ack_file_content["generatedDate"]
-    actual_ack_file_content["summary"]["ingestionTime"] = expected_ack_file_content["summary"]["ingestionTime"]
+    # disregard real-time generated fields
+    if is_complete:
+        actual_ack_file_content["generatedDate"] = expected_ack_file_content["generatedDate"]
+        actual_ack_file_content["summary"]["ingestionTime"] = expected_ack_file_content["summary"]["ingestionTime"]
 
     assert expected_ack_file_content == actual_ack_file_content

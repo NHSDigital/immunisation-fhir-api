@@ -209,8 +209,6 @@ class TestUpdateAckFile(unittest.TestCase):
         for test_case in test_cases:
             with self.subTest(test_case["description"]):
                 update_ack_file(
-                    message_id=MOCK_MESSAGE_DETAILS.message_id,
-                    supplier=MOCK_MESSAGE_DETAILS.supplier,
                     file_key=MOCK_MESSAGE_DETAILS.file_key,
                     created_at_formatted_string=MOCK_MESSAGE_DETAILS.created_at_formatted_string,
                     ack_data_rows=test_case["input_rows"],
@@ -238,8 +236,6 @@ class TestUpdateAckFile(unittest.TestCase):
             ValidValues.ack_data_failure_dict,
         ]
         update_ack_file(
-            message_id=MOCK_MESSAGE_DETAILS.message_id,
-            supplier=MOCK_MESSAGE_DETAILS.supplier,
             file_key=MOCK_MESSAGE_DETAILS.file_key,
             created_at_formatted_string=MOCK_MESSAGE_DETAILS.created_at_formatted_string,
             ack_data_rows=ack_data_rows,
@@ -256,11 +252,8 @@ class TestUpdateAckFile(unittest.TestCase):
         self.assertEqual(expected_ack_file_content, actual_ack_file_content)
 
     def test_obtain_current_ack_content_file_no_existing(self):
-        """Test that when the json ack file does not yet exist, obtain_current_ack_content returns the ack headers only."""
+        """Test that when the json ack file does not yet exist, obtain_current_ack_content returns an initialised ack file."""
         result = obtain_current_ack_content(
-            MOCK_MESSAGE_DETAILS.message_id,
-            MOCK_MESSAGE_DETAILS.supplier,
-            MOCK_MESSAGE_DETAILS.file_key,
             MOCK_MESSAGE_DETAILS.temp_ack_file_key,
         )
         self.assertEqual(result, ValidValues.ack_initial_content)
@@ -270,9 +263,6 @@ class TestUpdateAckFile(unittest.TestCase):
         existing_content = generate_sample_existing_ack_content()
         setup_existing_ack_file(MOCK_MESSAGE_DETAILS.temp_ack_file_key, json.dumps(existing_content), self.s3_client)
         result = obtain_current_ack_content(
-            MOCK_MESSAGE_DETAILS.message_id,
-            MOCK_MESSAGE_DETAILS.supplier,
-            MOCK_MESSAGE_DETAILS.file_key,
             MOCK_MESSAGE_DETAILS.temp_ack_file_key,
         )
         self.assertEqual(result, existing_content)
@@ -286,8 +276,6 @@ class TestUpdateAckFile(unittest.TestCase):
             Body="dummy content",
         )
         update_ack_file(
-            message_id=MOCK_MESSAGE_DETAILS.message_id,
-            supplier=MOCK_MESSAGE_DETAILS.supplier,
             file_key=MOCK_MESSAGE_DETAILS.file_key,
             created_at_formatted_string=MOCK_MESSAGE_DETAILS.created_at_formatted_string,
             ack_data_rows=[ValidValues.ack_data_failure_dict],
@@ -303,9 +291,6 @@ class TestUpdateAckFile(unittest.TestCase):
             file_key=MOCK_MESSAGE_DETAILS.file_key,
         )
         result = obtain_current_ack_content(
-            MOCK_MESSAGE_DETAILS.message_id,
-            MOCK_MESSAGE_DETAILS.supplier,
-            MOCK_MESSAGE_DETAILS.file_key,
             MOCK_MESSAGE_DETAILS.archive_ack_file_key,
         )
         self.assertEqual(result, ValidValues.ack_complete_content)
@@ -321,8 +306,6 @@ class TestUpdateAckFile(unittest.TestCase):
             patch("update_ack_file.get_s3_client") as mock_get_s3_client,  # noqa: E999
         ):  # noqa: E999
             update_ack_file(
-                message_id=MOCK_MESSAGE_DETAILS.message_id,
-                supplier=MOCK_MESSAGE_DETAILS.supplier,
                 file_key=MOCK_MESSAGE_DETAILS.file_key,
                 created_at_formatted_string=MOCK_MESSAGE_DETAILS.created_at_formatted_string,
                 ack_data_rows=[],

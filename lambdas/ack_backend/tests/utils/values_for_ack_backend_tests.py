@@ -254,14 +254,17 @@ class ValidValues:
     }
 
     ack_initial_content = {
+        "failures": [],
+    }
+
+    ack_complete_content_info = {
         "system": "Immunisation FHIR API Batch Report",
         "version": 1,
-        "generatedDate": "",
+        "generatedDate": "2026-02-09T17:26:00.000Z",
         "filename": "RSV_Vaccinations_v5_X26_20210730T12000000",
         "provider": "RAVS",
         "messageHeaderId": "test_file_id",
-        "summary": {"ingestionTime": {"start": 3456}},
-        "failures": [],
+        "summary": {"totalRecords": 0, "succeeded": 0, "failed": 0, "ingestionTime": {"start": 3456, "end": 7890}},
     }
 
     ack_complete_content = {

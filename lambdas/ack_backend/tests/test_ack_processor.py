@@ -136,7 +136,6 @@ class TestAckProcessor(unittest.TestCase):
         # Set up an audit entry which does not yet have record_count recorded
         add_audit_entry_to_table(self.dynamodb_client, "row")
         existing_file_content = deepcopy(ValidValues.ack_initial_content)
-        existing_file_content["messageHeaderId"] = "row"
         # First array of messages. Rows 1 to 3
         array_of_messages_one = [
             {
@@ -208,7 +207,6 @@ class TestAckProcessor(unittest.TestCase):
         # Set up an audit entry which does not yet have record_count recorded
         add_audit_entry_to_table(self.dynamodb_client, "row")
         existing_file_content = deepcopy(ValidValues.ack_initial_content)
-        existing_file_content["messageHeaderId"] = "row"
         test_cases = [
             {
                 "description": "Multiple messages: all with diagnostics (failure messages)",
@@ -269,7 +267,6 @@ class TestAckProcessor(unittest.TestCase):
         # Original source file had 100 records
         add_audit_entry_to_table(self.dynamodb_client, mock_batch_message_id, record_count=100)
         existing_file_content = deepcopy(ValidValues.ack_initial_content)
-        existing_file_content["messageHeaderId"] = mock_batch_message_id
 
         array_of_failure_messages = [
             {
@@ -344,6 +341,9 @@ class TestAckProcessor(unittest.TestCase):
             "records_succeeded": "49",
             "records_failed": "51",
         }
+
+        existing_ack_content |= ValidValues.ack_complete_content_info
+        existing_ack_content["messageHeaderId"] = mock_batch_message_id
         # Include summary counts in expected JSON content
         existing_ack_content["summary"]["totalRecords"] = int(expected_entry_counts["record_count"])
         existing_ack_content["summary"]["succeeded"] = int(expected_entry_counts["records_succeeded"])
