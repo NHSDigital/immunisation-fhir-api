@@ -50,8 +50,8 @@ Feature: Update the immunization of a patient
     @smoke
     @vaccine_type_ROTAVIRUS @patient_id_Random
     Scenario: Verify that update will be successful when request is triggered by other supplier with authorize permission
-        Given valid vaccination record is created by 'Postman_Auth' supplier
-        When Send a update for Immunization event created with patient address being updated by 'MAVIS'
+        Given valid vaccination record is created by 'TPP' supplier
+        When Send a update for Immunization event created with patient address being updated by 'EMIS'
         Then The request will be successful with the status code '200'
         And The Etag in header will containing the latest event version
         And The imms event table will be populated with the correct data for 'updated' event

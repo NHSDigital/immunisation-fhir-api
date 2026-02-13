@@ -212,7 +212,7 @@ Feature: Search the immunization of a patient
         And correct immunization event is returned in the response with only specified elements
 
     @smoke
-    @Delete_cleanUp @vaccine_type_HIB @patient_id_Random  @supplier_name_Postman_Auth
+    @Delete_cleanUp @vaccine_type_HIB @patient_id_Random  @supplier_name_TPP
     Scenario: Flu event is created and search post request fetch the only one record matched with identifier with correct version id
         Given I have created a valid vaccination record
         And created event is being updated twice
@@ -221,7 +221,7 @@ Feature: Search the immunization of a patient
         And correct immunization event is returned in the response
 
     @smoke
-    @Delete_cleanUp @vaccine_type_6IN1 @patient_id_Random  @supplier_name_Postman_Auth
+    @Delete_cleanUp @vaccine_type_6IN1 @patient_id_Random  @supplier_name_EMIS
     Scenario: Flu event is created and search post request fetch the only one record matched with identifier and _elements with correct version id
         Given I have created a valid vaccination record
         And created event is being updated twice
