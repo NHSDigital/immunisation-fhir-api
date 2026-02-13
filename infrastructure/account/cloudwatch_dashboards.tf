@@ -22,12 +22,11 @@ locals {
     "_not_found memory alarm"
   ]
   dev_alarms     = [for alarm in alarms : "arn:aws:cloudwatch:${var.aws_region}:${var.imms_account_id}:alarm:imms-internal-dev${alarm}"]
-  blue_alarms    = [for alarm in alarms : "arn:aws:cloudwatch:${var.aws_region}:${var.imms_account_id}:alarm:imms-${var.environment == "prod" ? "blue" : "int-blue"}${alarm}"]
-  green_alarms   = [for alarm in alarms : "arn:aws:cloudwatch:${var.aws_region}:${var.imms_account_id}:alarm:imms-${var.environment == "prod" ? "green" : "int-green"}${alarm}"]
+  non_dev_blue   = var.environment == "prod" ? "blue" : "int-blue"
+  non_dev_green  = var.environment == "prod" ? "green" : "int-green"
+  blue_alarms    = [for alarm in alarms : "arn:aws:cloudwatch:${var.aws_region}:${var.imms_account_id}:alarm:imms-${local.non_dev_blue}${alarm}"]
+  green_alarms   = [for alarm in alarms : "arn:aws:cloudwatch:${var.aws_region}:${var.imms_account_id}:alarm:imms-${local.non_dev_green}${alarm}"]
   non_dev_alarms = concat(local.blue_alarms, local.green_alarms)
-
-  sub_envs_a = var.environment == dev ? "internal-dev" : var.environment == "prod" ? "blue" : "int-blue"
-  sub_envs_b = var.environment == dev ? "internal-qa" : var.environment == "prod" ? "green" : "int-green"
 }
 
 resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
@@ -170,25 +169,20 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : [
-            ["AWS/DynamoDB", "SuccessfulRequestLatency", "TableName", "imms-internal-dev-delta", "Operation", "GetItem", { region : var.aws_region }],
-            ["...", "imms-internal-qa-delta", ".", ".", { region : var.aws_region }],
-
-            ["...", "imms-internal-dev-delta", ".", "Query", { region : var.aws_region }],
-            ["...", "imms-internal-qa-delta", ".", ".", { region : var.aws_region }],
-
-            ["...", "imms-internal-dev-imms-events", ".", "GetItem", { region : var.aws_region }],
-            ["...", "imms-internal-qa-imms-events", ".", ".", { region : var.aws_region }],
-
-            ["...", "imms-internal-dev-imms-events", ".", "Query", { region : var.aws_region }],
-            ["...", "imms-internal-qa-imms-events", ".", ".", { region : var.aws_region }],
-
-            ["...", "immunisation-batch-internal-dev-audit-table", ".", "GetItem", { region : var.aws_region }],
-            ["...", "immunisation-batch-internal-qa-audit-table", ".", ".", { region : var.aws_region }],
-
-            ["...", "immunisation-batch-internal-dev-audit-table", ".", "Query", { region : var.aws_region }],
-            ["...", "immunisation-batch-internal-qa-audit-table", ".", ".", { region : var.aws_region }],
-          ],
+          "metrics" : compact([
+            ["AWS/DynamoDB", "SuccessfulRequestLatency", "TableName", "imms-${var.environment == "dev" ? "internal-dev" : var.environment}-delta", "Operation", "GetItem", { region : var.aws_region }],
+            var.environment == "dev" ? ["...", "imms-internal-qa-delta", ".", ".", { region : var.aws_region }] : "",
+            ["...", "imms-${var.environment == "dev" ? "internal-dev" : var.environment}-delta", ".", "Query", { region : var.aws_region }],
+            var.environment == "dev" ? ["...", "imms-internal-qa-delta", ".", ".", { region : var.aws_region }] : "",
+            ["...", "imms-${var.environment == "dev" ? "internal-dev" : var.environment}-imms-events", ".", "GetItem", { region : var.aws_region }],
+            var.environment == "dev" ? ["...", "imms-internal-qa-imms-events", ".", ".", { region : var.aws_region }] : "",
+            ["...", "imms-${var.environment == "dev" ? "internal-dev" : var.environment}-imms-events", ".", "Query", { region : var.aws_region }],
+            var.environment == "dev" ? ["...", "imms-internal-qa-imms-events", ".", ".", { region : var.aws_region }] : "",
+            ["...", "immunisation-batch-${var.environment == "dev" ? "internal-dev" : var.environment}-audit-table", ".", "GetItem", { region : var.aws_region }],
+            var.environment == "dev" ? ["...", "immunisation-batch-internal-qa-audit-table", ".", ".", { region : var.aws_region }] : "",
+            ["...", "immunisation-batch-${var.environment == "dev" ? "internal-dev" : var.environment}-audit-table", ".", "Query", { region : var.aws_region }],
+            var.environment == "dev" ? ["...", "immunisation-batch-internal-qa-audit-table", ".", ".", { region : var.aws_region }] : "",
+          ]),
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
@@ -232,26 +226,20 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : [
-            [
-              "AWS/DynamoDB",
-              "SuccessfulRequestLatency",
-              "TableName",
-              "imms-internal-dev-delta",
-              "Operation",
-              "GetItem"
-            ],
-            ["...", "imms-internal-dev-imms-events", ".", "."],
-            ["...", "immunisation-batch-internal-dev-audit-table", ".", "."],
-            ["...", "imms-internal-dev-delta", ".", "Query"],
-            ["...", "imms-internal-qa-imms-events", ".", "."],
-            ["...", "GetItem"],
-            ["...", "imms-internal-qa-delta", ".", "Query"],
-            ["...", "immunisation-batch-internal-qa-audit-table", ".", "."],
-            ["...", "GetItem"],
-            ["...", "imms-internal-dev-imms-events", ".", "Query"],
-            ["...", "immunisation-batch-internal-dev-audit-table", ".", "."]
-          ],
+          "metrics" : compact([
+            ["AWS/DynamoDB", "SuccessfulRequestLatency", "TableName", "imms-${var.environment == "dev" ? "internal-dev" : var.environment}-delta", "Operation", "GetItem", { region : var.aws_region }],
+            var.environment == "dev" ? ["...", "imms-internal-qa-delta", ".", ".", { region : var.aws_region }] : "",
+            ["...", "imms-${var.environment == "dev" ? "internal-dev" : var.environment}-delta", ".", "Query", { region : var.aws_region }],
+            var.environment == "dev" ? ["...", "imms-internal-qa-delta", ".", ".", { region : var.aws_region }] : "",
+            ["...", "imms-${var.environment == "dev" ? "internal-dev" : var.environment}-imms-events", ".", "GetItem", { region : var.aws_region }],
+            var.environment == "dev" ? ["...", "imms-internal-qa-imms-events", ".", ".", { region : var.aws_region }] : "",
+            ["...", "imms-${var.environment == "dev" ? "internal-dev" : var.environment}-imms-events", ".", "Query", { region : var.aws_region }],
+            var.environment == "dev" ? ["...", "imms-internal-qa-imms-events", ".", ".", { region : var.aws_region }] : "",
+            ["...", "immunisation-batch-${var.environment == "dev" ? "internal-dev" : var.environment}-audit-table", ".", "GetItem", { region : var.aws_region }],
+            var.environment == "dev" ? ["...", "immunisation-batch-internal-qa-audit-table", ".", ".", { region : var.aws_region }] : "",
+            ["...", "immunisation-batch-${var.environment == "dev" ? "internal-dev" : var.environment}-audit-table", ".", "Query", { region : var.aws_region }],
+            var.environment == "dev" ? ["...", "immunisation-batch-internal-qa-audit-table", ".", ".", { region : var.aws_region }] : "",
+          ]),
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
@@ -304,13 +292,8 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
           "view" : "timeSeries",
           "stacked" : false,
           "metrics" : [
-            [
-              "AWS/Kinesis",
-              "IncomingBytes",
-              "StreamName",
-              "imms-internal-dev-processingdata-stream"
-            ],
-            ["...", "imms-internal-qa-processingdata-stream"]
+            ["AWS/Kinesis", "IncomingBytes", "StreamName", "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}-processingdata-stream"],
+            ["...", "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}-processingdata-stream"]
           ],
           "region" : var.aws_region,
           "title" : "Kinesis - IncomingBytes"
