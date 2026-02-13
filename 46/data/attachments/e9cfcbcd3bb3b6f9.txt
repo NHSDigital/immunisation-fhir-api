@@ -1,0 +1,1 @@
+✅ Step Passed: **Empty immunization event is returned in the response

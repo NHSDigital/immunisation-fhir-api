@@ -1,1 +1,0 @@
-✅ Step Passed: **Api request will be successful and tables will be updated correctly

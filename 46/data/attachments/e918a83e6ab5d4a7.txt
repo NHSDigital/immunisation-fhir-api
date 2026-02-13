@@ -1,0 +1,1 @@
+✅ Step Passed: **The location key and Etag in header will contain the Immunization Id and version
