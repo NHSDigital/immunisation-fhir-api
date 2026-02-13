@@ -10,13 +10,17 @@ def validate_bus_ack_file_for_successful_records(context, file_rows) -> bool:
         print("No rows found in BUS ACK file for successful records")
         return True
     else:
-        success_mask = ~context.vaccine_df["UNIQUE_ID"].str.startswith("Fail-", na=False) & (
-            context.vaccine_df["UNIQUE_ID"].str.strip() != ""
-        )
+        success_mask = ~context.vaccine_df["UNIQUE_ID"].str.startswith(
+            "Fail-", na=False
+        ) & (context.vaccine_df["UNIQUE_ID"].str.strip() != "")
 
         success_df = context.vaccine_df[success_mask]
 
-        valid_ids = set(success_df["UNIQUE_ID"].astype(str) + "^" + success_df["UNIQUE_ID_URI"].astype(str))
+        valid_ids = set(
+            success_df["UNIQUE_ID"].astype(str)
+            + "^"
+            + success_df["UNIQUE_ID_URI"].astype(str)
+        )
 
         file_ids = set(file_rows["LOCAL_ID"].astype(str))
 
@@ -38,7 +42,9 @@ def validate_inf_ack_file(context, success: bool = True) -> bool:
     expected_columns = 12
 
     if len(header) != expected_columns:
-        print(f"Header column count mismatch: expected {expected_columns}, got {len(header)}")
+        print(
+            f"Header column count mismatch: expected {expected_columns}, got {len(header)}"
+        )
         return False
 
     row_valid = True  # Reset for each row
@@ -67,7 +73,9 @@ def validate_inf_ack_file(context, success: bool = True) -> bool:
         excepted_issue_severity = "Fatal"
         excepted_issue_code = "Fatal Error"
         excepted_response_code = "10002"
-        expected_response_display = "Infrastructure Level Response Value - Processing Error"
+        expected_response_display = (
+            "Infrastructure Level Response Value - Processing Error"
+        )
 
     if header_response_code != excepted_header_response_code:
         print(f"HEADER_RESPONSE_CODE is not {excepted_header_response_code}")
@@ -111,7 +119,9 @@ def validate_bus_ack_file_for_error(context, file_rows) -> bool:
 
     fail_df = context.vaccine_df[fail_mask]
 
-    valid_ids = set(fail_df["UNIQUE_ID"].astype(str) + "^" + fail_df["UNIQUE_ID_URI"].astype(str))
+    valid_ids = set(
+        fail_df["UNIQUE_ID"].astype(str) + "^" + fail_df["UNIQUE_ID_URI"].astype(str)
+    )
 
     overall_valid = True
 
@@ -165,13 +175,23 @@ def validate_bus_ack_file_for_error(context, file_rows) -> bool:
                 prefix = str(valid_id_df["UNIQUE_ID"]).strip()
 
                 if prefix in ["", " ", "nan"]:
-                    expected_error = valid_id_df["PERSON_SURNAME"] if not valid_id_df.empty else "no_valid_surname"
+                    expected_error = (
+                        valid_id_df["PERSON_SURNAME"]
+                        if not valid_id_df.empty
+                        else "no_valid_surname"
+                    )
 
                 else:
                     split_parts = prefix.split("-")
-                    expected_error = split_parts[2] if len(split_parts) > 2 else "invalid_prefix_format"
+                    expected_error = (
+                        split_parts[2]
+                        if len(split_parts) > 2
+                        else "invalid_prefix_format"
+                    )
 
-                expected_diagnostic = ERROR_MAP.get(expected_error, {}).get("diagnostics")
+                expected_diagnostic = ERROR_MAP.get(expected_error, {}).get(
+                    "diagnostics"
+                )
 
                 if operation_outcome != expected_diagnostic:
                     print(
@@ -180,7 +200,9 @@ def validate_bus_ack_file_for_error(context, file_rows) -> bool:
                     row_valid = False
 
             except Exception as e:
-                print(f"Row {i}: error extracting expected diagnostics from local_id '{valid_id}': {e}")
+                print(
+                    f"Row {i}: error extracting expected diagnostics from local_id '{valid_id}': {e}"
+                )
                 row_valid = False
 
             overall_valid = overall_valid and row_valid
@@ -188,7 +210,9 @@ def validate_bus_ack_file_for_error(context, file_rows) -> bool:
     return overall_valid
 
 
-def read_and_validate_csv_bus_ack_file_content(context, by_local_id: bool = True, by_row_number: bool = False) -> dict:
+def read_and_validate_csv_bus_ack_file_content(
+    context, by_local_id: bool = True, by_row_number: bool = False
+) -> dict:
     if by_local_id and by_row_number:
         raise ValueError("Choose only one mode: by_local_id OR by_row_number")
 
@@ -256,16 +280,16 @@ def read_and_validate_csv_bus_ack_file_content(context, by_local_id: bool = True
 def validate_json_bus_ack_file_structure_and_metadata(context):
     data = json.loads(context.fileContentJson)
     report = BatchReport(**data)
-    assert report.system == "Immunisation FHIR API Batch Report", (
-        f"Expected system 'Immunisation FHIR API Batch Report', got '{report.system}'"
-    )
+    assert (
+        report.system == "Immunisation FHIR API Batch Report"
+    ), f"Expected system 'Immunisation FHIR API Batch Report', got '{report.system}'"
     assert report.version == 1, f"Expected version 1, got {report.version}"
-    assert report.filename == context.filename.replace(f".{context.file_extension}", ""), (
-        f"Expected filename '{context.filename}' without extension, got '{report.filename}'"
-    )
-    assert report.provider == context.supplier_name, (
-        f"Expected provider '{context.supplier_name}', got '{report.provider}'"
-    )
+    assert report.filename == context.filename.replace(
+        f".{context.file_extension}", ""
+    ), f"Expected filename '{context.filename}' without extension, got '{report.filename}'"
+    assert (
+        report.provider == context.supplier_name
+    ), f"Expected provider '{context.supplier_name}', got '{report.provider}'"
 
     expected_row_count = len(context.vaccine_df)
 
@@ -279,15 +303,15 @@ def validate_json_bus_ack_file_structure_and_metadata(context):
         | (context.vaccine_df["UNIQUE_ID"].str.strip() == "")
     ].shape[0]
 
-    assert report.summary.totalRecords == expected_row_count, (
-        f"Expected totalRecords {expected_row_count}, got {report.summary.totalRecords}"
-    )
-    assert report.summary.succeeded == expected_success_count, (
-        f"Expected success count {expected_success_count}, got {report.summary.succeeded}"
-    )
-    assert report.summary.failed == expected_failure_count, (
-        f"Expected failure count {expected_failure_count}, got {report.summary.failed}"
-    )
+    assert (
+        report.summary.totalRecords == expected_row_count
+    ), f"Expected totalRecords {expected_row_count}, got {report.summary.totalRecords}"
+    assert (
+        report.summary.succeeded == expected_success_count
+    ), f"Expected success count {expected_success_count}, got {report.summary.succeeded}"
+    assert (
+        report.summary.failed == expected_failure_count
+    ), f"Expected failure count {expected_failure_count}, got {report.summary.failed}"
 
 
 def validate_json_bus_ack_file_failure_records(
@@ -308,7 +332,9 @@ def validate_json_bus_ack_file_failure_records(
     )
     fail_df = context.vaccine_df[fail_mask]
 
-    expected_local_ids = set(fail_df["UNIQUE_ID"].astype(str) + "^" + fail_df["UNIQUE_ID_URI"].astype(str))
+    expected_local_ids = set(
+        fail_df["UNIQUE_ID"].astype(str) + "^" + fail_df["UNIQUE_ID_URI"].astype(str)
+    )
 
     overall_valid = True
 
@@ -327,7 +353,10 @@ def validate_json_bus_ack_file_failure_records(
             print(f"Failure rowId {row_id}: responseCode != '30002'")
             row_valid = False
 
-        if failure.responseDisplay != "Business Level Response Value - Processing Error":
+        if (
+            failure.responseDisplay
+            != "Business Level Response Value - Processing Error"
+        ):
             print(f"Failure rowId {row_id}: responseDisplay incorrect")
             row_valid = False
 
@@ -347,6 +376,12 @@ def validate_json_bus_ack_file_failure_records(
                     "<identifier>",
                     f"{context.immunization_object.identifier[0].system}#"
                     f"{context.immunization_object.identifier[0].value}",
+                )
+
+            if expected_error == "not_found" and expected_diagnostic:
+                expected_diagnostic = expected_diagnostic.replace(
+                    "<imms_id>",
+                    f"{context.immunization_object.identifier[0].system}#{str(df_row.get("UNIQUE_ID", "")).strip()}",
                 )
 
             if operation_outcome != expected_diagnostic:
