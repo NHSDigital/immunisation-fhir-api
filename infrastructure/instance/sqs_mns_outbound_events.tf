@@ -1,5 +1,5 @@
 resource "aws_sqs_queue" "mns_outbound_events" {
-  name                       = "${local.resource_scope}-mns-outbound-events"
+  name                       = "${local.mns_publisher_resource_name_prefix}-queue"
   fifo_queue                 = false
   kms_master_key_id          = aws_kms_key.mns_outbound_events.arn
   visibility_timeout_seconds = 180
@@ -10,7 +10,7 @@ resource "aws_sqs_queue" "mns_outbound_events" {
 }
 
 resource "aws_sqs_queue" "mns_outbound_events_dlq" {
-  name              = "${local.resource_scope}-mns-outbound-events-dlq"
+  name              = "${local.mns_publisher_resource_name_prefix}-dead-letter-queue"
   kms_master_key_id = aws_kms_key.mns_outbound_events.arn
 }
 

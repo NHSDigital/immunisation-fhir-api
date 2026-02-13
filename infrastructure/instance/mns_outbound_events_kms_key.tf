@@ -42,16 +42,38 @@ resource "aws_kms_key" "mns_outbound_events" {
           "kms:Decrypt"
         ]
         Resource = "*"
+        Condition = {
+          StringEquals = {
+            "kms:EncryptionContext:aws:sqs:queue_arn" = [
+              "arn:aws:sqs:${var.aws_region}:${var.immunisation_account_id}:${local.mns_publisher_resource_name_prefix}-queue",
+              "arn:aws:sqs:${var.aws_region}:${var.immunisation_account_id}:${local.mns_publisher_resource_name_prefix}-dead-letter-queue"
+            ]
+          }
+        }
       },
       {
         Sid    = "AllowLambdaToDecrypt"
         Effect = "Allow"
         Principal = {
-          AWS = aws_iam_role.mns_publisher_lambda_exec_role.arn
+          AWS = "arn:aws:iam::${var.immunisation_account_id}:role/${local.short_prefix}-mns-publisher-lambda-exec-role"
         }
         Action = [
           "kms:Decrypt",
           "kms:GenerateDataKey"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "AllowEventBridgePipesUseOfKey"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${var.immunisation_account_id}:role/${local.mns_publisher_resource_name_prefix}-eventbridge-pipe-role"
+        }
+        Action = [
+          "kms:GenerateDataKey",
+          "kms:Encrypt",
+          "kms:DescribeKey"
+
         ]
         Resource = "*"
       }
@@ -60,6 +82,6 @@ resource "aws_kms_key" "mns_outbound_events" {
 }
 
 resource "aws_kms_alias" "mns_outbound_events_key" {
-  name          = "alias/mns-outbound-events-key"
+  name          = "alias/${local.mns_publisher_resource_name_prefix}-events-key"
   target_key_id = aws_kms_key.mns_outbound_events.id
 }

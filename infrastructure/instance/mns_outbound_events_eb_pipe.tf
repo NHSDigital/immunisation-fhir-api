@@ -1,6 +1,6 @@
 # IAM Role for EventBridge Pipe
 resource "aws_iam_role" "mns_outbound_events_eb_pipe" {
-  name = "${local.resource_scope}-mns-outbound-eventbridge-pipe-role"
+  name = "${local.mns_publisher_resource_name_prefix}-eventbridge-pipe-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -97,7 +97,7 @@ resource "aws_pipes_pipe" "mns_outbound_events" {
     aws_iam_role_policy.mns_outbound_events_eb_pipe_target_policy,
     aws_iam_role_policy.mns_outbound_events_eb_pipe_cw_log_policy,
   ]
-  name     = "${local.resource_scope}-mns-outbound-events"
+  name     = "${local.mns_publisher_resource_name_prefix}-pipe"
   role_arn = aws_iam_role.mns_outbound_events_eb_pipe.arn
   source   = aws_dynamodb_table.delta-dynamodb-table.stream_arn
   target   = aws_sqs_queue.mns_outbound_events.arn
@@ -116,3 +116,7 @@ resource "aws_pipes_pipe" "mns_outbound_events" {
     }
   }
 }
+
+# TODO - for consideration, move the MNS Publishing related components into a module
+# Discuss with testers - do we want to only toggle this in certain environments
+# If so, using a module would be easier from an on/off switch perspective
