@@ -82,9 +82,7 @@ def fetch_immunization_events_detail_by_IdentifierPK(
     return response
 
 
-def fetch_immunization_int_delta_detail_by_immsID(
-    aws_profile_name: str, ImmsID: str, env: str, expected_item: int = 1
-):
+def fetch_immunization_int_delta_detail_by_immsID(aws_profile_name: str, ImmsID: str, env: str, expected_item: int = 1):
     db = DynamoDBHelper(aws_profile_name, env)
     tableImmsDelta = db.get_delta_table()
 
@@ -134,9 +132,7 @@ def fetch_batch_audit_table_detail(aws_profile_name: str, filename: str, env: st
         time.sleep(delay)
         delay *= 2
 
-    print(
-        f"\n❌ No items found for filename={filename} after {max_attempts} attempts.\n"
-    )
+    print(f"\n❌ No items found for filename={filename} after {max_attempts} attempts.\n")
     return []
 
 
@@ -189,9 +185,7 @@ def validate_imms_delta_record_with_created_event(
         )
 
     if hasattr(create_obj, "lotNumber") and create_obj.lotNumber:
-        fields_to_compare.append(
-            ("BATCH_NUMBER", create_obj.lotNumber or "", imms_event.get("BATCH_NUMBER"))
-        )
+        fields_to_compare.append(("BATCH_NUMBER", create_obj.lotNumber or "", imms_event.get("BATCH_NUMBER")))
 
     if hasattr(create_obj, "expirationDate") and create_obj.expirationDate:
         fields_to_compare.append(
@@ -307,10 +301,7 @@ def validate_imms_delta_record_with_created_event(
             ),
             (
                 "VACCINATION_PROCEDURE_TERM",
-                create_obj.extension[0]
-                .valueCodeableConcept.coding[0]
-                .extension[0]
-                .valueString,
+                create_obj.extension[0].valueCodeableConcept.coding[0].extension[0].valueString,
                 imms_event.get("VACCINATION_PROCEDURE_TERM"),
             ),
             (
@@ -391,32 +382,24 @@ def validate_imms_delta_record_with_created_event(
 
 
 def get_all_term_text(context):
-    item = fetch_immunization_int_delta_detail_by_immsID(
-        context.aws_profile_name, context.ImmsID, context.S3_env
-    )
+    item = fetch_immunization_int_delta_detail_by_immsID(context.aws_profile_name, context.ImmsID, context.S3_env)
     assert item, f"Item not found in response for ImmsID: {context.ImmsID}"
 
     event = item[0].get("Imms")
     assert event, "Imms field missing in items."
 
-    assert (
-        "VACCINATION_PROCEDURE_TERM" in event
-    ), "Procedure term text field is missing in the delta table item."
+    assert "VACCINATION_PROCEDURE_TERM" in event, "Procedure term text field is missing in the delta table item."
     procedure_term = event.get("VACCINATION_PROCEDURE_TERM")
 
-    assert (
-        "VACCINE_PRODUCT_TERM" in event
-    ), "Product term text field is missing in the delta table item."
+    assert "VACCINE_PRODUCT_TERM" in event, "Product term text field is missing in the delta table item."
     product_term = event.get("VACCINE_PRODUCT_TERM")
 
-    assert (
-        "SITE_OF_VACCINATION_TERM" in event
-    ), "Site of vaccination term text field is missing in the delta table item."
+    assert "SITE_OF_VACCINATION_TERM" in event, "Site of vaccination term text field is missing in the delta table item."
     site_term = event.get("SITE_OF_VACCINATION_TERM")
 
-    assert (
-        "ROUTE_OF_VACCINATION_TERM" in event
-    ), "Route of vaccination term text field is missing in the delta table item."
+    assert "ROUTE_OF_VACCINATION_TERM" in event, (
+        "Route of vaccination term text field is missing in the delta table item."
+    )
     route_term = event.get("ROUTE_OF_VACCINATION_TERM")
 
     return {
@@ -452,11 +435,7 @@ def validate_audit_table_record(
         f"Expected status {expected_status}, got '{item.get('status')}'",
     )
 
-    expected_queue = (
-        expected_queue_name
-        if expected_queue_name
-        else f"{context.supplier_name}_{context.vaccine_type}"
-    )
+    expected_queue = expected_queue_name if expected_queue_name else f"{context.supplier_name}_{context.vaccine_type}"
     check.is_true(
         item.get("queue_name", "").upper() == expected_queue.upper(),
         f"Expected queue_name '{expected_queue}', got '{item.get('queue_name')}'",
@@ -499,15 +478,12 @@ def validate_audit_table_record(
     check.is_true("timestamp" in item, "processed_timestamp not found in item")
 
     check.is_true(
-        item.get("error_details")
-        == (expected_error_detail if expected_error_detail != "None" else None),
+        item.get("error_details") == (expected_error_detail if expected_error_detail != "None" else None),
         f"Expected error_detail {expected_error_detail}, but got: {item.get('error_details')}",
     )
 
 
-def validate_imms_delta_record_with_batch_record(
-    context, batch_record, item, event_type, action_flag
-):
+def validate_imms_delta_record_with_batch_record(context, batch_record, item, event_type, action_flag):
     event = item.get("Imms")
     assert event, "Imms field missing in items."
 
@@ -586,11 +562,7 @@ def validate_imms_delta_record_with_batch_record(
         ),
         (
             "DOSE_AMOUNT",
-            (
-                float(batch_record["DOSE_AMOUNT"])
-                if batch_record["DOSE_AMOUNT"] != ""
-                else ""
-            ),
+            (float(batch_record["DOSE_AMOUNT"]) if batch_record["DOSE_AMOUNT"] != "" else ""),
             float(event.get("DOSE_AMOUNT")) if event.get("DOSE_AMOUNT") != "" else "",
         ),
         (
@@ -648,20 +620,11 @@ def validate_imms_delta_record_with_batch_record(
         )
 
 
-def validate_to_compare_batch_record_with_event_table_record(
-    context, batch_record, created_event
-):
-    response_patient, response_practitioner = extract_patient_and_practitioner(
-        created_event.contained
-    )
+def validate_to_compare_batch_record_with_event_table_record(context, batch_record, created_event):
+    response_patient, response_practitioner = extract_patient_and_practitioner(created_event.contained)
 
-    check.is_true(
-        response_patient is not None, "Patient not found in contained resources"
-    )
-    if (
-        batch_record["PERFORMING_PROFESSIONAL_FORENAME"]
-        or batch_record["PERFORMING_PROFESSIONAL_SURNAME"]
-    ):
+    check.is_true(response_patient is not None, "Patient not found in contained resources")
+    if batch_record["PERFORMING_PROFESSIONAL_FORENAME"] or batch_record["PERFORMING_PROFESSIONAL_SURNAME"]:
         check.is_true(
             response_practitioner is not None,
             "Practitioner not found in contained resources",
@@ -674,13 +637,9 @@ def validate_to_compare_batch_record_with_event_table_record(
 
     created_occurrence_date = batch_record["DATE_AND_TIME"]
     trimmed_date = created_occurrence_date[:-2]
-    expected_occurrenceDateTime = (
-        f"{covert_to_expected_date_format(trimmed_date)}+00:00"
-    )
+    expected_occurrenceDateTime = f"{covert_to_expected_date_format(trimmed_date)}+00:00"
     expected_recorded = covert_to_expected_date_format(batch_record["RECORDED_DATE"])
-    actual_occurrenceDateTime = covert_to_expected_date_format(
-        created_event.occurrenceDateTime
-    )
+    actual_occurrenceDateTime = covert_to_expected_date_format(created_event.occurrenceDateTime)
     actual_recorded = covert_to_expected_date_format(created_event.recorded)
     gender_code = get_gender_code(batch_record["PERSON_GENDER_CODE"])
     expected_gender = GenderCode(gender_code).name.lower()
@@ -833,9 +792,7 @@ def validate_to_compare_batch_record_with_event_table_record(
         )
 
     if batch_record["BATCH_NUMBER"]:
-        fields_to_compare.append(
-            ("lotNumber", batch_record["BATCH_NUMBER"], created_event.lotNumber)
-        )
+        fields_to_compare.append(("lotNumber", batch_record["BATCH_NUMBER"], created_event.lotNumber))
 
     if batch_record["EXPIRY_DATE"]:
         fields_to_compare.append(
@@ -899,10 +856,7 @@ def validate_to_compare_batch_record_with_event_table_record(
             )
         )
 
-    if (
-        batch_record["PERFORMING_PROFESSIONAL_FORENAME"]
-        or batch_record["PERFORMING_PROFESSIONAL_SURNAME"]
-    ):
+    if batch_record["PERFORMING_PROFESSIONAL_FORENAME"] or batch_record["PERFORMING_PROFESSIONAL_SURNAME"]:
         p_names = extract_practitioner_name(response_practitioner)
         fields_to_compare.extend(
             [
@@ -1111,6 +1065,4 @@ def update_audit_table_for_failed_status(item: dict, aws_profile_name: str, env:
         ReturnValues="UPDATED_NEW",
     )
 
-    print(
-        f"✅ Updated audit status for message_id={key['message_id']}: {response.get('Attributes')}"
-    )
+    print(f"✅ Updated audit status for message_id={key['message_id']}: {response.get('Attributes')}")
