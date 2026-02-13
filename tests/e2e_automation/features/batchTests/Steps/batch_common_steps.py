@@ -112,12 +112,8 @@ def all_records_are_processed_successfully_in_the_inf_ack_file(context):
 @then("bus ack files will be created")
 def file_will_be_moved_to_destination_bucket(context):
     result = wait_and_read_ack_file(context, "forwardedFile")
-    assert isinstance(result, dict), f"Expected both CSV and JSON ACK files but got: {type(result)}"
-    context.fileContent = result.get("csv")
+    assert isinstance(result, dict), f"Expected JSON ACK file but got: {type(result)}"
     context.fileContentJson = result.get("json")
-    assert context.fileContent, (
-        f"BUS Ack csv File not found in destination bucket after timeout: {context.forwarded_prefix}"
-    )
     assert context.fileContentJson, (
         f"BUS Ack JSON file not found in destination bucket after timeout: {context.forwarded_prefix}"
     )
