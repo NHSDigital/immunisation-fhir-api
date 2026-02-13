@@ -30,8 +30,7 @@ def find_entry_by_Imms_id(parsed_data, imms_id) -> Optional[object]:
         (
             entry
             for entry in parsed_data.entry
-            if entry.resource.resourceType == "Immunization"
-            and entry.resource.id == imms_id
+            if entry.resource.resourceType == "Immunization" and entry.resource.id == imms_id
         ),
         None,
     )
@@ -54,9 +53,7 @@ def parse_entry(entry_data: dict) -> Entry:
     resource_data = entry_data["resource"]
     resource_type = resource_data.get("resourceType", "").lower()  # ✅ Normalize case
 
-    resource_class = RESOURCE_MAP.get(
-        resource_type.capitalize()
-    )  # ✅ Match correct class
+    resource_class = RESOURCE_MAP.get(resource_type.capitalize())  # ✅ Match correct class
 
     if not resource_class:
         raise ValueError(f"Unsupported resourceType: {resource_type}")
@@ -112,19 +109,13 @@ def validate_error_response(
     identifier: str = "",
 ):
     uuid_obj = uuid.UUID(error_response.id, version=4)
-    check.is_true(
-        isinstance(uuid_obj, uuid.UUID), f"Id is not UUID {error_response.id}"
-    )
+    check.is_true(isinstance(uuid_obj, uuid.UUID), f"Id is not UUID {error_response.id}")
 
     fields_to_compare = []
 
     match errorName:
         case "not_found":
-            expected_diagnostics = (
-                ERROR_MAP.get("not_found", {})
-                .get("diagnostics", "")
-                .replace("<imms_id>", imms_id)
-            )
+            expected_diagnostics = ERROR_MAP.get("not_found", {}).get("diagnostics", "").replace("<imms_id>", imms_id)
             fields_to_compare.append(
                 (
                     "Diagnostics",
@@ -134,11 +125,7 @@ def validate_error_response(
             )
 
         case "invalid_etag":
-            expected_diagnostics = (
-                ERROR_MAP.get("invalid_etag", {})
-                .get("diagnostics", "")
-                .replace("<version>", version)
-            )
+            expected_diagnostics = ERROR_MAP.get("invalid_etag", {}).get("diagnostics", "").replace("<version>", version)
             fields_to_compare.append(
                 (
                     "Diagnostics",
@@ -148,9 +135,7 @@ def validate_error_response(
             )
         case "duplicate":
             expected_diagnostics = (
-                ERROR_MAP.get("duplicate", {})
-                .get("diagnostics", "")
-                .replace("<identifier>", identifier)
+                ERROR_MAP.get("duplicate", {}).get("diagnostics", "").replace("<identifier>", identifier)
             )
             fields_to_compare.append(
                 (
@@ -170,9 +155,7 @@ def validate_error_response(
                 .replace("\n", "")
             )
             expected_diagnostics = ERROR_MAP.get(errorName, {}).get("diagnostics", "")
-            fields_to_compare.append(
-                ("Diagnostics", expected_diagnostics, actual_diagnostics)
-            )
+            fields_to_compare.append(("Diagnostics", expected_diagnostics, actual_diagnostics))
 
     fields_to_compare.extend(
         [
@@ -225,30 +208,22 @@ def parse_error_response(json_data: dict) -> OperationOutcome:
     return OperationOutcome.parse_obj(json_data)
 
 
-def validate_to_compare_request_and_response(
-    context, create_obj, created_event, table_validation: bool = False
-):
+def validate_to_compare_request_and_response(context, create_obj, created_event, table_validation: bool = False):
     request_patient = create_obj.contained[1]
     response_patient = created_event.patient
 
     expected_fullUrl = f"{context.baseUrl}/Immunization/{context.ImmsID}"
 
     referencePattern = r"^urn:uuid:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
-    expected_occurrenceDateTime = covert_to_expected_date_format(
-        create_obj.occurrenceDateTime
-    )
+    expected_occurrenceDateTime = covert_to_expected_date_format(create_obj.occurrenceDateTime)
     expected_recorded = covert_to_expected_date_format(create_obj.recorded)
-    actual_occurrenceDateTime = covert_to_expected_date_format(
-        created_event.occurrenceDateTime
-    )
+    actual_occurrenceDateTime = covert_to_expected_date_format(created_event.occurrenceDateTime)
     actual_recorded = covert_to_expected_date_format(created_event.recorded)
 
     fields_to_compare = []
 
     if not table_validation:
-        fields_to_compare.append(
-            ("fullUrl", expected_fullUrl, context.created_event.fullUrl)
-        )
+        fields_to_compare.append(("fullUrl", expected_fullUrl, context.created_event.fullUrl))
         fields_to_compare.append(
             (
                 "patient.identifier.system",
@@ -279,9 +254,7 @@ def validate_to_compare_request_and_response(
         )
 
     if table_validation:
-        fields_to_compare.append(
-            ("Contained", create_obj.contained, created_event.contained)
-        )
+        fields_to_compare.append(("Contained", create_obj.contained, created_event.contained))
         fields_to_compare.append(
             (
                 "patient.reference",
@@ -289,20 +262,14 @@ def validate_to_compare_request_and_response(
                 created_event.patient.reference,
             )
         )
-        fields_to_compare.append(
-            ("performer", create_obj.performer, created_event.performer)
-        )
+        fields_to_compare.append(("performer", create_obj.performer, created_event.performer))
         fields_to_compare.append(("Id", context.ImmsID, created_event.id))
 
     if hasattr(create_obj, "manufacturer") and create_obj.manufacturer:
-        fields_to_compare.append(
-            ("manufacturer", create_obj.manufacturer, created_event.manufacturer)
-        )
+        fields_to_compare.append(("manufacturer", create_obj.manufacturer, created_event.manufacturer))
 
     if hasattr(create_obj, "reasonCode") and create_obj.reasonCode:
-        fields_to_compare.append(
-            ("reasonCode", create_obj.reasonCode, created_event.reasonCode)
-        )
+        fields_to_compare.append(("reasonCode", create_obj.reasonCode, created_event.reasonCode))
 
     if hasattr(create_obj, "site") and create_obj.site:
         fields_to_compare.append(("site", create_obj.site, created_event.site))
@@ -311,19 +278,13 @@ def validate_to_compare_request_and_response(
         fields_to_compare.append(("route", create_obj.route, created_event.route))
 
     if hasattr(create_obj, "lotNumber") and create_obj.lotNumber:
-        fields_to_compare.append(
-            ("lotNumber", create_obj.lotNumber, created_event.lotNumber)
-        )
+        fields_to_compare.append(("lotNumber", create_obj.lotNumber, created_event.lotNumber))
 
     if hasattr(create_obj, "expirationDate") and create_obj.expirationDate:
-        fields_to_compare.append(
-            ("expirationDate", create_obj.expirationDate, created_event.expirationDate)
-        )
+        fields_to_compare.append(("expirationDate", create_obj.expirationDate, created_event.expirationDate))
 
     if hasattr(create_obj, "doseQuantity") and create_obj.doseQuantity:
-        fields_to_compare.append(
-            ("doseQuantity", create_obj.doseQuantity, created_event.doseQuantity)
-        )
+        fields_to_compare.append(("doseQuantity", create_obj.doseQuantity, created_event.doseQuantity))
     fields_to_compare.extend(
         [
             ("resourceType", create_obj.resourceType, created_event.resourceType),
@@ -359,9 +320,7 @@ def validate_to_compare_request_and_response(
     )
 
     for name, expected, actual in fields_to_compare:
-        check.is_true(
-            expected == actual, f"Expected {name}: {expected}, Actual {actual}"
-        )
+        check.is_true(expected == actual, f"Expected {name}: {expected}, Actual {actual}")
 
 
 def extract_practitioner_name(response_practitioner):
