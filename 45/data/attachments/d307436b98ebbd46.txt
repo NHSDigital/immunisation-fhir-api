@@ -1,0 +1,31 @@
+✅ Pipe-delimited file saved to: /home/runner/work/immunisation-fhir-api/immunisation-fhir-api/tests/e2e_automation/batch_files_directory/6IN1_Vaccinations_v5_YGJ_20260213T16144800.csv
+Batch file created: 6IN1_Vaccinations_v5_YGJ_20260213T16144800.csv
+Upload successful: 6IN1_Vaccinations_v5_YGJ_20260213T16144800.csv → immunisation-batch-internal-qa-data-sources
+Batch file uploaded to S3: 6IN1_Vaccinations_v5_YGJ_20260213T16144800.csv
+Waiting for file in archive: s3://immunisation-batch-internal-qa-data-sources/archive/6IN1_Vaccinations_v5_YGJ_20260213T16144800.csv
+Still waiting... (0s)
+Still waiting... (5s)
+Still waiting... (10s)
+Still waiting... (15s)
+Still waiting... (20s)
+Still waiting... (25s)
+Still waiting... (30s)
+Still waiting... (35s)
+File found in archive: archive/6IN1_Vaccinations_v5_YGJ_20260213T16144800.csv
+Waiting for ACK files starting with 'ack/6IN1_Vaccinations_v5_YGJ_20260213T16144800' in bucket: immunisation-batch-internal-qa-data-destinations
+[MODE] Expecting ONLY CSV ACK file
+[FOUND] .csv file located: ack/6IN1_Vaccinations_v5_YGJ_20260213T16144800_InfAck_20260213T16144900.csv
+[SUCCESS] Loaded .csv file (299 bytes)
+[COMPLETE] All expected ACK files received
+Waiting for ACK files starting with 'forwardedFile/6IN1_Vaccinations_v5_YGJ_20260213T16144800' in bucket: immunisation-batch-internal-qa-data-destinations
+[MODE] Expecting BOTH CSV and JSON ACK files
+[FOUND] .csv file located: forwardedFile/6IN1_Vaccinations_v5_YGJ_20260213T16144800_BusAck_20260213T16144900.csv
+[SUCCESS] Loaded .csv file (2307 bytes)
+[FOUND] .json file located: forwardedFile/6IN1_Vaccinations_v5_YGJ_20260213T16144800_BusAck_20260213T16144900.json
+[SUCCESS] Loaded .json file (2778 bytes)
+[COMPLETE] All expected ACK files received
+Attempt 1: Found 1 items
+
+Found Audit detail for filename=6IN1_Vaccinations_v5_YGJ_20260213T16144800.csv
+
+ No IMMS_ID column or no values present as test failed due to as exception — skipping delete cleanup.
