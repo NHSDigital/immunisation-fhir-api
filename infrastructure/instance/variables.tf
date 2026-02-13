@@ -74,10 +74,15 @@ variable "mesh_no_invocation_period_seconds" {
   default     = 300
 }
 
-# Remember to switch off in PR envs after testing
 variable "error_alarm_notifications_enabled" {
   default     = true
   description = "Switch to enable error alarm notifications to Slack"
+  type        = bool
+}
+
+variable "mns_publisher_feature_enabled" {
+  default     = false
+  description = "Switch to the MNS Publisher feature which allows us to publish Immunisation events."
   type        = bool
 }
 
@@ -88,17 +93,16 @@ variable "has_sub_environment_scope" {
 }
 
 locals {
-  prefix                             = "${var.project_name}-${var.service}-${var.sub_environment}"
-  short_prefix                       = "${var.project_short_name}-${var.sub_environment}"
-  batch_prefix                       = "immunisation-batch-${var.sub_environment}"
-  root_domain_name                   = "${var.environment}.vds.platform.nhs.uk"
-  project_domain_name                = "imms.${local.root_domain_name}"
-  service_domain_name                = "${var.sub_environment}.${local.project_domain_name}"
-  config_bucket_arn                  = aws_s3_bucket.batch_config_bucket.arn
-  config_bucket_name                 = aws_s3_bucket.batch_config_bucket.bucket
-  is_temp                            = length(regexall("[a-z]{2,4}-?[0-9]+", var.sub_environment)) > 0
-  mns_publisher_resource_name_prefix = "${local.resource_scope}-mns-outbound-events"
-  resource_scope                     = var.has_sub_environment_scope ? var.sub_environment : var.environment
+  prefix              = "${var.project_name}-${var.service}-${var.sub_environment}"
+  short_prefix        = "${var.project_short_name}-${var.sub_environment}"
+  batch_prefix        = "immunisation-batch-${var.sub_environment}"
+  root_domain_name    = "${var.environment}.vds.platform.nhs.uk"
+  project_domain_name = "imms.${local.root_domain_name}"
+  service_domain_name = "${var.sub_environment}.${local.project_domain_name}"
+  config_bucket_arn   = aws_s3_bucket.batch_config_bucket.arn
+  config_bucket_name  = aws_s3_bucket.batch_config_bucket.bucket
+  is_temp             = length(regexall("[a-z]{2,4}-?[0-9]+", var.sub_environment)) > 0
+  resource_scope      = var.has_sub_environment_scope ? var.sub_environment : var.environment
   # Public subnet - The subnet has a direct route to an internet gateway. Resources in a public subnet can access the public internet.
   # public_subnet_ids = [for k, v in data.aws_route.internet_traffic_route_by_subnet : k if length(v.gateway_id) > 0]
   # Private subnet - The subnet does not have a direct route to an internet gateway. Resources in a private subnet require a NAT device to access the public internet.

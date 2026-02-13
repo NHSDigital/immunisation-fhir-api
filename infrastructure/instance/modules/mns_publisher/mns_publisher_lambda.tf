@@ -1,16 +1,16 @@
 locals {
-  mns_publisher_lambda_dir     = abspath("${path.root}/../../lambdas/mns_publisher")
+  mns_publisher_lambda_dir     = abspath("${path.root}/../../../lambdas/mns_publisher")
   mns_publisher_lambda_files   = fileset(local.mns_publisher_lambda_dir, "**")
   mns_publisher_lambda_dir_sha = sha1(join("", [for f in local.mns_publisher_lambda_files : filesha1("${local.mns_publisher_lambda_dir}/${f}")]))
-  mns_publisher_lambda_name    = "${local.short_prefix}-mns-publisher-lambda"
+  mns_publisher_lambda_name    = "${var.short_prefix}-mns-publisher-lambda"
 }
 
 resource "aws_ecr_repository" "mns_publisher_lambda_repository" {
   image_scanning_configuration {
     scan_on_push = true
   }
-  name         = "${local.short_prefix}-mns-publisher-repo"
-  force_delete = local.is_temp
+  name         = "${var.short_prefix}-mns-publisher-repo"
+  force_delete = var.is_temp
 }
 
 # Module for building and pushing Docker image to ECR
@@ -40,10 +40,10 @@ module "mns_publisher_docker_image" {
 
   platform      = "linux/amd64"
   use_image_tag = false
-  source_path   = abspath("${path.root}/../../lambdas")
+  source_path   = abspath("${path.root}/../../../lambdas")
   triggers = {
     dir_sha        = local.mns_publisher_lambda_dir_sha
-    shared_dir_sha = local.shared_dir_sha
+    shared_dir_sha = var.shared_dir_sha
   }
 }
 
@@ -122,7 +122,7 @@ resource "aws_iam_policy" "mns_publisher_lambda_exec_policy" {
           "firehose:PutRecord",
           "firehose:PutRecordBatch"
         ],
-        "Resource" : "arn:aws:firehose:*:*:deliverystream/${module.splunk.firehose_stream_name}"
+        "Resource" : "arn:aws:firehose:*:*:deliverystream/${var.splunk_firehose_stream_name}"
       },
       {
         Effect = "Allow",
@@ -149,7 +149,7 @@ resource "aws_iam_policy" "mns_publisher_lambda_kms_access_policy" {
         Action = [
           "kms:Decrypt"
         ]
-        Resource = data.aws_kms_key.existing_lambda_encryption_key.arn
+        Resource = var.dynamo_kms_encryption_key_arn
       },
       {
         Effect = "Allow"
@@ -185,18 +185,18 @@ resource "aws_lambda_function" "mns_publisher_lambda" {
   timeout       = 120
 
   vpc_config {
-    subnet_ids         = local.private_subnet_ids
-    security_group_ids = [data.aws_security_group.existing_securitygroup.id]
+    subnet_ids         = var.private_subnet_ids
+    security_group_ids = [var.security_group_id]
   }
 
   environment {
     variables = {
-      SPLUNK_FIREHOSE_NAME = module.splunk.firehose_stream_name
+      SPLUNK_FIREHOSE_NAME = var.splunk_firehose_stream_name
     }
   }
 
-  kms_key_arn                    = data.aws_kms_key.existing_lambda_encryption_key.arn
-  reserved_concurrent_executions = local.is_temp ? -1 : 20
+  kms_key_arn                    = var.lambda_kms_encryption_key_arn
+  reserved_concurrent_executions = var.is_temp ? -1 : 20
   depends_on = [
     aws_cloudwatch_log_group.mns_publisher_lambda_log_group,
     aws_iam_policy.mns_publisher_lambda_exec_policy
@@ -216,31 +216,31 @@ resource "aws_lambda_event_source_mapping" "mns_outbound_event_sqs_to_lambda" {
 }
 
 resource "aws_cloudwatch_log_metric_filter" "mns_publisher_error_logs" {
-  count = var.error_alarm_notifications_enabled ? 1 : 0
+  count = var.enable_lambda_alarm ? 1 : 0
 
-  name           = "${local.short_prefix}-MnsPublisherErrorLogsFilter"
+  name           = "${var.short_prefix}-MnsPublisherErrorLogsFilter"
   pattern        = "%\\[ERROR\\]%"
   log_group_name = aws_cloudwatch_log_group.mns_publisher_lambda_log_group.name
 
   metric_transformation {
-    name      = "${local.short_prefix}-MnsPublisherErrorLogs"
-    namespace = "${local.short_prefix}-MnsPublisherLambda"
+    name      = "${var.short_prefix}-MnsPublisherErrorLogs"
+    namespace = "${var.short_prefix}-MnsPublisherLambda"
     value     = "1"
   }
 }
 
 resource "aws_cloudwatch_metric_alarm" "mns_publisher_error_alarm" {
-  count = var.error_alarm_notifications_enabled ? 1 : 0
+  count = var.enable_lambda_alarm ? 1 : 0
 
   alarm_name          = "${local.mns_publisher_lambda_name}-error"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = 1
-  metric_name         = "${local.short_prefix}-MnsPublisherErrorLogs"
-  namespace           = "${local.short_prefix}-MnsPublisherLambda"
+  metric_name         = "${var.short_prefix}-MnsPublisherErrorLogs"
+  namespace           = "${var.short_prefix}-MnsPublisherLambda"
   period              = 120
   statistic           = "Sum"
   threshold           = 1
   alarm_description   = "This sets off an alarm for any error logs found in the MNS Publisher Lambda function"
-  alarm_actions       = [data.aws_sns_topic.imms_system_alert_errors.arn]
+  alarm_actions       = [var.system_alarm_sns_topic_arn]
   treat_missing_data  = "notBreaching"
 }
