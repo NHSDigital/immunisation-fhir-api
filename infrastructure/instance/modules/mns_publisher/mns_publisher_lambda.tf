@@ -1,5 +1,5 @@
 locals {
-  mns_publisher_lambda_dir     = abspath("${path.root}/../../../lambdas/mns_publisher")
+  mns_publisher_lambda_dir     = abspath("${path.root}/../../../../lambdas/mns_publisher")
   mns_publisher_lambda_files   = fileset(local.mns_publisher_lambda_dir, "**")
   mns_publisher_lambda_dir_sha = sha1(join("", [for f in local.mns_publisher_lambda_files : filesha1("${local.mns_publisher_lambda_dir}/${f}")]))
   mns_publisher_lambda_name    = "${var.short_prefix}-mns-publisher-lambda"
@@ -40,7 +40,7 @@ module "mns_publisher_docker_image" {
 
   platform      = "linux/amd64"
   use_image_tag = false
-  source_path   = abspath("${path.root}/../../../lambdas")
+  source_path   = abspath("${path.root}/../../../../lambdas")
   triggers = {
     dir_sha        = local.mns_publisher_lambda_dir_sha
     shared_dir_sha = var.shared_dir_sha
