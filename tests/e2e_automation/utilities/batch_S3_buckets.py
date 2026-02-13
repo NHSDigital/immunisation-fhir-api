@@ -62,8 +62,8 @@ def wait_and_read_ack_file(
     elapsed = 0
 
     if folderName == "forwardedFile":
-        expected_extensions = {".csv", ".json"}
-        print("[MODE] Expecting BOTH CSV and JSON ACK files")
+        expected_extensions = {".json"}
+        print("[MODE] Expecting ONLY JSON ACK file")
     else:
         expected_extensions = {".csv"}
         print("[MODE] Expecting ONLY CSV ACK file")
@@ -105,7 +105,7 @@ def wait_and_read_ack_file(
                     if expected_extensions == {".csv"}:
                         return {"csv": found_files[".csv"]}
 
-                    return {"csv": found_files[".csv"], "json": found_files[".json"]}
+                    return {"json": found_files[".json"]}
 
             time.sleep(interval)
             elapsed += interval
