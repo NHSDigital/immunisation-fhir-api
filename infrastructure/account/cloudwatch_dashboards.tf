@@ -1,4 +1,5 @@
 locals {
+  # Alarms
   alarms = [
     "_create_imms-lambda-error",
     "_create_imms memory alarm",
@@ -21,12 +22,56 @@ locals {
     "_not_found-lambda-error",
     "_not_found memory alarm"
   ]
-  dev_alarms     = [for alarm in alarms : "arn:aws:cloudwatch:${var.aws_region}:${var.imms_account_id}:alarm:imms-internal-dev${alarm}"]
-  non_dev_blue   = var.environment == "prod" ? "blue" : "int-blue"
-  non_dev_green  = var.environment == "prod" ? "green" : "int-green"
-  blue_alarms    = [for alarm in alarms : "arn:aws:cloudwatch:${var.aws_region}:${var.imms_account_id}:alarm:imms-${local.non_dev_blue}${alarm}"]
-  green_alarms   = [for alarm in alarms : "arn:aws:cloudwatch:${var.aws_region}:${var.imms_account_id}:alarm:imms-${local.non_dev_green}${alarm}"]
-  non_dev_alarms = concat(local.blue_alarms, local.green_alarms)
+  non_dev_blue      = var.environment == "prod" ? "blue" : "int-blue"
+  non_dev_green     = var.environment == "prod" ? "green" : "int-green"
+  dev_alarms        = [for alarm in alarms : "arn:aws:cloudwatch:${var.aws_region}:${var.imms_account_id}:alarm:imms-internal-dev${alarm}"]
+  blue_alarms       = [for alarm in alarms : "arn:aws:cloudwatch:${var.aws_region}:${var.imms_account_id}:alarm:imms-${local.non_dev_blue}${alarm}"]
+  green_alarms      = [for alarm in alarms : "arn:aws:cloudwatch:${var.aws_region}:${var.imms_account_id}:alarm:imms-${local.non_dev_green}${alarm}"]
+  non_dev_alarms    = concat(local.blue_alarms, local.green_alarms)
+  alarms_properties = var.environment == "dev" ? local.dev_alarms : local.non_dev_alarms
+
+  # DynamoDB
+  dynamodb_tables = compact([
+    "imms-${var.environment == "dev" ? "internal-dev" : var.environment}-delta",
+    var.environment == "dev" ? "imms-internal-qa-delta" : "",
+    "imms-${var.environment == "dev" ? "internal-dev" : var.environment}-imms-events",
+    var.environment == "dev" ? "imms-internal-qa--imms-events" : "",
+    "immunisation-batch-${var.environment == "dev" ? "internal-dev" : var.environment}-audit-table",
+    var.environment == "dev" ? "imms-internal-qa--audit-table" : "",
+  ])
+
+  dynamodb_getitems_metrics      = [for table in local.dynamodb_tables : ["AWS/DynamoDB", "SuccessfulRequestLatency", "TableName", table, "Operation", "GetItem", { region : var.aws_region }]]
+  dynamodb_query_metrics         = [for table in local.dynamodb_tables : ["AWS/DynamoDB", "SuccessfulRequestLatency", "TableName", table, "Operation", "Query", { region : var.aws_region }]]
+  dynamodb_read_metrics          = concat(local.dynamodb_getitems_metrics, local.dynamodb_query_metrics)
+  dynamodb_read_capacity_metrics = [for table in local.dynamodb_tables : ["AWS/DynamoDB", "ConsumedReadCapacityUnits", "TableName", table]]
+
+  dynamodb_putitems_metrics       = [for table in local.dynamodb_tables : ["AWS/DynamoDB", "SuccessfulRequestLatency", "TableName", table, "Operation", "PutItem", { region : var.aws_region }]]
+  dynamodb_updateitem_metrics     = [for table in local.dynamodb_tables : ["AWS/DynamoDB", "SuccessfulRequestLatency", "TableName", table, "Operation", "UpdateItem", { region : var.aws_region }]]
+  dynamodb_write_metrics          = concat(local.dynamodb_putitems_metrics, local.dynamodb_updateitem_metrics)
+  dynamodb_write_capacity_metrics = [for table in local.dynamodb_tables : ["AWS/DynamoDB", "ConsumedWriteCapacityUnits", "TableName", table]]
+
+  # Kinesis
+  kinesis_metrics = [
+    ["AWS/Kinesis", "IncomingBytes", "StreamName", "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}-processingdata-stream"],
+    ["AWS/Kinesis", "IncomingBytes", "StreamName", "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}-processingdata-stream"],
+  ]
+
+  # SQS
+  sqs_queues = [
+    "ack-metadata-queue.fifo",
+    "batch-file-created-queue.fifo",
+    "delta-dlq",
+    "metadata-queue.fifo",
+    "id-sync-dlq",
+    "id-sync-queue"
+  ]
+  internal_dev_sqs_queue_metrics = [for queue in local.sqs_queues : ["AWS/SQS", "NumberOfMessagesSent", "QueueName", "imms-internal-dev-${queue}", { region : var.aws_region }]]
+  internal_qa_sqs_queue_metrics  = [for queue in local.sqs_queues : ["AWS/SQS", "NumberOfMessagesSent", "QueueName", "imms-internal-qa-${queue}", { region : var.aws_region }]]
+  dev_sqs_queue_metrics          = concat(local.internal_dev_sqs_queue_metrics, local.internal_qa_sqs_queue_metrics)
+  blue_sqs_queue_metrics         = [for queue in local.sqs_queues : ["AWS/SQS", "NumberOfMessagesSent", "QueueName", queue == "id-sync-dlq" || queue == "id-sync-queue" ? "imms-${var.environment}-${queue}" : "imms-${local.non_dev_blue}-${queue}", { region : var.aws_region }]]
+  green_sqs_queue_metrics        = [for queue in local.sqs_queues : ["AWS/SQS", "NumberOfMessagesSent", "QueueName", queue == "id-sync-dlq" || queue == "id-sync-queue" ? "imms-${var.environment}-${queue}" : "imms-${local.non_dev_green}-${queue}", { region : var.aws_region }]]
+  non_dev_sqs_queue_metrics      = concat(local.blue_sqs_queue_metrics, local.green_sqs_queue_metrics)
+  sqs_queue_metrics              = var.environment == "dev" ? local.dev_sqs_queue_metrics : local.non_dev_sqs_queue_metrics
 }
 
 resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
@@ -127,7 +172,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 24,
         "height" : var.environment == dev ? 4 : 8,
         "properties" : {
-          "alarms" : var.environment == dev ? local.dev_alarms : local.non_dev_alarms
+          "alarms" : local.alarms_properties
         }
       },
       {
@@ -169,20 +214,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : compact([
-            ["AWS/DynamoDB", "SuccessfulRequestLatency", "TableName", "imms-${var.environment == "dev" ? "internal-dev" : var.environment}-delta", "Operation", "GetItem", { region : var.aws_region }],
-            var.environment == "dev" ? ["...", "imms-internal-qa-delta", ".", ".", { region : var.aws_region }] : "",
-            ["...", "imms-${var.environment == "dev" ? "internal-dev" : var.environment}-delta", ".", "Query", { region : var.aws_region }],
-            var.environment == "dev" ? ["...", "imms-internal-qa-delta", ".", ".", { region : var.aws_region }] : "",
-            ["...", "imms-${var.environment == "dev" ? "internal-dev" : var.environment}-imms-events", ".", "GetItem", { region : var.aws_region }],
-            var.environment == "dev" ? ["...", "imms-internal-qa-imms-events", ".", ".", { region : var.aws_region }] : "",
-            ["...", "imms-${var.environment == "dev" ? "internal-dev" : var.environment}-imms-events", ".", "Query", { region : var.aws_region }],
-            var.environment == "dev" ? ["...", "imms-internal-qa-imms-events", ".", ".", { region : var.aws_region }] : "",
-            ["...", "immunisation-batch-${var.environment == "dev" ? "internal-dev" : var.environment}-audit-table", ".", "GetItem", { region : var.aws_region }],
-            var.environment == "dev" ? ["...", "immunisation-batch-internal-qa-audit-table", ".", ".", { region : var.aws_region }] : "",
-            ["...", "immunisation-batch-${var.environment == "dev" ? "internal-dev" : var.environment}-audit-table", ".", "Query", { region : var.aws_region }],
-            var.environment == "dev" ? ["...", "immunisation-batch-internal-qa-audit-table", ".", ".", { region : var.aws_region }] : "",
-          ]),
+          "metrics" : local.dynamodb_read_metrics,
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
@@ -226,20 +258,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : compact([
-            ["AWS/DynamoDB", "SuccessfulRequestLatency", "TableName", "imms-${var.environment == "dev" ? "internal-dev" : var.environment}-delta", "Operation", "GetItem", { region : var.aws_region }],
-            var.environment == "dev" ? ["...", "imms-internal-qa-delta", ".", ".", { region : var.aws_region }] : "",
-            ["...", "imms-${var.environment == "dev" ? "internal-dev" : var.environment}-delta", ".", "Query", { region : var.aws_region }],
-            var.environment == "dev" ? ["...", "imms-internal-qa-delta", ".", ".", { region : var.aws_region }] : "",
-            ["...", "imms-${var.environment == "dev" ? "internal-dev" : var.environment}-imms-events", ".", "GetItem", { region : var.aws_region }],
-            var.environment == "dev" ? ["...", "imms-internal-qa-imms-events", ".", ".", { region : var.aws_region }] : "",
-            ["...", "imms-${var.environment == "dev" ? "internal-dev" : var.environment}-imms-events", ".", "Query", { region : var.aws_region }],
-            var.environment == "dev" ? ["...", "imms-internal-qa-imms-events", ".", ".", { region : var.aws_region }] : "",
-            ["...", "immunisation-batch-${var.environment == "dev" ? "internal-dev" : var.environment}-audit-table", ".", "GetItem", { region : var.aws_region }],
-            var.environment == "dev" ? ["...", "immunisation-batch-internal-qa-audit-table", ".", ".", { region : var.aws_region }] : "",
-            ["...", "immunisation-batch-${var.environment == "dev" ? "internal-dev" : var.environment}-audit-table", ".", "Query", { region : var.aws_region }],
-            var.environment == "dev" ? ["...", "immunisation-batch-internal-qa-audit-table", ".", ".", { region : var.aws_region }] : "",
-          ]),
+          "metrics" : local.dynamodb_read_metrics,
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
@@ -291,10 +310,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "properties" : {
           "view" : "timeSeries",
           "stacked" : false,
-          "metrics" : [
-            ["AWS/Kinesis", "IncomingBytes", "StreamName", "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}-processingdata-stream"],
-            ["...", "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}-processingdata-stream"]
-          ],
+          "metrics" : local.kinesis_metrics,
           "region" : var.aws_region,
           "title" : "Kinesis - IncomingBytes"
         }
@@ -306,26 +322,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : [
-            [
-              "AWS/SQS",
-              "NumberOfMessagesSent",
-              "QueueName",
-              "imms-internal-dev-batch-file-created-queue.fifo",
-              { region : var.aws_region }
-            ],
-            ["...", "imms-internal-dev-id-sync-queue", { region : var.aws_region }],
-            ["...", "imms-internal-qa-id-sync-dlq", { region : var.aws_region }],
-            ["...", "imms-internal-qa-delta-dlq", { region : var.aws_region }],
-            ["...", "imms-internal-dev-metadata-queue.fifo", { region : var.aws_region }],
-            ["...", "imms-internal-qa-batch-file-created-queue.fifo", { region : var.aws_region }],
-            ["...", "imms-internal-qa-id-sync-queue", { region : var.aws_region }],
-            ["...", "imms-internal-dev-id-sync-dlq", { region : var.aws_region }],
-            ["...", "imms-internal-dev-ack-metadata-queue.fifo", { region : var.aws_region }],
-            ["...", "imms-internal-dev-delta-dlq", { region : var.aws_region }],
-            ["...", "imms-internal-qa-ack-metadata-queue.fifo", { region : var.aws_region }],
-            ["...", "imms-internal-qa-metadata-queue.fifo", { region : var.aws_region }]
-          ],
+          "metrics" : local.sqs_queue_metrics,
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
@@ -341,19 +338,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : [
-            [
-              "AWS/DynamoDB",
-              "ConsumedReadCapacityUnits",
-              "TableName",
-              "imms-internal-qa-imms-events"
-            ],
-            ["...", "imms-internal-dev-delta"],
-            ["...", "imms-internal-dev-imms-events"],
-            ["...", "imms-internal-qa-delta"],
-            ["...", "immunisation-batch-internal-qa-audit-table"],
-            ["...", "immunisation-batch-internal-dev-audit-table"]
-          ],
+          "metrics" : local.dynamodb_read_capacity_metrics,
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
@@ -369,19 +354,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : [
-            [
-              "AWS/DynamoDB",
-              "ConsumedWriteCapacityUnits",
-              "TableName",
-              "immunisation-batch-internal-qa-audit-table"
-            ],
-            ["...", "imms-internal-dev-imms-events"],
-            ["...", "imms-internal-qa-imms-events"],
-            ["...", "imms-internal-dev-delta"],
-            ["...", "immunisation-batch-internal-dev-audit-table"],
-            ["...", "imms-internal-qa-delta"]
-          ],
+          "metrics" : local.dynamodb_write_capacity_metrics,
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
@@ -397,27 +370,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : [
-            [
-              "AWS/DynamoDB",
-              "SuccessfulRequestLatency",
-              "TableName",
-              "imms-internal-qa-delta",
-              "Operation",
-              "GetItem",
-              { region : var.aws_region }
-            ],
-            ["...", "imms-internal-dev-delta", ".", "PutItem", { region : var.aws_region }],
-            ["...", "imms-internal-dev-imms-events", ".", "UpdateItem", { region : var.aws_region }],
-            ["...", "PutItem", { region : var.aws_region }],
-            ["...", "imms-internal-qa-delta", ".", ".", { region : var.aws_region }],
-            ["...", "imms-internal-qa-imms-events", ".", "UpdateItem", { region : var.aws_region }],
-            ["...", "PutItem", { region : var.aws_region }],
-            ["...", "immunisation-batch-internal-dev-audit-table", ".", ".", { region : var.aws_region }],
-            ["...", "UpdateItem", { region : var.aws_region }],
-            ["...", "immunisation-batch-internal-qa-audit-table", ".", "PutItem", { region : var.aws_region }],
-            ["...", "UpdateItem", { region : var.aws_region }]
-          ],
+          "metrics" : local.dynamodb_write_metrics,
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
@@ -438,21 +391,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : [
-            [
-              "AWS/DynamoDB",
-              "SuccessfulRequestLatency",
-              "TableName",
-              "imms-internal-dev-delta",
-              "Operation",
-              "PutItem",
-              { region : var.aws_region }
-            ],
-            ["...", "imms-internal-dev-imms-events", ".", "UpdateItem", { region : var.aws_region }],
-            ["...", "imms-internal-qa-delta", ".", "PutItem", { region : var.aws_region }],
-            ["...", "imms-internal-qa-imms-events", ".", ".", { region : var.aws_region }],
-            ["...", "UpdateItem", { region : var.aws_region }]
-          ],
+          "metrics" : local.dynamodb_write_metrics,
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
