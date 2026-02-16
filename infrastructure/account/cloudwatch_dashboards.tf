@@ -1,34 +1,8 @@
 locals {
-  # Alarms
-  alarms = [
-    "_create_imms-lambda-error",
-    "_create_imms memory alarm",
-    "_get_imms-lambda-error",
-    "_get_imms memory alarm",
-    "_get_status memory alarm",
-    "_get_status-lambda-error",
-    "_search_imms-lambda-error",
-    "_search_imms memory alarm",
-    "_update_imms-lambda-error",
-    "_update_imms memory alarm",
-    "_delete_imms-lambda-error",
-    "_delete_imms memory alarm",
-    "-record-processor-task-error",
-    "-file-name-processor-lambda-error",
-    "-batch-processor-filter-lambda-error",
-    "-id-sync-lambda-error",
-    "-redis-sync-lambda-error",
-    "-delta-lambda-error",
-    "_not_found-lambda-error",
-    "_not_found memory alarm"
-  ]
-  non_dev_blue      = var.environment == "prod" ? "blue" : "int-blue"
-  non_dev_green     = var.environment == "prod" ? "green" : "int-green"
-  dev_alarms        = [for alarm in alarms : "arn:aws:cloudwatch:${var.aws_region}:${var.imms_account_id}:alarm:imms-internal-dev${alarm}"]
-  blue_alarms       = [for alarm in alarms : "arn:aws:cloudwatch:${var.aws_region}:${var.imms_account_id}:alarm:imms-${local.non_dev_blue}${alarm}"]
-  green_alarms      = [for alarm in alarms : "arn:aws:cloudwatch:${var.aws_region}:${var.imms_account_id}:alarm:imms-${local.non_dev_green}${alarm}"]
-  non_dev_alarms    = concat(local.blue_alarms, local.green_alarms)
-  alarms_properties = var.environment == "dev" ? local.dev_alarms : local.non_dev_alarms
+  non_dev_blue  = var.environment == "prod" ? "blue" : "int-blue"
+  non_dev_green = var.environment == "prod" ? "green" : "int-green"
+
+  # Lambda
 
   # DynamoDB
   dynamodb_tables = compact([
@@ -72,6 +46,35 @@ locals {
   green_sqs_queue_metrics        = [for queue in local.sqs_queues : ["AWS/SQS", "NumberOfMessagesSent", "QueueName", queue == "id-sync-dlq" || queue == "id-sync-queue" ? "imms-${var.environment}-${queue}" : "imms-${local.non_dev_green}-${queue}", { region : var.aws_region }]]
   non_dev_sqs_queue_metrics      = concat(local.blue_sqs_queue_metrics, local.green_sqs_queue_metrics)
   sqs_queue_metrics              = var.environment == "dev" ? local.dev_sqs_queue_metrics : local.non_dev_sqs_queue_metrics
+
+  # Alarms
+  alarms = [
+    "_create_imms-lambda-error",
+    "_create_imms memory alarm",
+    "_get_imms-lambda-error",
+    "_get_imms memory alarm",
+    "_get_status memory alarm",
+    "_get_status-lambda-error",
+    "_search_imms-lambda-error",
+    "_search_imms memory alarm",
+    "_update_imms-lambda-error",
+    "_update_imms memory alarm",
+    "_delete_imms-lambda-error",
+    "_delete_imms memory alarm",
+    "-record-processor-task-error",
+    "-file-name-processor-lambda-error",
+    "-batch-processor-filter-lambda-error",
+    "-id-sync-lambda-error",
+    "-redis-sync-lambda-error",
+    "-delta-lambda-error",
+    "_not_found-lambda-error",
+    "_not_found memory alarm"
+  ]
+  dev_alarms        = [for alarm in alarms : "arn:aws:cloudwatch:${var.aws_region}:${var.imms_account_id}:alarm:imms-internal-dev${alarm}"]
+  blue_alarms       = [for alarm in alarms : "arn:aws:cloudwatch:${var.aws_region}:${var.imms_account_id}:alarm:imms-${local.non_dev_blue}${alarm}"]
+  green_alarms      = [for alarm in alarms : "arn:aws:cloudwatch:${var.aws_region}:${var.imms_account_id}:alarm:imms-${local.non_dev_green}${alarm}"]
+  non_dev_alarms    = concat(local.blue_alarms, local.green_alarms)
+  alarms_properties = var.environment == "dev" ? local.dev_alarms : local.non_dev_alarms
 }
 
 resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
@@ -89,6 +92,16 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         }
       },
       {
+        "type" : "text",
+        "x" : 0,
+        "y" : 1,
+        "width" : 24,
+        "height" : 1,
+        "properties" : {
+          "markdown" : "## Lambda"
+        }
+      },
+      {
         "type" : "metric",
         "x" : 0,
         "y" : 2,
@@ -98,11 +111,6 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
           "metrics" : [
             ["AWS/Lambda", "Invocations", { region : var.aws_region }],
             [".", "Errors", { color : "#d62728", region : var.aws_region }],
-            [
-              ".",
-              "ConcurrentExecutions",
-              { region : var.aws_region, visible : false }
-            ]
           ],
           "view" : "timeSeries",
           "stacked" : false,
@@ -110,27 +118,6 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
           "stat" : "Sum",
           "period" : 300,
           "title" : "Invocations & Errors"
-        }
-      },
-      {
-        "type" : "metric",
-        "x" : 18,
-        "y" : 2,
-        "width" : 2,
-        "height" : 3,
-        "properties" : {
-          "metrics" : [
-            [
-              "AWS/Lambda",
-              "Errors",
-              { region : var.aws_region, color : "#d62728" }
-            ]
-          ],
-          "sparkline" : true,
-          "view" : "singleValue",
-          "region" : var.aws_region,
-          "stat" : "Sum",
-          "period" : 300
         }
       },
       {
@@ -153,36 +140,6 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
           "title" : "Duration",
           "period" : 300,
           "stat" : "Average"
-        }
-      },
-      {
-        "type" : "text",
-        "x" : 0,
-        "y" : 21,
-        "width" : 24,
-        "height" : 1,
-        "properties" : {
-          "markdown" : "## Other"
-        }
-      },
-      {
-        "type" : "alarm",
-        "x" : 0,
-        "y" : 29,
-        "width" : 24,
-        "height" : var.environment == dev ? 4 : 8,
-        "properties" : {
-          "alarms" : local.alarms_properties
-        }
-      },
-      {
-        "type" : "text",
-        "x" : 0,
-        "y" : 1,
-        "width" : 24,
-        "height" : 1,
-        "properties" : {
-          "markdown" : "## Lambda"
         }
       },
       {
@@ -209,6 +166,37 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       },
       {
         "type" : "metric",
+        "x" : 18,
+        "y" : 2,
+        "width" : 2,
+        "height" : 3,
+        "properties" : {
+          "metrics" : [
+            [
+              "AWS/Lambda",
+              "Errors",
+              { region : var.aws_region, color : "#d62728" }
+            ]
+          ],
+          "sparkline" : true,
+          "view" : "singleValue",
+          "region" : var.aws_region,
+          "stat" : "Sum",
+          "period" : 300
+        }
+      },
+      {
+        "type" : "text",
+        "x" : 0,
+        "y" : 8,
+        "width" : 24,
+        "height" : 1,
+        "properties" : {
+          "markdown" : "## DynamoDB"
+        }
+      },
+      {
+        "type" : "metric",
         "x" : 0,
         "y" : 9,
         "width" : 6,
@@ -226,6 +214,38 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
               "label" : ""
             }
           }
+        }
+      },
+      {
+        "type" : "metric",
+        "x" : 6,
+        "y" : 9,
+        "width" : 6,
+        "height" : 6,
+        "properties" : {
+          "metrics" : local.dynamodb_read_metrics,
+          "view" : "timeSeries",
+          "stacked" : false,
+          "region" : var.aws_region,
+          "period" : 300,
+          "title" : "Successful Read Requests (latency)",
+          "stat" : "Average"
+        }
+      },
+      {
+        "type" : "metric",
+        "x" : 12,
+        "y" : 9,
+        "width" : 6,
+        "height" : 6,
+        "properties" : {
+          "metrics" : local.dynamodb_read_capacity_metrics,
+          "view" : "timeSeries",
+          "stacked" : false,
+          "region" : var.aws_region,
+          "stat" : "Sum",
+          "period" : 300,
+          "title" : "ConsumedReadCapacityUnits"
         }
       },
       {
@@ -249,118 +269,6 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
           "region" : var.aws_region,
           "stat" : "Sum",
           "period" : 300
-        }
-      },
-      {
-        "type" : "metric",
-        "x" : 6,
-        "y" : 9,
-        "width" : 6,
-        "height" : 6,
-        "properties" : {
-          "metrics" : local.dynamodb_read_metrics,
-          "view" : "timeSeries",
-          "stacked" : false,
-          "region" : var.aws_region,
-          "period" : 300,
-          "title" : "Successful Read Requests (latency)",
-          "stat" : "Average"
-        }
-      },
-      {
-        "type" : "text",
-        "x" : 0,
-        "y" : 8,
-        "width" : 24,
-        "height" : 1,
-        "properties" : {
-          "markdown" : "## DynamoDB"
-        }
-      },
-      {
-        "type" : "metric",
-        "x" : 0,
-        "y" : 22,
-        "width" : 6,
-        "height" : 6,
-        "properties" : {
-          "view" : "timeSeries",
-          "stacked" : false,
-          "metrics" : [["AWS/ApiGateway", "DataProcessed"]],
-          "region" : var.aws_region,
-          "title" : "ApiGateway - DataProcessed Across All APIs"
-        }
-      },
-      {
-        "type" : "text",
-        "x" : 0,
-        "y" : 28,
-        "width" : 24,
-        "height" : 1,
-        "properties" : {
-          "markdown" : "# Alarms"
-        }
-      },
-      {
-        "type" : "metric",
-        "x" : 6,
-        "y" : 22,
-        "width" : 6,
-        "height" : 6,
-        "properties" : {
-          "view" : "timeSeries",
-          "stacked" : false,
-          "metrics" : local.kinesis_metrics,
-          "region" : var.aws_region,
-          "title" : "Kinesis - IncomingBytes"
-        }
-      },
-      {
-        "type" : "metric",
-        "x" : 12,
-        "y" : 22,
-        "width" : 6,
-        "height" : 6,
-        "properties" : {
-          "metrics" : local.sqs_queue_metrics,
-          "view" : "timeSeries",
-          "stacked" : false,
-          "region" : var.aws_region,
-          "title" : "SQS Queues - NumberOfMessagesSent",
-          "period" : 300,
-          "stat" : "Sum"
-        }
-      },
-      {
-        "type" : "metric",
-        "x" : 12,
-        "y" : 9,
-        "width" : 6,
-        "height" : 6,
-        "properties" : {
-          "metrics" : local.dynamodb_read_capacity_metrics,
-          "view" : "timeSeries",
-          "stacked" : false,
-          "region" : var.aws_region,
-          "stat" : "Sum",
-          "period" : 300,
-          "title" : "ConsumedReadCapacityUnits"
-        }
-      },
-      {
-        "type" : "metric",
-        "x" : 12,
-        "y" : 15,
-        "width" : 6,
-        "height" : 6,
-        "properties" : {
-          "metrics" : local.dynamodb_write_capacity_metrics,
-          "view" : "timeSeries",
-          "stacked" : false,
-          "region" : var.aws_region,
-          "stat" : "Sum",
-          "period" : 300,
-          "title" : "ConsumedWriteCapacityUnits"
         }
       },
       {
@@ -402,6 +310,76 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       },
       {
         "type" : "metric",
+        "x" : 12,
+        "y" : 15,
+        "width" : 6,
+        "height" : 6,
+        "properties" : {
+          "metrics" : local.dynamodb_write_capacity_metrics,
+          "view" : "timeSeries",
+          "stacked" : false,
+          "region" : var.aws_region,
+          "stat" : "Sum",
+          "period" : 300,
+          "title" : "ConsumedWriteCapacityUnits"
+        }
+      },
+      {
+        "type" : "text",
+        "x" : 0,
+        "y" : 21,
+        "width" : 24,
+        "height" : 1,
+        "properties" : {
+          "markdown" : "## Other"
+        }
+      },
+      {
+        "type" : "metric",
+        "x" : 0,
+        "y" : 22,
+        "width" : 6,
+        "height" : 6,
+        "properties" : {
+          "view" : "timeSeries",
+          "stacked" : false,
+          "metrics" : [["AWS/ApiGateway", "DataProcessed"]],
+          "region" : var.aws_region,
+          "title" : "ApiGateway - DataProcessed Across All APIs"
+        }
+      },
+      {
+        "type" : "metric",
+        "x" : 6,
+        "y" : 22,
+        "width" : 6,
+        "height" : 6,
+        "properties" : {
+          "view" : "timeSeries",
+          "stacked" : false,
+          "metrics" : local.kinesis_metrics,
+          "region" : var.aws_region,
+          "title" : "Kinesis - IncomingBytes"
+        }
+      },
+      {
+        "type" : "metric",
+        "x" : 12,
+        "y" : 22,
+        "width" : 6,
+        "height" : 6,
+        "properties" : {
+          "metrics" : local.sqs_queue_metrics,
+          "view" : "timeSeries",
+          "stacked" : false,
+          "region" : var.aws_region,
+          "title" : "SQS Queues - NumberOfMessagesSent",
+          "period" : 300,
+          "stat" : "Sum"
+        }
+      },
+      {
+        "type" : "metric",
         "x" : 18,
         "y" : 22,
         "width" : 6,
@@ -416,6 +394,26 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
           "stat" : "Sum",
           "period" : 300,
           "title" : "ElastiCache - CacheHits"
+        }
+      },
+      {
+        "type" : "text",
+        "x" : 0,
+        "y" : 28,
+        "width" : 24,
+        "height" : 1,
+        "properties" : {
+          "markdown" : "# Alarms"
+        }
+      },
+      {
+        "type" : "alarm",
+        "x" : 0,
+        "y" : 29,
+        "width" : 24,
+        "height" : var.environment == dev ? 4 : 8,
+        "properties" : {
+          "alarms" : local.alarms_properties
         }
       }
     ]
