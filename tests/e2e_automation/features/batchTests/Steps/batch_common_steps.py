@@ -22,9 +22,6 @@ from src.objectModels.batch.batch_file_builder import (
     save_record_to_batch_files_directory,
 )
 from utilities.batch_file_helper import (
-    read_and_validate_csv_bus_ack_file_content,
-    validate_bus_ack_file_for_error,
-    validate_bus_ack_file_for_successful_records,
     validate_inf_ack_file,
     validate_json_bus_ack_file_failure_records,
     validate_json_bus_ack_file_structure_and_metadata,
@@ -112,22 +109,11 @@ def all_records_are_processed_successfully_in_the_inf_ack_file(context):
 @then("bus ack files will be created")
 def file_will_be_moved_to_destination_bucket(context):
     result = wait_and_read_ack_file(context, "forwardedFile")
-    assert isinstance(result, dict), f"Expected both CSV and JSON ACK files but got: {type(result)}"
-    context.fileContent = result.get("csv")
+    assert isinstance(result, dict), f"Expected JSON ACK file but got: {type(result)}"
     context.fileContentJson = result.get("json")
-    assert context.fileContent, (
-        f"BUS Ack csv File not found in destination bucket after timeout: {context.forwarded_prefix}"
-    )
     assert context.fileContentJson, (
         f"BUS Ack JSON file not found in destination bucket after timeout: {context.forwarded_prefix}"
     )
-
-
-@then("CSV bus ack will not have any entry of successfully processed records")
-def all_records_are_processed_successfully_in_the_batch_file(context):
-    file_rows = read_and_validate_csv_bus_ack_file_content(context)
-    all_valid = validate_bus_ack_file_for_successful_records(context, file_rows)
-    assert all_valid, "One or more records failed validation checks"
 
 
 @then("Json bus ack will only contain file metadata and no failure record entry")
@@ -233,13 +219,6 @@ def validate_imms_event_table_for_all_records_in_batch_file(context, operation: 
             check.is_true(expected == actual, f"Expected {name}: {expected}, Actual {actual}")
 
         validate_to_compare_batch_record_with_event_table_record(context, batch_record, created_event)
-
-
-@then("all rejected records are listed in the csv bus ack file and no imms id is generated")
-def all_record_are_rejected_for_given_field_name(context):
-    file_rows = read_and_validate_csv_bus_ack_file_content(context)
-    all_valid = validate_bus_ack_file_for_error(context, file_rows)
-    assert all_valid, "One or more records failed validation checks"
 
 
 def normalize(value):

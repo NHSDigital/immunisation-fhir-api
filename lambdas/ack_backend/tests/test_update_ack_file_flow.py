@@ -61,9 +61,6 @@ class TestUpdateAckFileFlow(unittest.TestCase):
             Key=f"processing/{file_key}",
             Body="dummy content",
         )
-        self.s3_client.put_object(
-            Bucket=self.ack_bucket_name, Key=f"TempAck/audit_table_test_BusAck_{mock_created_at_string}.csv"
-        )
         self.mock_get_record_and_failure_count.return_value = 10, 2
         self.mock_get_ingestion_start_time.return_value = 1769781283
 
@@ -90,9 +87,6 @@ class TestUpdateAckFileFlow(unittest.TestCase):
             Bucket=self.source_bucket_name,
             Key=f"processing/{file_key}",
             Body="dummy content",
-        )
-        self.s3_client.put_object(
-            Bucket=self.ack_bucket_name, Key=f"TempAck/audit_table_test_BusAck_{mock_created_at_string}.csv"
         )
         self.mock_get_record_and_failure_count.return_value = 10, 2
         self.mock_get_ingestion_start_time.return_value = 1769781283

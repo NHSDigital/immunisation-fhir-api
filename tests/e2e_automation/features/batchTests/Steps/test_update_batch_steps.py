@@ -4,12 +4,10 @@ import pandas as pd
 from pytest_bdd import given, scenarios, then, when
 from src.objectModels.batch.batch_file_builder import build_batch_file
 from utilities.batch_file_helper import (
-    read_and_validate_csv_bus_ack_file_content,
     validate_json_bus_ack_file_failure_records,
     validate_json_bus_ack_file_structure_and_metadata,
 )
 from utilities.enums import GenderCode
-from utilities.error_constants import ERROR_MAP
 
 from features.APITests.steps.common_steps import (
     The_request_will_have_status_code,
@@ -180,13 +178,6 @@ def upload_batch_file_to_s3_for_update_with_mandatory_field_missing(context):
     create_batch_file(context)
 
 
-@then("csv bus ack will have error records for all the updated records in the batch file")
-def all_records_are_processed_successfully_in_the_batch_file(context):
-    file_rows = read_and_validate_csv_bus_ack_file_content(context, False, True)
-    all_valid = validate_bus_ack_file_for_error_by_surname(context, file_rows)
-    assert all_valid, "One or more records failed validation checks"
-
-
 @then("json bus ack will have error records for all the updated records in the batch file")
 def json_bus_ack_will_have_error_records_for_all_updated_records_in_batch_file(context):
     json_content = context.fileContentJson
@@ -196,67 +187,3 @@ def json_bus_ack_will_have_error_records_for_all_updated_records_in_batch_file(c
         context, expected_failure=True, use_username_for_error_lookup=True
     )
     assert success, "Failed to validate JSON bus ack file failure records"
-
-
-def validate_bus_ack_file_for_error_by_surname(context, file_rows) -> bool:
-    if not file_rows:
-        print("No rows found in BUS ACK file for failed records")
-        return False
-    overall_valid = True
-    for batch_idx, row in context.vaccine_df.iterrows():
-        bus_ack_row_number = batch_idx + 2
-        row_data_list = file_rows.get(bus_ack_row_number)
-        if not row_data_list:
-            print(f"Batch row {batch_idx}: No BUS ACK entry found for row number {bus_ack_row_number}")
-            overall_valid = False
-            continue
-        surname = str(row.get("PERSON_SURNAME", "")).strip()
-        expected_error = surname
-        expected_diagnostic = ERROR_MAP.get(expected_error, {}).get("diagnostics")
-        if expected_error == "duplicate" and expected_diagnostic:
-            expected_diagnostic = expected_diagnostic.replace(
-                "<identifier>",
-                f"{context.immunization_object.identifier[0].system}#{context.immunization_object.identifier[0].value}",
-            )
-        for row_data in row_data_list:
-            i = row_data["row"]
-            fields = row_data["fields"]
-            row_valid = True
-
-            header_response_code = fields[1]
-            issue_severity = fields[2]
-            issue_code = fields[3]
-            response_code = fields[6]
-            response_display = fields[7]
-            imms_id = fields[11]
-            operation_outcome = fields[12]
-            message_delivery = fields[13]
-            if header_response_code != "Fatal Error":
-                print(f"Row {i}: HEADER_RESPONSE_CODE is not 'Fatal Error'")
-                row_valid = False
-            if issue_severity != "Fatal":
-                print(f"Row {i}: ISSUE_SEVERITY is not 'Fatal'")
-                row_valid = False
-            if issue_code != "Fatal Error":
-                print(f"Row {i}: ISSUE_CODE is not 'Fatal Error'")
-                row_valid = False
-            if response_code != "30002":
-                print(f"Row {i}: RESPONSE_CODE is not '30002'")
-                row_valid = False
-            if response_display != "Business Level Response Value - Processing Error":
-                print(f"Row {i}: RESPONSE_DISPLAY is not expected value")
-                row_valid = False
-            if imms_id:
-                print(f"Row {i}: IMMS_ID should be null but is populated")
-                row_valid = False
-            if message_delivery != "False":
-                print(f"Row {i}: MESSAGE_DELIVERY is not 'False'")
-                row_valid = False
-            if operation_outcome != expected_diagnostic:
-                print(
-                    f"Row {i}: operation_outcome '{operation_outcome}' does not match "
-                    f"expected diagnostics '{expected_diagnostic}' for surname '{expected_error}'"
-                )
-                row_valid = False
-            overall_valid = overall_valid and row_valid
-    return overall_valid

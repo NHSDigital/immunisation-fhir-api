@@ -101,15 +101,9 @@ class MessageDetails:
         self.name = f"{vaccine_type.upper()}/ {supplier.upper()} {operation_requested} message"
         self.file_key = f"{vaccine_type}_Vaccinations_v5_{ods_code}_20210730T12000000.csv"
         self.temp_ack_file_key = (
-            f"TempAck/{vaccine_type}_Vaccinations_v5_{ods_code}_20210730T12000000_BusAck_20211120T12000000.csv"
-        )
-        self.archive_ack_file_key = (
-            f"forwardedFile/{vaccine_type}_Vaccinations_v5_{ods_code}_20210730T12000000_BusAck_20211120T12000000.csv"
-        )
-        self.temp_json_ack_file_key = (
             f"TempAck/{vaccine_type}_Vaccinations_v5_{ods_code}_20210730T12000000_BusAck_20211120T12000000.json"
         )
-        self.archive_json_ack_file_key = (
+        self.archive_ack_file_key = (
             f"forwardedFile/{vaccine_type}_Vaccinations_v5_{ods_code}_20210730T12000000_BusAck_20211120T12000000.json"
         )
         self.vaccine_type = vaccine_type
@@ -244,12 +238,6 @@ class ValidValues:
         "diagnostics": "DIAGNOSTICS MESSAGE",
     }
 
-    ack_headers = (
-        "MESSAGE_HEADER_ID|HEADER_RESPONSE_CODE|ISSUE_SEVERITY|ISSUE_CODE|ISSUE_DETAILS_CODE|RESPONSE_TYPE|"
-        "RESPONSE_CODE|RESPONSE_DISPLAY|RECEIVED_TIME|MAILBOX_FROM|LOCAL_ID|IMMS_ID|OPERATION_OUTCOME"
-        "|MESSAGE_DELIVERY\n"
-    )
-
     upload_ack_file_expected_log = {
         "function_name": "ack_processor_complete_batch_file_process",
         "date_time": fixed_datetime.strftime("%Y-%m-%d %H:%M:%S"),
@@ -265,18 +253,21 @@ class ValidValues:
         "message": "Record processing complete",
     }
 
-    json_ack_initial_content = {
-        "system": "Immunisation FHIR API Batch Report",
-        "version": 1,
-        "generatedDate": "",
-        "filename": "RSV_Vaccinations_v5_X26_20210730T12000000",
-        "provider": "RAVS",
-        "messageHeaderId": "test_file_id",
-        "summary": {"ingestionTime": {"start": 3456}},
+    ack_initial_content = {
         "failures": [],
     }
 
-    json_ack_complete_content = {
+    ack_complete_content_info = {
+        "system": "Immunisation FHIR API Batch Report",
+        "version": 1,
+        "generatedDate": "2026-02-09T17:26:00.000Z",
+        "filename": "RSV_Vaccinations_v5_X26_20210730T12000000",
+        "provider": "RAVS",
+        "messageHeaderId": "test_file_id",
+        "summary": {"totalRecords": 0, "succeeded": 0, "failed": 0, "ingestionTime": {"start": 3456, "end": 7890}},
+    }
+
+    ack_complete_content = {
         "system": "Immunisation FHIR API Batch Report",
         "version": 1,
         "generatedDate": "2026-02-09T17:26:00.000Z",
@@ -295,17 +286,6 @@ class ValidValues:
             }
         ],
     }
-
-    json_ack_data_failure_dict = (
-        {
-            "rowId": DefaultValues.row_id,
-            "responseCode": "30002",
-            "responseDisplay": "Business Level Response Value - Processing Error",
-            "severity": "Fatal",
-            "localId": DefaultValues.local_id,
-            "operationOutcome": "DIAGNOSTICS",
-        },
-    )
 
 
 class InvalidValues:

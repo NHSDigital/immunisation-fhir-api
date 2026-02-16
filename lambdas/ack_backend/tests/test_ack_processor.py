@@ -23,9 +23,7 @@ from utils.mock_environment_variables import (
 from utils.utils_for_ack_backend_tests import (
     add_audit_entry_to_table,
     generate_sample_existing_ack_content,
-    generate_sample_existing_json_ack_content,
     validate_ack_file_content,
-    validate_json_ack_file_content,
 )
 from utils.values_for_ack_backend_tests import (
     EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS,
@@ -96,20 +94,15 @@ class TestAckProcessor(unittest.TestCase):
         source_file_key: str,
         tmp_ack_file_key: str,
         complete_ack_file_key: str,
-        tmp_json_ack_file_key: str,
-        complete_json_ack_file_key: str,
         is_complete: bool,
     ) -> None:
         """Helper function to check the ack and source files have not been moved as the processing is not yet
         complete"""
         if is_complete:
             ack_file = self.s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=complete_ack_file_key)
-            json_ack_file = self.s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=complete_json_ack_file_key)
         else:
             ack_file = self.s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=tmp_ack_file_key)
-            json_ack_file = self.s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=tmp_json_ack_file_key)
         self.assertIsNotNone(ack_file["Body"].read())
-        self.assertIsNotNone(json_ack_file["Body"].read())
 
         full_src_file_key = f"archive/{source_file_key}" if is_complete else f"processing/{source_file_key}"
         src_file = self.s3_client.get_object(Bucket=BucketNames.SOURCE, Key=full_src_file_key)
@@ -142,8 +135,7 @@ class TestAckProcessor(unittest.TestCase):
         """Test lambda handler with multiple records."""
         # Set up an audit entry which does not yet have record_count recorded
         add_audit_entry_to_table(self.dynamodb_client, "row")
-        existing_json_file_content = deepcopy(ValidValues.json_ack_initial_content)
-        existing_json_file_content["messageHeaderId"] = "row"
+        existing_file_content = deepcopy(ValidValues.ack_initial_content)
         # First array of messages. Rows 1 to 3
         array_of_messages_one = [
             {
@@ -206,16 +198,7 @@ class TestAckProcessor(unittest.TestCase):
                 *array_of_messages_two,
                 *array_of_messages_three,
             ],
-            existing_file_content=ValidValues.ack_headers,
-        )
-        validate_json_ack_file_content(
-            self.s3_client,
-            [
-                *array_of_messages_one,
-                *array_of_messages_two,
-                *array_of_messages_three,
-            ],
-            existing_file_content=existing_json_file_content,
+            existing_file_content=existing_file_content,
         )
         self.assert_audit_entry_counts_equal("row", expected_entry_counts)
 
@@ -223,8 +206,7 @@ class TestAckProcessor(unittest.TestCase):
         """Test lambda handler with consistent ack_file_name and message_template."""
         # Set up an audit entry which does not yet have record_count recorded
         add_audit_entry_to_table(self.dynamodb_client, "row")
-        existing_json_file_content = deepcopy(ValidValues.json_ack_initial_content)
-        existing_json_file_content["messageHeaderId"] = "row"
+        existing_file_content = deepcopy(ValidValues.ack_initial_content)
         test_cases = [
             {
                 "description": "Multiple messages: all with diagnostics (failure messages)",
@@ -265,16 +247,11 @@ class TestAckProcessor(unittest.TestCase):
                         "records_failed": test_case["expected_failures_cum_tot"],
                     },
                 )
-                validate_ack_file_content(self.s3_client, test_case["messages"])
-                validate_json_ack_file_content(self.s3_client, test_case["messages"], existing_json_file_content)
+                validate_ack_file_content(self.s3_client, test_case["messages"], existing_file_content)
 
                 self.s3_client.delete_object(
                     Bucket=BucketNames.DESTINATION,
                     Key=MOCK_MESSAGE_DETAILS.temp_ack_file_key,
-                )
-                self.s3_client.delete_object(
-                    Bucket=BucketNames.DESTINATION,
-                    Key=MOCK_MESSAGE_DETAILS.temp_json_ack_file_key,
                 )
 
     def test_lambda_handler_updates_ack_file_but_does_not_mark_complete_when_records_still_remaining(self):
@@ -289,8 +266,7 @@ class TestAckProcessor(unittest.TestCase):
 
         # Original source file had 100 records
         add_audit_entry_to_table(self.dynamodb_client, mock_batch_message_id, record_count=100)
-        existing_json_file_content = deepcopy(ValidValues.json_ack_initial_content)
-        existing_json_file_content["messageHeaderId"] = mock_batch_message_id
+        existing_file_content = deepcopy(ValidValues.ack_initial_content)
 
         array_of_failure_messages = [
             {
@@ -313,19 +289,12 @@ class TestAckProcessor(unittest.TestCase):
         validate_ack_file_content(
             self.s3_client,
             [*array_of_failure_messages],
-            existing_file_content=ValidValues.ack_headers,
-        )
-        validate_json_ack_file_content(
-            self.s3_client,
-            [*array_of_failure_messages],
-            existing_file_content=existing_json_file_content,
+            existing_file_content=existing_file_content,
         )
         self.assert_ack_and_source_file_locations_correct(
             MOCK_MESSAGE_DETAILS.file_key,
             MOCK_MESSAGE_DETAILS.temp_ack_file_key,
             MOCK_MESSAGE_DETAILS.archive_ack_file_key,
-            MOCK_MESSAGE_DETAILS.temp_json_ack_file_key,
-            MOCK_MESSAGE_DETAILS.archive_json_ack_file_key,
             is_complete=False,
         )
         self.assert_audit_entry_status_equals(mock_batch_message_id, "Preprocessed")
@@ -346,17 +315,11 @@ class TestAckProcessor(unittest.TestCase):
         add_audit_entry_to_table(self.dynamodb_client, mock_batch_message_id, record_count=100)
 
         # Previous invocations have already created and added to the temp ack file
-        existing_ack_content = generate_sample_existing_ack_content()
+        existing_ack_content = generate_sample_existing_ack_content(mock_batch_message_id)
         self.s3_client.put_object(
             Bucket=BucketNames.DESTINATION,
             Key=MOCK_MESSAGE_DETAILS.temp_ack_file_key,
-            Body=StringIO(existing_ack_content).getvalue(),
-        )
-        existing_json_ack_content = generate_sample_existing_json_ack_content(mock_batch_message_id)
-        self.s3_client.put_object(
-            Bucket=BucketNames.DESTINATION,
-            Key=MOCK_MESSAGE_DETAILS.temp_json_ack_file_key,
-            Body=json.dumps(existing_json_ack_content),
+            Body=json.dumps(existing_ack_content),
         )
 
         array_of_failure_messages = [
@@ -378,29 +341,27 @@ class TestAckProcessor(unittest.TestCase):
             "records_succeeded": "49",
             "records_failed": "51",
         }
+
+        existing_ack_content |= ValidValues.ack_complete_content_info
+        existing_ack_content["messageHeaderId"] = mock_batch_message_id
         # Include summary counts in expected JSON content
-        existing_json_ack_content["summary"]["totalRecords"] = int(expected_entry_counts["record_count"])
-        existing_json_ack_content["summary"]["succeeded"] = int(expected_entry_counts["records_succeeded"])
-        existing_json_ack_content["summary"]["failed"] = int(expected_entry_counts["records_failed"])
+        existing_ack_content["summary"]["totalRecords"] = int(expected_entry_counts["record_count"])
+        existing_ack_content["summary"]["succeeded"] = int(expected_entry_counts["records_succeeded"])
+        existing_ack_content["summary"]["failed"] = int(expected_entry_counts["records_failed"])
 
         response = lambda_handler(event=test_event, context={})
 
         self.assertEqual(response, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
         validate_ack_file_content(
-            self.s3_client, [*array_of_failure_messages], existing_file_content=existing_ack_content, is_complete=True
-        )
-        validate_json_ack_file_content(
             self.s3_client,
             [*array_of_failure_messages],
-            existing_file_content=existing_json_ack_content,
+            existing_file_content=existing_ack_content,
             is_complete=True,
         )
         self.assert_ack_and_source_file_locations_correct(
             MOCK_MESSAGE_DETAILS.file_key,
             MOCK_MESSAGE_DETAILS.temp_ack_file_key,
             MOCK_MESSAGE_DETAILS.archive_ack_file_key,
-            MOCK_MESSAGE_DETAILS.temp_json_ack_file_key,
-            MOCK_MESSAGE_DETAILS.archive_json_ack_file_key,
             is_complete=True,
         )
         self.assert_audit_entry_status_equals(mock_batch_message_id, "Processed")
