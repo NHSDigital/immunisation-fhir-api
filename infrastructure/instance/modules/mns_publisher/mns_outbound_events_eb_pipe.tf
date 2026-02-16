@@ -1,6 +1,6 @@
 # IAM Role for EventBridge Pipe
 resource "aws_iam_role" "mns_outbound_events_eb_pipe" {
-  name = "${local.resource_scope}-mns-outbound-eventbridge-pipe-role"
+  name = "${var.mns_publisher_resource_name_prefix}-eventbridge-pipe-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -33,7 +33,7 @@ resource "aws_iam_role_policy" "mns_outbound_events_eb_pipe_source_policy" {
           "dynamodb:GetShardIterator",
           "dynamodb:ListStreams"
         ],
-        "Resource" : aws_dynamodb_table.delta-dynamodb-table.stream_arn
+        "Resource" : var.ddb_delta_stream_arn
       },
       {
         "Effect" : "Allow",
@@ -41,7 +41,7 @@ resource "aws_iam_role_policy" "mns_outbound_events_eb_pipe_source_policy" {
           "kms:Decrypt",
           "kms:GenerateDataKey"
         ],
-        "Resource" : data.aws_kms_key.existing_dynamo_encryption_key.arn
+        "Resource" : var.dynamo_kms_encryption_key_arn
       },
     ]
   })
@@ -79,7 +79,7 @@ resource "aws_iam_role_policy" "mns_outbound_events_eb_pipe_cw_log_policy" {
           "logs:PutLogEvents"
         ],
         Resource = [
-          "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/vendedlogs/pipes/${local.resource_scope}-mns-outbound-event-pipe-logs:*",
+          "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/vendedlogs/pipes/${var.mns_publisher_resource_name_prefix}-pipe-logs:*",
         ]
       },
     ]
@@ -87,7 +87,7 @@ resource "aws_iam_role_policy" "mns_outbound_events_eb_pipe_cw_log_policy" {
 }
 
 resource "aws_cloudwatch_log_group" "mns_outbound_events_eb_pipe" {
-  name              = "/aws/vendedlogs/pipes/${local.resource_scope}-mns-outbound-event-pipe-logs"
+  name              = "/aws/vendedlogs/pipes/${var.mns_publisher_resource_name_prefix}-pipe-logs"
   retention_in_days = 30
 }
 
@@ -97,9 +97,9 @@ resource "aws_pipes_pipe" "mns_outbound_events" {
     aws_iam_role_policy.mns_outbound_events_eb_pipe_target_policy,
     aws_iam_role_policy.mns_outbound_events_eb_pipe_cw_log_policy,
   ]
-  name     = "${local.resource_scope}-mns-outbound-events"
+  name     = "${var.mns_publisher_resource_name_prefix}-pipe"
   role_arn = aws_iam_role.mns_outbound_events_eb_pipe.arn
-  source   = aws_dynamodb_table.delta-dynamodb-table.stream_arn
+  source   = var.ddb_delta_stream_arn
   target   = aws_sqs_queue.mns_outbound_events.arn
 
   source_parameters {
@@ -112,7 +112,7 @@ resource "aws_pipes_pipe" "mns_outbound_events" {
     include_execution_data = ["ALL"]
     level                  = "ERROR"
     cloudwatch_logs_log_destination {
-      log_group_arn = aws_cloudwatch_log_group.pipe_log_group.arn
+      log_group_arn = aws_cloudwatch_log_group.mns_outbound_events_eb_pipe.arn
     }
   }
 }

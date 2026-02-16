@@ -80,10 +80,15 @@ variable "mesh_no_invocation_period_seconds" {
   default     = 300
 }
 
-# Remember to switch off in PR envs after testing
 variable "error_alarm_notifications_enabled" {
   default     = true
   description = "Switch to enable error alarm notifications to Slack"
+  type        = bool
+}
+
+variable "mns_publisher_feature_enabled" {
+  default     = false
+  description = "Switch to the MNS Publisher feature which allows us to publish Immunisation events."
   type        = bool
 }
 
