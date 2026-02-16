@@ -84,9 +84,7 @@ def temp_apigee_apps():
 
 
 @pytest.fixture
-def context(
-    request, global_context, temp_apigee_apps: list[ApigeeApp] | None
-) -> ScenarioContext:
+def context(request, global_context, temp_apigee_apps: list[ApigeeApp] | None) -> ScenarioContext:
     ctx = ScenarioContext()
     ctx.aws_profile_name = os.getenv("aws_profile_name")
 
@@ -136,39 +134,30 @@ def pytest_bdd_after_scenario(request, feature, scenario):
     if "Delete_cleanUp" in tags:
         if context.ImmsID is not None:
             print(f"\n Delete Request is {context.url}/{context.ImmsID}")
-            context.response = http_requests_session.delete(
-                f"{context.url}/{context.ImmsID}", headers=context.headers
+            context.response = http_requests_session.delete(f"{context.url}/{context.ImmsID}", headers=context.headers)
+            assert context.response.status_code == 204, (
+                f"Expected status code 204, but got {context.response.status_code}. Response: {context.response.json()}"
             )
-            assert (
-                context.response.status_code == 204
-            ), f"Expected status code 204, but got {context.response.status_code}. Response: {context.response.json()}"
         else:
             print("Skipping delete: ImmsID is None")
 
     if "delete_cleanup_batch" in tags:
-        if (
-            "IMMS_ID" in context.vaccine_df.columns
-            and context.vaccine_df["IMMS_ID"].notna().any()
-        ):
+        if "IMMS_ID" in context.vaccine_df.columns and context.vaccine_df["IMMS_ID"].notna().any():
             get_tokens(context, context.supplier_name)
 
             context.vaccine_df["IMMS_ID_CLEAN"] = (
-                context.vaccine_df["IMMS_ID"]
-                .astype(str)
-                .str.replace("Immunization#", "", regex=False)
+                context.vaccine_df["IMMS_ID"].astype(str).str.replace("Immunization#", "", regex=False)
             )
 
             for imms_id in context.vaccine_df["IMMS_ID_CLEAN"].dropna().unique():
                 delete_url = f"{context.url}/{imms_id}"
                 print(f"Sending DELETE request to: {delete_url}")
 
-                response = http_requests_session.delete(
-                    delete_url, headers=context.headers
-                )
+                response = http_requests_session.delete(delete_url, headers=context.headers)
 
-                assert (
-                    response.status_code == 204
-                ), f"Failed to delete {imms_id}: expected 204, got {response.status_code}. Response: {response.text}"
+                assert response.status_code == 204, (
+                    f"Failed to delete {imms_id}: expected 204, got {response.status_code}. Response: {response.text}"
+                )
 
             print("All IMMS_IDs deleted successfully.")
 
