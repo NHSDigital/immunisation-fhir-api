@@ -45,6 +45,8 @@ class SearchUser(HttpUser):
         get_secrets_manager_client(), environment, f"imms/perf-tests/{environment}/jwt-secrets"
     )
 
+    host = f"https://{environment}.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4"
+
     wait_time = constant_throughput(1)
 
     def get_headers(self):
