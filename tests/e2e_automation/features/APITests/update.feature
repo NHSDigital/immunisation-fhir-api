@@ -94,7 +94,7 @@ Feature: Update the immunization of a patient
             | empty          |
 
     @Delete_cleanUp @vaccine_type_RSV @patient_id_Mod11_NHS @supplier_name_Postman_Auth
-    Scenario Outline: Scenario Outline name: Verify that the Update API will be fails if expiration date has invalid formatted date
+    Scenario Outline: Scenario Outline name: Verify that the Update API will fail if expiration date has invalid formatted date
         Given I have created a valid vaccination record
         When Send a update for Immunization event created with expiration date being updated to '<Date>'
         Then The request will be unsuccessful with the status code '400'
