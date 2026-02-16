@@ -46,8 +46,9 @@ Feature: Search the immunization of a patient
             | SupersedeNhsNo | HEPB         |
 
     @smoke
-    @supplier_name_Postman_Auth
-    Scenario Outline: Verify that the immunisation events retrieved in the response of Search API should be within Date From and Date To range
+    @Delete_cleanUp @supplier_name_Postman_Auth
+    Scenario Outline: Verify that the immunization events retrieved in the response of Search API should be within Date From and Date To range
+        Given Valid vaccination record is created for '<NHSNumber>' and Disease Type '<vaccine_type>' with recorded date as '<DateFrom>'
         When Send a search request with GET method with valid NHS Number '<NHSNumber>' and Disease Type '<vaccine_type>' and Date From '<DateFrom>' and Date To '<DateTo>'
         Then The request will be successful with the status code '200'
         And The occurrenceDateTime of the immunization events should be within the Date From and Date To range
@@ -56,7 +57,7 @@ Feature: Search the immunization of a patient
         And The occurrenceDateTime of the immunization events should be within the Date From and Date To range
         Examples:
             | NHSNumber  | vaccine_type | DateFrom   | DateTo     |
-            | 9728403348 | FLU          | 2025-01-01 | 2025-06-04 |
+            | 9728403348 | FLU          | 2023-01-01 | 2023-06-04 |
 
     # Negative Scenarios
     @supplier_name_Postman_Auth
