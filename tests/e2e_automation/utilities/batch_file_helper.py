@@ -349,6 +349,12 @@ def validate_json_bus_ack_file_failure_records(
                     f"{context.immunization_object.identifier[0].value}",
                 )
 
+            if expected_error == "not_found" and expected_diagnostic:
+                expected_diagnostic = expected_diagnostic.replace(
+                    "<imms_id>",
+                    f"{context.immunization_object.identifier[0].system}#{str(df_row.get('UNIQUE_ID', '')).strip()}",
+                )
+
             if operation_outcome != expected_diagnostic:
                 print(
                     f"Failure rowId {row_id}: operationOutcome mismatch. "
