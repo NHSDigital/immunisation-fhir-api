@@ -15,7 +15,7 @@
   "license": "MIT",
   "homepage": "https://github.com/NHSDigital/immunisation-fhir-api",
   "devDependencies": {
-    "@redocly/cli": "^2.15.0",
+    "@redocly/cli": "^2.18.1",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "prettier": "^3.8.1"
@@ -26,7 +26,7 @@
       "poetry -P quality_checks run ruff check --fix",
       "poetry -P quality_checks run ruff format"
     ],
-    "*.tf": "terraform fmt",
+    "*.{tf,tfvars}": "terraform fmt",
     "immunisation-fhir-api.{yaml,json}": "redocly lint --skip-rule=security-defined"
   }
 }

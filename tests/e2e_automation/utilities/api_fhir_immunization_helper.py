@@ -61,7 +61,11 @@ def parse_entry(entry_data: dict) -> Entry:
     parsed_resource = resource_class.parse_obj(resource_data)
     parsed_search = Search.parse_obj(entry_data.get("search", {}))
 
-    return Entry(fullUrl=entry_data.get("fullUrl"), resource=parsed_resource, search=parsed_search)
+    return Entry(
+        fullUrl=entry_data.get("fullUrl"),
+        resource=parsed_resource,
+        search=parsed_search,
+    )
 
 
 def is_valid_disease_type(disease_type: str) -> bool:
@@ -97,7 +101,13 @@ def is_valid_nhs_number(nhs_number: str) -> bool:
     return check_digit == digits[9]
 
 
-def validate_error_response(error_response, errorName: str, imms_id: str = "", version: str = ""):
+def validate_error_response(
+    error_response,
+    errorName: str,
+    imms_id: str = "",
+    version: str = "",
+    identifier: str = "",
+):
     uuid_obj = uuid.UUID(error_response.id, version=4)
     check.is_true(isinstance(uuid_obj, uuid.UUID), f"Id is not UUID {error_response.id}")
 
@@ -106,11 +116,34 @@ def validate_error_response(error_response, errorName: str, imms_id: str = "", v
     match errorName:
         case "not_found":
             expected_diagnostics = ERROR_MAP.get("not_found", {}).get("diagnostics", "").replace("<imms_id>", imms_id)
-            fields_to_compare.append(("Diagnostics", expected_diagnostics, error_response.issue[0].diagnostics))
+            fields_to_compare.append(
+                (
+                    "Diagnostics",
+                    expected_diagnostics,
+                    error_response.issue[0].diagnostics,
+                )
+            )
 
         case "invalid_etag":
             expected_diagnostics = ERROR_MAP.get("invalid_etag", {}).get("diagnostics", "").replace("<version>", version)
-            fields_to_compare.append(("Diagnostics", expected_diagnostics, error_response.issue[0].diagnostics))
+            fields_to_compare.append(
+                (
+                    "Diagnostics",
+                    expected_diagnostics,
+                    error_response.issue[0].diagnostics,
+                )
+            )
+        case "duplicate":
+            expected_diagnostics = (
+                ERROR_MAP.get("duplicate", {}).get("diagnostics", "").replace("<identifier>", identifier)
+            )
+            fields_to_compare.append(
+                (
+                    "Diagnostics",
+                    expected_diagnostics,
+                    error_response.issue[0].diagnostics,
+                )
+            )
         case _:
             actual_diagnostics = (
                 error_response.issue[0]
@@ -126,9 +159,21 @@ def validate_error_response(error_response, errorName: str, imms_id: str = "", v
 
     fields_to_compare.extend(
         [
-            ("ResourceType", ERROR_MAP.get("Common_field", {}).get("resourceType", ""), error_response.resourceType),
-            ("Meta_Profile", ERROR_MAP.get("Common_field", {}).get("profile", ""), error_response.meta.profile[0]),
-            ("Issue_Code", ERROR_MAP.get(errorName, {}).get("code", "").lower(), error_response.issue[0].code.lower()),
+            (
+                "ResourceType",
+                ERROR_MAP.get("Common_field", {}).get("resourceType", ""),
+                error_response.resourceType,
+            ),
+            (
+                "Meta_Profile",
+                ERROR_MAP.get("Common_field", {}).get("profile", ""),
+                error_response.meta.profile[0],
+            ),
+            (
+                "Issue_Code",
+                ERROR_MAP.get(errorName, {}).get("code", "").lower(),
+                error_response.issue[0].code.lower(),
+            ),
             (
                 "Coding_system",
                 ERROR_MAP.get("Common_field", {}).get("system", ""),
@@ -139,7 +184,11 @@ def validate_error_response(error_response, errorName: str, imms_id: str = "", v
                 ERROR_MAP.get(errorName, {}).get("code", "").lower(),
                 error_response.issue[0].details.coding[0].code.lower(),
             ),
-            ("severity", ERROR_MAP.get("Common_field", {}).get("severity", ""), error_response.issue[0].severity),
+            (
+                "severity",
+                ERROR_MAP.get("Common_field", {}).get("severity", ""),
+                error_response.issue[0].severity,
+            ),
         ]
     )
 
@@ -176,44 +225,97 @@ def validate_to_compare_request_and_response(context, create_obj, created_event,
     if not table_validation:
         fields_to_compare.append(("fullUrl", expected_fullUrl, context.created_event.fullUrl))
         fields_to_compare.append(
-            ("patient.identifier.system", request_patient.identifier[0].system, response_patient.identifier.system)
+            (
+                "patient.identifier.system",
+                request_patient.identifier[0].system,
+                response_patient.identifier.system,
+            )
         )
         fields_to_compare.append(
-            ("patient.identifier.value", request_patient.identifier[0].value, response_patient.identifier.value)
+            (
+                "patient.identifier.value",
+                request_patient.identifier[0].value,
+                response_patient.identifier.value,
+            )
         )
         fields_to_compare.append(
-            ("patient.reference", bool(re.match(referencePattern, response_patient.reference)), True)
+            (
+                "patient.reference",
+                bool(re.match(referencePattern, response_patient.reference)),
+                True,
+            )
         )
-        fields_to_compare.append(("meta.versionId", context.expected_version, int(created_event.meta.versionId)))
+        fields_to_compare.append(
+            (
+                "meta.versionId",
+                context.expected_version,
+                int(created_event.meta.versionId),
+            )
+        )
 
     if table_validation:
         fields_to_compare.append(("Contained", create_obj.contained, created_event.contained))
-        fields_to_compare.append(("patient.reference", create_obj.patient.reference, created_event.patient.reference))
+        fields_to_compare.append(
+            (
+                "patient.reference",
+                create_obj.patient.reference,
+                created_event.patient.reference,
+            )
+        )
         fields_to_compare.append(("performer", create_obj.performer, created_event.performer))
         fields_to_compare.append(("Id", context.ImmsID, created_event.id))
 
+    if hasattr(create_obj, "manufacturer") and create_obj.manufacturer:
+        fields_to_compare.append(("manufacturer", create_obj.manufacturer, created_event.manufacturer))
+
+    if hasattr(create_obj, "reasonCode") and create_obj.reasonCode:
+        fields_to_compare.append(("reasonCode", create_obj.reasonCode, created_event.reasonCode))
+
+    if hasattr(create_obj, "site") and create_obj.site:
+        fields_to_compare.append(("site", create_obj.site, created_event.site))
+
+    if hasattr(create_obj, "route") and create_obj.route:
+        fields_to_compare.append(("route", create_obj.route, created_event.route))
+
+    if hasattr(create_obj, "lotNumber") and create_obj.lotNumber:
+        fields_to_compare.append(("lotNumber", create_obj.lotNumber, created_event.lotNumber))
+
+    if hasattr(create_obj, "expirationDate") and create_obj.expirationDate:
+        fields_to_compare.append(("expirationDate", create_obj.expirationDate, created_event.expirationDate))
+
+    if hasattr(create_obj, "doseQuantity") and create_obj.doseQuantity:
+        fields_to_compare.append(("doseQuantity", create_obj.doseQuantity, created_event.doseQuantity))
     fields_to_compare.extend(
         [
             ("resourceType", create_obj.resourceType, created_event.resourceType),
             ("extension", create_obj.extension, created_event.extension),
-            ("identifier.system", create_obj.identifier[0].system, created_event.identifier[0].system),
-            ("identifier.value", create_obj.identifier[0].value, created_event.identifier[0].value),
+            (
+                "identifier.system",
+                create_obj.identifier[0].system,
+                created_event.identifier[0].system,
+            ),
+            (
+                "identifier.value",
+                create_obj.identifier[0].value,
+                created_event.identifier[0].value,
+            ),
             ("status", create_obj.status, created_event.status),
             ("vaccineCode", create_obj.vaccineCode, created_event.vaccineCode),
             ("patient.type", create_obj.patient.type, created_event.patient.type),
-            ("occurrenceDateTime", expected_occurrenceDateTime, actual_occurrenceDateTime),
+            (
+                "occurrenceDateTime",
+                expected_occurrenceDateTime,
+                actual_occurrenceDateTime,
+            ),
             ("Recorded", expected_recorded, actual_recorded),
             ("primarySource", create_obj.primarySource, created_event.primarySource),
             ("location", create_obj.location, created_event.location),
-            ("manufacturer", create_obj.manufacturer, created_event.manufacturer),
-            ("lotNumber", create_obj.lotNumber, created_event.lotNumber),
-            ("expirationDate", create_obj.expirationDate, created_event.expirationDate),
-            ("site", create_obj.site, created_event.site),
-            ("route", create_obj.route, created_event.route),
-            ("doseQuantity", create_obj.doseQuantity, created_event.doseQuantity),
             # ("performer", create_obj.performer, created_event.performer),
-            ("reasonCode", create_obj.reasonCode, created_event.reasonCode),
-            ("protocolApplied", create_obj.protocolApplied, created_event.protocolApplied),
+            (
+                "protocolApplied",
+                create_obj.protocolApplied,
+                created_event.protocolApplied,
+            ),
         ]
     )
 

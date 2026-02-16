@@ -5,7 +5,7 @@ locals {
   id_sync_lambda_files = fileset(local.id_sync_lambda_dir, "**")
 
   id_sync_lambda_dir_sha = sha1(join("", [for f in local.id_sync_lambda_files : filesha1("${local.id_sync_lambda_dir}/${f}")]))
-  id_sync_lambda_name    = "${local.short_prefix}-id_sync_lambda"
+  id_sync_lambda_name    = "${local.short_prefix}-id-sync-lambda"
 }
 
 resource "aws_ecr_repository" "id_sync_lambda_repository" {
@@ -19,7 +19,7 @@ resource "aws_ecr_repository" "id_sync_lambda_repository" {
 # Module for building and pushing Docker image to ECR
 module "id_sync_docker_image" {
   source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version          = "8.4.0"
+  version          = "8.5.0"
   docker_file_path = "./id_sync/Dockerfile"
   create_ecr_repo  = false
   ecr_repo         = aws_ecr_repository.id_sync_lambda_repository.name
@@ -71,7 +71,7 @@ resource "aws_ecr_repository_policy" "id_sync_lambda_ECRImageRetreival_policy" {
         ],
         Condition : {
           StringLike : {
-            "aws:sourceArn" : aws_lambda_function.id_sync_lambda.arn
+            "aws:sourceArn" : "arn:aws:lambda:${var.aws_region}:${var.immunisation_account_id}:function:${local.id_sync_lambda_name}"
           }
         }
       }
@@ -81,7 +81,7 @@ resource "aws_ecr_repository_policy" "id_sync_lambda_ECRImageRetreival_policy" {
 
 # IAM Role for Lambda
 resource "aws_iam_role" "id_sync_lambda_exec_role" {
-  name = "${local.short_prefix}-id-sync-lambda-exec-role"
+  name = "${local.id_sync_lambda_name}-exec-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
@@ -97,7 +97,7 @@ resource "aws_iam_role" "id_sync_lambda_exec_role" {
 
 # Policy for Lambda execution role
 resource "aws_iam_policy" "id_sync_lambda_exec_policy" {
-  name = "${local.short_prefix}-id-sync-lambda-exec-policy"
+  name = "${local.id_sync_lambda_name}-exec-policy"
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -108,7 +108,7 @@ resource "aws_iam_policy" "id_sync_lambda_exec_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-id_sync_lambda:*"
+        Resource = "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/lambda/${local.id_sync_lambda_name}:*"
       },
       {
         Effect = "Allow"
@@ -172,8 +172,6 @@ resource "aws_iam_policy" "id_sync_lambda_exec_policy" {
           "arn:aws:lambda:${var.aws_region}:${var.immunisation_account_id}:function:${local.id_sync_lambda_name}",
         ]
       },
-      # NEW
-      # NB anomaly: do we want this in "id_sync_lambda_sqs_access_policy"?
       {
         Effect = "Allow",
         Action = [
@@ -183,7 +181,6 @@ resource "aws_iam_policy" "id_sync_lambda_exec_policy" {
         ],
         Resource = aws_sqs_queue.id_sync_queue.arn
       },
-      # NB anomaly: in redis_sync this appears in "redis_sync_lambda_kms_access_policy"
       {
         Effect = "Allow",
         Action = [
@@ -197,7 +194,7 @@ resource "aws_iam_policy" "id_sync_lambda_exec_policy" {
 }
 
 resource "aws_iam_policy" "id_sync_lambda_kms_access_policy" {
-  name        = "${local.short_prefix}-id-sync-lambda-kms-policy"
+  name        = "${local.id_sync_lambda_name}-kms-policy"
   description = "Allow Lambda to decrypt environment variables"
 
   policy = jsonencode({
@@ -264,7 +261,7 @@ data "aws_iam_policy_document" "id_sync_policy_document" {
 }
 
 resource "aws_iam_policy" "id_sync_lambda_dynamodb_access_policy" {
-  name        = "${local.short_prefix}-id-sync-lambda-dynamodb-access-policy"
+  name        = "${local.id_sync_lambda_name}-dynamodb-access-policy"
   description = "Allow Lambda to access DynamoDB"
   policy      = data.aws_iam_policy_document.id_sync_policy_document.json
 }
@@ -326,7 +323,7 @@ resource "aws_cloudwatch_log_metric_filter" "id_sync_error_logs" {
 resource "aws_cloudwatch_metric_alarm" "id_sync_error_alarm" {
   count = var.error_alarm_notifications_enabled ? 1 : 0
 
-  alarm_name          = "${local.short_prefix}-id-sync-lambda-error"
+  alarm_name          = "${local.id_sync_lambda_name}-error"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = 1
   metric_name         = "${local.short_prefix}-IdSyncErrorLogs"

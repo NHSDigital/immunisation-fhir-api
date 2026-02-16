@@ -37,10 +37,15 @@
     "supplier": "EMIS",
     "permissions": [
       "3IN1.CRUDS",
+      "FLU.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
       "MMR.CRUDS",
-      "RSV.CRUDS"
+      "MMRV.CRUDS",
+      "PERTUSSIS.CRUDS",
+      "PNEUMOCOCCAL.CRUDS",
+      "RSV.CRUDS",
+      "SHINGLES.CRUDS"
     ],
     "ods_codes": ["YGM41", "YGJ"]
   },
@@ -48,10 +53,15 @@
     "supplier": "TPP",
     "permissions": [
       "3IN1.CRUDS",
+      "FLU.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
       "MMR.CRUDS",
-      "RSV.CRUDS"
+      "MMRV.CRUDS",
+      "PERTUSSIS.CRUDS",
+      "PNEUMOCOCCAL.CRUDS",
+      "RSV.CRUDS",
+      "SHINGLES.CRUDS"
     ],
     "ods_codes": ["YGA"]
   },
@@ -59,6 +69,7 @@
     "supplier": "MEDICUS",
     "permissions": [
       "3IN1.CRUDS",
+      "FLU.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
       "MMR.CRUDS",

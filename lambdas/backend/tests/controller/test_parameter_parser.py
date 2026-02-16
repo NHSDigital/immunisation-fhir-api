@@ -158,8 +158,8 @@ class TestParameterParser(unittest.TestCase):
         )
 
         # immunization targets should be deduped and preserve valid entries
-        self.assertIsInstance(params.IMMUNIZATION_TARGETS, set)
-        self.assertCountEqual(params.IMMUNIZATION_TARGETS, {"RSV", "FLU"})
+        self.assertIsInstance(params.immunization_targets, set)
+        self.assertCountEqual(params.immunization_targets, {"RSV", "FLU"})
 
         # include should be returned as provided
         self.assertEqual(params.include, "immunization:patient")

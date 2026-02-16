@@ -14,39 +14,48 @@ See https://nhsd-confluence.digital.nhs.uk/display/APM/Glossary.
 
 **Note:** Each Lambda has its own `README.md` file for detailed documentation. For non-Lambda-specific folders, refer to `README.specification.md`.
 
-### Lambdas
+### Lambdas (compute microservices)
 
-| Folder              | Description                                                                                                                                     |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `backend`           | **Imms API** – Handles CRUD operations for the Immunisation API.                                                                                |
-| `delta_backend`     | **Imms Sync** – Lambda function that reacts to events in the Immunisation database.                                                             |
-| `ack_backend`       | **Imms Batch** – Generates the final Business Acknowledgment (BUSACK) file from processed messages and writes it to the designated S3 location. |
-| `filenameprocessor` | **Imms Batch** – Processes batch file names.                                                                                                    |
-| `mesh_processor`    | **Imms Batch** – MESH-specific batch processing functionality.                                                                                  |
-| `recordprocessor`   | **Imms Batch** – Handles batch record processing.                                                                                               |
-| `redis_sync`        | **Imms Redis** – Handles sync s3 to REDIS.                                                                                                      |
-| `id_sync`           | **Imms Redis** – Handles sync SQS to IEDS.                                                                                                      |
-| `shared`            | **Imms Redis** – Not a lambda but Shared Code for lambdas                                                                                       |
+| Folder                   | Description                                                                                                                                                                             |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ack_backend`            | **Imms Batch** – Generates the final Business Acknowledgment (BUSACK) file from processed messages and writes it to the designated destination.                                         |
+| `backend`                | **Imms API** – Handles CRUD operations for the Immunisation API.                                                                                                                        |
+| `batch_processor_filter` | **Imms Batch** – Controller function that consumes from a queue and forwards file event for processing if filter conditions are met.                                                    |
+| `delta_backend`          | **Imms Sync** – Lambda function that reacts to events in the Immunisation Event Data Store (IEDS).                                                                                      |
+| `filenameprocessor`      | **Imms Batch** – Validates and processes new batch file events.                                                                                                                         |
+| `id_sync`                | **Imms Cross-cutting** – Handles [MNS](https://digital.nhs.uk/developer/api-catalogue/multicast-notification-service) NHS Number Change events and applies updates to affected records. |
+| `mesh_processor`         | **Imms Batch** – Triggered when new files are received via MESH. Moves them into the Imms Batch processing system.                                                                      |
+| `mns_subscription`       | **Imms Cross-cutting** – Simple helper Lambda which sets up our required MNS subscription. Used in pipelines in DEV.                                                                    |
+| `recordforwarder`        | **Imms Batch** – Consumes from the stream and applies the processed batch file row operations (CUD) to IEDS.                                                                            |
+| `recordprocessor`        | **Imms Batch** – ECS Task - **not** a Lambda function - responsible for processing batch file rows and forwarding to the stream.                                                        |
+| `redis_sync`             | **Imms Cross-cutting** – Handles config file updates. E.g. disease mapping or permission files.                                                                                         |
+| `shared`                 | **Imms Cross-cutting** – Shared `common` code that can be shared by other Lambda functions. This is not a standalone Lambda.                                                            |
 
 ---
 
 ### Pipelines
 
-| Folder  | Description                                 |
-| ------- | ------------------------------------------- |
-| `azure` | Pipeline definition and orchestration code. |
+Due to the timing of the project's inception, Azure pipelines have been inherited from the API Management team for deploying
+the Apigee proxy and sandbox. The new way to manage and deploy said resources is [Proxygen](https://digital.nhs.uk/developer/api-catalogue/proxy-generator).
+
+In future a migration plan will be provided by the API Management team so we can move to the new process and use purely
+GitHub Actions for our entire pipeline.
+
+| Folder    | Description                                                                                                                     |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `azure`   | Pipeline definition and orchestration code concerned purely with the management and deployment of the Apigee proxy and sandbox. |
+| `.github` | Pipeline definition and orchestration code for deploying and testing our backend project.                                       |
 
 ---
 
 ### Infrastructure
 
-| Folder                 | Description                                                                                            |
-| ---------------------- | ------------------------------------------------------------------------------------------------------ |
-| `account`              | Base infrastructure components.                                                                        |
-| `grafana`              | Terraform configuration for Grafana, built on top of core infra.                                       |
-| `instance`             | Core Terraform infrastructure code. This is run in each PR and sets up lambdas associated with the PR. |
-| `terraform_aws_backup` | Streamlined backup processing with AWS.                                                                |
-| `proxies`              | Apigee API proxy definitions.                                                                          |
+| Folder                 | Description                                                     |
+| ---------------------- | --------------------------------------------------------------- |
+| `account`              | Base infrastructure components deployed on a per account basis. |
+| `instance`             | Core Terraform app infrastructure.                              |
+| `terraform_aws_backup` | Streamlined backup processing with AWS.                         |
+| `proxies`              | Apigee API proxy definitions.                                   |
 
 ---
 
@@ -60,13 +69,12 @@ See https://nhsd-confluence.digital.nhs.uk/display/APM/Glossary.
 
 ### Utilities
 
-| Folder           | Description                                                   |
-| ---------------- | ------------------------------------------------------------- |
-| `devtools`       | Helper tools and utilities for local development              |
-| `quality_checks` | Dependencies for linting and formatting Python code           |
-| `scripts`        | Standalone or reusable scripts for development and automation |
-| `specification`  | Specification files to document API and related definitions   |
-| `sandbox`        | Simple sandbox API                                            |
+| Folder              | Description                                                   |
+| ------------------- | ------------------------------------------------------------- |
+| `quality_checks`    | Dependencies for linting and formatting Python code           |
+| `utilities/scripts` | Standalone or reusable scripts for development and automation |
+| `specification`     | Specification files to document API and related definitions   |
+| `sandbox`           | Simple sandbox API                                            |
 
 ---
 
@@ -268,11 +276,3 @@ run a different set of tests. To do this:
 Please note that this project requires that all commits are verified using a GPG key.
 To set up a GPG key please follow the instructions specified here:
 https://docs.github.com/en/authentication/managing-commit-signature-verification
-
-## AWS configuration: Getting credentials for AWS federated user account
-
-In the 'Access keys' popup menu under AWS Access Portal:
-
-**NOTE** that AWS's 'Recommended' method of getting credentials **(AWS IAM Identity Center credentials)** will break mocking in unit tests; specifically any tests calling `dynamodb_client.create_table()` will fail with `botocore.errorfactory.ResourceInUseException: Table already exists`.
-
-Instead, use **Option 2 (Add a profile to your AWS credentials file)**.

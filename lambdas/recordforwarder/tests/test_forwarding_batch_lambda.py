@@ -385,7 +385,7 @@ class TestForwardLambdaHandler(TestCase):
                     "diagnostics": create_diagnostics_dictionary(
                         ResourceNotFoundError(
                             resource_type="Immunization",
-                            resource_id="Immunization#4d2ac1eb-080f-4e54-9598-f2d53334681c",
+                            resource_id="https://www.ravs.england.nhs.uk/#RSV_002",
                         )
                     ),
                 },
@@ -415,7 +415,7 @@ class TestForwardLambdaHandler(TestCase):
                     "diagnostics": create_diagnostics_dictionary(
                         ResourceNotFoundError(
                             resource_type="Immunization",
-                            resource_id="Immunization#4d2ac1eb-080f-4e54-9598-f2d53334681c",
+                            resource_id="https://www.ravs.england.nhs.uk/#RSV_002",
                         )
                     ),
                 },
@@ -700,7 +700,7 @@ class TestForwardLambdaHandler(TestCase):
                     "diagnostics": create_diagnostics_dictionary(
                         ResourceNotFoundError(
                             resource_type="Immunization",
-                            resource_id="Immunization#4d2ac1eb-080f-4e54-9598-f2d53334687r",
+                            resource_id="https://www.ravs.england.nhs.uk/#UPDATE_TEST",
                         )
                     ),
                 },

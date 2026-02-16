@@ -56,17 +56,6 @@ resource "aws_s3_bucket_policy" "batch_data_source_bucket_policy" {
   })
 }
 
-# resource "aws_s3_bucket_server_side_encryption_configuration" "s3_batch_source_encryption" {
-#   bucket = aws_s3_bucket.batch_data_source_bucket.bucket
-#
-#   rule {
-#     apply_server_side_encryption_by_default {
-#       kms_master_key_id = data.aws_kms_key.existing_s3_encryption_key.arn
-#       sse_algorithm     = "aws:kms"
-#     }
-#   }
-# }
-
 resource "aws_s3_bucket_versioning" "source_versioning" {
   bucket = aws_s3_bucket.batch_data_source_bucket.bucket
   versioning_configuration {

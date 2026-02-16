@@ -7,7 +7,7 @@ from unittest.mock import ANY, MagicMock, patch
 import responses
 from responses import matchers
 
-from common.authentication import ACCESS_TOKEN_EXPIRY_SECONDS, AppRestrictedAuth
+from common.api_clients.authentication import ACCESS_TOKEN_EXPIRY_SECONDS, AppRestrictedAuth
 from common.models.errors import UnhandledResponseError
 
 
@@ -51,7 +51,7 @@ class TestAuthenticator(unittest.TestCase):
             match=[matchers.urlencoded_params_matcher(request_data)],
         )
 
-        with patch("common.authentication.jwt.encode") as mock_jwt:
+        with patch("common.api_clients.authentication.jwt.encode") as mock_jwt:
             mock_jwt.return_value = _jwt
             # When
             act_access_token = self.authenticator.get_access_token()
@@ -132,7 +132,7 @@ class TestAuthenticator(unittest.TestCase):
         responses.add(responses.POST, self.url, status=200, json={"access_token": new_token})
 
         new_now = expires_at  # this is to trigger expiry and also the mocked now-time when storing the new token
-        with patch("common.authentication.jwt.encode") as mock_jwt:
+        with patch("common.api_clients.authentication.jwt.encode") as mock_jwt:
             with patch("time.time") as mock_time:
                 mock_time.return_value = new_now
                 mock_jwt.return_value = "a-jwt"
@@ -148,7 +148,7 @@ class TestAuthenticator(unittest.TestCase):
         """it should raise exception if auth response is not 200"""
         responses.add(responses.POST, self.url, status=400)
 
-        with patch("common.authentication.jwt.encode") as mock_jwt:
+        with patch("common.api_clients.authentication.jwt.encode") as mock_jwt:
             mock_jwt.return_value = "a-jwt"
             with self.assertRaises(UnhandledResponseError):
                 # When
