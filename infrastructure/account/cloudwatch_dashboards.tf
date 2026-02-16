@@ -3,6 +3,9 @@ locals {
   non_dev_green = var.environment == "prod" ? "green" : "int-green"
 
   # Lambda
+  api_lambdas        = []
+  batch_lambdas      = []
+  ancilliary_lambdas = []
 
   # DynamoDB
   dynamodb_tables = compact([
@@ -102,9 +105,19 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         }
       },
       {
-        "type" : "metric",
+        "type" : "text",
         "x" : 0,
         "y" : 2,
+        "width" : 24,
+        "height" : 1,
+        "properties" : {
+          "markdown" : "### Overview"
+        }
+      },
+      {
+        "type" : "metric",
+        "x" : 0,
+        "y" : 3,
         "width" : 6,
         "height" : 6,
         "properties" : {
@@ -123,7 +136,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "metric",
         "x" : 6,
-        "y" : 2,
+        "y" : 3,
         "width" : 6,
         "height" : 6,
         "properties" : {
@@ -145,7 +158,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "metric",
         "x" : 12,
-        "y" : 2,
+        "y" : 3,
         "width" : 6,
         "height" : 6,
         "properties" : {
@@ -167,7 +180,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "metric",
         "x" : 18,
-        "y" : 2,
+        "y" : 3,
         "width" : 2,
         "height" : 3,
         "properties" : {
@@ -188,7 +201,289 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "text",
         "x" : 0,
-        "y" : 8,
+        "y" : 9,
+        "width" : 24,
+        "height" : 1,
+        "properties" : {
+          "markdown" : "### API"
+        }
+      },
+      {
+        "type" : "metric",
+        "x" : 0,
+        "y" : 10,
+        "width" : 6,
+        "height" : 6,
+        "properties" : {
+          "metrics" : [
+            ["AWS/Lambda", "Invocations", { region : var.aws_region }],
+            [".", "Errors", { color : "#d62728", region : var.aws_region }],
+          ], # TODO
+          "view" : "timeSeries",
+          "stacked" : false,
+          "region" : var.aws_region,
+          "stat" : "Sum",
+          "period" : 300,
+          "title" : "Invocations & Errors"
+        }
+      },
+      {
+        "type" : "metric",
+        "x" : 6,
+        "y" : 10,
+        "width" : 6,
+        "height" : 6,
+        "properties" : {
+          "metrics" : [
+            [
+              "AWS/Lambda",
+              "Duration",
+              { region : var.aws_region, color : "#ffbb78" }
+            ]
+          ], # TODO
+          "view" : "timeSeries",
+          "stacked" : true,
+          "region" : var.aws_region,
+          "title" : "Duration",
+          "period" : 300,
+          "stat" : "Average"
+        }
+      },
+      {
+        "type" : "metric",
+        "x" : 12,
+        "y" : 10,
+        "width" : 6,
+        "height" : 6,
+        "properties" : {
+          "metrics" : [
+            [
+              "AWS/Lambda",
+              "ConcurrentExecutions",
+              { color : "#2ca02c", region : var.aws_region }
+            ]
+          ], # TODO
+          "view" : "timeSeries",
+          "stacked" : false,
+          "region" : var.aws_region,
+          "stat" : "Maximum",
+          "period" : 300,
+          "title" : "Max ConcurrentExecutions"
+        }
+      },
+      {
+        "type" : "metric",
+        "x" : 18,
+        "y" : 10,
+        "width" : 2,
+        "height" : 3,
+        "properties" : {
+          "metrics" : [
+            [
+              "AWS/Lambda",
+              "Errors",
+              { region : var.aws_region, color : "#d62728" }
+            ]
+          ], # TODO
+          "sparkline" : true,
+          "view" : "singleValue",
+          "region" : var.aws_region,
+          "stat" : "Sum",
+          "period" : 300
+        }
+      },
+      {
+        "type" : "text",
+        "x" : 0,
+        "y" : 16,
+        "width" : 24,
+        "height" : 1,
+        "properties" : {
+          "markdown" : "### Batch"
+        }
+      },
+      {
+        "type" : "metric",
+        "x" : 0,
+        "y" : 17,
+        "width" : 6,
+        "height" : 6,
+        "properties" : {
+          "metrics" : [
+            ["AWS/Lambda", "Invocations", { region : var.aws_region }],
+            [".", "Errors", { color : "#d62728", region : var.aws_region }],
+          ], # TODO
+          "view" : "timeSeries",
+          "stacked" : false,
+          "region" : var.aws_region,
+          "stat" : "Sum",
+          "period" : 300,
+          "title" : "Invocations & Errors"
+        }
+      },
+      {
+        "type" : "metric",
+        "x" : 6,
+        "y" : 17,
+        "width" : 6,
+        "height" : 6,
+        "properties" : {
+          "metrics" : [
+            [
+              "AWS/Lambda",
+              "Duration",
+              { region : var.aws_region, color : "#ffbb78" }
+            ]
+          ], # TODO
+          "view" : "timeSeries",
+          "stacked" : true,
+          "region" : var.aws_region,
+          "title" : "Duration",
+          "period" : 300,
+          "stat" : "Average"
+        }
+      },
+      {
+        "type" : "metric",
+        "x" : 12,
+        "y" : 17,
+        "width" : 6,
+        "height" : 6,
+        "properties" : {
+          "metrics" : [
+            [
+              "AWS/Lambda",
+              "ConcurrentExecutions",
+              { color : "#2ca02c", region : var.aws_region }
+            ]
+          ], # TODO
+          "view" : "timeSeries",
+          "stacked" : false,
+          "region" : var.aws_region,
+          "stat" : "Maximum",
+          "period" : 300,
+          "title" : "Max ConcurrentExecutions"
+        }
+      },
+      {
+        "type" : "metric",
+        "x" : 18,
+        "y" : 17,
+        "width" : 2,
+        "height" : 3,
+        "properties" : {
+          "metrics" : [
+            [
+              "AWS/Lambda",
+              "Errors",
+              { region : var.aws_region, color : "#d62728" }
+            ]
+          ], # TODO
+          "sparkline" : true,
+          "view" : "singleValue",
+          "region" : var.aws_region,
+          "stat" : "Sum",
+          "period" : 300
+        }
+      },
+      {
+        "type" : "text",
+        "x" : 0,
+        "y" : 23,
+        "width" : 24,
+        "height" : 1,
+        "properties" : {
+          "markdown" : "### Ancilliaries"
+        }
+      },
+      {
+        "type" : "metric",
+        "x" : 0,
+        "y" : 24,
+        "width" : 6,
+        "height" : 6,
+        "properties" : {
+          "metrics" : [
+            ["AWS/Lambda", "Invocations", { region : var.aws_region }],
+            [".", "Errors", { color : "#d62728", region : var.aws_region }],
+          ], # TODO
+          "view" : "timeSeries",
+          "stacked" : false,
+          "region" : var.aws_region,
+          "stat" : "Sum",
+          "period" : 300,
+          "title" : "Invocations & Errors"
+        }
+      },
+      {
+        "type" : "metric",
+        "x" : 6,
+        "y" : 24,
+        "width" : 6,
+        "height" : 6,
+        "properties" : {
+          "metrics" : [
+            [
+              "AWS/Lambda",
+              "Duration",
+              { region : var.aws_region, color : "#ffbb78" }
+            ]
+          ], # TODO
+          "view" : "timeSeries",
+          "stacked" : true,
+          "region" : var.aws_region,
+          "title" : "Duration",
+          "period" : 300,
+          "stat" : "Average"
+        }
+      },
+      {
+        "type" : "metric",
+        "x" : 12,
+        "y" : 24,
+        "width" : 6,
+        "height" : 6,
+        "properties" : {
+          "metrics" : [
+            [
+              "AWS/Lambda",
+              "ConcurrentExecutions",
+              { color : "#2ca02c", region : var.aws_region }
+            ]
+          ], # TODO
+          "view" : "timeSeries",
+          "stacked" : false,
+          "region" : var.aws_region,
+          "stat" : "Maximum",
+          "period" : 300,
+          "title" : "Max ConcurrentExecutions"
+        }
+      },
+      {
+        "type" : "metric",
+        "x" : 18,
+        "y" : 24,
+        "width" : 2,
+        "height" : 3,
+        "properties" : {
+          "metrics" : [
+            [
+              "AWS/Lambda",
+              "Errors",
+              { region : var.aws_region, color : "#d62728" }
+            ]
+          ], # TODO
+          "sparkline" : true,
+          "view" : "singleValue",
+          "region" : var.aws_region,
+          "stat" : "Sum",
+          "period" : 300
+        }
+      },
+      {
+        "type" : "text",
+        "x" : 0,
+        "y" : 30,
         "width" : 24,
         "height" : 1,
         "properties" : {
@@ -198,7 +493,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "metric",
         "x" : 0,
-        "y" : 9,
+        "y" : 31,
         "width" : 6,
         "height" : 6,
         "properties" : {
@@ -219,7 +514,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "metric",
         "x" : 6,
-        "y" : 9,
+        "y" : 31,
         "width" : 6,
         "height" : 6,
         "properties" : {
@@ -235,7 +530,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "metric",
         "x" : 12,
-        "y" : 9,
+        "y" : 31,
         "width" : 6,
         "height" : 6,
         "properties" : {
@@ -251,7 +546,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "metric",
         "x" : 18,
-        "y" : 9,
+        "y" : 31,
         "width" : 6,
         "height" : 6,
         "properties" : {
@@ -274,7 +569,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "metric",
         "x" : 0,
-        "y" : 15,
+        "y" : 37,
         "width" : 6,
         "height" : 6,
         "properties" : {
@@ -295,7 +590,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "metric",
         "x" : 6,
-        "y" : 15,
+        "y" : 37,
         "width" : 6,
         "height" : 6,
         "properties" : {
@@ -311,7 +606,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "metric",
         "x" : 12,
-        "y" : 15,
+        "y" : 37,
         "width" : 6,
         "height" : 6,
         "properties" : {
@@ -327,7 +622,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "text",
         "x" : 0,
-        "y" : 21,
+        "y" : 43,
         "width" : 24,
         "height" : 1,
         "properties" : {
@@ -337,7 +632,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "metric",
         "x" : 0,
-        "y" : 22,
+        "y" : 44,
         "width" : 6,
         "height" : 6,
         "properties" : {
@@ -351,7 +646,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "metric",
         "x" : 6,
-        "y" : 22,
+        "y" : 44,
         "width" : 6,
         "height" : 6,
         "properties" : {
@@ -365,7 +660,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "metric",
         "x" : 12,
-        "y" : 22,
+        "y" : 44,
         "width" : 6,
         "height" : 6,
         "properties" : {
@@ -381,7 +676,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "metric",
         "x" : 18,
-        "y" : 22,
+        "y" : 44,
         "width" : 6,
         "height" : 6,
         "properties" : {
@@ -399,7 +694,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "text",
         "x" : 0,
-        "y" : 28,
+        "y" : 50,
         "width" : 24,
         "height" : 1,
         "properties" : {
@@ -409,7 +704,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "alarm",
         "x" : 0,
-        "y" : 29,
+        "y" : 51,
         "width" : 24,
         "height" : var.environment == dev ? 4 : 8,
         "properties" : {
