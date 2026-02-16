@@ -21,13 +21,13 @@ ACCESS_TOKEN_MIN_ACCEPTABLE_LIFETIME_SECONDS = 30
 
 
 class AppRestrictedAuth:
-    def __init__(self, secret_manager_client, environment):
+    def __init__(self, secret_manager_client, environment, secret_name=None):
         self.secret_manager_client = secret_manager_client
 
         self.cached_access_token = None
         self.cached_access_token_expiry_time = None
 
-        self.secret_name = f"imms/pds/{environment}/jwt-secrets"
+        self.secret_name = f"imms/pds/{environment}/jwt-secrets" if secret_name is None else secret_name
 
         self.token_url = (
             f"https://{environment}.api.service.nhs.uk/oauth2/token"

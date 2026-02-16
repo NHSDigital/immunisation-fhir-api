@@ -4,7 +4,7 @@ from urllib.parse import urlencode
 
 from locust import HttpUser, constant_throughput, task
 
-from common.authentication import AppRestrictedAuth
+from common.api_clients.authentication import AppRestrictedAuth
 from common.clients import get_secrets_manager_client
 
 CONTENT_TYPE_FHIR_JSON = "application/fhir+json"
@@ -39,7 +39,11 @@ NHS_NUMBERS = [
 
 
 class SearchUser(HttpUser):
-    authenticator = AppRestrictedAuth(get_secrets_manager_client(), os.getenv("APIGEE_ENVIRONMENT"))
+    environment = os.getenv("APIGEE_ENVIRONMENT")
+
+    authenticator = AppRestrictedAuth(
+        get_secrets_manager_client(), environment, f"imms/perf-tests/{environment}/jwt-secrets"
+    )
 
     wait_time = constant_throughput(1)
 
