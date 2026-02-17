@@ -276,3 +276,20 @@ run a different set of tests. To do this:
 Please note that this project requires that all commits are verified using a GPG key.
 To set up a GPG key please follow the instructions specified here:
 https://docs.github.com/en/authentication/managing-commit-signature-verification
+
+## AWS configuration: getting credentials for AWS federated user accounts
+
+If you need to run commands that interact with AWS resources e.g. running a terraform plan against a dev account locally
+then you will need to configure AWS credentials.
+
+Once you have been granted access, the `Access Keys` section within the AWS Access Portal will present you with several
+options. It is _recommended_ to use `Option 2: Add a profile to your AWS credentials file`.
+
+This is because the way that Python unittests using `moto` have been implemented is brittle and cannot handle other methods
+such as IAM Identity Centre SSO. In future, we should consider following [moto recommendations](https://docs.getmoto.org/en/latest/docs/getting_started.html#how-do-i-avoid-tests-from-mutating-my-real-infrastructure)
+to ensure our tests are authentication type agnostic and are fully robust.
+
+If you _are_ using another option, such as SSO, and want to run unit tests then you will need to:
+
+- Add dummy values for `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` to the .env file in the Lambda dir you are testing.
+- Ensure those values are set before running the test
