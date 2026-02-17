@@ -10,6 +10,7 @@ from aws_lambda_typing.events import APIGatewayProxyEventV1
 from fhir.resources.R4B.bundle import Bundle
 from fhir.resources.R4B.identifier import Identifier
 
+from common.get_service_url import get_service_url
 from constants import MAX_RESPONSE_SIZE_BYTES
 from controller.aws_apig_event_utils import (
     get_multi_value_query_params,
@@ -33,7 +34,7 @@ from models.errors import (
     TooManyResultsError,
 )
 from repository.fhir_repository import ImmunizationRepository, create_table
-from service.fhir_service import FhirService, get_service_url
+from service.fhir_service import FhirService
 
 IMMUNIZATION_ENV = os.getenv("IMMUNIZATION_ENV")
 IMMUNIZATION_BASE_PATH = os.getenv("IMMUNIZATION_BASE_PATH")

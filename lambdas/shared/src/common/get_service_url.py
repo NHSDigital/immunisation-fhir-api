@@ -1,6 +1,6 @@
 from typing import Optional
 
-from constants import DEFAULT_BASE_PATH, PR_ENV_PREFIX
+from common.constants import DEFAULT_BASE_PATH, PR_ENV_PREFIX
 
 
 def get_service_url(service_env: Optional[str], service_base_path: Optional[str]) -> str:
