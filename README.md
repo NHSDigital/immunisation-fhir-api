@@ -26,6 +26,7 @@ See https://nhsd-confluence.digital.nhs.uk/display/APM/Glossary.
 | `id_sync`                | **Imms Cross-cutting** – Handles [MNS](https://digital.nhs.uk/developer/api-catalogue/multicast-notification-service) NHS Number Change events and applies updates to affected records. |
 | `mesh_processor`         | **Imms Batch** – Triggered when new files are received via MESH. Moves them into the Imms Batch processing system.                                                                      |
 | `mns_subscription`       | **Imms Cross-cutting** – Simple helper Lambda which sets up our required MNS subscription. Used in pipelines in DEV.                                                                    |
+| `perf_tests`             | **Imms API** – Locust performance tests for the Immunisation API.                                                                                                                       |
 | `recordforwarder`        | **Imms Batch** – Consumes from the stream and applies the processed batch file row operations (CUD) to IEDS.                                                                            |
 | `recordprocessor`        | **Imms Batch** – ECS Task - **not** a Lambda function - responsible for processing batch file rows and forwarding to the stream.                                                        |
 | `redis_sync`             | **Imms Cross-cutting** – Handles config file updates. E.g. disease mapping or permission files.                                                                                         |

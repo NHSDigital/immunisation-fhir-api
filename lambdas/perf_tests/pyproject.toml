@@ -1,0 +1,23 @@
+[project]
+name = "perf-tests"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Matt Jarvis",email = "matt.jarvis2@nhs.net"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "locust (>=2.42.3,<3.0.0)",
+    "pyjwt (>=2.10.1,<3.0.0)",
+    "cryptography (>=46.0.4,<47.0.0)"
+]
+packages = [
+    {include = "src"},
+    {include = "common", from = "../shared/src"}
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
