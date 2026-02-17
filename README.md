@@ -279,7 +279,7 @@ https://docs.github.com/en/authentication/managing-commit-signature-verification
 
 ## AWS configuration: getting credentials for AWS federated user accounts
 
-If you need to run commands that interact with AWS resources e.g. running a terraform plan against a dev account locally
+If you need to run commands that interact with AWS resources e.g. running a terraform plan against a dev environment locally
 then you will need to configure AWS credentials.
 
 Once you have been granted access, the `Access Keys` section within the AWS Access Portal will present you with several
@@ -292,4 +292,4 @@ to ensure our tests are authentication type agnostic and are fully robust.
 If you _are_ using another option, such as SSO, and want to run unit tests then you will need to:
 
 - Add dummy values for `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` to the .env file in the Lambda dir you are testing.
-- Ensure those values are set before running the test
+- Ensure those values are set before running the test, i.e. using the standard setup with direnv and a .envrc file
