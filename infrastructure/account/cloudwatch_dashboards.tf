@@ -1,11 +1,88 @@
 locals {
-  non_dev_blue  = var.environment == "prod" ? "blue" : "int-blue"
-  non_dev_green = var.environment == "prod" ? "green" : "int-green"
+  non_dev_blue    = var.environment == "prod" ? "blue" : "int-blue"
+  non_dev_green   = var.environment == "prod" ? "green" : "int-green"
+  red_colour_code = "#d62728"
 
-  # Lambda
-  api_lambdas        = []
-  batch_lambdas      = []
-  ancilliary_lambdas = []
+  # API Lambda
+  api_lambdas = [
+    "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}_search_imms",
+    "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}_search_imms",
+    "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}_create_imms",
+    "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}_create_imms",
+    "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}_get_imms",
+    "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}_get_imms",
+    "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}_update_imms",
+    "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}_update_imms",
+    "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}_delete_imms",
+    "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}_delete_imms",
+    "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}_not_found",
+    "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}_not_found"
+  ]
+
+  api_lambda_invocations_metrics            = [for lambda in local.api_lambdas : ["AWS/Lambda", "Invocations", "FunctionName", lambda, { region : var.aws_region }]]
+  api_lambda_errors_metrics                 = [for lambda in local.api_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.red_colour_code, region : var.aws_region }]]
+  api_lambda_invocations_and_errors_metrics = concat(local.api_lambda_invocations_metrics, local.api_lambda_errors_metrics)
+  api_lambda_duration_metrics = concat(
+    [[{ expression : "AVG(METRICS())", label : "Average Duration", id : "e1", stat : "Maximum", region : var.aws_region }]],
+    [for i, lambda in local.api_lambdas : ["AWS/Lambda", "Duration", "FunctionName", lambda, { stat : "Maximum", id : "m${i + 1}", region : var.aws_region }]],
+  )
+  api_lambda_concurrent_execution_metrics = [for lambda in local.api_lambdas : ["AWS/Lambda", "ConcurrentExecutions", "FunctionName", lambda, { region : var.aws_region }]]
+  api_lambda_total_errors_metrics = concat(
+    [[{ expression : "SUM(METRICS())", label : "API Errors", id : "e1", region : var.aws_region, color : local.red_colour_code }]],
+    [for i, lambda in local.api_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.red_colour_code, region : var.aws_region, id : "m${i + 1}", visible : false }]]
+  )
+
+  # Batch Lambda
+  batch_lambdas = [
+    "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}-batch-processor-filter-lambda",
+    "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}-batch-processor-filter-lambda",
+    "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}-ack-lambda",
+    "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}-ack-lambda",
+    "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}-forwarding-lambda",
+    "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}-forwarding-lambda",
+    "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}-filenameproc-lambda",
+    "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}-filenameproc-lambda"
+  ]
+
+  batch_lambda_invocations_metrics            = [for lambda in local.batch_lambdas : ["AWS/Lambda", "Invocations", "FunctionName", lambda, { region : var.aws_region }]]
+  batch_lambda_errors_metrics                 = [for lambda in local.batch_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.red_colour_code, region : var.aws_region }]]
+  batch_lambda_invocations_and_errors_metrics = concat(local.batch_lambda_invocations_metrics, local.batch_lambda_errors_metrics)
+  batch_lambda_duration_metrics = concat(
+    [[{ expression : "AVG(METRICS())", label : "Average Duration", id : "e1", stat : "Maximum", region : var.aws_region }]],
+    [for i, lambda in local.batch_lambdas : ["AWS/Lambda", "Duration", "FunctionName", lambda, { stat : "Maximum", id : "m${i + 1}", region : var.aws_region }]]
+  )
+  batch_lambda_concurrent_execution_metrics = [for lambda in local.batch_lambdas : ["AWS/Lambda", "ConcurrentExecutions", "FunctionName", lambda, { region : var.aws_region }]]
+  batch_lambda_total_errors_metrics = concat(
+    [[{ expression : "SUM(METRICS())", label : "API Errors", id : "e1", region : var.aws_region, color : local.red_colour_code }]],
+    [for i, lambda in local.batch_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.red_colour_code, region : var.aws_region, id : "m${i + 1}", visible : false }]]
+  )
+
+  # Ancillary Lambda
+  ancillary_lambdas = compact([
+    "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}-id-sync-lambda",
+    "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}-id-sync-lambda",
+    "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}-delta-lambda",
+    "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}-delta-lambda",
+    "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}_get_status",
+    "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}_get_status",
+    var.environment != dev ? "imms-${local.non_dev_blue}-mesh-processor-lambda" : "",
+    var.environment != dev ? "imms-${local.non_dev_green}-mesh-processor-lambda" : "",
+    var.environment != dev ? "imms-${local.non_dev_blue}-redis-sync-lambda" : "",
+    var.environment != dev ? "imms-${local.non_dev_green}-redis-sync-lambda" : "",
+  ])
+
+  ancillary_lambda_invocations_metrics            = [for lambda in local.ancillary_lambdas : ["AWS/Lambda", "Invocations", "FunctionName", lambda, { region : var.aws_region }]]
+  ancillary_lambda_errors_metrics                 = [for lambda in local.ancillary_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.red_colour_code, region : var.aws_region }]]
+  ancillary_lambda_invocations_and_errors_metrics = concat(local.ancillary_lambda_invocations_metrics, local.ancillary_lambda_errors_metrics)
+  ancillary_lambda_duration_metrics = concat(
+    [[{ expression : "AVG(METRICS())", label : "Average Duration", id : "e1", stat : "Maximum", region : var.aws_region }]],
+    [for i, lambda in local.ancillary_lambdas : ["AWS/Lambda", "Duration", "FunctionName", lambda, { stat : "Maximum", id : "m${i + 1}", region : var.aws_region }]]
+  )
+  ancillary_lambda_concurrent_execution_metrics = [for lambda in local.ancillary_lambdas : ["AWS/Lambda", "ConcurrentExecutions", "FunctionName", lambda, { region : var.aws_region }]]
+  ancillary_lambda_total_errors_metrics = concat(
+    [[{ expression : "SUM(METRICS())", label : "API Errors", id : "e1", region : var.aws_region, color : local.red_colour_code }]],
+    [for i, lambda in local.ancillary_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.red_colour_code, region : var.aws_region, id : "m${i + 1}", visible : false }]]
+  )
 
   # DynamoDB
   dynamodb_tables = compact([
@@ -123,7 +200,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "properties" : {
           "metrics" : [
             ["AWS/Lambda", "Invocations", { region : var.aws_region }],
-            [".", "Errors", { color : "#d62728", region : var.aws_region }],
+            [".", "Errors", { color : local.red_colour_code, region : var.aws_region }],
           ],
           "view" : "timeSeries",
           "stacked" : false,
@@ -174,7 +251,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
           "region" : var.aws_region,
           "stat" : "Maximum",
           "period" : 300,
-          "title" : "Max ConcurrentExecutions"
+          "title" : "ConcurrentExecutions"
         }
       },
       {
@@ -188,7 +265,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
             [
               "AWS/Lambda",
               "Errors",
-              { region : var.aws_region, color : "#d62728" }
+              { region : var.aws_region, color : local.red_colour_code }
             ]
           ],
           "sparkline" : true,
@@ -215,10 +292,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : [
-            ["AWS/Lambda", "Invocations", { region : var.aws_region }],
-            [".", "Errors", { color : "#d62728", region : var.aws_region }],
-          ], # TODO
+          "metrics" : local.api_lambda_invocations_and_errors_metrics,
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
@@ -234,13 +308,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : [
-            [
-              "AWS/Lambda",
-              "Duration",
-              { region : var.aws_region, color : "#ffbb78" }
-            ]
-          ], # TODO
+          "metrics" : local.api_lambda_duration_metrics
           "view" : "timeSeries",
           "stacked" : true,
           "region" : var.aws_region,
@@ -256,19 +324,13 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : [
-            [
-              "AWS/Lambda",
-              "ConcurrentExecutions",
-              { color : "#2ca02c", region : var.aws_region }
-            ]
-          ], # TODO
+          "metrics" : local.api_lambda_concurrent_execution_metrics,
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
           "stat" : "Maximum",
           "period" : 300,
-          "title" : "Max ConcurrentExecutions"
+          "title" : "ConcurrentExecutions"
         }
       },
       {
@@ -278,13 +340,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 2,
         "height" : 3,
         "properties" : {
-          "metrics" : [
-            [
-              "AWS/Lambda",
-              "Errors",
-              { region : var.aws_region, color : "#d62728" }
-            ]
-          ], # TODO
+          "metrics" : local.api_lambda_total_errors_metrics,
           "sparkline" : true,
           "view" : "singleValue",
           "region" : var.aws_region,
@@ -309,10 +365,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : [
-            ["AWS/Lambda", "Invocations", { region : var.aws_region }],
-            [".", "Errors", { color : "#d62728", region : var.aws_region }],
-          ], # TODO
+          "metrics" : local.batch_lambda_invocations_and_errors_metrics,
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
@@ -328,13 +381,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : [
-            [
-              "AWS/Lambda",
-              "Duration",
-              { region : var.aws_region, color : "#ffbb78" }
-            ]
-          ], # TODO
+          "metrics" : local.batch_lambda_duration_metrics,
           "view" : "timeSeries",
           "stacked" : true,
           "region" : var.aws_region,
@@ -350,19 +397,13 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : [
-            [
-              "AWS/Lambda",
-              "ConcurrentExecutions",
-              { color : "#2ca02c", region : var.aws_region }
-            ]
-          ], # TODO
+          "metrics" : local.batch_lambda_concurrent_execution_metrics,
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
           "stat" : "Maximum",
           "period" : 300,
-          "title" : "Max ConcurrentExecutions"
+          "title" : "ConcurrentExecutions"
         }
       },
       {
@@ -372,13 +413,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 2,
         "height" : 3,
         "properties" : {
-          "metrics" : [
-            [
-              "AWS/Lambda",
-              "Errors",
-              { region : var.aws_region, color : "#d62728" }
-            ]
-          ], # TODO
+          "metrics" : local.batch_lambda_total_errors_metrics,
           "sparkline" : true,
           "view" : "singleValue",
           "region" : var.aws_region,
@@ -403,10 +438,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : [
-            ["AWS/Lambda", "Invocations", { region : var.aws_region }],
-            [".", "Errors", { color : "#d62728", region : var.aws_region }],
-          ], # TODO
+          "metrics" : local.ancillary_lambda_invocations_and_errors_metrics,
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
@@ -422,13 +454,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : [
-            [
-              "AWS/Lambda",
-              "Duration",
-              { region : var.aws_region, color : "#ffbb78" }
-            ]
-          ], # TODO
+          "metrics" : local.ancillary_lambda_duration_metrics,
           "view" : "timeSeries",
           "stacked" : true,
           "region" : var.aws_region,
@@ -444,19 +470,13 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : [
-            [
-              "AWS/Lambda",
-              "ConcurrentExecutions",
-              { color : "#2ca02c", region : var.aws_region }
-            ]
-          ], # TODO
+          "metrics" : local.ancillary_lambda_concurrent_execution_metrics,
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
           "stat" : "Maximum",
           "period" : 300,
-          "title" : "Max ConcurrentExecutions"
+          "title" : "ConcurrentExecutions"
         }
       },
       {
@@ -466,13 +486,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 2,
         "height" : 3,
         "properties" : {
-          "metrics" : [
-            [
-              "AWS/Lambda",
-              "Errors",
-              { region : var.aws_region, color : "#d62728" }
-            ]
-          ], # TODO
+          "metrics" : local.ancillary_lambda_total_errors_metrics,
           "sparkline" : true,
           "view" : "singleValue",
           "region" : var.aws_region,
@@ -556,7 +570,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
               "UserErrors",
               "Operation",
               "GetRecords",
-              { color : "#d62728", region : var.aws_region }
+              { color : local.red_colour_code, region : var.aws_region }
             ]
           ],
           "view" : "timeSeries",
