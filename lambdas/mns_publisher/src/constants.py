@@ -7,7 +7,6 @@ IMMUNISATION_TYPE = "imms-vaccinations-2"
 
 # Fields from the incoming SQS message that forms part of the base schema and filtering attributes for MNS notifications
 class SQSEventFields(Enum):
-    IMMUNISATION_TYPE = IMMUNISATION_TYPE
     DATE_AND_TIME_KEY = "DATE_AND_TIME"
     BIRTH_DATE_KEY = "PERSON_DOB"
     NHS_NUMBER_KEY = "NHS_NUMBER"

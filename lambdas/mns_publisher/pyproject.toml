@@ -13,6 +13,12 @@ packages = [
 python = "~3.11"
 aws-lambda-typing = "~2.20.0"
 coverage          = "^7.13.2"
+pyjwt             = "^2.10.1"
+requests          = "^2.31.0"
+boto3 = "~1.42.37"
+mypy-boto3-dynamodb = "^1.42.33"
+moto = "~5.1.20"
+cache = "^1.0.3"
 
 [build-system]
 requires = ["poetry-core >= 1.5.0"]

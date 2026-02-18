@@ -1,12 +1,12 @@
-import datetime
 import json
 import os
 import uuid
+from datetime import datetime
 
-from common.api_clients import get_patient_details_from_pds
+from common.api_clients.get_pds_details import pds_get_patient_details
 from common.get_service_url import get_service_url
 from constants import IMMUNISATION_TYPE, SPEC_VERSION, SQSEventFields
-from helper import find_imms_value_in_stream
+from sqs_dynamo_utils import find_imms_value_in_stream
 
 IMMUNIZATION_ENV = os.getenv("IMMUNIZATION_ENV")
 IMMUNIZATION_BASE_PATH = os.getenv("IMMUNIZATION_BASE_PATH")
@@ -24,12 +24,7 @@ def create_mns_notification(sqs_event: dict) -> dict:
     patient_age = calculate_age_at_vaccination(
         imms_data[SQSEventFields.BIRTH_DATE_KEY], imms_data[SQSEventFields.DATE_AND_TIME_KEY]
     )
-    gp_ods_code = (
-        get_patient_details_from_pds(imms_data[SQSEventFields.NHS_NUMBER_KEY], PDS_BASE_URL)
-        .get("generalPractitioner", [{}])[0]
-        .get("identifier", {})
-        .get("value", "unknown")
-    )
+    gp_ods_code = pds_get_patient_details(imms_data[SQSEventFields.NHS_NUMBER_KEY])
 
     return {
         "specversion": SPEC_VERSION,
@@ -40,7 +35,7 @@ def create_mns_notification(sqs_event: dict) -> dict:
         "subject": imms_data[SQSEventFields.NHS_NUMBER_KEY],
         "dataref": f"{immunisation_url}/Immunization/{imms_data[SQSEventFields.IMMUNISATION_ID_KEY]}",
         "filtering": {
-            "generalpractitioner": {gp_ods_code},
+            "generalpractitioner": gp_ods_code,
             "sourceorganisation": imms_data[SQSEventFields.SOURCE_ORGANISATION_KEY],
             "sourceapplication": imms_data[SQSEventFields.SOURCE_APPLICATION_KEY],
             "subjectage": str(patient_age),
@@ -51,9 +46,15 @@ def create_mns_notification(sqs_event: dict) -> dict:
 
 
 def calculate_age_at_vaccination(birth_date: str, vaccination_date: str) -> int:
-    """Calculate patient age in years at time of vaccination."""
-    birth = datetime.fromisoformat(birth_date.replace("Z", "+00:00"))
-    vacc = datetime.fromisoformat(vaccination_date.replace("Z", "+00:00"))
+    """
+    Calculate patient age in years at time of vaccination.
+    Expects dates in format: YYYYMMDD or YYYYMMDDTHHmmss
+    """
+    birth_str = birth_date[:8] if len(birth_date) >= 8 else birth_date
+    vacc_str = vaccination_date[:8] if len(vaccination_date) >= 8 else vaccination_date
+
+    birth = datetime.strptime(birth_str, "%Y%m%d")
+    vacc = datetime.strptime(vacc_str, "%Y%m%d")
 
     age = vacc.year - birth.year
     if (vacc.month, vacc.day) < (birth.month, birth.day):
