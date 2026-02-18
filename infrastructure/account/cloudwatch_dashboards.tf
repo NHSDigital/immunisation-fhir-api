@@ -65,10 +65,10 @@ locals {
     "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}-delta-lambda",
     "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}_get_status",
     "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}_get_status",
-    var.environment != dev ? "imms-${local.non_dev_blue}-mesh-processor-lambda" : "",
-    var.environment != dev ? "imms-${local.non_dev_green}-mesh-processor-lambda" : "",
-    var.environment != dev ? "imms-${local.non_dev_blue}-redis-sync-lambda" : "",
-    var.environment != dev ? "imms-${local.non_dev_green}-redis-sync-lambda" : "",
+    var.environment != "dev" ? "imms-${local.non_dev_blue}-mesh-processor-lambda" : "",
+    var.environment != "dev" ? "imms-${local.non_dev_green}-mesh-processor-lambda" : "",
+    var.environment != "dev" ? "imms-${local.non_dev_blue}-redis-sync-lambda" : "",
+    var.environment != "dev" ? "imms-${local.non_dev_green}-redis-sync-lambda" : "",
   ])
 
   ancillary_lambda_invocations_metrics            = [for lambda in local.ancillary_lambdas : ["AWS/Lambda", "Invocations", "FunctionName", lambda, { region : var.aws_region }]]
@@ -89,9 +89,9 @@ locals {
     "imms-${var.environment == "dev" ? "internal-dev" : var.environment}-delta",
     var.environment == "dev" ? "imms-internal-qa-delta" : "",
     "imms-${var.environment == "dev" ? "internal-dev" : var.environment}-imms-events",
-    var.environment == "dev" ? "imms-internal-qa--imms-events" : "",
+    var.environment == "dev" ? "imms-internal-qa-imms-events" : "",
     "immunisation-batch-${var.environment == "dev" ? "internal-dev" : var.environment}-audit-table",
-    var.environment == "dev" ? "imms-internal-qa--audit-table" : "",
+    var.environment == "dev" ? "imms-internal-qa-audit-table" : "",
   ])
 
   dynamodb_getitems_metrics      = [for table in local.dynamodb_tables : ["AWS/DynamoDB", "SuccessfulRequestLatency", "TableName", table, "Operation", "GetItem", { region : var.aws_region }]]
@@ -123,7 +123,7 @@ locals {
   internal_qa_sqs_queue_metrics  = [for queue in local.sqs_queues : ["AWS/SQS", "NumberOfMessagesSent", "QueueName", "imms-internal-qa-${queue}", { region : var.aws_region }]]
   dev_sqs_queue_metrics          = concat(local.internal_dev_sqs_queue_metrics, local.internal_qa_sqs_queue_metrics)
   blue_sqs_queue_metrics         = [for queue in local.sqs_queues : ["AWS/SQS", "NumberOfMessagesSent", "QueueName", queue == "id-sync-dlq" || queue == "id-sync-queue" ? "imms-${var.environment}-${queue}" : "imms-${local.non_dev_blue}-${queue}", { region : var.aws_region }]]
-  green_sqs_queue_metrics        = compact([for queue in local.sqs_queues : ["AWS/SQS", "NumberOfMessagesSent", "QueueName", queue == "id-sync-dlq" || queue == "id-sync-queue" ? "" : "imms-${local.non_dev_green}-${queue}", { region : var.aws_region }]])
+  green_sqs_queue_metrics        = [for queue in local.sqs_queues : ["AWS/SQS", "NumberOfMessagesSent", "QueueName", "imms-${local.non_dev_green}-${queue}", { region : var.aws_region }] if queue != "id-sync-dlq" || queue != "id-sync-queue"]
   non_dev_sqs_queue_metrics      = concat(local.blue_sqs_queue_metrics, local.green_sqs_queue_metrics)
   sqs_queue_metrics              = var.environment == "dev" ? local.dev_sqs_queue_metrics : local.non_dev_sqs_queue_metrics
 
@@ -150,9 +150,9 @@ locals {
     "_not_found-lambda-error",
     "_not_found memory alarm"
   ]
-  dev_alarms        = [for alarm in alarms : "arn:aws:cloudwatch:${var.aws_region}:${var.imms_account_id}:alarm:imms-internal-dev${alarm}"]
-  blue_alarms       = [for alarm in alarms : "arn:aws:cloudwatch:${var.aws_region}:${var.imms_account_id}:alarm:imms-${local.non_dev_blue}${alarm}"]
-  green_alarms      = [for alarm in alarms : "arn:aws:cloudwatch:${var.aws_region}:${var.imms_account_id}:alarm:imms-${local.non_dev_green}${alarm}"]
+  dev_alarms        = [for alarm in local.alarms : "arn:aws:cloudwatch:${var.aws_region}:${var.imms_account_id}:alarm:imms-internal-dev${alarm}"]
+  blue_alarms       = [for alarm in local.alarms : "arn:aws:cloudwatch:${var.aws_region}:${var.imms_account_id}:alarm:imms-${local.non_dev_blue}${alarm}"]
+  green_alarms      = [for alarm in local.alarms : "arn:aws:cloudwatch:${var.aws_region}:${var.imms_account_id}:alarm:imms-${local.non_dev_green}${alarm}"]
   non_dev_alarms    = concat(local.blue_alarms, local.green_alarms)
   alarms_properties = var.environment == "dev" ? local.dev_alarms : local.non_dev_alarms
 }
@@ -720,7 +720,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "x" : 0,
         "y" : 51,
         "width" : 24,
-        "height" : var.environment == dev ? 4 : 8,
+        "height" : var.environment == "dev" ? 4 : 8,
         "properties" : {
           "alarms" : local.alarms_properties
         }
