@@ -171,13 +171,10 @@ info:
      
     ## Service level
 
-    This API is a silver plus service, meaning it is operational 24 hours a day,
-    365 days a year but only supported during business hours (8am to 6pm),
-    Monday to Friday excluding bank holidays. However, we respond to severity 1
-    and severity 2 incidents outside of business hours.
+    This API is a Silver Plus service.
      
     For more details, see [service
-    levels](https://digital.nhs.uk/developer/guides-and-documentation/reference-guide#service-levels).
+    levels](https://digital.nhs.uk/services/reference-guide#service-levels).
      
     ## Technology
      
