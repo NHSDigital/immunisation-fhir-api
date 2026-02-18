@@ -56,7 +56,7 @@ Feature: Create the immunization event for a patient through batch file and upda
 
     @smoke
     @Delete_cleanUp @vaccine_type_RSV @patient_id_Random @supplier_name_RAVS
-    Scenario: Verify API succeeds while batch upload fails due to missing mandatory fields and duplicate record
+    Scenario: Verify batch update fails due to missing mandatory fields or a duplicate record for already existing record
         Given vaccination record exists in the API where batch file includes update records  for missing mandatory fields and a duplicate entry
         When records for same event are uploaded via batch file with missing mandatory fields and duplicated record
         And batch file is uploaded in s3 bucket

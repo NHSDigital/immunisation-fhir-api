@@ -147,7 +147,7 @@ def upload_batch_file_to_s3_for_update_with_mandatory_field_missing(context):
         "UNIQUE_ID_URI": context.create_object.identifier[0].system,
     }
     context.vaccine_df.loc[0, list(base_fields.keys())] = list(base_fields.values())
-    context.vaccine_df = pd.concat([context.vaccine_df.loc[[0]]] * 20, ignore_index=True)
+    context.vaccine_df = pd.concat([context.vaccine_df.loc[[0]]] * 21, ignore_index=True)
     missing_cases = {
         0: {"SITE_CODE": "", "PERSON_SURNAME": "empty_site_code"},
         1: {"SITE_CODE_TYPE_URI": "", "PERSON_SURNAME": "empty_site_code_uri"},
@@ -172,6 +172,11 @@ def upload_batch_file_to_s3_for_update_with_mandatory_field_missing(context):
         17: {"ACTION_FLAG": "", "PERSON_SURNAME": "invalid_action_flag"},
         18: {"ACTION_FLAG": " ", "PERSON_SURNAME": "invalid_action_flag"},
         19: {"ACTION_FLAG": "New", "PERSON_SURNAME": "duplicate"},
+        20: {
+            "ACTION_FLAG": "DELETE",
+            "PERSON_SURNAME": "not_found",
+            "UNIQUE_ID": "Fail-111111222223333-NonExiting",
+        },
     }
     # Apply all missing-field modifications
     for row_idx, updates in missing_cases.items():
@@ -217,6 +222,11 @@ def validate_bus_ack_file_for_error_by_surname(context, file_rows) -> bool:
             expected_diagnostic = expected_diagnostic.replace(
                 "<identifier>",
                 f"{context.immunization_object.identifier[0].system}#{context.immunization_object.identifier[0].value}",
+            )
+        if expected_error == "not_found" and expected_diagnostic:
+            expected_diagnostic = expected_diagnostic.replace(
+                "<imms_id>",
+                f"{context.immunization_object.identifier[0].system}#{str(row.get('UNIQUE_ID', '')).strip()}",
             )
         for row_data in row_data_list:
             i = row_data["row"]
