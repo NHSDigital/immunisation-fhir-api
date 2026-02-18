@@ -310,7 +310,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "properties" : {
           "metrics" : local.api_lambda_duration_metrics
           "view" : "timeSeries",
-          "stacked" : true,
+          "stacked" : false,
           "region" : var.aws_region,
           "title" : "Duration",
           "period" : 300,
@@ -383,7 +383,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "properties" : {
           "metrics" : local.batch_lambda_duration_metrics,
           "view" : "timeSeries",
-          "stacked" : true,
+          "stacked" : false,
           "region" : var.aws_region,
           "title" : "Duration",
           "period" : 300,
@@ -456,7 +456,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "properties" : {
           "metrics" : local.ancillary_lambda_duration_metrics,
           "view" : "timeSeries",
-          "stacked" : true,
+          "stacked" : false,
           "region" : var.aws_region,
           "title" : "Duration",
           "period" : 300,
@@ -689,20 +689,37 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       },
       {
         "type" : "metric",
-        "x" : 18,
-        "y" : 44,
+        "x" : 0,
+        "y" : 50,
+        "width" : 6,
+        "height" : 6,
+        "properties" : {
+          "view" : "timeSeries",
+          "stacked" : false,
+          "metrics" : [
+            ["AWS/ElastiCache", "CacheHits", "CacheClusterId", "immunisation-redis-cluster", "CacheNodeId", "0001"]
+          ],
+          "region" : "eu-west-2",
+          "title" : "ElastiCache - CacheHits"
+          "period" : 300,
+        }
+      },
+      {
+        "type" : "metric",
+        "x" : 6,
+        "y" : 50,
         "width" : 6,
         "height" : 6,
         "properties" : {
           "metrics" : [
-            ["AWS/ElastiCache", "CacheHits", { region : var.aws_region, color : "#ff7f0e" }]
+            ["AWS/ElastiCache", "CPUUtilization", "CacheClusterId", "immunisation-redis-cluster", "CacheNodeId", "0001"]
           ],
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
-          "stat" : "Sum",
+          "title" : "ElastiCache - CPUUtilization",
           "period" : 300,
-          "title" : "ElastiCache - CacheHits"
+          "stat" : "Average"
         }
       },
       {
