@@ -127,7 +127,7 @@ class FhirService:
             raise UnauthorizedVaxError()
 
         # Set ID for the requested new record
-        immunization["id"] = str(uuid.uuid4())
+        immunization["id"] = "bob"
 
         immunization_fhir_entity = Immunization.parse_obj(immunization)
         identifier = cast(Identifier, immunization_fhir_entity.identifier[0])
