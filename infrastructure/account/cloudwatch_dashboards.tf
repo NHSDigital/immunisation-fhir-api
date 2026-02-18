@@ -725,7 +725,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "text",
         "x" : 0,
-        "y" : 50,
+        "y" : 56,
         "width" : 24,
         "height" : 1,
         "properties" : {
@@ -735,7 +735,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "alarm",
         "x" : 0,
-        "y" : 51,
+        "y" : 57,
         "width" : 24,
         "height" : var.environment == "dev" ? 4 : 8,
         "properties" : {
