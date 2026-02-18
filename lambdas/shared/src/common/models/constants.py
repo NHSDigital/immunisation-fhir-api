@@ -67,7 +67,7 @@ class Urls:
 
     NHS_NUMBER = "https://fhir.nhs.uk/Id/nhs-number"
     VACCINATION_PROCEDURE = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure"
-    SNOMED = "http://snomed.info/sct"  # NOSONAR(S5332)
+    SNOMED = "http://snomed.info/sct"
     NHS_NUMBER_VERIFICATION_STATUS_STRUCTURE_DEFINITION = (
         "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-NHSNumberVerificationStatus"
     )
@@ -76,7 +76,7 @@ class Urls:
     )
     ODS_ORGANIZATION_CODE = "https://fhir.nhs.uk/Id/ods-organization-code"
     URN_SCHOOL_NUMBER = "https://fhir.hl7.org.uk/Id/urn-school-number"
-    NULL_FLAVOUR_CODES = "http://terminology.hl7.org/CodeSystem/v3-NullFlavor"  # NOSONAR(S5332)
+    NULL_FLAVOUR_CODES = "http://terminology.hl7.org/CodeSystem/v3-NullFlavor"
 
 
 class RedisHashKeys:
