@@ -50,13 +50,12 @@ GitHub Actions for our entire pipeline.
 
 ### Infrastructure
 
-| Folder                 | Description                                                      |
-| ---------------------- | ---------------------------------------------------------------- |
-| `account`              | Base infrastructure components deployed on a per account basis.  |
-| `grafana`              | Terraform configuration for Grafana, built on top of core infra. |
-| `instance`             | Core Terraform app infrastructure.                               |
-| `terraform_aws_backup` | Streamlined backup processing with AWS.                          |
-| `proxies`              | Apigee API proxy definitions.                                    |
+| Folder                 | Description                                                     |
+| ---------------------- | --------------------------------------------------------------- |
+| `account`              | Base infrastructure components deployed on a per account basis. |
+| `instance`             | Core Terraform app infrastructure.                              |
+| `terraform_aws_backup` | Streamlined backup processing with AWS.                         |
+| `proxies`              | Apigee API proxy definitions.                                   |
 
 ---
 

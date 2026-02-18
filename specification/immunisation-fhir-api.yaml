@@ -523,12 +523,14 @@ paths:
                               properties:
                                 family:
                                   type: string
-                                  description: Family name (often called 'Surname')
+                                  maxLength: 35
+                                  description: Family name (often called 'Surname'). Maximum length 35 characters.
                                 given:
                                   type: array
-                                  description: Given names (not always 'first').
+                                  description: Given names (not always 'first'). Maximum length 180 characters.
                                   items:
                                     type: string
+                                    maxLength: 180
                         required:
                           - resourceType
                           - id
@@ -578,6 +580,7 @@ paths:
                               properties:
                                 family:
                                   type: string
+                                  maxLength: 35
                                   description: Family name (often called 'Surname')
                                 given:
                                   type: array
@@ -586,9 +589,10 @@ paths:
                                     included within this field.  
 
                                     There SHOULD only be one given name supplied
-                                    in this element.
+                                    in this element. Maximum length 180 characters.
                                   items:
                                     type: string
+                                    maxLength: 180
                               required:
                                 - family
                                 - given
@@ -1601,12 +1605,14 @@ paths:
                                 properties:
                                   family:
                                     type: string
-                                    description: Family name (often called 'Surname')
+                                    maxLength: 35
+                                    description: Family name (often called 'Surname'). Maximum length 35 characters.
                                   given:
                                     type: array
-                                    description: Given names (not always 'first').
+                                    description: Given names (not always 'first'). Maximum length 180 characters.
                                     items:
                                       type: string
+                                      maxLength: 180
                                 required:
                                   - family
                                   - given
@@ -1648,12 +1654,14 @@ paths:
                                 properties:
                                   family:
                                     type: string
-                                    description: Family name (often called 'Surname')
+                                    maxLength: 35
+                                    description: Family name (often called 'Surname'). Maximum length 35 characters.
                                   given:
                                     type: array
-                                    description: Given names (not always 'first').
+                                    description: Given names (not always 'first'). Maximum length 180 characters for batch.
                                     items:
                                       type: string
+                                      maxLength: 180
                                 required:
                                   - family
                                   - given
@@ -2368,12 +2376,14 @@ paths:
                               properties:
                                 family:
                                   type: string
-                                  description: Family name (often called 'Surname')
+                                  maxLength: 35
+                                  description: Family name (often called 'Surname'). Maximum length 35 characters.
                                 given:
                                   type: array
-                                  description: Given names (not always 'first').
+                                  description: Given names (not always 'first'). Maximum length 180 characters.
                                   items:
                                     type: string
+                                    maxLength: 180
                         required:
                           - resourceType
                           - id
@@ -2423,7 +2433,8 @@ paths:
                               properties:
                                 family:
                                   type: string
-                                  description: Family name (often called 'Surname')
+                                  maxLength: 35
+                                  description: Family name (often called 'Surname'). Maximum length 35 characters.
                                 given:
                                   type: array
                                   description: >-
@@ -2431,9 +2442,10 @@ paths:
                                     included within this field.  
 
                                     There SHOULD only be one given name supplied
-                                    in this element.
+                                    in this element. Maximum length 180 characters.
                                   items:
                                     type: string
+                                    maxLength: 180
                               required:
                                 - family
                                 - given

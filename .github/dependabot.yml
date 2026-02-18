@@ -7,7 +7,6 @@ version: 2
 updates:
   - package-ecosystem: "docker"
     directories:
-      - "/infrastructure/grafana/non-prod/docker"
       - "/lambdas/ack_backend"
       - "/lambdas/batch_processor_filter"
       - "/lambdas/delta_backend"
@@ -74,7 +73,6 @@ updates:
 
   - package-ecosystem: "terraform"
     directories:
-      - "/infrastructure/grafana/non-prod/terraform"
       - "/infrastructure/account"
       - "/infrastructure/instance"
       - "/infrastructure/terraform_aws_backup/**"

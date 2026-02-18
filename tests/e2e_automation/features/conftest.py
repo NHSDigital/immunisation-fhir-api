@@ -24,13 +24,21 @@ from features.batchTests.Steps.batch_common_steps import *  # noqa: F403
 def pytest_bdd_after_step(request, feature, scenario, step, step_func, step_func_args):
     if not step.failed:
         message = f"✅ Step Passed: **{step.name}"
-        allure.attach(message, name=f"Step Passed: {step.name}", attachment_type=allure.attachment_type.TEXT)
+        allure.attach(
+            message,
+            name=f"Step Passed: {step.name}",
+            attachment_type=allure.attachment_type.TEXT,
+        )
 
 
 @pytest.hookimpl(tryfirst=True)
 def pytest_bdd_step_error(request, feature, scenario, step, exception):
     message = f"❌ Step failed! **{step.name}** \n Error: {exception}"
-    allure.attach(message, name=f"Step Failed: {step.name}", attachment_type=allure.attachment_type.TEXT)
+    allure.attach(
+        message,
+        name=f"Step Failed: {step.name}",
+        attachment_type=allure.attachment_type.TEXT,
+    )
 
 
 @pytest.hookimpl(tryfirst=True)
@@ -51,9 +59,11 @@ def setup_environment():
 @pytest.fixture(scope="session")
 def global_context():
     aws_profile_name = os.getenv("aws_profile_name")
-    refresh_sso_token(aws_profile_name) if os.getenv(
-        "aws_token_refresh", "false"
-    ).strip().lower() == "true" else set_aws_session_token()
+    (
+        refresh_sso_token(aws_profile_name)
+        if os.getenv("aws_token_refresh", "false").strip().lower() == "true"
+        else set_aws_session_token()
+    )
 
 
 @pytest.fixture(scope="session")
@@ -132,18 +142,26 @@ def pytest_bdd_after_scenario(request, feature, scenario):
             print("Skipping delete: ImmsID is None")
 
     if "delete_cleanup_batch" in tags:
-        get_tokens(context, context.supplier_name)
-        context.vaccine_df["IMMS_ID_CLEAN"] = (
-            context.vaccine_df["IMMS_ID"].astype(str).str.replace("Immunization#", "", regex=False)
-        )
+        if "IMMS_ID" in context.vaccine_df.columns and context.vaccine_df["IMMS_ID"].notna().any():
+            get_tokens(context, context.supplier_name)
 
-        for imms_id in context.vaccine_df["IMMS_ID_CLEAN"].dropna().unique():
-            delete_url = f"{context.url}/{imms_id}"
-            print(f"Sending DELETE request to: {delete_url}")
-            response = http_requests_session.delete(delete_url, headers=context.headers)
-
-            assert response.status_code == 204, (
-                f" Failed to delete {imms_id}: expected 204, got {response.status_code}. Response: {response.text}"
+            context.vaccine_df["IMMS_ID_CLEAN"] = (
+                context.vaccine_df["IMMS_ID"].astype(str).str.replace("Immunization#", "", regex=False)
             )
 
-        print("✅ All IMMS_IDs deleted successfully.")
+            for imms_id in context.vaccine_df["IMMS_ID_CLEAN"].dropna().unique():
+                delete_url = f"{context.url}/{imms_id}"
+                print(f"Sending DELETE request to: {delete_url}")
+
+                response = http_requests_session.delete(delete_url, headers=context.headers)
+
+                assert response.status_code == 204, (
+                    f"Failed to delete {imms_id}: expected 204, got {response.status_code}. Response: {response.text}"
+                )
+
+            print("All IMMS_IDs deleted successfully.")
+
+        else:
+            print(
+                " No IMMS_ID column or no values present as test failed due to as exception — skipping delete cleanup."
+            )

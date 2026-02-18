@@ -27,7 +27,7 @@ coverage = "^7.13.2"
 redis = "^4.6.0"
 cache = "^1.0.3"
 pydantic = "~1.10.13"
-pyjwt = "^2.10.1"
+pyjwt = {extras = ["crypto"], version = "~2.11.0"}
 jsonpath-ng = "^1.6.0"
 
 [tool.poetry.group.dev.dependencies]

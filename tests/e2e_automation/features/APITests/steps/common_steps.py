@@ -6,7 +6,10 @@ from venv import logger
 
 import pytest_check as check
 from pytest_bdd import given, parsers, then, when
-from src.dynamoDB.dynamo_db_helper import fetch_immunization_events_detail, parse_imms_int_imms_event_response
+from src.dynamoDB.dynamo_db_helper import (
+    fetch_immunization_events_detail,
+    parse_imms_int_imms_event_response,
+)
 from src.objectModels.api_immunization_builder import (
     build_site_route,
     build_vaccine_procedure_extension,
@@ -23,7 +26,11 @@ from utilities.api_fhir_immunization_helper import (
     validate_to_compare_request_and_response,
 )
 from utilities.api_gen_token import get_tokens
-from utilities.api_get_header import get_create_post_url_header, get_delete_url_header, get_update_url_header
+from utilities.api_get_header import (
+    get_create_post_url_header,
+    get_delete_url_header,
+    get_update_url_header,
+)
 from utilities.date_helper import is_valid_date
 from utilities.enums import Operation
 from utilities.http_requests_session import http_requests_session
@@ -50,9 +57,45 @@ def The_Immunization_object_is_created_with_patient_for_vaccine_type(context, Pa
     context.immunization_object = create_immunization_object(context.patient, context.vaccine_type)
 
 
+@given(
+    parsers.parse(
+        "Valid json payload is created with Patient '{Patient}' and vaccine_type '{vaccine_type}' with minimal dataset"
+    )
+)
+def The_Immunization_object_is_created_with_patient_for_vaccine_type_with_minimal_dataset(
+    context, Patient, vaccine_type
+):
+    context.vaccine_type = vaccine_type
+    context.patient_id = Patient
+    context.patient = load_patient_by_id(context.patient_id)
+    context.immunization_object = create_immunization_object(context.patient, context.vaccine_type)
+    del context.immunization_object.lotNumber
+    del context.immunization_object.manufacturer
+    del context.immunization_object.expirationDate
+    del context.immunization_object.site
+    del context.immunization_object.route
+    del context.immunization_object.reasonCode
+    del context.immunization_object.doseQuantity
+
+
 @given(parsers.parse("Valid vaccination record is created with Patient '{Patient}' and vaccine_type '{vaccine_type}'"))
-def validVaccinationRecordIsCreatedWithPatient(context, Patient, vaccine_type):
+def valid_vaccination_record_is_created_with_patient(context, Patient, vaccine_type):
     The_Immunization_object_is_created_with_patient_for_vaccine_type(context, Patient, vaccine_type)
+    Trigger_the_post_create_request(context)
+    The_request_will_have_status_code(context, 201)
+    validateCreateLocation(context)
+
+
+@given(
+    parsers.parse(
+        "Valid vaccination record is created for '{NHSNumber}' and Disease Type '{vaccine_type}' with recorded date as '{DateFrom}'"
+    )
+)
+def valid_vaccination_record_is_created_with_number_date(context, NHSNumber, vaccine_type, DateFrom):
+    The_Immunization_object_is_created_with_patient_for_vaccine_type(context, "Random", vaccine_type)
+    context.immunization_object.occurrenceDateTime = f"{DateFrom}T11:55:55.565+00:00"
+    context.immunization_object.recorded = f"{DateFrom}T12:00:55.565+00:00"
+    context.immunization_object.contained[1].identifier[0].value = NHSNumber
     Trigger_the_post_create_request(context)
     The_request_will_have_status_code(context, 201)
     validateCreateLocation(context)
@@ -139,7 +182,13 @@ def operationOutcomeInvalidParams(context):
     date_to_invalid = date_to_value and not is_valid_date(date_to_value)
     include_invalid = include_value != "Immunization:patient"
 
-    match (nhs_invalid, disease_invalid, date_from_invalid, date_to_invalid, include_invalid):
+    match (
+        nhs_invalid,
+        disease_invalid,
+        date_from_invalid,
+        date_to_invalid,
+        include_invalid,
+    ):
         case (True, _, _, _, _):
             expected_error = "invalid_NHSNumber"
         case (False, True, _, _, _):
@@ -196,9 +245,21 @@ def validate_imms_event_table_by_operation(context, operation: Operation):
 
     fields_to_compare = [
         ("Operation", Operation[operation].value, item.get("Operation")),
-        ("SupplierSystem", context.supplier_name.upper(), item.get("SupplierSystem").upper()),
-        ("PatientPK", f"Patient#{context.patient.identifier[0].value}", item.get("PatientPK")),
-        ("PatientSK", f"{context.vaccine_type.upper()}#{context.ImmsID}", item.get("PatientSK")),
+        (
+            "SupplierSystem",
+            context.supplier_name.upper(),
+            item.get("SupplierSystem").upper(),
+        ),
+        (
+            "PatientPK",
+            f"Patient#{context.patient.identifier[0].value}",
+            item.get("PatientPK"),
+        ),
+        (
+            "PatientSK",
+            f"{context.vaccine_type.upper()}#{context.ImmsID}",
+            item.get("PatientSK"),
+        ),
         ("Version", int(context.expected_version), int(item.get("Version"))),
     ]
 
@@ -213,7 +274,13 @@ def validate_imms_event_table_by_operation(context, operation: Operation):
 @then(parsers.parse("The Response JSONs should contain correct error message for Imms_id '{errorName}'"))
 def validateForbiddenAccess(context, errorName):
     error_response = parse_error_response(context.response.json())
-    validate_error_response(error_response, errorName, imms_id=context.ImmsID)
+    if errorName == "duplicate":
+        identifier = (
+            f"{context.immunization_object.identifier[0].system}#{context.immunization_object.identifier[0].value}"
+        )
+        validate_error_response(error_response, errorName, identifier=identifier)
+    else:
+        validate_error_response(error_response, errorName, imms_id=context.ImmsID)
     print(f"\n Error Response - \n {error_response}")
 
 
@@ -268,6 +335,7 @@ def created_event_is_being_deleted(context):
     The_request_will_have_status_code(context, 204)
 
 
+@when("same delete request is triggered again")
 @when("Send a delete for Immunization event created")
 def send_delete_for_immunization_event_created(context):
     get_delete_url_header(context)
@@ -280,7 +348,9 @@ def trigger_the_updated_request(context):
     context.create_object = context.update_object
     context.request = context.update_object.dict(exclude_none=True, exclude_unset=True)
     context.response = http_requests_session.put(
-        context.url + "/" + context.ImmsID, json=context.request, headers=context.headers
+        context.url + "/" + context.ImmsID,
+        json=context.request,
+        headers=context.headers,
     )
     print(f"Update Request is {json.dumps(context.request)}")
 

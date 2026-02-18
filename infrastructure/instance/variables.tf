@@ -27,10 +27,16 @@ variable "mns_account_id" {
   default     = "631615744739"
 }
 
-variable "dspp_kms_key_alias" {
-  description = "Alias name of the DPS KMS key allowed for SSE-KMS encryption"
+variable "dspp_submission_s3_bucket_name" {
+  description = "Name of the DSPP (DPS) S3 bucket where extended attributes files should be submitted"
   type        = string
-  default     = "nhsd-dspp-core-ref-extended-attributes-gdp-key"
+  default     = "nhsd-dspp-core-ref-s3-submission-upload"
+}
+
+variable "dspp_submission_kms_key_alias" {
+  description = "Alias of the DSPP (DPS) KMS key required to encrypt extended attributes files"
+  type        = string
+  default     = "nhsd-dspp-core-ref-s3-submission-upload-key"
 }
 
 variable "create_mesh_processor" {
@@ -74,10 +80,15 @@ variable "mesh_no_invocation_period_seconds" {
   default     = 300
 }
 
-# Remember to switch off in PR envs after testing
 variable "error_alarm_notifications_enabled" {
   default     = true
   description = "Switch to enable error alarm notifications to Slack"
+  type        = bool
+}
+
+variable "mns_publisher_feature_enabled" {
+  default     = false
+  description = "Switch to the MNS Publisher feature which allows us to publish Immunisation events."
   type        = bool
 }
 
