@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from exceptions.id_sync_exception import IdSyncException
+
 from pds_details import get_nhs_number_from_pds_resource, pds_get_patient_details
 
 

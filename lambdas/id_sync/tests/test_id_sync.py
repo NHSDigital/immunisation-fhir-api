@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 with patch("common.log_decorator.logging_decorator") as mock_decorator:
     mock_decorator.return_value = lambda f: f  # Pass-through decorator
-    from exceptions.id_sync_exception import IdSyncException
+    from common.api_clients.errors import PdsSyncException
     from id_sync import handler
 
 
@@ -93,7 +93,7 @@ class TestIdSyncHandler(unittest.TestCase):
         }
 
         # Call handler
-        with self.assertRaises(IdSyncException) as exception_context:
+        with self.assertRaises(PdsSyncException) as exception_context:
             handler(self.single_sqs_event, None)
 
         exception = exception_context.exception
@@ -117,7 +117,7 @@ class TestIdSyncHandler(unittest.TestCase):
         ]
 
         # Call handler
-        with self.assertRaises(IdSyncException) as exception_context:
+        with self.assertRaises(PdsSyncException) as exception_context:
             handler(self.multi_sqs_event, None)
 
         error = exception_context.exception
@@ -139,7 +139,7 @@ class TestIdSyncHandler(unittest.TestCase):
         ]
 
         # Call handler
-        with self.assertRaises(IdSyncException) as exception_context:
+        with self.assertRaises(PdsSyncException) as exception_context:
             handler(self.multi_sqs_event, None)
         exception = exception_context.exception
         # Assertions
@@ -187,7 +187,7 @@ class TestIdSyncHandler(unittest.TestCase):
         self.mock_aws_lambda_event.side_effect = Exception("AwsLambdaEvent creation failed")
 
         # Call handler
-        with self.assertRaises(IdSyncException) as exception_context:
+        with self.assertRaises(PdsSyncException) as exception_context:
             handler(self.single_sqs_event, None)
 
         result = exception_context.exception
@@ -208,7 +208,7 @@ class TestIdSyncHandler(unittest.TestCase):
         self.mock_process_record.side_effect = Exception("Process record failed")
 
         # Call handler
-        with self.assertRaises(IdSyncException) as exception_context:
+        with self.assertRaises(PdsSyncException) as exception_context:
             handler(self.single_sqs_event, None)
         exception = exception_context.exception
         # Assertions
@@ -233,12 +233,12 @@ class TestIdSyncHandler(unittest.TestCase):
         }
 
         # Call handler and expect exception
-        with self.assertRaises(IdSyncException) as exception_context:
+        with self.assertRaises(PdsSyncException) as exception_context:
             handler(self.single_sqs_event, None)
 
         exception = exception_context.exception
 
-        self.assertIsInstance(exception, IdSyncException)
+        self.assertIsInstance(exception, PdsSyncException)
         self.assertEqual(exception.message, "Processed 1 records with 1 errors")
         self.mock_logger.exception.assert_called_once_with(f"id_sync error: {exception.message}")
 
@@ -275,7 +275,7 @@ class TestIdSyncHandler(unittest.TestCase):
         ]
 
         # Call handler
-        with self.assertRaises(IdSyncException) as exception_context:
+        with self.assertRaises(PdsSyncException) as exception_context:
             handler(self.multi_sqs_event, None)
         exception = exception_context.exception
         # Assertions - should track 2 errors out of 4 records

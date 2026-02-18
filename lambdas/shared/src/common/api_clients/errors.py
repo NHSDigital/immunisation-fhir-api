@@ -157,6 +157,14 @@ class UnhandledResponseError(RuntimeError):
         )
 
 
+class PdsSyncException(Exception):
+    """Custom exception for Pds Sync errors."""
+
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(message)
+
+
 def raise_error_response(response):
     error_mapping = {
         401: (TokenValidationError, "Token validation failed for the request"),
