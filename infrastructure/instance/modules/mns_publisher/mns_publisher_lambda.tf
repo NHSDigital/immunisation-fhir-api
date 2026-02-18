@@ -192,8 +192,8 @@ resource "aws_lambda_function" "mns_publisher_lambda" {
   environment {
     variables = {
       SPLUNK_FIREHOSE_NAME     = var.splunk_firehose_stream_name
-      "IMMUNIZATION_ENV"       = local.resource_scope,
-      "IMMUNIZATION_BASE_PATH" = strcontains(var.sub_environment, "pr-") ? "immunisation-fhir-api/FHIR/R4-${var.sub_environment}" : "immunisation-fhir-api/FHIR/R4"
+      "IMMUNIZATION_ENV"       = var.resource_scope,
+      "IMMUNIZATION_BASE_PATH" = var.sub_environment
     }
   }
 

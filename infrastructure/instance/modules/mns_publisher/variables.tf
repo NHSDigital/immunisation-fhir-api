@@ -72,3 +72,13 @@ variable "system_alarm_sns_topic_arn" {
   description = "The ARN of the SNS Topic used for raising alerts to Slack for CW alarms."
 }
 
+variable "resource_scope" {
+  type        = string
+  description = "The effective deployment scope used for resource naming and isolation."
+}
+
+
+variable "sub_environment" {
+  type        = string
+  description = "Sub-environment name, e.g. internal-dev, internal-qa. The value is set in the Makefile"
+}
