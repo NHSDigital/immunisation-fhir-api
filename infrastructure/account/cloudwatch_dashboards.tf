@@ -1,7 +1,7 @@
 locals {
-  non_dev_blue    = var.environment == "prod" ? "blue" : "int-blue"
-  non_dev_green   = var.environment == "prod" ? "green" : "int-green"
-  red_colour_code = "#d62728"
+  non_dev_blue       = var.environment == "prod" ? "blue" : "int-blue"
+  non_dev_green      = var.environment == "prod" ? "green" : "int-green"
+  errors_colour_code = "#d62728" # red
 
   # API Lambda
   api_lambdas = [
@@ -20,7 +20,7 @@ locals {
   ]
 
   api_lambda_invocations_metrics            = [for lambda in local.api_lambdas : ["AWS/Lambda", "Invocations", "FunctionName", lambda, { region : var.aws_region }]]
-  api_lambda_errors_metrics                 = [for lambda in local.api_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.red_colour_code, region : var.aws_region }]]
+  api_lambda_errors_metrics                 = [for lambda in local.api_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.errors_colour_code, region : var.aws_region }]]
   api_lambda_invocations_and_errors_metrics = concat(local.api_lambda_invocations_metrics, local.api_lambda_errors_metrics)
   api_lambda_duration_metrics = concat(
     [[{ expression : "AVG(METRICS())", label : "Average Duration", id : "e1", stat : "Maximum", region : var.aws_region }]],
@@ -28,8 +28,8 @@ locals {
   )
   api_lambda_concurrent_execution_metrics = [for lambda in local.api_lambdas : ["AWS/Lambda", "ConcurrentExecutions", "FunctionName", lambda, { region : var.aws_region }]]
   api_lambda_total_errors_metrics = concat(
-    [[{ expression : "SUM(METRICS())", label : "API Errors", id : "e1", region : var.aws_region, color : local.red_colour_code }]],
-    [for i, lambda in local.api_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.red_colour_code, region : var.aws_region, id : "m${i + 1}", visible : false }]]
+    [[{ expression : "SUM(METRICS())", label : "API Errors", id : "e1", region : var.aws_region, color : local.errors_colour_code }]],
+    [for i, lambda in local.api_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.errors_colour_code, region : var.aws_region, id : "m${i + 1}", visible : false }]]
   )
 
   # Batch Lambda
@@ -45,7 +45,7 @@ locals {
   ]
 
   batch_lambda_invocations_metrics            = [for lambda in local.batch_lambdas : ["AWS/Lambda", "Invocations", "FunctionName", lambda, { region : var.aws_region }]]
-  batch_lambda_errors_metrics                 = [for lambda in local.batch_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.red_colour_code, region : var.aws_region }]]
+  batch_lambda_errors_metrics                 = [for lambda in local.batch_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.errors_colour_code, region : var.aws_region }]]
   batch_lambda_invocations_and_errors_metrics = concat(local.batch_lambda_invocations_metrics, local.batch_lambda_errors_metrics)
   batch_lambda_duration_metrics = concat(
     [[{ expression : "AVG(METRICS())", label : "Average Duration", id : "e1", stat : "Maximum", region : var.aws_region }]],
@@ -53,8 +53,8 @@ locals {
   )
   batch_lambda_concurrent_execution_metrics = [for lambda in local.batch_lambdas : ["AWS/Lambda", "ConcurrentExecutions", "FunctionName", lambda, { region : var.aws_region }]]
   batch_lambda_total_errors_metrics = concat(
-    [[{ expression : "SUM(METRICS())", label : "API Errors", id : "e1", region : var.aws_region, color : local.red_colour_code }]],
-    [for i, lambda in local.batch_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.red_colour_code, region : var.aws_region, id : "m${i + 1}", visible : false }]]
+    [[{ expression : "SUM(METRICS())", label : "API Errors", id : "e1", region : var.aws_region, color : local.errors_colour_code }]],
+    [for i, lambda in local.batch_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.errors_colour_code, region : var.aws_region, id : "m${i + 1}", visible : false }]]
   )
 
   # Ancillary Lambda
@@ -72,7 +72,7 @@ locals {
   ])
 
   ancillary_lambda_invocations_metrics            = [for lambda in local.ancillary_lambdas : ["AWS/Lambda", "Invocations", "FunctionName", lambda, { region : var.aws_region }]]
-  ancillary_lambda_errors_metrics                 = [for lambda in local.ancillary_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.red_colour_code, region : var.aws_region }]]
+  ancillary_lambda_errors_metrics                 = [for lambda in local.ancillary_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.errors_colour_code, region : var.aws_region }]]
   ancillary_lambda_invocations_and_errors_metrics = concat(local.ancillary_lambda_invocations_metrics, local.ancillary_lambda_errors_metrics)
   ancillary_lambda_duration_metrics = concat(
     [[{ expression : "AVG(METRICS())", label : "Average Duration", id : "e1", stat : "Maximum", region : var.aws_region }]],
@@ -80,8 +80,8 @@ locals {
   )
   ancillary_lambda_concurrent_execution_metrics = [for lambda in local.ancillary_lambdas : ["AWS/Lambda", "ConcurrentExecutions", "FunctionName", lambda, { region : var.aws_region }]]
   ancillary_lambda_total_errors_metrics = concat(
-    [[{ expression : "SUM(METRICS())", label : "API Errors", id : "e1", region : var.aws_region, color : local.red_colour_code }]],
-    [for i, lambda in local.ancillary_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.red_colour_code, region : var.aws_region, id : "m${i + 1}", visible : false }]]
+    [[{ expression : "SUM(METRICS())", label : "API Errors", id : "e1", region : var.aws_region, color : local.errors_colour_code }]],
+    [for i, lambda in local.ancillary_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.errors_colour_code, region : var.aws_region, id : "m${i + 1}", visible : false }]]
   )
 
   # DynamoDB
@@ -123,7 +123,7 @@ locals {
   internal_qa_sqs_queue_metrics  = [for queue in local.sqs_queues : ["AWS/SQS", "NumberOfMessagesSent", "QueueName", "imms-internal-qa-${queue}", { region : var.aws_region }]]
   dev_sqs_queue_metrics          = concat(local.internal_dev_sqs_queue_metrics, local.internal_qa_sqs_queue_metrics)
   blue_sqs_queue_metrics         = [for queue in local.sqs_queues : ["AWS/SQS", "NumberOfMessagesSent", "QueueName", queue == "id-sync-dlq" || queue == "id-sync-queue" ? "imms-${var.environment}-${queue}" : "imms-${local.non_dev_blue}-${queue}", { region : var.aws_region }]]
-  green_sqs_queue_metrics        = [for queue in local.sqs_queues : ["AWS/SQS", "NumberOfMessagesSent", "QueueName", queue == "id-sync-dlq" || queue == "id-sync-queue" ? "imms-${var.environment}-${queue}" : "imms-${local.non_dev_green}-${queue}", { region : var.aws_region }]]
+  green_sqs_queue_metrics        = compact([for queue in local.sqs_queues : ["AWS/SQS", "NumberOfMessagesSent", "QueueName", queue == "id-sync-dlq" || queue == "id-sync-queue" ? "" : "imms-${local.non_dev_green}-${queue}", { region : var.aws_region }]])
   non_dev_sqs_queue_metrics      = concat(local.blue_sqs_queue_metrics, local.green_sqs_queue_metrics)
   sqs_queue_metrics              = var.environment == "dev" ? local.dev_sqs_queue_metrics : local.non_dev_sqs_queue_metrics
 
@@ -200,7 +200,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "properties" : {
           "metrics" : [
             ["AWS/Lambda", "Invocations", { region : var.aws_region }],
-            [".", "Errors", { color : local.red_colour_code, region : var.aws_region }],
+            [".", "Errors", { color : local.errors_colour_code, region : var.aws_region }],
           ],
           "view" : "timeSeries",
           "stacked" : false,
@@ -265,7 +265,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
             [
               "AWS/Lambda",
               "Errors",
-              { region : var.aws_region, color : local.red_colour_code }
+              { region : var.aws_region, color : local.errors_colour_code }
             ]
           ],
           "sparkline" : true,
@@ -570,7 +570,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
               "UserErrors",
               "Operation",
               "GetRecords",
-              { color : local.red_colour_code, region : var.aws_region }
+              { color : local.errors_colour_code, region : var.aws_region }
             ]
           ],
           "view" : "timeSeries",
