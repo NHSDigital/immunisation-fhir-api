@@ -737,7 +737,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "x" : 0,
         "y" : 57,
         "width" : 24,
-        "height" : var.environment == "dev" ? 4 : 8,
+        "height" : var.environment == "dev" ? 5 : 8,
         "properties" : {
           "alarms" : local.alarms_properties
         }
