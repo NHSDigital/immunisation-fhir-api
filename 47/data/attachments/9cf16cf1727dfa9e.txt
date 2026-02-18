@@ -1,8 +1,0 @@
-
- Read Request is https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/ ?_summary
-400
-400
-
- Error Response - 
- resourceType='OperationOutcome' id='e7f118f1-b951-4a28-8806-8e48b7560167' meta=Meta(profile=['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']) issue=[Issue(severity='error', code='invalid', details=Details(coding=[Coding(system='https://fhir.nhs.uk/Codesystem/http-error-codes', code='INVALID')]), diagnostics='Validation errors: the provided event ID is either missing or not in the expected format.')]
- No IMMS_ID column or no values present as test failed due to as exception — skipping delete cleanup.
