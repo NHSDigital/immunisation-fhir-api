@@ -65,10 +65,10 @@ locals {
     "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}-delta-lambda",
     "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}_get_status",
     "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}_get_status",
+    "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}-redis-sync-lambda",
+    "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}-redis-sync-lambda",
     var.environment != "dev" ? "imms-${local.non_dev_blue}-mesh-processor-lambda" : "",
     var.environment != "dev" ? "imms-${local.non_dev_green}-mesh-processor-lambda" : "",
-    var.environment != "dev" ? "imms-${local.non_dev_blue}-redis-sync-lambda" : "",
-    var.environment != "dev" ? "imms-${local.non_dev_green}-redis-sync-lambda" : "",
   ])
 
   ancillary_lambda_invocations_metrics            = [for lambda in local.ancillary_lambdas : ["AWS/Lambda", "Invocations", "FunctionName", lambda, { region : var.aws_region }]]
@@ -737,7 +737,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "x" : 0,
         "y" : 57,
         "width" : 24,
-        "height" : var.environment == "dev" ? 5 : 8,
+        "height" : var.environment == "dev" ? 5 : 10,
         "properties" : {
           "alarms" : local.alarms_properties
         }
