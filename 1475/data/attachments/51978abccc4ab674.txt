@@ -1,0 +1,30 @@
+✅ Pipe-delimited file saved to: /home/runner/work/immunisation-fhir-api/immunisation-fhir-api/tests/e2e_automation/batch_files_directory/HPV_Vaccinations_v5_YGA_20260219T16355400.csv
+Batch file created: HPV_Vaccinations_v5_YGA_20260219T16355400.csv
+Upload successful: HPV_Vaccinations_v5_YGA_20260219T16355400.csv → immunisation-batch-pr-1220-data-sources
+Batch file uploaded to S3: HPV_Vaccinations_v5_YGA_20260219T16355400.csv
+Waiting for file in archive: s3://immunisation-batch-pr-1220-data-sources/archive/HPV_Vaccinations_v5_YGA_20260219T16355400.csv
+Still waiting... (0s)
+Still waiting... (5s)
+Still waiting... (10s)
+Still waiting... (15s)
+Still waiting... (20s)
+Still waiting... (25s)
+Still waiting... (30s)
+Still waiting... (35s)
+Still waiting... (40s)
+Still waiting... (45s)
+Still waiting... (50s)
+Still waiting... (55s)
+Still waiting... (60s)
+Still waiting... (65s)
+Still waiting... (70s)
+Still waiting... (75s)
+Still waiting... (80s)
+Still waiting... (85s)
+Still waiting... (90s)
+Still waiting... (95s)
+Still waiting... (100s)
+Still waiting... (105s)
+Still waiting... (110s)
+Still waiting... (115s)
+Timeout: File not found in archive after 120 seconds
