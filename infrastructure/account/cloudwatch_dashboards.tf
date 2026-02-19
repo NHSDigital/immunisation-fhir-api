@@ -1,23 +1,21 @@
 locals {
-  non_dev_blue       = var.environment == "prod" ? "blue" : "int-blue"
-  non_dev_green      = var.environment == "prod" ? "green" : "int-green"
+  # There is no blue-green split in our dev environment but we still want to monitor internal-dev and internal-qa
+  sub_environments_map = {
+    dev     = ["internal-dev", "internal-qa"],
+    preprod = ["int-blue", "int-green"],
+    prod    = ["blue", "green"],
+  }
   errors_colour_code = "#d62728" # red
 
   # API Lambda
-  api_lambdas = [
-    "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}_search_imms",
-    "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}_search_imms",
-    "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}_create_imms",
-    "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}_create_imms",
-    "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}_get_imms",
-    "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}_get_imms",
-    "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}_update_imms",
-    "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}_update_imms",
-    "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}_delete_imms",
-    "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}_delete_imms",
-    "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}_not_found",
-    "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}_not_found"
-  ]
+  api_lambdas = flatten([
+    [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}_search_imms"],
+    [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}_create_imms"],
+    [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}_get_imms"],
+    [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}_update_imms"],
+    [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}_delete_imms"],
+    [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}_not_found"],
+  ])
 
   api_lambda_invocations_metrics            = [for lambda in local.api_lambdas : ["AWS/Lambda", "Invocations", "FunctionName", lambda, { region : var.aws_region }]]
   api_lambda_errors_metrics                 = [for lambda in local.api_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.errors_colour_code, region : var.aws_region }]]
@@ -33,16 +31,12 @@ locals {
   )
 
   # Batch Lambda
-  batch_lambdas = [
-    "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}-batch-processor-filter-lambda",
-    "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}-batch-processor-filter-lambda",
-    "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}-ack-lambda",
-    "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}-ack-lambda",
-    "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}-forwarding-lambda",
-    "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}-forwarding-lambda",
-    "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}-filenameproc-lambda",
-    "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}-filenameproc-lambda"
-  ]
+  batch_lambdas = flatten([
+    [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-batch-processor-filter-lambda"],
+    [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-ack-lambda"],
+    [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-forwarding-lambda"],
+    [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-filenameproc-lambda"],
+  ])
 
   batch_lambda_invocations_metrics            = [for lambda in local.batch_lambdas : ["AWS/Lambda", "Invocations", "FunctionName", lambda, { region : var.aws_region }]]
   batch_lambda_errors_metrics                 = [for lambda in local.batch_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.errors_colour_code, region : var.aws_region }]]
@@ -58,17 +52,12 @@ locals {
   )
 
   # Ancillary Lambda
-  ancillary_lambdas = compact([
-    "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}-id-sync-lambda",
-    "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}-id-sync-lambda",
-    "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}-delta-lambda",
-    "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}-delta-lambda",
-    "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}_get_status",
-    "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}_get_status",
-    "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}-redis-sync-lambda",
-    "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}-redis-sync-lambda",
-    var.environment != "dev" ? "imms-${local.non_dev_blue}-mesh-processor-lambda" : "",
-    var.environment != "dev" ? "imms-${local.non_dev_green}-mesh-processor-lambda" : "",
+  ancillary_lambdas = flatten([
+    [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-id-sync-lambda"],
+    [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-delta-lambda"],
+    [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}_get_status"],
+    [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-redis-sync-lambda"],
+    [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-mesh-processor-lambda" if var.environment != "dev"],
   ])
 
   ancillary_lambda_invocations_metrics            = [for lambda in local.ancillary_lambdas : ["AWS/Lambda", "Invocations", "FunctionName", lambda, { region : var.aws_region }]]
@@ -85,12 +74,13 @@ locals {
   )
 
   # DynamoDB
+  # We only have tables by sub-environment in dev
   dynamodb_tables = compact([
     "imms-${var.environment == "dev" ? "internal-dev" : var.environment}-delta",
-    var.environment == "dev" ? "imms-internal-qa-delta" : "",
     "imms-${var.environment == "dev" ? "internal-dev" : var.environment}-imms-events",
-    var.environment == "dev" ? "imms-internal-qa-imms-events" : "",
     "immunisation-batch-${var.environment == "dev" ? "internal-dev" : var.environment}-audit-table",
+    var.environment == "dev" ? "imms-internal-qa-delta" : "",
+    var.environment == "dev" ? "imms-internal-qa-imms-events" : "",
     var.environment == "dev" ? "imms-internal-qa-audit-table" : "",
   ])
 
@@ -105,27 +95,20 @@ locals {
   dynamodb_write_capacity_metrics = [for table in local.dynamodb_tables : ["AWS/DynamoDB", "ConsumedWriteCapacityUnits", "TableName", table]]
 
   # Kinesis
-  kinesis_metrics = [
-    ["AWS/Kinesis", "IncomingBytes", "StreamName", "imms-${var.environment == "dev" ? "internal-dev" : local.non_dev_blue}-processingdata-stream"],
-    ["AWS/Kinesis", "IncomingBytes", "StreamName", "imms-${var.environment == "dev" ? "internal-qa" : local.non_dev_green}-processingdata-stream"],
+  kinesis_metrics = [for sub_env in local.sub_environments_map[var.environment] :
+    ["AWS/Kinesis", "IncomingBytes", "StreamName", "imms-${sub_env}-processingdata-stream"]
   ]
 
   # SQS
-  sqs_queues = [
-    "ack-metadata-queue.fifo",
-    "batch-file-created-queue.fifo",
-    "delta-dlq",
-    "metadata-queue.fifo",
-    "id-sync-dlq",
-    "id-sync-queue"
-  ]
-  internal_dev_sqs_queue_metrics = [for queue in local.sqs_queues : ["AWS/SQS", "NumberOfMessagesSent", "QueueName", "imms-internal-dev-${queue}", { region : var.aws_region }]]
-  internal_qa_sqs_queue_metrics  = [for queue in local.sqs_queues : ["AWS/SQS", "NumberOfMessagesSent", "QueueName", "imms-internal-qa-${queue}", { region : var.aws_region }]]
-  dev_sqs_queue_metrics          = concat(local.internal_dev_sqs_queue_metrics, local.internal_qa_sqs_queue_metrics)
-  blue_sqs_queue_metrics         = [for queue in local.sqs_queues : ["AWS/SQS", "NumberOfMessagesSent", "QueueName", queue == "id-sync-dlq" || queue == "id-sync-queue" ? "imms-${var.environment}-${queue}" : "imms-${local.non_dev_blue}-${queue}", { region : var.aws_region }]]
-  green_sqs_queue_metrics        = [for queue in local.sqs_queues : ["AWS/SQS", "NumberOfMessagesSent", "QueueName", "imms-${local.non_dev_green}-${queue}", { region : var.aws_region }] if queue != "id-sync-dlq" || queue != "id-sync-queue"]
-  non_dev_sqs_queue_metrics      = concat(local.blue_sqs_queue_metrics, local.green_sqs_queue_metrics)
-  sqs_queue_metrics              = var.environment == "dev" ? local.dev_sqs_queue_metrics : local.non_dev_sqs_queue_metrics
+  sqs_queues = flatten([
+    [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-ack-metadata-queue.fifo"],
+    [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-batch-file-created-queue.fifo"],
+    [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-delta-dlq"],
+    [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-metadata-queue.fifo"],
+    [for sub_env in local.sub_environments_map[var.environment] : (var.environment == "dev" ? "imms-${sub_env}-id-sync-dlq" : "imms-${var.environment}-id-sync-dlq")],
+    [for sub_env in local.sub_environments_map[var.environment] : (var.environment == "dev" ? "imms-${sub_env}-id-sync-queue" : "imms-${var.environment}-id-sync-queue")],
+  ])
+  sqs_queue_metrics = [for queue in local.sqs_queues : ["AWS/SQS", "NumberOfMessagesSent", "QueueName", queue, { region : var.aws_region }]]
 
   # Alarms
   alarms = [
@@ -150,11 +133,12 @@ locals {
     "_not_found-lambda-error",
     "_not_found memory alarm"
   ]
-  dev_alarms        = [for alarm in local.alarms : "arn:aws:cloudwatch:${var.aws_region}:${var.imms_account_id}:alarm:imms-internal-dev${alarm}"]
-  blue_alarms       = [for alarm in local.alarms : "arn:aws:cloudwatch:${var.aws_region}:${var.imms_account_id}:alarm:imms-${local.non_dev_blue}${alarm}"]
-  green_alarms      = [for alarm in local.alarms : "arn:aws:cloudwatch:${var.aws_region}:${var.imms_account_id}:alarm:imms-${local.non_dev_green}${alarm}"]
-  non_dev_alarms    = concat(local.blue_alarms, local.green_alarms)
+  # Alarms are turned off in internal-qa as testing could cause unnecessary noise
+  dev_alarms = [for alarm in local.alarms : "arn:aws:cloudwatch:${var.aws_region}:${var.imms_account_id}:alarm:imms-internal-dev${alarm}"]
+  non_dev_alarms = flatten([for sub_env in local.sub_environments_map[var.environment] :
+  [for alarm in local.alarms : "arn:aws:cloudwatch:${var.aws_region}:${var.imms_account_id}:alarm:imms-${sub_env}${alarm}"] if var.environment != "dev"])
   alarms_properties = var.environment == "dev" ? local.dev_alarms : local.non_dev_alarms
+
 }
 
 resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
@@ -428,7 +412,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 24,
         "height" : 1,
         "properties" : {
-          "markdown" : "### Ancilliaries"
+          "markdown" : "### Ancillaries"
         }
       },
       {
@@ -699,7 +683,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
           "metrics" : [
             ["AWS/ElastiCache", "CacheHits", "CacheClusterId", "immunisation-redis-cluster", "CacheNodeId", "0001"]
           ],
-          "region" : "eu-west-2",
+          "region" : var.aws_region,
           "title" : "ElastiCache - CacheHits"
           "period" : 300,
         }
