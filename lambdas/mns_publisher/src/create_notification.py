@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime
 
 from common.api_clients.get_pds_details import pds_get_patient_details
+from common.clients import logger
 from common.get_service_url import get_service_url
 from constants import IMMUNISATION_TYPE, SPEC_VERSION, SQSEventFields
 from sqs_dynamo_utils import find_imms_value_in_stream
@@ -24,7 +25,8 @@ def create_mns_notification(sqs_event: dict) -> dict:
     patient_age = calculate_age_at_vaccination(
         imms_data[SQSEventFields.BIRTH_DATE_KEY], imms_data[SQSEventFields.DATE_AND_TIME_KEY]
     )
-    gp_ods_code = pds_get_patient_details(imms_data[SQSEventFields.NHS_NUMBER_KEY])
+
+    gp_ods_code = get_practitioner_details_from_pds(imms_data[SQSEventFields.NHS_NUMBER_KEY])
 
     return {
         "specversion": SPEC_VERSION,
@@ -61,3 +63,22 @@ def calculate_age_at_vaccination(birth_date: str, vaccination_date: str) -> int:
         age -= 1
 
     return age
+
+
+def get_practitioner_details_from_pds(nhs_number: str) -> str | None:
+    try:
+        patient_details = pds_get_patient_details(nhs_number)
+        patient_gp = patient_details.get("generalPractitioner")
+        if not patient_gp:
+            logger.warning("No patient details found for NHS number", {"nhs_number": nhs_number})
+            return None
+
+        gp_ods_code = patient_gp.get("value")
+        if not gp_ods_code:
+            logger.warning("GP ODS code not found in practitioner details", {"nhs_number": nhs_number})
+            return None
+
+        return gp_ods_code
+    except Exception as error:
+        logger.exception("Failed to get practitioner details from pds", error)
+        raise

@@ -16,7 +16,7 @@ class TestCalculateAgeAtVaccination(unittest.TestCase):
 
         age = calculate_age_at_vaccination(birth_date, vaccination_date)
 
-        self.assertEqual(age, 21)  # Before birthday
+        self.assertEqual(age, 21)
 
     def test_age_calculation_with_time(self):
         """Test age calculation with YYYYMMDDTHHmmss format."""
@@ -30,7 +30,7 @@ class TestCalculateAgeAtVaccination(unittest.TestCase):
     def test_age_calculation_after_birthday(self):
         """Test age when vaccination is after birthday."""
         birth_date = "20040609"
-        vaccination_date = "20260815"  # After June 9th
+        vaccination_date = "20260815"
 
         age = calculate_age_at_vaccination(birth_date, vaccination_date)
 
@@ -91,20 +91,17 @@ class TestCreateMnsNotification(unittest.TestCase):
         self.expected_gp_ods_code = "Y12345"
         self.expected_immunisation_url = "https://int.api.service.nhs.uk/immunisation-fhir-api"
 
-    @patch("create_notification.pds_get_patient_details")
+    @patch("create_notification.get_practitioner_details_from_pds")
     @patch("create_notification.get_service_url")
     @patch("create_notification.uuid.uuid4")
-    def test_create_mns_notification_success(self, mock_uuid, mock_get_service_url, mock_pds):
+    def test_create_mns_notification_success(self, mock_uuid, mock_get_service_url, mock_get_gp):
         """Test successful MNS notification creation."""
-        # Setup mocks
         mock_uuid.return_value = MagicMock(hex="236a1d4a-5d69-4fa9-9c7f-e72bf505aa5b")
         mock_get_service_url.return_value = self.expected_immunisation_url
-        mock_pds.return_value = self.expected_gp_ods_code
+        mock_get_gp.return_value = self.expected_gp_ods_code
 
-        # Execute
         result = create_mns_notification(self.sample_sqs_event)
 
-        # Verify structure
         self.assertEqual(result["specversion"], SPEC_VERSION)
         self.assertEqual(result["type"], IMMUNISATION_TYPE)
         self.assertEqual(result["source"], self.expected_immunisation_url)
@@ -114,24 +111,24 @@ class TestCreateMnsNotification(unittest.TestCase):
         self.assertIn("dataref", result)
         self.assertIn("filtering", result)
 
-    @patch("create_notification.pds_get_patient_details")
+    @patch("create_notification.get_practitioner_details_from_pds")
     @patch("create_notification.get_service_url")
-    def test_create_mns_notification_dataref_format(self, mock_get_service_url, mock_pds):
+    def test_create_mns_notification_dataref_format(self, mock_get_service_url, mock_get_gp):
         """Test dataref URL format is correct."""
         mock_get_service_url.return_value = self.expected_immunisation_url
-        mock_pds.return_value = self.expected_gp_ods_code
+        mock_get_gp.return_value = self.expected_gp_ods_code
 
         result = create_mns_notification(self.sample_sqs_event)
 
         expected_dataref = f"{self.expected_immunisation_url}/Immunization/d058014c-b0fd-4471-8db9-3316175eb825"
         self.assertEqual(result["dataref"], expected_dataref)
 
-    @patch("create_notification.pds_get_patient_details")
+    @patch("create_notification.get_practitioner_details_from_pds")
     @patch("create_notification.get_service_url")
-    def test_create_mns_notification_filtering_fields(self, mock_get_service_url, mock_pds):
+    def test_create_mns_notification_filtering_fields(self, mock_get_service_url, mock_get_gp):
         """Test all filtering fields are populated correctly."""
         mock_get_service_url.return_value = self.expected_immunisation_url
-        mock_pds.return_value = self.expected_gp_ods_code
+        mock_get_gp.return_value = self.expected_gp_ods_code
 
         result = create_mns_notification(self.sample_sqs_event)
 
@@ -143,46 +140,43 @@ class TestCreateMnsNotification(unittest.TestCase):
         self.assertEqual(filtering["action"], "CREATE")
         self.assertIsInstance(filtering["subjectage"], str)
 
-    @patch("create_notification.pds_get_patient_details")
+    @patch("create_notification.get_practitioner_details_from_pds")
     @patch("create_notification.get_service_url")
-    def test_create_mns_notification_age_calculation(self, mock_get_service_url, mock_pds):
+    def test_create_mns_notification_age_calculation(self, mock_get_service_url, mock_get_gp):
         """Test patient age is calculated correctly."""
         mock_get_service_url.return_value = self.expected_immunisation_url
-        mock_pds.return_value = self.expected_gp_ods_code
+        mock_get_gp.return_value = self.expected_gp_ods_code
 
         result = create_mns_notification(self.sample_sqs_event)
 
-        # Birth: 2004-06-09, Vaccination: 2026-02-12
-        # Expected age: 21 (before birthday in 2026)
         self.assertEqual(result["filtering"]["subjectage"], "21")
 
-    @patch("create_notification.pds_get_patient_details")
+    @patch("create_notification.get_practitioner_details_from_pds")
     @patch("create_notification.get_service_url")
-    def test_create_mns_notification_calls_pds(self, mock_get_service_url, mock_pds):
-        """Test PDS is called with correct NHS number."""
+    def test_create_mns_notification_calls_get_practitioner(self, mock_get_service_url, mock_get_gp):
+        """Test get_practitioner_details_from_pds is called with correct NHS number."""
         mock_get_service_url.return_value = self.expected_immunisation_url
-        mock_pds.return_value = self.expected_gp_ods_code
+        mock_get_gp.return_value = self.expected_gp_ods_code
 
         create_mns_notification(self.sample_sqs_event)
 
-        mock_pds.assert_called_once_with("9481152782")
+        mock_get_gp.assert_called_once_with("9481152782")
 
-    @patch("create_notification.pds_get_patient_details")
+    @patch("create_notification.get_practitioner_details_from_pds")
     @patch("create_notification.get_service_url")
-    def test_create_mns_notification_uuid_generated(self, mock_get_service_url, mock_pds):
+    def test_create_mns_notification_uuid_generated(self, mock_get_service_url, mock_get_gp):
         """Test unique ID is generated for each notification."""
         mock_get_service_url.return_value = self.expected_immunisation_url
-        mock_pds.return_value = self.expected_gp_ods_code
+        mock_get_gp.return_value = self.expected_gp_ods_code
 
         result1 = create_mns_notification(self.sample_sqs_event)
         result2 = create_mns_notification(self.sample_sqs_event)
 
-        # Each notification should have a different ID
         self.assertNotEqual(result1["id"], result2["id"])
 
-    @patch("create_notification.pds_get_patient_details")
+    @patch("create_notification.get_practitioner_details_from_pds")
     @patch("create_notification.get_service_url")
-    def test_create_mns_notification_invalid_json_body(self, mock_get_service_url, mock_pds):
+    def test_create_mns_notification_invalid_json_body(self, mock_get_service_url, mock_get_gp):
         """Test error handling when SQS body is invalid JSON."""
         mock_get_service_url.return_value = self.expected_immunisation_url
 
@@ -191,26 +185,37 @@ class TestCreateMnsNotification(unittest.TestCase):
         with self.assertRaises(json.JSONDecodeError):
             create_mns_notification(invalid_event)
 
-    @patch("create_notification.pds_get_patient_details")
+    @patch("create_notification.get_practitioner_details_from_pds")
     @patch("create_notification.get_service_url")
-    def test_create_mns_notification_pds_failure(self, mock_get_service_url, mock_pds):
-        """Test handling when PDS call fails."""
+    def test_create_mns_notification_pds_failure(self, mock_get_service_url, mock_get_gp):
+        """Test handling when get_practitioner_details_from_pds call fails."""
         mock_get_service_url.return_value = self.expected_immunisation_url
-        mock_pds.side_effect = Exception("PDS API unavailable")
+        mock_get_gp.side_effect = Exception("PDS API unavailable")
 
         with self.assertRaises(Exception):
             create_mns_notification(self.sample_sqs_event)
 
-    @patch("create_notification.pds_get_patient_details")
+    @patch("create_notification.get_practitioner_details_from_pds")
     @patch("create_notification.get_service_url")
-    def test_create_mns_notification_required_fields_present(self, mock_get_service_url, mock_pds):
-        """Test all required CloudEvents fields are present."""
+    def test_create_mns_notification_gp_not_found(self, mock_get_service_url, mock_get_gp):
+        """Test handling when GP ODS code is not found (returns None)."""
         mock_get_service_url.return_value = self.expected_immunisation_url
-        mock_pds.return_value = self.expected_gp_ods_code
+        mock_get_gp.return_value = None
 
         result = create_mns_notification(self.sample_sqs_event)
 
-        required_fields = ["id", "source", "specversion", "type", "time", "dataref"]
+        self.assertIsNone(result["filtering"]["generalpractitioner"])
+
+    @patch("create_notification.get_practitioner_details_from_pds")
+    @patch("create_notification.get_service_url")
+    def test_create_mns_notification_required_fields_present(self, mock_get_service_url, mock_get_gp):
+        """Test all required CloudEvents fields are present."""
+        mock_get_service_url.return_value = self.expected_immunisation_url
+        mock_get_gp.return_value = self.expected_gp_ods_code
+
+        result = create_mns_notification(self.sample_sqs_event)
+
+        required_fields = ["id", "source", "specversion", "type", "time", "dataref", "subject"]
         for field in required_fields:
             self.assertIn(field, result, f"Required field '{field}' missing")
 
