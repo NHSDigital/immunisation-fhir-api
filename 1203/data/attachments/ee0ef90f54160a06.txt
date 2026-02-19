@@ -1,2 +1,0 @@
-❌ Step failed! **Valid vaccination record is created with Patient 'Random' and vaccine_type 'PNEUMOCOCCAL'** 
- Error: 502 Server Error: Bad Gateway for url: https://api.enterprise.apigee.com/v1/organizations/nhsd-nonprod/developers/england.immsfhirapigee@nhs.net/apps

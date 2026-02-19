@@ -1,2 +1,0 @@
-❌ Step failed! **batch file is created for below data as full dataset and each record has a valid delete record in the same file** 
- Error: 502 Server Error: Bad Gateway for url: https://api.enterprise.apigee.com/v1/organizations/nhsd-nonprod/developers/england.immsfhirapigee@nhs.net/apps

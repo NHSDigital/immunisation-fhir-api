@@ -1,7 +1,0 @@
-"BROKEN","EPIC","FAILED","FEATURE","PASSED","SKIPPED","STORY","UNKNOWN"
-"21","Immunization Service","0","Search the immunization of a patient","0","0","","0"
-"17","Immunization Service","0","Create the immunization event for a patient","0","0","","0"
-"2","Immunization Service","0","Create the immunization event for a patient through batch file","0","0","","0"
-"2","Immunization Service","0","Update the immunization of a patient","0","0","","0"
-"2","Immunization Service","0","Create the immunization event for a patient through batch file and update the record from batch or Api calls","0","0","","0"
-"4","Immunization Service","0","Get the API status","0","0","","0"
