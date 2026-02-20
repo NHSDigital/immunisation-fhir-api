@@ -15,3 +15,6 @@ class SQSEventFields(Enum):
     SOURCE_APPLICATION_KEY = "SupplierSystem"
     VACCINE_TYPE = "VACCINE_TYPE"
     ACTION = "Operation"
+
+
+DYNAMO_DB_TYPE_DESCRIPTORS = ("S", "N", "BOOL", "M", "L")

@@ -1,3 +1,5 @@
+from constants import DYNAMO_DB_TYPE_DESCRIPTORS
+
 """
 Recursion to fetch deeply nested values from DynamoDB stream events.
 Time complexity: O(n) where n is the total number of keys in the nested structure.
@@ -33,18 +35,13 @@ def _unwrap_dynamodb_value(value):
         return value
 
     # DynamoDB type descriptors
-    if "S" in value:
-        return value["S"]
-    if "N" in value:
-        return value["N"]
-    if "BOOL" in value:
-        return value["BOOL"]
-    if "M" in value:
-        return value["M"]
-    if "L" in value:
-        return value["L"]
     if "NULL" in value:
         return None
+
+    # Check other DynamoDB types
+    for key in DYNAMO_DB_TYPE_DESCRIPTORS:
+        if key in value:
+            return value[key]
 
     # Not a DynamoDB type, return as-is
     return value

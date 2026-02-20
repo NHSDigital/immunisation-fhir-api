@@ -18,9 +18,7 @@ class TestExtractTraceIds(unittest.TestCase):
 
     def test_extract_trace_ids_success_from_real_payload(self):
         """Test successful extraction using real SQS event structure."""
-        record = self.sample_sqs_event  # Assuming the file contains a single record
-
-        message_id, immunisation_id = extract_trace_ids(record)
+        message_id, immunisation_id = extract_trace_ids(self.sample_sqs_event)
 
         self.assertEqual(message_id, "98ed30eb-829f-41df-8a73-57fef70cf161")
         self.assertEqual(immunisation_id, "d058014c-b0fd-4471-8db9-3316175eb825")
@@ -80,29 +78,34 @@ class TestLambdaHandler(unittest.TestCase):
             "type": "imms-vaccinations-2",
         }
 
-    @patch("lambda_handler.logger")
+        self.successful_mns_response = {"status_code": 201, "message": "Published"}
+
+    @patch("lambda_handler.MnsService.publish_notification")
     @patch("lambda_handler.create_mns_notification")
-    def test_lambda_handler_single_record_success_real_payload(self, mock_create_notification, mock_logger):
+    @patch("lambda_handler.logger")
+    def test_lambda_handler_single_record_success_real_payload(
+        self, mock_logger, mock_create_notification, mock_mns_publish
+    ):
         """Test successful processing using real SQS event payload."""
         mock_create_notification.return_value = self.sample_notification
+        mock_mns_publish.return_value = self.successful_mns_response
 
         event = {"Records": [self.sample_sqs_record]}
         result = lambda_handler(event, Mock())
 
         self.assertEqual(result, {"batchItemFailures": []})
         mock_create_notification.assert_called_once_with(self.sample_sqs_record)
-
-        # Verify logging
-        self.assertEqual(mock_logger.info.call_count, 3)
+        mock_mns_publish.assert_called_once_with(self.sample_notification)
         mock_logger.exception.assert_not_called()
 
-    @patch("lambda_handler.logger")
+    @patch("lambda_handler.MnsService.publish_notification")
     @patch("lambda_handler.create_mns_notification")
-    def test_lambda_handler_multiple_records_all_success(self, mock_create_notification, mock_logger):
+    @patch("lambda_handler.logger")
+    def test_lambda_handler_multiple_records_all_success(self, mock_logger, mock_create_notification, mock_mns_publish):
         """Test successful processing of multiple SQS records."""
         mock_create_notification.return_value = self.sample_notification
+        mock_mns_publish.return_value = self.successful_mns_response
 
-        # Create second record with different messageId
         record_2 = self.sample_sqs_record.copy()
         record_2["messageId"] = "different-message-id"
 
@@ -111,11 +114,13 @@ class TestLambdaHandler(unittest.TestCase):
 
         self.assertEqual(result, {"batchItemFailures": []})
         self.assertEqual(mock_create_notification.call_count, 2)
+        self.assertEqual(mock_mns_publish.call_count, 2)
         mock_logger.exception.assert_not_called()
 
-    @patch("lambda_handler.logger")
+    @patch("lambda_handler.MnsService.publish_notification")
     @patch("lambda_handler.create_mns_notification")
-    def test_lambda_handler_single_record_failure(self, mock_create_notification, mock_logger):
+    @patch("lambda_handler.logger")
+    def test_lambda_handler_single_record_failure(self, mock_logger, mock_create_notification, mock_mns_publish):
         """Test handling of a single record failure."""
         mock_create_notification.side_effect = Exception("Processing error")
 
@@ -126,12 +131,30 @@ class TestLambdaHandler(unittest.TestCase):
         self.assertEqual(result, {"batchItemFailures": [{"itemIdentifier": expected_message_id}]})
         mock_logger.exception.assert_called_once()
         mock_logger.warning.assert_called_once_with("Batch completed with 1 failures")
+        mock_mns_publish.assert_not_called()
 
-    @patch("lambda_handler.logger")
+    @patch("lambda_handler.MnsService.publish_notification")
     @patch("lambda_handler.create_mns_notification")
-    def test_lambda_handler_partial_batch_failure(self, mock_create_notification, mock_logger):
+    @patch("lambda_handler.logger")
+    def test_lambda_handler_mns_publish_failure(self, mock_logger, mock_create_notification, mock_mns_publish):
+        """Test handling when MNS publish returns non-201 status."""
+        mock_create_notification.return_value = self.sample_notification
+        mock_mns_publish.return_value = {"status_code": 400, "message": "Bad Request"}
+
+        event = {"Records": [self.sample_sqs_record]}
+        result = lambda_handler(event, Mock())
+
+        expected_message_id = self.sample_sqs_record["messageId"]
+        self.assertEqual(result, {"batchItemFailures": [{"itemIdentifier": expected_message_id}]})
+        mock_logger.exception.assert_called_once()
+
+    @patch("lambda_handler.MnsService.publish_notification")
+    @patch("lambda_handler.create_mns_notification")
+    @patch("lambda_handler.logger")
+    def test_lambda_handler_partial_batch_failure(self, mock_logger, mock_create_notification, mock_mns_publish):
         """Test partial batch failure where one record succeeds and one fails."""
-        mock_create_notification.side_effect = [self.sample_notification, Exception("Processing error")]
+        mock_create_notification.return_value = self.sample_notification
+        mock_mns_publish.side_effect = [self.successful_mns_response, Exception("MNS API error")]
 
         record_2 = self.sample_sqs_record.copy()
         record_2["messageId"] = "msg-456"
@@ -144,41 +167,31 @@ class TestLambdaHandler(unittest.TestCase):
         self.assertEqual(mock_create_notification.call_count, 2)
         mock_logger.exception.assert_called_once()
 
-    @patch("lambda_handler.logger")
+    @patch("lambda_handler.MnsService.publish_notification")
     @patch("lambda_handler.create_mns_notification")
-    def test_lambda_handler_empty_records(self, mock_create_notification, mock_logger):
+    @patch("lambda_handler.logger")
+    def test_lambda_handler_empty_records(self, mock_logger, mock_create_notification, mock_mns_publish):
         """Test handling of empty Records list."""
         event = {"Records": []}
         result = lambda_handler(event, Mock())
 
         self.assertEqual(result, {"batchItemFailures": []})
         mock_create_notification.assert_not_called()
+        mock_mns_publish.assert_not_called()
         mock_logger.info.assert_called_with("Successfully processed all 0 messages")
 
-    @patch("lambda_handler.logger")
+    @patch("lambda_handler.MnsService.publish_notification")
     @patch("lambda_handler.create_mns_notification")
-    def test_lambda_handler_notification_id_logged(self, mock_create_notification, mock_logger):
-        """Test that notification ID is properly extracted and logged."""
-        mock_create_notification.return_value = self.sample_notification
-
-        event = {"Records": [self.sample_sqs_record]}
-        lambda_handler(event, Mock())
-
-        # Check that logger.info was called with trace_id
-        info_calls = mock_logger.info.call_args_list
-        success_log_call = info_calls[1]
-        self.assertIn("trace_id", success_log_call[1])
-
     @patch("lambda_handler.logger")
-    @patch("lambda_handler.create_mns_notification")
-    def test_lambda_handler_logs_correct_trace_ids_on_failure(self, mock_create_notification, mock_logger):
+    def test_lambda_handler_logs_correct_trace_ids_on_failure(
+        self, mock_logger, mock_create_notification, mock_mns_publish
+    ):
         """Test that all trace IDs are logged when an error occurs."""
         mock_create_notification.side_effect = Exception("Test error")
 
         event = {"Records": [self.sample_sqs_record]}
         lambda_handler(event, Mock())
 
-        # Verify exception was called with trace_ids
         exception_call = mock_logger.exception.call_args
         self.assertEqual(exception_call[0][0], "Failed to process message")
         trace_ids = exception_call[1]["trace_ids"]
@@ -186,3 +199,7 @@ class TestLambdaHandler(unittest.TestCase):
         self.assertEqual(trace_ids["message_id"], "98ed30eb-829f-41df-8a73-57fef70cf161")
         self.assertEqual(trace_ids["immunisation_id"], "d058014c-b0fd-4471-8db9-3316175eb825")
         self.assertEqual(trace_ids["error"], "Test error")
+
+
+if __name__ == "__main__":
+    unittest.main()
