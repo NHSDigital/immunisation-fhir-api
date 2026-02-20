@@ -2,7 +2,7 @@ import json
 import unittest
 from unittest.mock import call, patch
 
-from exceptions.id_sync_exception import IdSyncException
+from common.api_clients.errors import PdsSyncException
 from record_processor import process_record
 
 
@@ -194,7 +194,7 @@ class TestRecordProcessor(unittest.TestCase):
         test_sqs_record = {"body": json.dumps({"subject": nhs_number})}
         # pds returns a different id to force update path
         self.mock_get_items_from_patient_id.return_value = [{"Resource": {}}]
-        self.mock_pds_get_patient_details.side_effect = IdSyncException("Error retrieving patient details from PDS")
+        self.mock_pds_get_patient_details.side_effect = PdsSyncException("Error retrieving patient details from PDS")
 
         result = process_record(test_sqs_record)
         self.assertEqual(result["status"], "error")

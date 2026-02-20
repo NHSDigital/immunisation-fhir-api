@@ -148,7 +148,7 @@ class TestMnsService(unittest.TestCase):
         result = service.delete_subscription("sub-id-123")
         self.assertTrue(result)
         mock_delete.assert_called_with(
-            method="DELETE", url=f"{MNS_URL}/sub-id-123", headers=service.request_headers, timeout=10
+            method="DELETE", url=f"{MNS_URL}/subscriptions/sub-id-123", headers=service.request_headers, timeout=10
         )
 
     @patch("common.api_clients.mns_service.requests.request")
@@ -276,6 +276,43 @@ class TestMnsService(unittest.TestCase):
             raise_error_response(resp)
         self.assertIn("Unhandled error: 418", str(context.exception))
         self.assertEqual(context.exception.response, {"resource": 1234})
+
+    @patch("common.api_clients.mns_service.requests.request")
+    def test_publish_notification_success(self, mock_request):
+        """Test successful notification publishing."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"status": "published"}
+        mock_request.return_value = mock_response
+
+        notification_payload = {
+            "specversion": "1.0",
+            "id": "test-id",
+            "type": "imms-vaccinations-2",
+            "source": "test-source",
+        }
+
+        service = MnsService(self.authenticator)
+        result = service.publish_notification(notification_payload)
+
+        self.assertEqual(result["status"], "published")
+        self.assertEqual(service.request_headers["Content-Type"], "application/cloudevents+json")
+        mock_request.assert_called_once()
+
+    @patch("common.api_clients.mns_service.requests.request")
+    @patch("common.api_clients.mns_service.raise_error_response")
+    def test_publish_notification_failure(self, mock_raise_error, mock_request):
+        """Test notification publishing failure."""
+        mock_response = Mock()
+        mock_response.status_code = 400
+        mock_request.return_value = mock_response
+
+        notification_payload = {"id": "test-id"}
+
+        service = MnsService(self.authenticator)
+        service.publish_notification(notification_payload)
+
+        mock_raise_error.assert_called_once_with(mock_response)
 
 
 if __name__ == "__main__":

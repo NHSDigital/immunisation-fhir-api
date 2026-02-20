@@ -2,9 +2,9 @@ import json
 
 from boto3.dynamodb.conditions import Key
 
+from common.api_clients.errors import PdsSyncException
 from common.aws_dynamodb import get_dynamodb_table
 from common.clients import get_dynamodb_client, logger
-from exceptions.id_sync_exception import IdSyncException
 from os_vars import get_ieds_table_name
 from utils import make_status
 
@@ -51,7 +51,7 @@ def ieds_update_patient_id(old_id: str, new_id: str, items_to_update: list) -> d
 
     except Exception as e:
         logger.exception("Error updating patient ID")
-        raise IdSyncException(
+        raise PdsSyncException(
             message="Error updating patient ID",
         ) from e
 
@@ -60,16 +60,16 @@ def get_items_from_patient_id(id: str) -> list:
     """Public wrapper: build PatientPK and return all matching items.
 
     Delegates actual paging to the internal helper `_paginate_items_for_patient_pk`.
-    Raises IdSyncException on error.
+    Raises PdsSyncException on error.
     """
     patient_pk = f"Patient#{id}"
     try:
         return paginate_items_for_patient_pk(patient_pk)
-    except IdSyncException:
+    except PdsSyncException:
         raise
     except Exception:
         logger.exception("Error querying items for patient PK")
-        raise IdSyncException(
+        raise PdsSyncException(
             message="Error querying items for patient PK",
         )
 
@@ -77,7 +77,7 @@ def get_items_from_patient_id(id: str) -> list:
 def paginate_items_for_patient_pk(patient_pk: str) -> list:
     """Internal helper that pages through the PatientGSI and returns all items.
 
-    Raises IdSyncException when the DynamoDB response is malformed.
+    Raises PdsSyncException when the DynamoDB response is malformed.
     """
     all_items: list = []
     last_evaluated_key = None
@@ -92,9 +92,9 @@ def paginate_items_for_patient_pk(patient_pk: str) -> list:
         response = get_ieds_table().query(**query_args)
 
         if "Items" not in response:
-            # Unexpected DynamoDB response shape - surface as IdSyncException
+            # Unexpected DynamoDB response shape - surface as PdsSyncException
             logger.exception("Unexpected DynamoDB response: missing 'Items'")
-            raise IdSyncException(
+            raise PdsSyncException(
                 message="No Items in DynamoDB response",
             )
 

@@ -1,16 +1,16 @@
 """
 - Parses the incoming AWS event into `AwsLambdaEvent` and iterate its `records`.
 - Delegate each record to `process_record` and collect `nhs_number` from each result.
-- If any record has status == "error" raise `IdSyncException` with aggregated nhs_numbers.
-- Any unexpected error is wrapped into `IdSyncException(message="Error processing id_sync event")`.
+- If any record has status == "error" raise `PdsSyncException` with aggregated nhs_numbers.
+- Any unexpected error is wrapped into `PdsSyncException(message="Error processing id_sync event")`.
 """
 
 from typing import Any, Dict
 
+from common.api_clients.errors import PdsSyncException
 from common.aws_lambda_event import AwsLambdaEvent
 from common.clients import STREAM_NAME, logger
 from common.log_decorator import logging_decorator
-from exceptions.id_sync_exception import IdSyncException
 from record_processor import process_record
 
 
@@ -34,7 +34,7 @@ def handler(event_data: Dict[str, Any], _context) -> Dict[str, Any]:
                 error_count += 1
 
         if error_count > 0:
-            raise IdSyncException(
+            raise PdsSyncException(
                 message=f"Processed {len(records)} records with {error_count} errors",
             )
 
@@ -43,10 +43,10 @@ def handler(event_data: Dict[str, Any], _context) -> Dict[str, Any]:
         logger.info("id_sync handler completed: %s", response)
         return response
 
-    except IdSyncException as e:
+    except PdsSyncException as e:
         logger.exception(f"id_sync error: {e.message}")
         raise
     except Exception:
         msg = "Error processing id_sync event"
         logger.exception(msg)
-        raise IdSyncException(message=msg)
+        raise PdsSyncException(message=msg)

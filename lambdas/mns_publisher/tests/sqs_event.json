@@ -1,0 +1,118 @@
+{
+  "messageId": "98ed30eb-829f-41df-8a73-57fef70cf161",
+  "receiptHandle": "AQEBpFIQq7dcCyEquMsKkFgM3iROiAVOLvq9CBwaFy7EkVHpqu5+leD7FEc/7KexUF91w8cZEn1XSSqUjapPq45SE7aAxzCOVjFHusYrYwcSBYg10mP60vXwVu3Qzp+F2T/52ONt75pStSJhm1fMXq6/ZkmYbpcTX2SLdL/5Yfx/rRo4uXFnPjo5VFMpH2yFDJnRnHJ4coHwCogvwuzp68cxU/zJOOaMKPQOCpYJMULkD8ITF/SAMWtzr6XSpgIWFUl+K9HFqDtljg5mv4oE34v9k+GRj0WNQVgjuSLCTYcGpYg75Kh6Rn9o7G9aH4fqczFQbzM0uYWmSSH2SNA4r6raupxTl8gXbG1Uzgq1rfhNxtMtvB4dSqR82je6IVf5lZ0Z+YTCy/Rqyr9SF9mDyFB5VjmqfN0MKENXKjJ/G7tqWoo=",
+
+  "body": {
+    "eventID": "b1ba2a48eae68bf43a8cb49b400788c6",
+    "eventName": "INSERT",
+    "eventVersion": "1.1",
+    "eventSource": "aws:dynamodb",
+    "awsRegion": "eu-west-2",
+
+    "dynamodb": {
+      "ApproximateCreationDateTime": 1770918337,
+
+      "Keys": {
+        "PK": { "S": "a841e2c1dd0ecd2f60113890cc02b130" }
+      },
+
+      "NewImage": {
+        "ImmsID": { "S": "d058014c-b0fd-4471-8db9-3316175eb825" },
+        "VaccineType": { "S": "hib" },
+        "SupplierSystem": { "S": "TPP" },
+        "DateTimeStamp": { "S": "2026-02-12T17:45:37+00:00" },
+
+        "Imms": {
+          "M": {
+            "UNIQUE_ID": { "S": "ae4f6b62-a419-41a8-b5e2-a5228b5f9e41" },
+            "UNIQUE_ID_URI": { "S": "https://supplierABC/identifiers/vacc" },
+
+            "PERSON_FORENAME": { "S": "PEILL" },
+            "PERSON_SURNAME": { "S": "LIZZY" },
+            "PERSON_DOB": { "S": "20040609" },
+            "PERSON_GENDER_CODE": { "S": "2" },
+            "PERSON_POSTCODE": { "S": "M7 4ES" },
+            "NHS_NUMBER": { "S": "9481152782" },
+
+            "PERFORMING_PROFESSIONAL_FORENAME": { "S": "Darren" },
+            "PERFORMING_PROFESSIONAL_SURNAME": { "S": "Furlong" },
+
+            "VACCINE_TYPE": { "S": "hib" },
+            "VACCINE_PRODUCT_CODE": { "S": "9903611000001100" },
+            "VACCINE_PRODUCT_TERM": {
+              "S": "Menitorix powder and solvent for solution for injection 0.5ml vials (GlaxoSmithKline)"
+            },
+            "VACCINE_MANUFACTURER": { "S": "Sanofi" },
+
+            "VACCINATION_PROCEDURE_CODE": { "S": "712833000" },
+            "VACCINATION_PROCEDURE_TERM": {
+              "S": "Haemophilus influenzae type B Meningitis C (HibMenC) vaccination codes"
+            },
+
+            "INDICATION_CODE": { "S": "443684005" },
+
+            "SITE_OF_VACCINATION_CODE": { "S": "368208006" },
+            "SITE_OF_VACCINATION_TERM": {
+              "S": "Left upper arm structure (body structure)"
+            },
+
+            "ROUTE_OF_VACCINATION_CODE": { "S": "78421000" },
+            "ROUTE_OF_VACCINATION_TERM": {
+              "S": "Intramuscular route (qualifier value)"
+            },
+
+            "DOSE_SEQUENCE": { "S": "1" },
+            "DOSE_AMOUNT": { "N": "0.3" },
+            "DOSE_UNIT_CODE": { "S": "2622896019" },
+            "DOSE_UNIT_TERM": { "S": "Inhalation - unit of product usage" },
+
+            "BATCH_NUMBER": { "S": "688346" },
+            "EXPIRY_DATE": { "S": "20280212" },
+
+            "DATE_AND_TIME": { "S": "20260212T17443700" },
+            "RECORDED_DATE": { "S": "20260212" },
+
+            "SITE_CODE": { "S": "B0C4P" },
+            "SITE_CODE_TYPE_URI": {
+              "S": "https://fhir.nhs.uk/Id/ods-organization-code"
+            },
+
+            "LOCATION_CODE": { "S": "X99999" },
+            "LOCATION_CODE_TYPE_URI": {
+              "S": "https://fhir.nhs.uk/Id/ods-organization-code"
+            },
+
+            "PRIMARY_SOURCE": { "S": "TRUE" },
+            "ACTION_FLAG": { "S": "NEW" },
+
+            "CONVERSION_ERRORS": { "L": [] }
+          }
+        },
+
+        "Operation": { "S": "CREATE" },
+        "PK": { "S": "a841e2c1dd0ecd2f60113890cc02b130" },
+        "ExpiresAt": { "N": "1773510337" },
+        "Source": { "S": "IEDS" }
+      },
+
+      "SequenceNumber": "42400003126610103283304",
+      "SizeBytes": 1463,
+      "StreamViewType": "NEW_IMAGE"
+    },
+
+    "eventSourceARN": "arn:aws:dynamodb:eu-west-2:345594581768:table/imms-pr-1203-delta/stream/2026-02-12T17:32:56.589"
+  },
+
+  "attributes": {
+    "ApproximateReceiveCount": "1",
+    "SentTimestamp": "1770994394616",
+    "SenderId": "AROAVA5YK2MEDW5XLAPXH:634b0edba98233009bdd0a31c220a880",
+    "ApproximateFirstReceiveTimestamp": "1770994394620"
+  },
+
+  "messageAttributes": {},
+  "md5OfBody": "f89442a426edfc37ca55f86e9cbb61bb",
+  "eventSource": "aws:sqs",
+  "eventSourceARN": "arn:aws:sqs:eu-west-2:345594581768:pr-1203-mns-outbound-events-queue",
+  "awsRegion": "eu-west-2"
+}
