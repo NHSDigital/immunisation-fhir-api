@@ -8,7 +8,11 @@ from boto3.dynamodb.conditions import Key
 from botocore.config import Config
 from utilities.api_fhir_immunization_helper import extract_practitioner_name
 from utilities.context import ScenarioContext
-from utilities.date_helper import covert_to_expected_date_format, format_date_yyyymmdd, iso_to_compact
+from utilities.date_helper import (
+    covert_to_expected_date_format,
+    format_date_yyyymmdd,
+    iso_to_compact,
+)
 from utilities.enums import GenderCode
 from utilities.vaccination_constants import PROTOCOL_DISEASE_MAP
 
@@ -86,7 +90,10 @@ def fetch_immunization_int_delta_detail_by_immsID(aws_profile_name: str, ImmsID:
     delay = 2  # seconds
 
     for attempt in range(1, max_attempts + 1):
-        response = tableImmsDelta.query(IndexName="ImmunisationIdIndex", KeyConditionExpression=Key("ImmsID").eq(ImmsID))
+        response = tableImmsDelta.query(
+            IndexName="ImmunisationIdIndex",
+            KeyConditionExpression=Key("ImmsID").eq(ImmsID),
+        )
 
         items = response.get("Items", [])
         print(f"Attempt {attempt}: Found {len(items)} items")
@@ -110,7 +117,10 @@ def fetch_batch_audit_table_detail(aws_profile_name: str, filename: str, env: st
     delay = 2
 
     for attempt in range(1, max_attempts + 1):
-        response = tableImmsAudit.query(IndexName="filename_index", KeyConditionExpression=Key("filename").eq(filename))
+        response = tableImmsAudit.query(
+            IndexName="filename_index",
+            KeyConditionExpression=Key("filename").eq(filename),
+        )
 
         items = response.get("Items", [])
         print(f"Attempt {attempt}: Found {len(items)} items")
@@ -126,7 +136,9 @@ def fetch_batch_audit_table_detail(aws_profile_name: str, filename: str, env: st
     return []
 
 
-def parse_imms_int_imms_event_response(resource: dict) -> ImmunizationReadResponse_IntTable:
+def parse_imms_int_imms_event_response(
+    resource: dict,
+) -> ImmunizationReadResponse_IntTable:
     contained_raw = resource.get("contained", [])
     parsed_contained = []
 
@@ -143,79 +155,224 @@ def parse_imms_int_imms_event_response(resource: dict) -> ImmunizationReadRespon
 
 
 def validate_imms_delta_record_with_created_event(
-    context: ScenarioContext, create_obj: Immunization, delta_record: dict, event_type: str, action_flag: str
+    context: ScenarioContext,
+    create_obj: Immunization,
+    delta_record: dict,
+    event_type: str,
+    action_flag: str,
 ):
     imms_event = delta_record.get("Imms")
     assert imms_event, "Imms field missing in items."
-    fields_to_compare = [
-        ("Operation", event_type.upper(), delta_record.get("Operation")),
-        ("SupplierSystem", context.supplier_name.lower(), delta_record.get("SupplierSystem").lower()),
-        ("VaccineType", context.vaccine_type.lower(), delta_record.get("VaccineType").lower()),
-        ("Source", "IEDS", delta_record.get("Source")),
-        ("CONVERSION_ERRORS", [], imms_event.get("CONVERSION_ERRORS")),
-        ("PERSON_FORENAME", create_obj.contained[1].name[0].given[0], imms_event.get("PERSON_FORENAME")),
-        ("PERSON_SURNAME", create_obj.contained[1].name[0].family, imms_event.get("PERSON_SURNAME")),
-        ("NHS_NUMBER", create_obj.contained[1].identifier[0].value, imms_event.get("NHS_NUMBER")),
-        ("PERSON_DOB", create_obj.contained[1].birthDate.replace("-", ""), imms_event.get("PERSON_DOB")),
-        ("PERSON_POSTCODE", create_obj.contained[1].address[0].postalCode, imms_event.get("PERSON_POSTCODE")),
-        ("PERSON_GENDER_CODE", GenderCode[(create_obj.contained[1].gender)].value, imms_event.get("PERSON_GENDER_CODE")),
-        (
-            "VACCINATION_PROCEDURE_CODE",
-            create_obj.extension[0].valueCodeableConcept.coding[0].code,
-            imms_event.get("VACCINATION_PROCEDURE_CODE"),
-        ),
-        (
-            "VACCINATION_PROCEDURE_TERM",
-            create_obj.extension[0].valueCodeableConcept.coding[0].extension[0].valueString,
-            imms_event.get("VACCINATION_PROCEDURE_TERM"),
-        ),
-        (
-            "VACCINE_PRODUCT_TERM",
-            create_obj.vaccineCode.coding[0].extension[0].valueString,
-            imms_event.get("VACCINE_PRODUCT_TERM"),
-        ),
-        ("VACCINE_PRODUCT_CODE", create_obj.vaccineCode.coding[0].code, imms_event.get("VACCINE_PRODUCT_CODE")),
-        ("VACCINE_MANUFACTURER", create_obj.manufacturer["display"], imms_event.get("VACCINE_MANUFACTURER")),
-        ("BATCH_NUMBER", create_obj.lotNumber, imms_event.get("BATCH_NUMBER")),
-        ("RECORDED_DATE", create_obj.recorded[:10].replace("-", ""), imms_event.get("RECORDED_DATE")),
-        ("EXPIRY_DATE", create_obj.expirationDate.replace("-", ""), imms_event.get("EXPIRY_DATE")),
-        ("DOSE_SEQUENCE", str(create_obj.protocolApplied[0].doseNumberPositiveInt), imms_event.get("DOSE_SEQUENCE")),
-        ("DOSE_UNIT_TERM", create_obj.doseQuantity.unit, imms_event.get("DOSE_UNIT_TERM")),
-        ("DOSE_UNIT_CODE", create_obj.doseQuantity.code, imms_event.get("DOSE_UNIT_CODE")),
-        (
-            "SITE_OF_VACCINATION_TERM",
-            create_obj.site.coding[0].extension[0].valueString,
-            imms_event.get("SITE_OF_VACCINATION_TERM"),
-        ),
-        ("SITE_OF_VACCINATION_CODE", create_obj.site.coding[0].code, imms_event.get("SITE_OF_VACCINATION_CODE")),
-        ("DOSE_AMOUNT", create_obj.doseQuantity.value, float(imms_event.get("DOSE_AMOUNT"))),
-        ("PRIMARY_SOURCE", str(create_obj.primarySource).upper(), imms_event.get("PRIMARY_SOURCE")),
-        (
-            "ROUTE_OF_VACCINATION_TERM",
-            create_obj.route.coding[0].extension[0].valueString,
-            imms_event.get("ROUTE_OF_VACCINATION_TERM"),
-        ),
-        ("ROUTE_OF_VACCINATION_CODE", create_obj.route.coding[0].code, imms_event.get("ROUTE_OF_VACCINATION_CODE")),
-        ("ACTION_FLAG", action_flag, imms_event.get("ACTION_FLAG")),
-        ("DATE_AND_TIME", iso_to_compact(create_obj.occurrenceDateTime), imms_event.get("DATE_AND_TIME")),
-        ("UNIQUE_ID", create_obj.identifier[0].value, imms_event.get("UNIQUE_ID")),
-        ("UNIQUE_ID_URI", create_obj.identifier[0].system, imms_event.get("UNIQUE_ID_URI")),
-        (
-            "PERFORMING_PROFESSIONAL_SURNAME",
-            create_obj.contained[0].name[0].family,
-            imms_event.get("PERFORMING_PROFESSIONAL_SURNAME"),
-        ),
-        (
-            "PERFORMING_PROFESSIONAL_FORENAME",
-            create_obj.contained[0].name[0].given[0],
-            imms_event.get("PERFORMING_PROFESSIONAL_FORENAME"),
-        ),
-        ("LOCATION_CODE", create_obj.location.identifier.value, imms_event.get("LOCATION_CODE")),
-        ("LOCATION_CODE_TYPE_URI", create_obj.location.identifier.system, imms_event.get("LOCATION_CODE_TYPE_URI")),
-        ("SITE_CODE_TYPE_URI", create_obj.location.identifier.system, imms_event.get("SITE_CODE_TYPE_URI")),
-        ("SITE_CODE", create_obj.performer[1].actor.identifier.value, imms_event.get("SITE_CODE")),
-        ("INDICATION_CODE", create_obj.reasonCode[0].coding[0].code, imms_event.get("INDICATION_CODE")),
-    ]
+
+    fields_to_compare = []
+
+    if hasattr(create_obj, "reasonCode") and create_obj.reasonCode:
+        fields_to_compare.append(
+            (
+                "INDICATION_CODE",
+                create_obj.reasonCode[0].coding[0].code or "",
+                imms_event.get("INDICATION_CODE"),
+            )
+        )
+
+    if hasattr(create_obj, "manufacturer") and create_obj.manufacturer:
+        fields_to_compare.append(
+            (
+                "VACCINE_MANUFACTURER",
+                create_obj.manufacturer["display"] or "",
+                imms_event.get("VACCINE_MANUFACTURER"),
+            )
+        )
+
+    if hasattr(create_obj, "lotNumber") and create_obj.lotNumber:
+        fields_to_compare.append(("BATCH_NUMBER", create_obj.lotNumber or "", imms_event.get("BATCH_NUMBER")))
+
+    if hasattr(create_obj, "expirationDate") and create_obj.expirationDate:
+        fields_to_compare.append(
+            (
+                "EXPIRY_DATE",
+                create_obj.expirationDate.replace("-", "") or "",
+                imms_event.get("EXPIRY_DATE"),
+            )
+        )
+
+    if hasattr(create_obj, "doseQuantity") and create_obj.doseQuantity:
+        fields_to_compare.extend(
+            [
+                (
+                    "DOSE_AMOUNT",
+                    create_obj.doseQuantity.value,
+                    float(imms_event.get("DOSE_AMOUNT")),
+                ),
+                (
+                    "DOSE_UNIT_TERM",
+                    create_obj.doseQuantity.unit,
+                    imms_event.get("DOSE_UNIT_TERM"),
+                ),
+                (
+                    "DOSE_UNIT_CODE",
+                    create_obj.doseQuantity.code,
+                    imms_event.get("DOSE_UNIT_CODE"),
+                ),
+            ]
+        )
+
+    if hasattr(create_obj, "route") and create_obj.route:
+        fields_to_compare.extend(
+            [
+                (
+                    "ROUTE_OF_VACCINATION_TERM",
+                    create_obj.route.coding[0].extension[0].valueString,
+                    imms_event.get("ROUTE_OF_VACCINATION_TERM"),
+                ),
+                (
+                    "ROUTE_OF_VACCINATION_CODE",
+                    create_obj.route.coding[0].code,
+                    imms_event.get("ROUTE_OF_VACCINATION_CODE"),
+                ),
+            ]
+        )
+
+    if hasattr(create_obj, "site") and create_obj.site:
+        fields_to_compare.extend(
+            [
+                (
+                    "SITE_OF_VACCINATION_TERM",
+                    create_obj.site.coding[0].extension[0].valueString,
+                    imms_event.get("SITE_OF_VACCINATION_TERM"),
+                ),
+                (
+                    "SITE_OF_VACCINATION_CODE",
+                    create_obj.site.coding[0].code,
+                    imms_event.get("SITE_OF_VACCINATION_CODE"),
+                ),
+            ]
+        )
+
+    fields_to_compare.extend(
+        [
+            ("Operation", event_type.upper(), delta_record.get("Operation")),
+            (
+                "SupplierSystem",
+                context.supplier_name.lower(),
+                delta_record.get("SupplierSystem").lower(),
+            ),
+            (
+                "VaccineType",
+                context.vaccine_type.lower(),
+                delta_record.get("VaccineType").lower(),
+            ),
+            ("Source", "IEDS", delta_record.get("Source")),
+            ("CONVERSION_ERRORS", [], imms_event.get("CONVERSION_ERRORS")),
+            (
+                "PERSON_FORENAME",
+                create_obj.contained[1].name[0].given[0],
+                imms_event.get("PERSON_FORENAME"),
+            ),
+            (
+                "PERSON_SURNAME",
+                create_obj.contained[1].name[0].family,
+                imms_event.get("PERSON_SURNAME"),
+            ),
+            (
+                "NHS_NUMBER",
+                create_obj.contained[1].identifier[0].value,
+                imms_event.get("NHS_NUMBER"),
+            ),
+            (
+                "PERSON_DOB",
+                create_obj.contained[1].birthDate.replace("-", ""),
+                imms_event.get("PERSON_DOB"),
+            ),
+            (
+                "PERSON_POSTCODE",
+                create_obj.contained[1].address[0].postalCode,
+                imms_event.get("PERSON_POSTCODE"),
+            ),
+            (
+                "PERSON_GENDER_CODE",
+                GenderCode[(create_obj.contained[1].gender)].value,
+                imms_event.get("PERSON_GENDER_CODE"),
+            ),
+            (
+                "VACCINATION_PROCEDURE_CODE",
+                create_obj.extension[0].valueCodeableConcept.coding[0].code,
+                imms_event.get("VACCINATION_PROCEDURE_CODE"),
+            ),
+            (
+                "VACCINATION_PROCEDURE_TERM",
+                create_obj.extension[0].valueCodeableConcept.coding[0].extension[0].valueString,
+                imms_event.get("VACCINATION_PROCEDURE_TERM"),
+            ),
+            (
+                "VACCINE_PRODUCT_TERM",
+                create_obj.vaccineCode.coding[0].extension[0].valueString,
+                imms_event.get("VACCINE_PRODUCT_TERM"),
+            ),
+            (
+                "VACCINE_PRODUCT_CODE",
+                create_obj.vaccineCode.coding[0].code,
+                imms_event.get("VACCINE_PRODUCT_CODE"),
+            ),
+            (
+                "RECORDED_DATE",
+                create_obj.recorded[:10].replace("-", ""),
+                imms_event.get("RECORDED_DATE"),
+            ),
+            (
+                "DOSE_SEQUENCE",
+                str(create_obj.protocolApplied[0].doseNumberPositiveInt),
+                imms_event.get("DOSE_SEQUENCE"),
+            ),
+            (
+                "PRIMARY_SOURCE",
+                str(create_obj.primarySource).upper(),
+                imms_event.get("PRIMARY_SOURCE"),
+            ),
+            ("ACTION_FLAG", action_flag, imms_event.get("ACTION_FLAG")),
+            (
+                "DATE_AND_TIME",
+                iso_to_compact(create_obj.occurrenceDateTime),
+                imms_event.get("DATE_AND_TIME"),
+            ),
+            ("UNIQUE_ID", create_obj.identifier[0].value, imms_event.get("UNIQUE_ID")),
+            (
+                "UNIQUE_ID_URI",
+                create_obj.identifier[0].system,
+                imms_event.get("UNIQUE_ID_URI"),
+            ),
+            (
+                "PERFORMING_PROFESSIONAL_SURNAME",
+                create_obj.contained[0].name[0].family,
+                imms_event.get("PERFORMING_PROFESSIONAL_SURNAME"),
+            ),
+            (
+                "PERFORMING_PROFESSIONAL_FORENAME",
+                create_obj.contained[0].name[0].given[0],
+                imms_event.get("PERFORMING_PROFESSIONAL_FORENAME"),
+            ),
+            (
+                "LOCATION_CODE",
+                create_obj.location.identifier.value,
+                imms_event.get("LOCATION_CODE"),
+            ),
+            (
+                "LOCATION_CODE_TYPE_URI",
+                create_obj.location.identifier.system,
+                imms_event.get("LOCATION_CODE_TYPE_URI"),
+            ),
+            (
+                "SITE_CODE_TYPE_URI",
+                create_obj.location.identifier.system,
+                imms_event.get("SITE_CODE_TYPE_URI"),
+            ),
+            (
+                "SITE_CODE",
+                create_obj.performer[1].actor.identifier.value,
+                imms_event.get("SITE_CODE"),
+            ),
+        ]
+    )
 
     for name, expected, actual in fields_to_compare:
         check.is_true(
@@ -255,7 +412,13 @@ def get_all_term_text(context):
 
 def get_all_the_vaccination_codes(list_items):
     return [
-        Coding(system=item["system"], code=item["code"], display=item["display"], extension=None) for item in list_items
+        Coding(
+            system=item["system"],
+            code=item["code"],
+            display=item["display"],
+            extension=None,
+        )
+        for item in list_items
     ]
 
 
@@ -268,7 +431,8 @@ def validate_audit_table_record(
     expected_record_count: str = None,
 ):
     check.is_true(
-        item.get("status") == expected_status, f"Expected status {expected_status}, got '{item.get('status')}'"
+        item.get("status") == expected_status,
+        f"Expected status {expected_status}, got '{item.get('status')}'",
     )
 
     expected_queue = expected_queue_name if expected_queue_name else f"{context.supplier_name}_{context.vaccine_type}"
@@ -307,7 +471,8 @@ def validate_audit_table_record(
         )
 
     check.is_true(
-        item.get("filename") == context.filename, f"Expected filename '{context.filename}', got '{item.get('filename')}'"
+        item.get("filename") == context.filename,
+        f"Expected filename '{context.filename}', got '{item.get('filename')}'",
     )
 
     check.is_true("timestamp" in item, "processed_timestamp not found in item")
@@ -324,15 +489,31 @@ def validate_imms_delta_record_with_batch_record(context, batch_record, item, ev
 
     fields_to_compare = [
         ("Operation", event_type.upper(), item.get("Operation")),
-        ("SupplierSystem", context.supplier_name.lower(), item.get("SupplierSystem").lower()),
-        ("VaccineType", f"{context.vaccine_type.lower()}", item.get("VaccineType").lower()),
+        (
+            "SupplierSystem",
+            context.supplier_name.lower(),
+            item.get("SupplierSystem").lower(),
+        ),
+        (
+            "VaccineType",
+            f"{context.vaccine_type.lower()}",
+            item.get("VaccineType").lower(),
+        ),
         ("Source", "IEDS", item.get("Source")),
         ("CONVERSION_ERRORS", [], event.get("CONVERSION_ERRORS")),
-        ("PERSON_FORENAME", batch_record["PERSON_FORENAME"], event.get("PERSON_FORENAME")),
+        (
+            "PERSON_FORENAME",
+            batch_record["PERSON_FORENAME"],
+            event.get("PERSON_FORENAME"),
+        ),
         ("PERSON_SURNAME", batch_record["PERSON_SURNAME"], event.get("PERSON_SURNAME")),
         ("NHS_NUMBER", batch_record["NHS_NUMBER"], event.get("NHS_NUMBER")),
         ("PERSON_DOB", batch_record["PERSON_DOB"], event.get("PERSON_DOB")),
-        ("PERSON_POSTCODE", batch_record["PERSON_POSTCODE"], event.get("PERSON_POSTCODE")),
+        (
+            "PERSON_POSTCODE",
+            batch_record["PERSON_POSTCODE"],
+            event.get("PERSON_POSTCODE"),
+        ),
         (
             "PERSON_GENDER_CODE",
             get_gender_code(batch_record["PERSON_GENDER_CODE"]).value,
@@ -348,25 +529,57 @@ def validate_imms_delta_record_with_batch_record(context, batch_record, item, ev
             batch_record["VACCINATION_PROCEDURE_TERM"],
             event.get("VACCINATION_PROCEDURE_TERM"),
         ),
-        ("VACCINE_PRODUCT_TERM", batch_record["VACCINE_PRODUCT_TERM"], event.get("VACCINE_PRODUCT_TERM")),
-        ("VACCINE_PRODUCT_CODE", batch_record["VACCINE_PRODUCT_CODE"], event.get("VACCINE_PRODUCT_CODE")),
-        ("VACCINE_MANUFACTURER", batch_record["VACCINE_MANUFACTURER"], event.get("VACCINE_MANUFACTURER")),
+        (
+            "VACCINE_PRODUCT_TERM",
+            batch_record["VACCINE_PRODUCT_TERM"],
+            event.get("VACCINE_PRODUCT_TERM"),
+        ),
+        (
+            "VACCINE_PRODUCT_CODE",
+            batch_record["VACCINE_PRODUCT_CODE"],
+            event.get("VACCINE_PRODUCT_CODE"),
+        ),
+        (
+            "VACCINE_MANUFACTURER",
+            batch_record["VACCINE_MANUFACTURER"],
+            event.get("VACCINE_MANUFACTURER"),
+        ),
         ("BATCH_NUMBER", batch_record["BATCH_NUMBER"], event.get("BATCH_NUMBER")),
         ("RECORDED_DATE", batch_record["RECORDED_DATE"], event.get("RECORDED_DATE")),
         ("EXPIRY_DATE", batch_record["EXPIRY_DATE"], event.get("EXPIRY_DATE")),
         ("DOSE_SEQUENCE", batch_record["DOSE_SEQUENCE"], event.get("DOSE_SEQUENCE")),
         ("DOSE_UNIT_TERM", batch_record["DOSE_UNIT_TERM"], event.get("DOSE_UNIT_TERM")),
         ("DOSE_UNIT_CODE", batch_record["DOSE_UNIT_CODE"], event.get("DOSE_UNIT_CODE")),
-        ("SITE_OF_VACCINATION_TERM", batch_record["SITE_OF_VACCINATION_TERM"], event.get("SITE_OF_VACCINATION_TERM")),
-        ("SITE_OF_VACCINATION_CODE", batch_record["SITE_OF_VACCINATION_CODE"], event.get("SITE_OF_VACCINATION_CODE")),
+        (
+            "SITE_OF_VACCINATION_TERM",
+            batch_record["SITE_OF_VACCINATION_TERM"],
+            event.get("SITE_OF_VACCINATION_TERM"),
+        ),
+        (
+            "SITE_OF_VACCINATION_CODE",
+            batch_record["SITE_OF_VACCINATION_CODE"],
+            event.get("SITE_OF_VACCINATION_CODE"),
+        ),
         (
             "DOSE_AMOUNT",
-            float(batch_record["DOSE_AMOUNT"]) if batch_record["DOSE_AMOUNT"] != "" else "",
+            (float(batch_record["DOSE_AMOUNT"]) if batch_record["DOSE_AMOUNT"] != "" else ""),
             float(event.get("DOSE_AMOUNT")) if event.get("DOSE_AMOUNT") != "" else "",
         ),
-        ("PRIMARY_SOURCE", str(batch_record["PRIMARY_SOURCE"]).upper(), event.get("PRIMARY_SOURCE")),
-        ("ROUTE_OF_VACCINATION_TERM", batch_record["ROUTE_OF_VACCINATION_TERM"], event.get("ROUTE_OF_VACCINATION_TERM")),
-        ("ROUTE_OF_VACCINATION_CODE", batch_record["ROUTE_OF_VACCINATION_CODE"], event.get("ROUTE_OF_VACCINATION_CODE")),
+        (
+            "PRIMARY_SOURCE",
+            str(batch_record["PRIMARY_SOURCE"]).upper(),
+            event.get("PRIMARY_SOURCE"),
+        ),
+        (
+            "ROUTE_OF_VACCINATION_TERM",
+            batch_record["ROUTE_OF_VACCINATION_TERM"],
+            event.get("ROUTE_OF_VACCINATION_TERM"),
+        ),
+        (
+            "ROUTE_OF_VACCINATION_CODE",
+            batch_record["ROUTE_OF_VACCINATION_CODE"],
+            event.get("ROUTE_OF_VACCINATION_CODE"),
+        ),
         ("ACTION_FLAG", action_flag, event.get("ACTION_FLAG")),
         ("DATE_AND_TIME", batch_record["DATE_AND_TIME"], event.get("DATE_AND_TIME")),
         ("UNIQUE_ID", batch_record["UNIQUE_ID"], event.get("UNIQUE_ID")),
@@ -382,10 +595,22 @@ def validate_imms_delta_record_with_batch_record(context, batch_record, item, ev
             event.get("PERFORMING_PROFESSIONAL_FORENAME"),
         ),
         ("LOCATION_CODE", batch_record["LOCATION_CODE"], event.get("LOCATION_CODE")),
-        ("LOCATION_CODE_TYPE_URI", batch_record["LOCATION_CODE_TYPE_URI"], event.get("LOCATION_CODE_TYPE_URI")),
-        ("SITE_CODE_TYPE_URI", batch_record["SITE_CODE_TYPE_URI"], event.get("SITE_CODE_TYPE_URI")),
+        (
+            "LOCATION_CODE_TYPE_URI",
+            batch_record["LOCATION_CODE_TYPE_URI"],
+            event.get("LOCATION_CODE_TYPE_URI"),
+        ),
+        (
+            "SITE_CODE_TYPE_URI",
+            batch_record["SITE_CODE_TYPE_URI"],
+            event.get("SITE_CODE_TYPE_URI"),
+        ),
         ("SITE_CODE", batch_record["SITE_CODE"], event.get("SITE_CODE")),
-        ("INDICATION_CODE", batch_record["INDICATION_CODE"], event.get("INDICATION_CODE")),
+        (
+            "INDICATION_CODE",
+            batch_record["INDICATION_CODE"],
+            event.get("INDICATION_CODE"),
+        ),
     ]
 
     for name, expected, actual in fields_to_compare:
@@ -400,9 +625,15 @@ def validate_to_compare_batch_record_with_event_table_record(context, batch_reco
 
     check.is_true(response_patient is not None, "Patient not found in contained resources")
     if batch_record["PERFORMING_PROFESSIONAL_FORENAME"] or batch_record["PERFORMING_PROFESSIONAL_SURNAME"]:
-        check.is_true(response_practitioner is not None, "Practitioner not found in contained resources")
+        check.is_true(
+            response_practitioner is not None,
+            "Practitioner not found in contained resources",
+        )
     else:
-        check.is_true(response_practitioner is None, "Practitioner should not be present in contained resources")
+        check.is_true(
+            response_practitioner is None,
+            "Practitioner should not be present in contained resources",
+        )
 
     created_occurrence_date = batch_record["DATE_AND_TIME"]
     trimmed_date = created_occurrence_date[:-2]
@@ -417,15 +648,27 @@ def validate_to_compare_batch_record_with_event_table_record(context, batch_reco
     if batch_record["INDICATION_CODE"]:
         fields_to_compare.extend(
             [
-                ("reasonCode.coding.code", batch_record["INDICATION_CODE"], created_event.reasonCode[0].coding[0].code),
-                ("reasonCode.coding.system", "http://snomed.info/sct", created_event.reasonCode[0].coding[0].system),
+                (
+                    "reasonCode.coding.code",
+                    batch_record["INDICATION_CODE"],
+                    created_event.reasonCode[0].coding[0].code,
+                ),
+                (
+                    "reasonCode.coding.system",
+                    "http://snomed.info/sct",
+                    created_event.reasonCode[0].coding[0].system,
+                ),
             ]
         )
 
     if batch_record["NHS_NUMBER"]:
         fields_to_compare.extend(
             [
-                ("Patient.identifier.value", batch_record["NHS_NUMBER"], response_patient.identifier[0].value),
+                (
+                    "Patient.identifier.value",
+                    batch_record["NHS_NUMBER"],
+                    response_patient.identifier[0].value,
+                ),
                 (
                     "Patient.identifier.system",
                     "https://fhir.nhs.uk/Id/nhs-number",
@@ -446,15 +689,27 @@ def validate_to_compare_batch_record_with_event_table_record(context, batch_reco
     if batch_record["SITE_OF_VACCINATION_CODE"]:
         fields_to_compare.extend(
             [
-                ("site.coding.code", batch_record["SITE_OF_VACCINATION_CODE"], created_event.site.coding[0].code),
-                ("site.coding.system", "http://snomed.info/sct", created_event.site.coding[0].system),
+                (
+                    "site.coding.code",
+                    batch_record["SITE_OF_VACCINATION_CODE"],
+                    created_event.site.coding[0].code,
+                ),
+                (
+                    "site.coding.system",
+                    "http://snomed.info/sct",
+                    created_event.site.coding[0].system,
+                ),
             ]
         )
 
     if batch_record["SITE_OF_VACCINATION_TERM"]:
         fields_to_compare.extend(
             [
-                ("site.coding.system", "http://snomed.info/sct", created_event.site.coding[0].system),
+                (
+                    "site.coding.system",
+                    "http://snomed.info/sct",
+                    created_event.site.coding[0].system,
+                ),
                 (
                     "site.coding.extension.display",
                     batch_record["SITE_OF_VACCINATION_TERM"],
@@ -466,7 +721,11 @@ def validate_to_compare_batch_record_with_event_table_record(context, batch_reco
     if batch_record["VACCINE_PRODUCT_TERM"]:
         fields_to_compare.extend(
             [
-                ("vaccineCode.coding.system", "http://snomed.info/sct", created_event.vaccineCode.coding[0].system),
+                (
+                    "vaccineCode.coding.system",
+                    "http://snomed.info/sct",
+                    created_event.vaccineCode.coding[0].system,
+                ),
                 (
                     "vaccineCode.coding.extension.valueString",
                     batch_record["VACCINE_PRODUCT_TERM"],
@@ -483,22 +742,38 @@ def validate_to_compare_batch_record_with_event_table_record(context, batch_reco
                     batch_record["VACCINE_PRODUCT_CODE"],
                     created_event.vaccineCode.coding[0].code,
                 ),
-                ("vaccineCode.coding.system", "http://snomed.info/sct", created_event.vaccineCode.coding[0].system),
+                (
+                    "vaccineCode.coding.system",
+                    "http://snomed.info/sct",
+                    created_event.vaccineCode.coding[0].system,
+                ),
             ]
         )
 
     if batch_record["ROUTE_OF_VACCINATION_CODE"]:
         fields_to_compare.extend(
             [
-                ("route.coding.code", batch_record["ROUTE_OF_VACCINATION_CODE"], created_event.route.coding[0].code),
-                ("route.coding.system", "http://snomed.info/sct", created_event.route.coding[0].system),
+                (
+                    "route.coding.code",
+                    batch_record["ROUTE_OF_VACCINATION_CODE"],
+                    created_event.route.coding[0].code,
+                ),
+                (
+                    "route.coding.system",
+                    "http://snomed.info/sct",
+                    created_event.route.coding[0].system,
+                ),
             ]
         )
 
     if batch_record["ROUTE_OF_VACCINATION_TERM"]:
         fields_to_compare.extend(
             [
-                ("route.coding.system", "http://snomed.info/sct", created_event.route.coding[0].system),
+                (
+                    "route.coding.system",
+                    "http://snomed.info/sct",
+                    created_event.route.coding[0].system,
+                ),
                 (
                     "route.coding.display",
                     batch_record["ROUTE_OF_VACCINATION_TERM"],
@@ -509,7 +784,11 @@ def validate_to_compare_batch_record_with_event_table_record(context, batch_reco
 
     if batch_record["VACCINE_MANUFACTURER"]:
         fields_to_compare.append(
-            ("manufacturer", batch_record["VACCINE_MANUFACTURER"], created_event.manufacturer["display"])
+            (
+                "manufacturer",
+                batch_record["VACCINE_MANUFACTURER"],
+                created_event.manufacturer["display"],
+            )
         )
 
     if batch_record["BATCH_NUMBER"]:
@@ -517,32 +796,56 @@ def validate_to_compare_batch_record_with_event_table_record(context, batch_reco
 
     if batch_record["EXPIRY_DATE"]:
         fields_to_compare.append(
-            ("expirationDate", format_date_yyyymmdd(batch_record["EXPIRY_DATE"]), created_event.expirationDate)
+            (
+                "expirationDate",
+                format_date_yyyymmdd(batch_record["EXPIRY_DATE"]),
+                created_event.expirationDate,
+            )
         )
 
     if batch_record["DOSE_AMOUNT"]:
         fields_to_compare.append(
-            ("doseQuantity.value", float(batch_record["DOSE_AMOUNT"]), created_event.doseQuantity.value)
+            (
+                "doseQuantity.value",
+                float(batch_record["DOSE_AMOUNT"]),
+                created_event.doseQuantity.value,
+            )
         )
 
     if batch_record["DOSE_UNIT_TERM"]:
         fields_to_compare.extend(
             [
-                ("doseQuantity.term", batch_record["DOSE_UNIT_TERM"], created_event.doseQuantity.unit),
+                (
+                    "doseQuantity.term",
+                    batch_record["DOSE_UNIT_TERM"],
+                    created_event.doseQuantity.unit,
+                ),
             ]
         )
 
     if batch_record["DOSE_UNIT_CODE"]:
         fields_to_compare.extend(
             [
-                ("doseQuantity.code", batch_record["DOSE_UNIT_CODE"], created_event.doseQuantity.code),
-                ("doseQuantity.system", "http://snomed.info/sct", created_event.doseQuantity.system),
+                (
+                    "doseQuantity.code",
+                    batch_record["DOSE_UNIT_CODE"],
+                    created_event.doseQuantity.code,
+                ),
+                (
+                    "doseQuantity.system",
+                    "http://snomed.info/sct",
+                    created_event.doseQuantity.system,
+                ),
             ]
         )
 
     if batch_record["DOSE_SEQUENCE"]:
         fields_to_compare.append(
-            ("protocolApplied.doseNumberPositiveInt", 1, created_event.protocolApplied[0].doseNumberPositiveInt)
+            (
+                "protocolApplied.doseNumberPositiveInt",
+                1,
+                created_event.protocolApplied[0].doseNumberPositiveInt,
+            )
         )
     else:
         fields_to_compare.append(
@@ -558,7 +861,11 @@ def validate_to_compare_batch_record_with_event_table_record(context, batch_reco
         fields_to_compare.extend(
             [
                 ("Practitioner.id", "Practitioner1", response_practitioner.id),
-                ("performer.actor.reference", "#Practitioner1", created_event.performer[1].actor.reference),
+                (
+                    "performer.actor.reference",
+                    "#Practitioner1",
+                    created_event.performer[1].actor.reference,
+                ),
             ]
         )
 
@@ -585,27 +892,68 @@ def validate_to_compare_batch_record_with_event_table_record(context, batch_reco
             ("patient.reference", "#Patient1", created_event.patient.reference),
             ("Id", context.ImmsID, created_event.id),
             ("resourceType", "Immunization", created_event.resourceType),
-            ("identifier.system", batch_record["UNIQUE_ID_URI"], created_event.identifier[0].system),
-            ("identifier.value", batch_record["UNIQUE_ID"], created_event.identifier[0].value),
+            (
+                "identifier.system",
+                batch_record["UNIQUE_ID_URI"],
+                created_event.identifier[0].system,
+            ),
+            (
+                "identifier.value",
+                batch_record["UNIQUE_ID"],
+                created_event.identifier[0].value,
+            ),
             ("status", "completed", created_event.status),
-            ("occurrenceDateTime", expected_occurrenceDateTime, actual_occurrenceDateTime),
+            (
+                "occurrenceDateTime",
+                expected_occurrenceDateTime,
+                actual_occurrenceDateTime,
+            ),
             ("Recorded", expected_recorded, actual_recorded),
-            ("primarySource", str(batch_record["PRIMARY_SOURCE"]).lower(), str(created_event.primarySource).lower()),
-            ("location.value", batch_record["LOCATION_CODE"], created_event.location.identifier.value),
-            ("location.system", batch_record["LOCATION_CODE_TYPE_URI"], created_event.location.identifier.system),
+            (
+                "primarySource",
+                str(batch_record["PRIMARY_SOURCE"]).lower(),
+                str(created_event.primarySource).lower(),
+            ),
+            (
+                "location.value",
+                batch_record["LOCATION_CODE"],
+                created_event.location.identifier.value,
+            ),
+            (
+                "location.system",
+                batch_record["LOCATION_CODE_TYPE_URI"],
+                created_event.location.identifier.system,
+            ),
             (
                 "protocolApplied",
                 True,
                 compare_protocol_codings_to_reference(
-                    created_event.protocolApplied, PROTOCOL_DISEASE_MAP.get(context.vaccine_type.upper(), [])
+                    created_event.protocolApplied,
+                    PROTOCOL_DISEASE_MAP.get(context.vaccine_type.upper(), []),
                 ),
             ),
             ("Patient.id", "Patient1", response_patient.id),
-            ("Patient.birthdate", format_date_yyyymmdd(batch_record["PERSON_DOB"]), response_patient.birthDate),
+            (
+                "Patient.birthdate",
+                format_date_yyyymmdd(batch_record["PERSON_DOB"]),
+                response_patient.birthDate,
+            ),
             ("Patient.Gender", expected_gender, response_patient.gender),
-            ("Patient.name.family", batch_record["PERSON_SURNAME"], response_patient.name[0].family),
-            ("Patient.name.given", batch_record["PERSON_FORENAME"], response_patient.name[0].given[0]),
-            ("Patient.address.postalCode", batch_record["PERSON_POSTCODE"], response_patient.address[0].postalCode),
+            (
+                "Patient.name.family",
+                batch_record["PERSON_SURNAME"],
+                response_patient.name[0].family,
+            ),
+            (
+                "Patient.name.given",
+                batch_record["PERSON_FORENAME"],
+                response_patient.name[0].given[0],
+            ),
+            (
+                "Patient.address.postalCode",
+                batch_record["PERSON_POSTCODE"],
+                response_patient.address[0].postalCode,
+            ),
             (
                 "extension.url",
                 "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
@@ -621,7 +969,11 @@ def validate_to_compare_batch_record_with_event_table_record(context, batch_reco
                 "http://snomed.info/sct",
                 created_event.extension[0].valueCodeableConcept.coding[0].system,
             ),
-            ("performer.actor.type", "Organization", created_event.performer[0].actor.type),
+            (
+                "performer.actor.type",
+                "Organization",
+                created_event.performer[0].actor.type,
+            ),
             (
                 "performer.actor.identifier.value",
                 batch_record["SITE_CODE"],
@@ -636,7 +988,10 @@ def validate_to_compare_batch_record_with_event_table_record(context, batch_reco
     )
 
     for name, expected, actual in fields_to_compare:
-        check.is_true(expected == actual, f"Event table Expected {name}: {expected}, Actual {actual}")
+        check.is_true(
+            expected == actual,
+            f"Event table Expected {name}: {expected}, Actual {actual}",
+        )
 
 
 def normalize_coding(coding) -> Dict[str, str]:

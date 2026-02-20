@@ -33,11 +33,26 @@ ERROR_MAP = {
         "code": "INVALID",
         "diagnostics": "-immunization.target must be one or more of the following: ROTAVIRUS, RSV, SHINGLES, 6IN1, MMR, FLU, 3IN1, PERTUSSIS, MENB, HIB, MMRV, BCG, MENACWY, 4IN1, COVID, PNEUMOCOCCAL, HPV, HEPB",
     },
-    "invalid_DateFrom": {"code": "INVALID", "diagnostics": "Search parameter -date.from must be in format: YYYY-MM-DD"},
-    "invalid_DateTo": {"code": "INVALID", "diagnostics": "Search parameter -date.to must be in format: YYYY-MM-DD"},
-    "unauthorized_access": {"code": "FORBIDDEN", "diagnostics": "Unauthorized request for vaccine type"},
-    "not_found": {"code": "NOT-FOUND", "diagnostics": "Immunization resource does not exist. ID: <imms_id>"},
-    "forbidden": {"code": "FORBIDDEN", "diagnostics": "Unauthorized request for vaccine type"},
+    "invalid_DateFrom": {
+        "code": "INVALID",
+        "diagnostics": "Search parameter -date.from must be in format: YYYY-MM-DD",
+    },
+    "invalid_DateTo": {
+        "code": "INVALID",
+        "diagnostics": "Search parameter -date.to must be in format: YYYY-MM-DD",
+    },
+    "unauthorized_access": {
+        "code": "FORBIDDEN",
+        "diagnostics": "Unauthorized request for vaccine type",
+    },
+    "not_found": {
+        "code": "NOT-FOUND",
+        "diagnostics": "Immunization resource does not exist. ID: <imms_id>",
+    },
+    "forbidden": {
+        "code": "FORBIDDEN",
+        "diagnostics": "Unauthorized request for vaccine type",
+    },
     "doseNumberPositiveInt_PositiveInteger": {
         "code": "INVARIANT",
         "diagnostics": "Validation errors: protocolApplied[0].doseNumberPositiveInt must be a positive integer",
@@ -58,7 +73,10 @@ ERROR_MAP = {
         "code": "INVARIANT",
         "diagnostics": "Validation errors: recorded must be a valid datetime in one of the following formats:- 'YYYY-MM-DD' — Full date only- 'YYYY-MM-DDThh:mm:ss%z' — Full date and time with timezone (e.g. +00:00 or +01:00)- 'YYYY-MM-DDThh:mm:ss.f%z' — Full date and time with milliseconds and timezone- Date must not be in the future.",
     },
-    "empty_recorded": {"code": "INVARIANT", "diagnostics": "Validation errors: recorded is a mandatory field"},
+    "empty_recorded": {
+        "code": "INVARIANT",
+        "diagnostics": "Validation errors: recorded is a mandatory field",
+    },
     "future_DateOfBirth": {
         "code": "INVARIANT",
         "diagnostics": "Validation errors: contained[?(@.resourceType=='Patient')].birthDate must not be in the future",
@@ -167,7 +185,10 @@ ERROR_MAP = {
         "code": "INVARIANT",
         "diagnostics": "Validation errors: location.identifier.system must be a non-empty string",
     },
-    "no_unique_identifiers": {"code": "INVARIANT", "diagnostics": "UNIQUE_ID or UNIQUE_ID_URI is missing"},
+    "no_unique_identifiers": {
+        "code": "INVARIANT",
+        "diagnostics": "UNIQUE_ID or UNIQUE_ID_URI is missing",
+    },
     "no_unique_id": {
         "code": "INVARIANT",
         "diagnostics": "Validation errors: identifier[0].value must be a non-empty string",
@@ -180,7 +201,10 @@ ERROR_MAP = {
         "code": "INVARIANT",
         "diagnostics": "Validation errors: primarySource is a mandatory field",
     },
-    "no_primary_source": {"code": "INVARIANT", "diagnostics": "Validation errors: primarySource must be a boolean"},
+    "no_primary_source": {
+        "code": "INVARIANT",
+        "diagnostics": "Validation errors: primarySource must be a boolean",
+    },
     "no_procedure_code": {
         "code": "INVARIANT",
         "diagnostics": "Validation errors: extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')].code is a mandatory field",
@@ -209,7 +233,10 @@ ERROR_MAP = {
         "code": "INVARIANT",
         "diagnostics": "Validation errors: manufacturer.display must be a non-empty string",
     },
-    "empty_lot_number": {"code": "INVARIANT", "diagnostics": "Validation errors: lotNumber must be a non-empty string"},
+    "empty_lot_number": {
+        "code": "INVARIANT",
+        "diagnostics": "Validation errors: lotNumber must be a non-empty string",
+    },
     "empty_vaccine_site_code": {
         "code": "INVARIANT",
         "diagnostics": "Validation errors: site.coding[?(@.system=='http://snomed.info/sct')].code must be a non-empty string",
@@ -245,5 +272,9 @@ ERROR_MAP = {
     "duplicate": {
         "code": "DUPLICATE",
         "diagnostics": "The provided identifier: <identifier> is duplicated",
+    },
+    "no_imms_id": {
+        "code": "INVALID",
+        "diagnostics": "Validation errors: the provided event ID is either missing or not in the expected format.",
     },
 }

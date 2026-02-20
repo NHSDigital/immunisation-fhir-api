@@ -32,6 +32,37 @@ Feature: Create the immunization event for a patient
             | Random  | HEPB         | EMIS         |
             | Random  | BCG          | MEDICUS      |
 
+    @Delete_cleanUp
+    Scenario Outline:  Verify that the POST Create API request with minimal dataset for different vaccine types
+        Given Valid token is generated for the '<Supplier>'
+        And Valid json payload is created with Patient '<Patient>' and vaccine_type '<vaccine_type>' with minimal dataset
+        When Trigger the post create request
+        Then The request will be successful with the status code '201'
+        And The location key and Etag in header will contain the Immunization Id and version
+        And The X-Request-ID and X-Correlation-ID keys in header will populate correctly
+        And The imms event table will be populated with the correct data for 'created' event
+        And The delta table will be populated with the correct data for created event
+
+        Examples:
+            | Patient | vaccine_type | Supplier     |
+            | Random  | COVID        | Postman_Auth |
+            | Random  | RSV          | RAVS         |
+            | Random  | FLU          | MAVIS        |
+            | Random  | MMR          | Postman_Auth |
+            | Random  | MENACWY      | TPP          |
+            | Random  | 3IN1         | TPP          |
+            | Random  | MMRV         | EMIS         |
+            | Random  | PERTUSSIS    | EMIS         |
+            | Random  | SHINGLES     | EMIS         |
+            | Random  | PNEUMOCOCCAL | EMIS         |
+            | Random  | 4IN1         | TPP          |
+            | Random  | 6IN1         | EMIS         |
+            | Random  | HIB          | TPP          |
+            | Random  | MENB         | TPP          |
+            | Random  | ROTAVIRUS    | MEDICUS      |
+            | Random  | HEPB         | EMIS         |
+            | Random  | BCG          | MEDICUS      |
+
     @Delete_cleanUp @vaccine_type_6IN1 @patient_id_Random @supplier_name_EMIS
     Scenario: Verify that VACCINATION_PROCEDURE_TERM, VACCINE_PRODUCT_TERM, SITE_OF_VACCINATION_TERM, ROUTE_OF_VACCINATION_TERM fields are mapped to respective text fields in imms delta table
         Given Valid json payload is created where vaccination terms has text field populated
