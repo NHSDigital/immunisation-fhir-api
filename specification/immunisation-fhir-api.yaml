@@ -171,11 +171,10 @@ info:
      
     ## Service level
 
-    This API will be a platinum service, meaning it is operational and supported
-    24 x 7 x 365.
+    This API is a Silver Plus service.
      
     For more details, see [service
-    levels](https://digital.nhs.uk/developer/guides-and-documentation/reference-guide#service-levels).
+    levels](https://digital.nhs.uk/services/reference-guide#service-levels).
      
     ## Technology
      
