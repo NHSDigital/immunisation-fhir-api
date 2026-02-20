@@ -100,14 +100,14 @@ locals {
   ]
 
   # SQS
-  sqs_queues = flatten([
+  sqs_queues = distinct(flatten([
     [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-ack-metadata-queue.fifo"],
     [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-batch-file-created-queue.fifo"],
     [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-delta-dlq"],
     [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-metadata-queue.fifo"],
-    [for sub_env in local.sub_environments_map[var.environment] : (var.environment == "dev" ? "imms-${sub_env}-id-sync-dlq" : "imms-${var.environment}-id-sync-dlq")],
-    [for sub_env in local.sub_environments_map[var.environment] : (var.environment == "dev" ? "imms-${sub_env}-id-sync-queue" : "imms-${var.environment}-id-sync-queue")],
-  ])
+    var.environment == "dev" ? [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-id-sync-dlq"] : ["imms-${var.environment}-id-sync-dlq"],
+    var.environment == "dev" ? [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-id-sync-queue"] : ["imms-${var.environment}-id-sync-queue"],
+  ]))
   sqs_queue_metrics = [for queue in local.sqs_queues : ["AWS/SQS", "NumberOfMessagesSent", "QueueName", queue, { region : var.aws_region }]]
 
   # Alarms
