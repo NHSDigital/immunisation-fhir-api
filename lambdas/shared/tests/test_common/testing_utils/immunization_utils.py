@@ -18,13 +18,17 @@ def create_covid_immunization_dict(
     nhs_number: str = VALID_NHS_NUMBER,
     occurrence_date_time: str = "2021-02-07T13:28:17+00:00",
     status: str = "completed",
+    omit_nhs_number: bool = False,
 ):
     immunization_json = load_json_data("completed_covid_immunization_event.json")
     immunization_json["id"] = imms_id
 
-    [x for x in immunization_json["contained"] if x.get("resourceType") == "Patient"][0]["identifier"][0]["value"] = (
-        nhs_number
-    )
+    for contained_resource in immunization_json.get("contained", []):
+        if contained_resource.get("resourceType") == "Patient":
+            if omit_nhs_number:
+                del contained_resource["identifier"][0]["value"]
+            else:
+                contained_resource["identifier"][0]["value"] = nhs_number
 
     immunization_json["occurrenceDateTime"] = occurrence_date_time
     immunization_json["status"] = status

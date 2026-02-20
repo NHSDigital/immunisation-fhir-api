@@ -86,6 +86,38 @@ class TestFilter(unittest.TestCase):
             expected_output,
         )
 
+    def test_create_reference_to_patient_resource_when_identifier_missing(self):
+        """Test that create_reference_to_patient_resource creates an appropriate reference without identifier info
+        where the saved patient record does not contain this information"""
+        test_data = deepcopy(self.bundle_patient_resource)
+        del test_data["identifier"]
+
+        patient_uuid = str(uuid4())
+        expected_output = {"reference": patient_uuid, "type": "Patient"}
+
+        self.assertEqual(
+            create_reference_to_patient_resource(patient_uuid, test_data),
+            expected_output,
+        )
+
+    def test_create_reference_to_patient_resource_when_nhs_number_missing(self):
+        """Test that create_reference_to_patient_resource creates an appropriate reference with empty identifier info
+        where the saved patient record does not contain this information"""
+        test_data = deepcopy(self.bundle_patient_resource)
+        del test_data["identifier"][0]["value"]
+
+        patient_uuid = str(uuid4())
+        expected_output = {
+            "reference": patient_uuid,
+            "type": "Patient",
+            "identifier": {"system": "https://fhir.nhs.uk/Id/nhs-number"},
+        }
+
+        self.assertEqual(
+            create_reference_to_patient_resource(patient_uuid, test_data),
+            expected_output,
+        )
+
     def test_add_use_to_identifier(self):
         """Test that a use of "offical" is added to identifier[0] is no use already given"""
         input_data = deepcopy(self.covid_immunization_event)

@@ -1,6 +1,6 @@
 """Functions for filtering a FHIR Immunization Resource"""
 
-from common.models.constants import Urls
+from common.models.constants import Constants, Urls
 from common.models.utils.generic_utils import (
     get_contained_patient,
     get_contained_practitioner,
@@ -28,23 +28,34 @@ def create_reference_to_patient_resource(patient_full_url: str, patient: dict) -
     """
     Returns a reference to the given patient which includes the patient nhs number identifier (system and value fields
     only) and a reference to patient full url. "Type" field is set to "Patient".
+
+    Due to validation business rules, it is possible (VED-1073) for a patient to be created without a value for NHS
+    Number or indeed an entry for their identifier.
     """
-    patient_nhs_number_identifier = [x for x in patient["identifier"] if x.get("system") == Urls.NHS_NUMBER][0]
+    patient_nhs_number_identifier: dict | None = None
+
+    for identifier in patient.get("identifier", []):
+        if identifier.get("system", "") == Urls.NHS_NUMBER:
+            patient_nhs_number_identifier = identifier
+            break
+
+    if patient_nhs_number_identifier is None:
+        return {
+            "reference": patient_full_url,
+            "type": Constants.PATIENT_RESOURCE_TYPE,
+        }
 
     return {
         "reference": patient_full_url,
-        "type": "Patient",
-        "identifier": {
-            "system": patient_nhs_number_identifier["system"],
-            "value": patient_nhs_number_identifier["value"],
-        },
+        "type": Constants.PATIENT_RESOURCE_TYPE,
+        "identifier": patient_nhs_number_identifier,
     }
 
 
 def replace_address_postal_codes(imms: dict) -> dict:
     """Replace any postal codes found in contained patient address with 'ZZ99 3CZ'"""
     for resource in imms.get("contained", [{}]):
-        if resource.get("resourceType") == "Patient":
+        if resource.get("resourceType") == Constants.PATIENT_RESOURCE_TYPE:
             for address in resource.get("address", [{}]):
                 if address.get("postalCode") is not None:
                     address["postalCode"] = "ZZ99 3CZ"
