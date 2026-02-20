@@ -30,6 +30,7 @@ def copy_file_to_external_bucket(
         Key=destination_key,
         ExpectedBucketOwner=expected_bucket_owner,
         ExpectedSourceBucketOwner=expected_source_bucket_owner,
+        ACL="bucket-owner-full-control",
     )
 
 

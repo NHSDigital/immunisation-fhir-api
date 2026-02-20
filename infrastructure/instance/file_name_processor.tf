@@ -166,7 +166,8 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
       {
         "Effect" : "Allow",
         "Action" : [
-          "s3:PutObject"
+          "s3:PutObject",
+          "s3:PutObjectAcl"
         ],
         "Resource" : ["arn:aws:s3:::${var.dspp_submission_s3_bucket_name}/*"]
       }
