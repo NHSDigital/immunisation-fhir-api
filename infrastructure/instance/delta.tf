@@ -16,7 +16,7 @@ resource "aws_ecr_repository" "delta_lambda_repository" {
 
 module "delta_docker_image" {
   source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version          = "8.5.0"
+  version          = "8.7.0"
   docker_file_path = "./delta_backend/Dockerfile"
 
   create_ecr_repo = false
