@@ -74,11 +74,6 @@ variable "system_alarm_sns_topic_arn" {
 
 variable "resource_scope" {
   type        = string
-  description = "A deployment scoping strategy to use either the environment scope or sub-environment scope if it has one"
-}
-
-variable "resource_scope" {
-  type        = string
   description = <<EOT
   The effective deployment scope used for resource naming and isolation. 
   This resolves to either the base environment (e.g., dev, test, prod) or a 
