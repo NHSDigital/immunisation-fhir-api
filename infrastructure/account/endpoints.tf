@@ -98,7 +98,8 @@ resource "aws_vpc_endpoint" "s3_endpoint" {
           "s3:PutObject",
           "s3:ListBucket",
           "s3:CopyObject",
-          "s3:DeleteObject"
+          "s3:DeleteObject",
+          "s3:PutObjectAcl"
         ]
         Resource = "*"
       }
