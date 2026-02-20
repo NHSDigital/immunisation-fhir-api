@@ -1,11 +1,37 @@
 name: PR Deploy and Test
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  workflow_run:
+    workflows: ["Quality Checks"]
+    types:
+      - completed
 
 jobs:
-  deploy-pr-backend:
+  on-start:
+    name: Workflow startup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
+      - name: Running Notification
+        env:
+          WORKFLOW_CONTEXT: ${{ github.event.workflow_run.conclusion }}
+        run: |
+          echo "Running pr-deploy-and-test..."
+          echo $"WORKFLOW_CONTEXT"
+          echo "---"
+
+  on-quality-checks-success:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - run: echo "The Quality Checks workflow passed"
+
+  on-quality-checks-failure:
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    steps:
+      - run: echo "The Quality Checks workflow failed"
+
+  deploy-internal-dev-backend:
+    needs: [on-quality-checks-success]
     uses: ./.github/workflows/deploy-backend.yml
     with:
       apigee_environment: internal-dev
