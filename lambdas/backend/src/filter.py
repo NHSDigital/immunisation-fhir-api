@@ -1,5 +1,7 @@
 """Functions for filtering a FHIR Immunization Resource"""
 
+import copy
+
 from common.models.constants import Constants, Urls
 from common.models.utils.generic_utils import (
     get_contained_patient,
@@ -36,7 +38,7 @@ def create_reference_to_patient_resource(patient_full_url: str, patient: dict) -
 
     for identifier in patient.get("identifier", []):
         if identifier.get("system", "") == Urls.NHS_NUMBER:
-            patient_nhs_number_identifier = identifier
+            patient_nhs_number_identifier = copy.deepcopy(identifier)
             break
 
     if patient_nhs_number_identifier is None:

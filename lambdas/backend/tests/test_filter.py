@@ -101,8 +101,8 @@ class TestFilter(unittest.TestCase):
         )
 
     def test_create_reference_to_patient_resource_when_nhs_number_missing(self):
-        """Test that create_reference_to_patient_resource creates an appropriate reference with empty identifier info
-        where the saved patient record does not contain this information"""
+        """Test that create_reference_to_patient_resource creates an appropriate reference with empty
+        identifier[0].value info where the saved patient record does not contain this information"""
         test_data = deepcopy(self.bundle_patient_resource)
         del test_data["identifier"][0]["value"]
 

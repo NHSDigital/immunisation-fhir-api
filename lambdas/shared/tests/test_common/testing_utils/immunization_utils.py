@@ -2,6 +2,7 @@
 
 from fhir.resources.R4B.immunization import Immunization
 
+from common.models.constants import Constants
 from test_common.testing_utils.generic_utils import load_json_data
 from test_common.testing_utils.values_for_tests import ValidValues
 
@@ -24,7 +25,7 @@ def create_covid_immunization_dict(
     immunization_json["id"] = imms_id
 
     for contained_resource in immunization_json.get("contained", []):
-        if contained_resource.get("resourceType") == "Patient":
+        if contained_resource.get("resourceType") == Constants.PATIENT_RESOURCE_TYPE:
             if omit_nhs_number:
                 del contained_resource["identifier"][0]["value"]
             else:
