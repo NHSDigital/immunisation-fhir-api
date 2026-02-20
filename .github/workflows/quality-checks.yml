@@ -36,6 +36,7 @@ jobs:
   lint-python:
     name: Lint Python projects
     runs-on: ubuntu-latest
+    needs: [lint-specification]
 
     steps:
       - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
@@ -63,6 +64,7 @@ jobs:
   lint-terraform:
     name: Lint Terraform projects
     runs-on: ubuntu-latest
+    needs: [lint-python]
 
     steps:
       - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
@@ -77,6 +79,7 @@ jobs:
   testcoverage_and_sonarcloud:
     name: Test Coverage and SonarCloud
     runs-on: ubuntu-latest
+    needs: [lint-terraform]
 
     steps:
       - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
