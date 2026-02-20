@@ -288,6 +288,38 @@ class TestGetImmunizationByIdentifier(TestFhirServiceBase):
             Immunization.construct(**{"resourceType": "Immunization", "id": "1234-some-id", "meta": {"versionId": 1}}),
         )
 
+    def test_get_immunization_by_identifier_returns_patient_created_without_nhs_number(self):
+        """VED-1073 - the contained patient within an Immunization resource MAY be created without an NHS Number as per
+        the business rules. The identifier retrieval should still succeed when this is the case."""
+        mock_resource_no_nhs_number = create_covid_immunization_dict("1234-some-id", omit_nhs_number=True)
+
+        self.mock_redis.hget.return_value = "COVID"
+        self.mock_redis_getter.return_value = self.mock_redis
+        self.authoriser.authorise.return_value = True
+        self.imms_repo.get_immunization_by_identifier.return_value = mock_resource_no_nhs_number, self.mock_resource_meta
+
+        # When
+        result = self.fhir_service.get_immunization_by_identifier(self.test_identifier, self.MOCK_SUPPLIER_NAME, None)
+
+        # Then
+        self.imms_repo.get_immunization_by_identifier.assert_called_once_with(self.test_identifier)
+        self.authoriser.authorise.assert_called_once_with(self.MOCK_SUPPLIER_NAME, ApiOperationCode.SEARCH, {"COVID"})
+
+        self.assertEqual(result.type, "searchset")
+        self.assertEqual(result.total, 1)
+        self.assertEqual(
+            result.link[0],
+            BundleLink.construct(
+                relation="self",
+                url="https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization?identifier=some-"
+                "system|some-value",
+            ),
+        )
+
+        # Search function adds meta to the resource
+        mock_resource_no_nhs_number["meta"] = {"versionId": "1"}
+        self.assertEqual(result.entry[0].resource, Immunization.parse_obj(mock_resource_no_nhs_number))
+
 
 class TestCreateImmunization(TestFhirServiceBase):
     """Tests for FhirService.create_immunization"""

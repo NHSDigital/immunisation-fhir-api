@@ -45,8 +45,9 @@ class Constants:
             "address",
         },
     }
-
-    ALLOWED_CONTAINED_RESOURCES = {"Practitioner", "Patient"}
+    PATIENT_RESOURCE_TYPE = "Patient"
+    PRACTITIONER_RESOURCE_TYPE = "Practitioner"
+    ALLOWED_CONTAINED_RESOURCES = {PRACTITIONER_RESOURCE_TYPE, PATIENT_RESOURCE_TYPE}
 
     # As per Personal Demographics Service (PDS) FHIR API, the maximum length of a family name is 35 characters:
     # https://digital.nhs.uk/developer/api-catalogue/personal-demographics-service-fhir#post-/Patient
