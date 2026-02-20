@@ -1,16 +1,22 @@
+import copy
 import json
 import unittest
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from constants import IMMUNISATION_TYPE, SPEC_VERSION
-from create_notification import calculate_age_at_vaccination, create_mns_notification
+from create_notification import (
+    calculate_age_at_vaccination,
+    create_mns_notification,
+    get_practitioner_details_from_pds,
+)
 
 
 class TestCalculateAgeAtVaccination(unittest.TestCase):
     """Tests for age calculation at vaccination time."""
 
     def test_age_calculation_yyyymmdd_format(self):
-        """Test age calculation with YYYYMMDD format (actual format from payload)."""
+        """Test age calculation with YYYYMMDD format."""
         birth_date = "20040609"
         vaccination_date = "20260212"
 
@@ -54,48 +60,131 @@ class TestCalculateAgeAtVaccination(unittest.TestCase):
 
         self.assertEqual(age, 0)
 
+    def test_age_calculation_leap_year_birthday(self):
+        """Test age calculation with leap year birthday."""
+        birth_date = "20000229"
+        vaccination_date = "20240228"
+
+        age = calculate_age_at_vaccination(birth_date, vaccination_date)
+
+        self.assertEqual(age, 23)
+
+    def test_age_calculation_same_day_different_year(self):
+        """Test age calculation for same day in different year."""
+        birth_date = "20000101"
+        vaccination_date = "20250101"
+
+        age = calculate_age_at_vaccination(birth_date, vaccination_date)
+
+        self.assertEqual(age, 25)
+
+
+class TestGetPractitionerDetailsFromPds(unittest.TestCase):
+    """Tests for get_practitioner_details_from_pds function."""
+
+    @patch("create_notification.pds_get_patient_details")
+    @patch("create_notification.logger")
+    def test_get_practitioner_success(self, mock_logger, mock_pds_get):
+        """Test successful retrieval of GP ODS code."""
+        mock_pds_get.return_value = {"generalPractitioner": {"value": "Y12345"}}
+
+        result = get_practitioner_details_from_pds("9481152782")
+
+        self.assertEqual(result, "Y12345")
+        mock_pds_get.assert_called_once_with("9481152782")
+        mock_logger.warning.assert_not_called()
+
+    @patch("create_notification.pds_get_patient_details")
+    @patch("create_notification.logger")
+    def test_get_practitioner_no_gp_details(self, mock_logger, mock_pds_get):
+        """Test when generalPractitioner is missing."""
+        mock_pds_get.return_value = {"name": "John Doe"}
+
+        result = get_practitioner_details_from_pds("9481152782")
+
+        self.assertIsNone(result)
+        mock_logger.warning.assert_called_once_with("No patient details found for NHS number")
+
+    @patch("create_notification.pds_get_patient_details")
+    @patch("create_notification.logger")
+    def test_get_practitioner_gp_is_none(self, mock_logger, mock_pds_get):
+        """Test when generalPractitioner is None."""
+        mock_pds_get.return_value = {"generalPractitioner": None}
+
+        result = get_practitioner_details_from_pds("9481152782")
+
+        self.assertIsNone(result)
+        mock_logger.warning.assert_called_once()
+
+    @patch("create_notification.pds_get_patient_details")
+    @patch("create_notification.logger")
+    def test_get_practitioner_no_value_field(self, mock_logger, mock_pds_get):
+        """Test when value field is missing from generalPractitioner."""
+        mock_pds_get.return_value = {"generalPractitioner": {"system": "https://fhir.nhs.uk"}}
+
+        result = get_practitioner_details_from_pds("9481152782")
+
+        self.assertIsNone(result)
+        mock_logger.warning.assert_called_with("GP ODS code not found in practitioner details")
+
+    @patch("create_notification.pds_get_patient_details")
+    @patch("create_notification.logger")
+    def test_get_practitioner_empty_value(self, mock_logger, mock_pds_get):
+        """Test when value is empty string."""
+        mock_pds_get.return_value = {"generalPractitioner": {"value": ""}}
+
+        result = get_practitioner_details_from_pds("9481152782")
+
+        self.assertIsNone(result)
+        mock_logger.warning.assert_called_with("GP ODS code not found in practitioner details")
+
+    @patch("create_notification.pds_get_patient_details")
+    @patch("create_notification.logger")
+    def test_get_practitioner_pds_exception(self, mock_logger, mock_pds_get):
+        """Test when PDS API raises exception."""
+        mock_pds_get.side_effect = Exception("PDS API error")
+
+        with self.assertRaises(Exception) as context:
+            get_practitioner_details_from_pds("9481152782")
+
+        self.assertEqual(str(context.exception), "PDS API error")
+        mock_logger.exception.assert_called_once()
+
+    @patch("create_notification.pds_get_patient_details")
+    @patch("create_notification.logger")
+    def test_get_practitioner_patient_details_none(self, mock_logger, mock_pds_get):
+        """Test when pds_get_patient_details returns None."""
+        mock_pds_get.return_value = None
+
+        with self.assertRaises(AttributeError):
+            get_practitioner_details_from_pds("9481152782")
+
 
 class TestCreateMnsNotification(unittest.TestCase):
     """Tests for MNS notification creation."""
 
+    @classmethod
+    def setUpClass(cls):
+        """Load the sample SQS event once for all tests."""
+        sample_event_path = Path(__file__).parent.parent / "tests" / "sqs_event.json"
+        with open(sample_event_path, "r") as f:
+            raw_event = json.load(f)
+
+        # Convert body from dict to JSON string (as it would be in real SQS)
+        if isinstance(raw_event.get("body"), dict):
+            raw_event["body"] = json.dumps(raw_event["body"])
+            cls.sample_sqs_event = raw_event
+
     def setUp(self):
         """Set up test fixtures."""
-        self.sample_sqs_event = {
-            "messageId": "98ed30eb-829f-41df-8a73-57fef70cf161",
-            "body": json.dumps(
-                {
-                    "eventID": "b1ba2a48eae68bf43a8cb49b400788c6",
-                    "eventName": "INSERT",
-                    "dynamodb": {
-                        "NewImage": {
-                            "ImmsID": {"S": "d058014c-b0fd-4471-8db9-3316175eb825"},
-                            "VaccineType": {"S": "hib"},
-                            "SupplierSystem": {"S": "TPP"},
-                            "DateTimeStamp": {"S": "2026-02-12T17:45:37+00:00"},
-                            "Imms": {
-                                "M": {
-                                    "NHS_NUMBER": {"S": "9481152782"},
-                                    "PERSON_DOB": {"S": "20040609"},
-                                    "DATE_AND_TIME": {"S": "20260212T174437"},
-                                    "VACCINE_TYPE": {"S": "hib"},
-                                    "SITE_CODE": {"S": "B0C4P"},
-                                }
-                            },
-                            "Operation": {"S": "CREATE"},
-                        }
-                    },
-                }
-            ),
-        }
-
         self.expected_gp_ods_code = "Y12345"
         self.expected_immunisation_url = "https://int.api.service.nhs.uk/immunisation-fhir-api"
 
     @patch("create_notification.get_practitioner_details_from_pds")
     @patch("create_notification.get_service_url")
     @patch("create_notification.uuid.uuid4")
-    def test_create_mns_notification_success(self, mock_uuid, mock_get_service_url, mock_get_gp):
-        """Test successful MNS notification creation."""
+    def test_create_mns_notification_success_with_real_payload(self, mock_uuid, mock_get_service_url, mock_get_gp):
+        """Test successful MNS notification creation using real SQS event."""
         mock_uuid.return_value = MagicMock(hex="236a1d4a-5d69-4fa9-9c7f-e72bf505aa5b")
         mock_get_service_url.return_value = self.expected_immunisation_url
         mock_get_gp.return_value = self.expected_gp_ods_code
@@ -113,8 +202,8 @@ class TestCreateMnsNotification(unittest.TestCase):
 
     @patch("create_notification.get_practitioner_details_from_pds")
     @patch("create_notification.get_service_url")
-    def test_create_mns_notification_dataref_format(self, mock_get_service_url, mock_get_gp):
-        """Test dataref URL format is correct."""
+    def test_create_mns_notification_dataref_format_real_payload(self, mock_get_service_url, mock_get_gp):
+        """Test dataref URL format is correct with real payload."""
         mock_get_service_url.return_value = self.expected_immunisation_url
         mock_get_gp.return_value = self.expected_gp_ods_code
 
@@ -125,8 +214,8 @@ class TestCreateMnsNotification(unittest.TestCase):
 
     @patch("create_notification.get_practitioner_details_from_pds")
     @patch("create_notification.get_service_url")
-    def test_create_mns_notification_filtering_fields(self, mock_get_service_url, mock_get_gp):
-        """Test all filtering fields are populated correctly."""
+    def test_create_mns_notification_filtering_fields_real_payload(self, mock_get_service_url, mock_get_gp):
+        """Test all filtering fields are populated correctly with real payload."""
         mock_get_service_url.return_value = self.expected_immunisation_url
         mock_get_gp.return_value = self.expected_gp_ods_code
 
@@ -142,8 +231,8 @@ class TestCreateMnsNotification(unittest.TestCase):
 
     @patch("create_notification.get_practitioner_details_from_pds")
     @patch("create_notification.get_service_url")
-    def test_create_mns_notification_age_calculation(self, mock_get_service_url, mock_get_gp):
-        """Test patient age is calculated correctly."""
+    def test_create_mns_notification_age_calculation_real_payload(self, mock_get_service_url, mock_get_gp):
+        """Test patient age is calculated correctly with real payload."""
         mock_get_service_url.return_value = self.expected_immunisation_url
         mock_get_gp.return_value = self.expected_gp_ods_code
 
@@ -153,8 +242,8 @@ class TestCreateMnsNotification(unittest.TestCase):
 
     @patch("create_notification.get_practitioner_details_from_pds")
     @patch("create_notification.get_service_url")
-    def test_create_mns_notification_calls_get_practitioner(self, mock_get_service_url, mock_get_gp):
-        """Test get_practitioner_details_from_pds is called with correct NHS number."""
+    def test_create_mns_notification_calls_get_practitioner_real_payload(self, mock_get_service_url, mock_get_gp):
+        """Test get_practitioner_details_from_pds is called with correct NHS number from real payload."""
         mock_get_service_url.return_value = self.expected_immunisation_url
         mock_get_gp.return_value = self.expected_gp_ods_code
 
@@ -218,6 +307,39 @@ class TestCreateMnsNotification(unittest.TestCase):
         required_fields = ["id", "source", "specversion", "type", "time", "dataref", "subject"]
         for field in required_fields:
             self.assertIn(field, result, f"Required field '{field}' missing")
+
+    @patch("create_notification.get_practitioner_details_from_pds")
+    @patch("create_notification.get_service_url")
+    def test_create_mns_notification_missing_imms_data_field(self, mock_get_service_url, mock_get_gp):
+        """Test handling when a required field is missing from imms_data."""
+        mock_get_service_url.return_value = self.expected_immunisation_url
+        mock_get_gp.return_value = self.expected_gp_ods_code
+
+        incomplete_event = {
+            "messageId": "test-id",
+            "body": json.dumps({"dynamodb": {"NewImage": {"ImmsID": {"S": "test-id"}}}}),
+        }
+
+        with self.assertRaises((KeyError, TypeError)):
+            create_mns_notification(incomplete_event)
+
+
+@patch("create_notification.get_practitioner_details_from_pds")
+@patch("create_notification.get_service_url")
+def test_create_mns_notification_with_update_action(self, mock_get_service_url, mock_get_gp):
+    """Test notification creation with UPDATE action using real payload structure."""
+    mock_get_service_url.return_value = self.expected_immunisation_url
+    mock_get_gp.return_value = self.expected_gp_ods_code
+
+    update_event = copy.deepcopy(self.sample_sqs_event)
+
+    update_event["body"]["dynamodb"]["NewImage"]["Operation"]["S"] = "UPDATE"
+
+    result = create_mns_notification(update_event)
+
+    self.assertEqual(result["filtering"]["action"], "UPDATE")
+    mock_get_service_url.assert_called()
+    mock_get_gp.assert_called()
 
 
 if __name__ == "__main__":
