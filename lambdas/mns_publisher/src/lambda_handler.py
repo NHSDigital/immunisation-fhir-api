@@ -1,11 +1,14 @@
 import json
+import os
 from typing import Tuple
 
 from aws_lambda_typing import context, events
 
-from common.api_clients.mns_service import MnsService
+from common.api_clients.mns_setup import get_mns_service
 from common.clients import logger
 from create_notification import create_mns_notification
+
+apigee_env = os.getenv("APIGEE_ENVIRONMENT", "int")
 
 
 def lambda_handler(event: events.SQSEvent, _: context.Context) -> dict[str, list]:
@@ -21,7 +24,8 @@ def lambda_handler(event: events.SQSEvent, _: context.Context) -> dict[str, list
             notification_id = mns_notification_payload.get("id", None)  # generated UUID for MNS
             logger.info("Processing message", trace_id=notification_id)
 
-            mns_pub_response = MnsService.publish_notification(mns_notification_payload)
+            mns_service = get_mns_service(mns=apigee_env)
+            mns_pub_response = mns_service.publish_notification(mns_notification_payload)
 
             if mns_pub_response["status_code"] != 201:
                 raise RuntimeError("MNS publish failed")

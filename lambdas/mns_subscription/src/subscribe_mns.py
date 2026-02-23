@@ -1,7 +1,7 @@
 import logging
 import os
 
-from mns_setup import get_mns_service
+from common.api_clients.mns_setup import get_mns_service
 
 apigee_env = os.getenv("APIGEE_ENVIRONMENT", "int")
 

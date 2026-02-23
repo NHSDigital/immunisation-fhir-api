@@ -12,7 +12,7 @@ from common.api_clients.errors import (
     UnhandledResponseError,
     raise_error_response,
 )
-from common.api_clients.mns_service import MNS_BASE_URL, MnsService
+from common.api_clients.mns_service import MnsService
 
 SQS_ARN = "arn:aws:sqs:eu-west-2:123456789012:my-queue"
 
@@ -138,18 +138,34 @@ class TestMnsService(unittest.TestCase):
         self.assertEqual(result, {"subscriptionId": "abc123"})
         self.assertEqual(mock_request.call_count, 2)
 
-    @patch("common.api_clients.mns_service.requests.request")
-    def test_delete_subscription_success(self, mock_delete):
+    @patch("common.api_clients.mns_service.request_with_retry_backoff")
+    def test_delete_subscription_success(self, mock_retry_request):
+        """Test successful subscription deletion."""
         mock_response = MagicMock()
         mock_response.status_code = 204
-        mock_delete.return_value = mock_response
+        mock_retry_request.return_value = mock_response
 
         service = MnsService(self.authenticator)
         result = service.delete_subscription("sub-id-123")
-        self.assertTrue(result)
-        mock_delete.assert_called_with(
-            method="DELETE", url=f"{MNS_BASE_URL}/subscriptions/sub-id-123", headers=service.request_headers, timeout=10
-        )
+
+        self.assertEqual(result, "Subscription Successfully Deleted...")
+
+        # Verify the request was made correctly
+        mock_retry_request.assert_called_once()
+
+        # Get call arguments
+        args, kwargs = mock_retry_request.call_args
+
+        # Verify method and URL
+        self.assertEqual(args[0], "DELETE")
+        self.assertIn("/subscriptions/sub-id-123", args[1])
+
+        # Verify headers exist
+        self.assertIn("headers", kwargs)
+        self.assertIn("Authorization", kwargs["headers"])
+
+        # Verify timeout
+        self.assertEqual(kwargs["timeout"], 10)
 
     @patch("common.api_clients.mns_service.requests.request")
     def test_delete_subscription_401(self, mock_delete):
@@ -296,7 +312,13 @@ class TestMnsService(unittest.TestCase):
         result = service.publish_notification(notification_payload)
 
         self.assertEqual(result["status"], "published")
-        self.assertEqual(service.request_headers["Content-Type"], "application/cloudevents+json")
+
+        # Verify the request was made correctly
+        mock_request.assert_called_once()
+        call_args = mock_request.call_args
+
+        headers = call_args[1]["headers"]
+        self.assertEqual(headers["Content-Type"], "application/cloudevents+json")
         mock_request.assert_called_once()
 
     @patch("common.api_clients.mns_service.requests.request")

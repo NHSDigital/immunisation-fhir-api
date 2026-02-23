@@ -23,11 +23,6 @@ class MnsService:
     def __init__(self, authenticator: AppRestrictedAuth):
         self.authenticator = authenticator
         self.access_token = self.authenticator.get_access_token()
-        self.request_headers = {
-            "Content-Type": "application/fhir+json",
-            "Authorization": f"Bearer {self.access_token}",
-            "X-Correlation-ID": str(uuid.uuid4()),
-        }
         self.subscription_payload = {
             "resourceType": "Subscription",
             "status": "requested",
@@ -42,11 +37,19 @@ class MnsService:
 
         logging.info(f"Using SQS ARN for subscription: {SQS_ARN}")
 
+    def _build_headers(self, content_type: str = "application/fhir+json") -> dict:
+        """Build request headers with authentication and correlation ID."""
+        return {
+            "Content-Type": content_type,
+            "Authorization": f"Bearer {self.access_token}",
+            "X-Correlation-ID": str(uuid.uuid4()),
+        }
+
     def subscribe_notification(self) -> dict | None:
         response = requests.request(
             "POST",
             f"{MNS_BASE_URL}/subscriptions",
-            headers=self.request_headers,
+            headers=self._build_headers(),
             timeout=15,
             data=json.dumps(self.subscription_payload),
         )
@@ -56,11 +59,11 @@ class MnsService:
             raise_error_response(response)
 
     def get_subscription(self) -> dict | None:
-        response = request_with_retry_backoff(
-            "GET", f"{MNS_BASE_URL}/subscriptions", headers=self.request_headers, timeout=10
-        )
+        """Retrieve existing subscription for this SQS ARN."""
+        headers = self._build_headers()
+        response = request_with_retry_backoff("GET", f"{MNS_BASE_URL}/subscriptions", headers, timeout=10)
         logging.info(f"GET {MNS_BASE_URL}/subscriptions")
-        logging.debug(f"Headers: {self.request_headers}")
+        logging.debug(f"Headers: {headers}")
 
         if response.status_code == 200:
             bundle = response.json()
@@ -96,7 +99,7 @@ class MnsService:
     def delete_subscription(self, subscription_id: str) -> str:
         """Delete the subscription by ID."""
         url = f"{MNS_BASE_URL}/subscriptions/{subscription_id}"
-        response = request_with_retry_backoff("DELETE", url, headers=self.request_headers, timeout=10)
+        response = request_with_retry_backoff("DELETE", url, headers=self._build_headers(), timeout=10)
         if response.status_code == 204:
             logging.info(f"Deleted subscription {subscription_id}")
             return "Subscription Successfully Deleted..."
@@ -119,11 +122,10 @@ class MnsService:
             return f"Error deleting subscription: {str(e)}"
 
     def publish_notification(self, notification_payload) -> dict | None:
-        self.request_headers["Content-Type"] = "application/cloudevents+json"
         response = requests.request(
             "POST",
             f"{MNS_BASE_URL}/events",
-            headers=self.request_headers,
+            headers=self._build_headers(content_type="application/cloudevents+json"),
             timeout=15,
             data=json.dumps(notification_payload),
         )
