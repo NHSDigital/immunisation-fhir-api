@@ -207,18 +207,3 @@ class TestGetPdsPatientDetails(unittest.TestCase):
         # Assert - function should extract the value from first identifier
         self.assertEqual(result, mock_pds_response)
         self.mock_pds_service_instance.get_patient_details.assert_called_once_with(test_nhs_number)
-
-    # def test_get_nhs_number_from_pds_resource(self):
-    #     """Test that the NHS Number is retrieved from a full PDS patient resource."""
-    #     mock_pds_resource = {
-    #         "identifier": [
-    #             {
-    #                 "system": "https://fhir.nhs.uk/Id/nhs-number",
-    #                 "value": "123456789012",
-    #             }
-    #         ]
-    #     }
-
-    #     result = get_nhs_number_from_pds_resource(mock_pds_resource)
-
-    #     self.assertEqual(result, "123456789012")

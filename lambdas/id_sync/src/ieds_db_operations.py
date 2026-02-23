@@ -2,9 +2,9 @@ import json
 
 from boto3.dynamodb.conditions import Key
 
-from common.api_clients.errors import PdsSyncException
 from common.aws_dynamodb import get_dynamodb_table
 from common.clients import get_dynamodb_client, logger
+from exceptions.id_sync_exception import IdSyncException
 from os_vars import get_ieds_table_name
 from utils import make_status
 
@@ -51,7 +51,7 @@ def ieds_update_patient_id(old_id: str, new_id: str, items_to_update: list) -> d
 
     except Exception as e:
         logger.exception("Error updating patient ID")
-        raise PdsSyncException(
+        raise IdSyncException(
             message="Error updating patient ID",
         ) from e
 
@@ -65,11 +65,11 @@ def get_items_from_patient_id(id: str) -> list:
     patient_pk = f"Patient#{id}"
     try:
         return paginate_items_for_patient_pk(patient_pk)
-    except PdsSyncException:
+    except IdSyncException:
         raise
     except Exception:
         logger.exception("Error querying items for patient PK")
-        raise PdsSyncException(
+        raise IdSyncException(
             message="Error querying items for patient PK",
         )
 
@@ -94,7 +94,7 @@ def paginate_items_for_patient_pk(patient_pk: str) -> list:
         if "Items" not in response:
             # Unexpected DynamoDB response shape - surface as PdsSyncException
             logger.exception("Unexpected DynamoDB response: missing 'Items'")
-            raise PdsSyncException(
+            raise IdSyncException(
                 message="No Items in DynamoDB response",
             )
 

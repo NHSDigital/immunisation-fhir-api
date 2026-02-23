@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 import ieds_db_operations
-from common.api_clients.errors import PdsSyncException
+from exceptions.id_sync_exception import IdSyncException
 from ieds_db_operations import extract_patient_resource_from_item
 
 
@@ -419,7 +419,7 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
             ieds_db_operations.ieds_update_patient_id(old_id, new_id, mock_items)
 
         exception = context.exception
-        self.assertIsInstance(exception, PdsSyncException)
+        self.assertIsInstance(exception, IdSyncException)
         self.assertEqual(exception.message, "Error updating patient ID")
 
         # Verify transact was attempted

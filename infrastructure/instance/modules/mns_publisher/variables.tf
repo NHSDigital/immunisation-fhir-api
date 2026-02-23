@@ -76,8 +76,8 @@ variable "resource_scope" {
   type        = string
   description = <<EOT
   The effective deployment scope used for resource naming and isolation. 
-  This resolves to either the base environment (e.g., dev, test, prod) or a 
-  sub-environment (e.g., dev-blue) when sub-environment scoping is enabled.
+  This resolves to either the base environment (e.g., dev, pre-prod, prod) or a 
+  sub-environment (e.g., int-blue/int-green) when sub-environment scoping is enabled.
   EOT
 }
 

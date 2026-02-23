@@ -215,6 +215,9 @@ resource "aws_lambda_event_source_mapping" "mns_outbound_event_sqs_to_lambda" {
   function_name    = aws_lambda_function.mns_publisher_lambda.arn
   batch_size       = 10
   enabled          = true
+
+  # Enables partial batch responses using `batchItemFailures`
+  function_response_types = ["ReportBatchItemFailures"]
 }
 
 resource "aws_cloudwatch_log_metric_filter" "mns_publisher_error_logs" {

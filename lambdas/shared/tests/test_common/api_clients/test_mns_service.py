@@ -12,7 +12,7 @@ from common.api_clients.errors import (
     UnhandledResponseError,
     raise_error_response,
 )
-from common.api_clients.mns_service import MNS_URL, MnsService
+from common.api_clients.mns_service import MNS_BASE_URL, MnsService
 
 SQS_ARN = "arn:aws:sqs:eu-west-2:123456789012:my-queue"
 
@@ -148,7 +148,7 @@ class TestMnsService(unittest.TestCase):
         result = service.delete_subscription("sub-id-123")
         self.assertTrue(result)
         mock_delete.assert_called_with(
-            method="DELETE", url=f"{MNS_URL}/subscriptions/sub-id-123", headers=service.request_headers, timeout=10
+            method="DELETE", url=f"{MNS_BASE_URL}/subscriptions/sub-id-123", headers=service.request_headers, timeout=10
         )
 
     @patch("common.api_clients.mns_service.requests.request")

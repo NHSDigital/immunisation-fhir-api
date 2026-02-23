@@ -12,7 +12,7 @@ from common.api_clients.retry import request_with_retry_backoff
 SQS_ARN = os.getenv("SQS_ARN")
 
 apigee_env = os.getenv("APIGEE_ENVIRONMENT", "int")
-MNS_URL = (
+MNS_BASE_URL = (
     "https://api.service.nhs.uk/multicast-notification-service"
     if apigee_env == "prod"
     else "https://int.api.service.nhs.uk/multicast-notification-service"
@@ -45,7 +45,7 @@ class MnsService:
     def subscribe_notification(self) -> dict | None:
         response = requests.request(
             "POST",
-            f"{MNS_URL}/subscriptions",
+            f"{MNS_BASE_URL}/subscriptions",
             headers=self.request_headers,
             timeout=15,
             data=json.dumps(self.subscription_payload),
@@ -57,9 +57,9 @@ class MnsService:
 
     def get_subscription(self) -> dict | None:
         response = request_with_retry_backoff(
-            "GET", f"{MNS_URL}/subscriptions", headers=self.request_headers, timeout=10
+            "GET", f"{MNS_BASE_URL}/subscriptions", headers=self.request_headers, timeout=10
         )
-        logging.info(f"GET {MNS_URL}/subscriptions")
+        logging.info(f"GET {MNS_BASE_URL}/subscriptions")
         logging.debug(f"Headers: {self.request_headers}")
 
         if response.status_code == 200:
@@ -95,7 +95,7 @@ class MnsService:
 
     def delete_subscription(self, subscription_id: str) -> str:
         """Delete the subscription by ID."""
-        url = f"{MNS_URL}/subscriptions/{subscription_id}"
+        url = f"{MNS_BASE_URL}/subscriptions/{subscription_id}"
         response = request_with_retry_backoff("DELETE", url, headers=self.request_headers, timeout=10)
         if response.status_code == 204:
             logging.info(f"Deleted subscription {subscription_id}")
@@ -121,7 +121,11 @@ class MnsService:
     def publish_notification(self, notification_payload) -> dict | None:
         self.request_headers["Content-Type"] = "application/cloudevents+json"
         response = requests.request(
-            "POST", f"{MNS_URL}/events", headers=self.request_headers, timeout=15, data=json.dumps(notification_payload)
+            "POST",
+            f"{MNS_BASE_URL}/events",
+            headers=self.request_headers,
+            timeout=15,
+            data=json.dumps(notification_payload),
         )
         if response.status_code in (200, 201):
             return response.json()
