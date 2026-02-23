@@ -1,6 +1,7 @@
 """Tests for lambda_handler"""
 
 import json
+import os
 from contextlib import ExitStack
 from copy import deepcopy
 from json import loads as json_loads
@@ -120,7 +121,8 @@ class TestLambdaHandlerDataSource(TestCase):
         created_at_formatted_string: str = MOCK_CREATED_AT_FORMATTED_STRING,
     ) -> str:
         """Returns the ack file key for the given file key"""
-        return f"ack/{file_key.replace('.csv', '_InfAck_' + created_at_formatted_string + '.csv')}"
+        file_key_without_ext = os.path.splitext(file_key)[0]
+        return f"ack/{file_key_without_ext}_InfAck_{created_at_formatted_string}.csv"
 
     @staticmethod
     def generate_expected_failure_inf_ack_content(message_id: str, created_at_formatted_string: str) -> str:
