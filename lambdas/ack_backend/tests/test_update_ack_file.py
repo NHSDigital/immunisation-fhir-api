@@ -433,6 +433,63 @@ class TestUpdateAckFile(unittest.TestCase):
         )
         self.assertEqual(result, ValidValues.json_ack_complete_content)
 
+    def test_complete_batch_file_process_with_dat_extension(self):
+        """Test that complete_batch_file_process correctly handles files with .dat extension."""
+        file_key_with_dat = "flu_Vaccinations_v5_YGA_20210730T12000000.dat"
+        created_at_formatted_string = "20211120T12000000"
+        expected_csv_ack_file_key = (
+            f"forwardedFile/flu_Vaccinations_v5_YGA_20210730T12000000_BusAck_{created_at_formatted_string}.csv"
+        )
+        expected_json_ack_file_key = (
+            f"forwardedFile/flu_Vaccinations_v5_YGA_20210730T12000000_BusAck_{created_at_formatted_string}.json"
+        )
+
+        generate_sample_existing_json_ack_content()
+        self.s3_client.put_object(
+            Bucket=BucketNames.SOURCE,
+            Key=f"processing/{file_key_with_dat}",
+            Body="dummy content",
+        )
+
+        update_csv_ack_file(
+            file_key=file_key_with_dat,
+            created_at_formatted_string=created_at_formatted_string,
+            ack_data_rows=[ValidValues.ack_data_failure_dict],
+        )
+        update_json_ack_file(
+            message_id=MOCK_MESSAGE_DETAILS.message_id,
+            supplier=MOCK_MESSAGE_DETAILS.supplier,
+            file_key=file_key_with_dat,
+            created_at_formatted_string=created_at_formatted_string,
+            ack_data_rows=[ValidValues.ack_data_failure_dict],
+        )
+
+        self.mock_get_record_and_failure_count.return_value = 10, 1
+
+        complete_batch_file_process(
+            message_id=MOCK_MESSAGE_DETAILS.message_id,
+            supplier=MOCK_MESSAGE_DETAILS.supplier,
+            vaccine_type=MOCK_MESSAGE_DETAILS.vaccine_type,
+            created_at_formatted_string=created_at_formatted_string,
+            file_key=file_key_with_dat,
+        )
+
+        # Verify CSV ACK file was created with .csv extension
+        try:
+            self.s3_client.head_object(Bucket=BucketNames.DESTINATION, Key=expected_csv_ack_file_key)
+            csv_ack_exists = True
+        except Exception:
+            csv_ack_exists = False
+        self.assertTrue(csv_ack_exists, f"Expected CSV ACK file at {expected_csv_ack_file_key}")
+
+        # Verify JSON ACK file was created with .json extension (not .dat.json)
+        try:
+            self.s3_client.head_object(Bucket=BucketNames.DESTINATION, Key=expected_json_ack_file_key)
+            json_ack_exists = True
+        except Exception:
+            json_ack_exists = False
+        self.assertTrue(json_ack_exists, f"Expected JSON ACK file at {expected_json_ack_file_key}")
+
     def test_update_json_ack_file_with_empty_ack_data_rows(self):
         """Test that update_json_ack_file correctly updates the ack file when given an empty list"""
         # Mock existing content in the ack file

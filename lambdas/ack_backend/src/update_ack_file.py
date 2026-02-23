@@ -142,7 +142,8 @@ def complete_batch_file_process(
     start_time = time.time()
 
     # finish CSV file
-    ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.csv')}"
+    file_key_without_ext = os.path.splitext(file_key)[0]
+    ack_filename = f"{file_key_without_ext}_BusAck_{created_at_formatted_string}.csv"
 
     move_file(ACK_BUCKET_NAME, f"{TEMP_ACK_DIR}/{ack_filename}", f"{COMPLETED_ACK_DIR}/{ack_filename}")
     move_file(SOURCE_BUCKET_NAME, f"{BATCH_FILE_PROCESSING_DIR}/{file_key}", f"{BATCH_FILE_ARCHIVE_DIR}/{file_key}")
@@ -164,7 +165,7 @@ def complete_batch_file_process(
     )
 
     # finish JSON file
-    json_ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.json')}"
+    json_ack_filename = f"{file_key_without_ext}_BusAck_{created_at_formatted_string}.json"
     temp_ack_file_key = f"{TEMP_ACK_DIR}/{json_ack_filename}"
     ack_data_dict = obtain_current_json_ack_content(message_id, supplier, file_key, temp_ack_file_key)
 
@@ -268,7 +269,8 @@ def update_csv_ack_file(
     ack_data_rows: list,
 ) -> None:
     """Updates the ack file with the new data row based on the given arguments"""
-    ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.csv')}"
+    file_key_without_ext = os.path.splitext(file_key)[0]
+    ack_filename = f"{file_key_without_ext}_BusAck_{created_at_formatted_string}.csv"
     temp_ack_file_key = f"{TEMP_ACK_DIR}/{ack_filename}"
     accumulated_csv_content = obtain_current_csv_ack_content(temp_ack_file_key)
 
