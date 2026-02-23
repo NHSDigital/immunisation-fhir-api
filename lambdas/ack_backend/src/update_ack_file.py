@@ -247,7 +247,7 @@ def obtain_current_json_ack_content(message_id: str, supplier: str, file_key: st
             logger.info("No existing JSON ack file found in S3 - creating new file")
 
             ingestion_start_time = get_ingestion_start_time_by_message_id(message_id)
-            raw_ack_filename = file_key.split(".")[0]
+            raw_ack_filename = os.path.splitext(file_key)[0]
 
             # Generate the initial fields
             return _make_ack_data_dict_identifier_information(
@@ -293,7 +293,8 @@ def update_json_ack_file(
     ack_data_rows: list,
 ) -> None:
     """Updates the ack file with the new data row based on the given arguments"""
-    ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.json')}"
+    file_key_without_ext = os.path.splitext(file_key)[0]
+    ack_filename = f"{file_key_without_ext}_BusAck_{created_at_formatted_string}.json"
     temp_ack_file_key = f"{TEMP_ACK_DIR}/{ack_filename}"
     ack_data_dict = obtain_current_json_ack_content(message_id, supplier, file_key, temp_ack_file_key)
 
