@@ -117,6 +117,13 @@ resource "aws_s3_bucket_public_access_block" "batch_data_destination_bucket_publ
   restrict_public_buckets = true
 }
 
+resource "aws_s3_bucket_versioning" "batch_data_destination" {
+  bucket = aws_s3_bucket.batch_data_destination_bucket.bucket
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
 resource "aws_s3_bucket_policy" "batch_data_destination_bucket_policy" {
   bucket = aws_s3_bucket.batch_data_destination_bucket.id
   policy = jsonencode({
@@ -213,6 +220,13 @@ resource "aws_s3_bucket_public_access_block" "batch_config_bucket_public_access_
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_versioning" "batch_config" {
+  bucket = aws_s3_bucket.batch_config_bucket.bucket
+  versioning_configuration {
+    status = "Enabled"
+  }
 }
 
 resource "aws_s3_bucket_policy" "batch_config_bucket_policy" {
