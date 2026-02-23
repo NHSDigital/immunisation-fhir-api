@@ -100,6 +100,11 @@ resource "aws_dynamodb_table" "delta-dynamodb-table" {
     type = "S"
   }
 
+  attribute {
+    name = "DateTimeStampWithSequence"
+    type = "S"
+  }
+
   ttl {
     attribute_name = "ExpiresAt"
     enabled        = true
@@ -118,6 +123,13 @@ resource "aws_dynamodb_table" "delta-dynamodb-table" {
       attribute_name = "DateTimeStamp"
       key_type       = "RANGE"
     }
+  }
+
+  global_secondary_index {
+    name            = "OperationSequenceIndex"
+    hash_key        = "Operation"
+    range_key       = "DateTimeStampWithSequence"
+    projection_type = "ALL"
   }
 
   global_secondary_index {
