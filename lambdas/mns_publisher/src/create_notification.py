@@ -3,6 +3,8 @@ import os
 import uuid
 from datetime import datetime
 
+from aws_lambda_typing.events.sqs import SQSMessage
+
 from common.api_clients.get_pds_details import pds_get_patient_details
 from common.clients import logger
 from common.get_service_url import get_service_url
@@ -14,7 +16,7 @@ IMMUNIZATION_BASE_PATH = os.getenv("IMMUNIZATION_BASE_PATH")
 PDS_BASE_URL = os.getenv("PDS_BASE_URL")
 
 
-def create_mns_notification(sqs_event: dict) -> dict:
+def create_mns_notification(sqs_event: SQSMessage) -> dict:
     """Create a notification payload for MNS."""
 
     immunisation_url = get_service_url(IMMUNIZATION_ENV, IMMUNIZATION_BASE_PATH)

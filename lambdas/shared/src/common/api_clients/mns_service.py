@@ -23,19 +23,31 @@ class MnsService:
     def __init__(self, authenticator: AppRestrictedAuth):
         self.authenticator = authenticator
         self.access_token = self.authenticator.get_access_token()
-        self.subscription_payload = {
+        logging.info(f"Using SQS ARN for subscription: {SQS_ARN}")
+
+    def _build_subscription_payload(self, event_type: str, reason: str | None = None, status: str = "requested") -> dict:
+        """
+        Builds subscription payload.
+        Args:
+            event_type: Event type to subscribe to (e.g., 'imms-vaccinations-2', 'nhs-number-change-2')
+            reason: Optional description of the subscription
+            status: Subscription status (default: 'requested')
+        Returns: Subscription payload dict
+        """
+        if not reason:
+            reason = f"Subscribe SQS to {event_type} events"
+
+        return {
             "resourceType": "Subscription",
-            "status": "requested",
-            "reason": "Subscribe SQS to NHS Number Change Events",
-            "criteria": "eventType=nhs-number-change-2",
+            "status": status,
+            "reason": reason,
+            "criteria": f"eventType={event_type}",
             "channel": {
                 "type": "message",
                 "endpoint": SQS_ARN,
                 "payload": "application/json",
             },
         }
-
-        logging.info(f"Using SQS ARN for subscription: {SQS_ARN}")
 
     def _build_headers(self, content_type: str = "application/fhir+json") -> dict:
         """Build request headers with authentication and correlation ID."""
@@ -45,14 +57,16 @@ class MnsService:
             "X-Correlation-ID": str(uuid.uuid4()),
         }
 
-    def subscribe_notification(self) -> dict | None:
+    def subscribe_notification(self, event_type: str = "nhs-number-change-2", reason: str | None = None) -> dict | None:
+        subscription_payload = self._build_subscription_payload(event_type, reason)
         response = requests.request(
             "POST",
             f"{MNS_BASE_URL}/subscriptions",
             headers=self._build_headers(),
             timeout=15,
-            data=json.dumps(self.subscription_payload),
+            data=json.dumps(subscription_payload),
         )
+
         if response.status_code in (200, 201):
             return response.json()
         else:
@@ -129,7 +143,7 @@ class MnsService:
             timeout=15,
             data=json.dumps(notification_payload),
         )
-        if response.status_code in (200, 201):
+        if response.status_code == 200:
             return response.json()
         else:
             raise_error_response(response)

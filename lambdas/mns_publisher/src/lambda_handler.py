@@ -3,6 +3,7 @@ import os
 from typing import Tuple
 
 from aws_lambda_typing import context, events
+from aws_lambda_typing.events.sqs import SQSMessage
 
 from common.api_clients.mns_setup import get_mns_service
 from common.clients import logger
@@ -22,12 +23,21 @@ def lambda_handler(event: events.SQSEvent, _: context.Context) -> dict[str, list
         try:
             mns_notification_payload = create_mns_notification(record)
             notification_id = mns_notification_payload.get("id", None)  # generated UUID for MNS
-            logger.info("Processing message", trace_id=notification_id)
+            action_flag = mns_notification_payload.get("action")
+            logger.info(
+                "Processing message",
+                trace_ids={
+                    "notification_id": notification_id,
+                    "message_id": message_id,
+                    "immunisation_id": immunisation_id,
+                    "action_flag": action_flag,
+                },
+            )
 
             mns_service = get_mns_service(mns=apigee_env)
             mns_pub_response = mns_service.publish_notification(mns_notification_payload)
 
-            if mns_pub_response["status_code"] != 201:
+            if mns_pub_response["status_code"] != 200:
                 raise RuntimeError("MNS publish failed")
             logger.info(
                 "Successfully created MNS notification",
@@ -56,7 +66,7 @@ def lambda_handler(event: events.SQSEvent, _: context.Context) -> dict[str, list
     return {"batchItemFailures": batch_item_failures}
 
 
-def extract_trace_ids(record: dict) -> Tuple[str, str | None]:
+def extract_trace_ids(record: SQSMessage) -> Tuple[str, str | None]:
     """
     Extract identifiers for tracing from SQS record.
     Returns: Tuple of (message_id, immunisation_id)
