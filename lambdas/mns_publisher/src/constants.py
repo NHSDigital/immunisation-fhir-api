@@ -2,7 +2,7 @@ from enum import Enum
 
 # Static constants for the MNS notification creation process
 SPEC_VERSION = "1.0"
-IMMUNISATION_TYPE = "imms-vaccinations-2"
+IMMUNISATION_TYPE = "imms-vaccinations-1"
 
 
 # Fields from the incoming SQS message that forms part of the base schema and filtering attributes for MNS notifications

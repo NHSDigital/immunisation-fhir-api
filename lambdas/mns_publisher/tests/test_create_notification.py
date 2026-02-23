@@ -86,7 +86,7 @@ class TestGetPractitionerDetailsFromPds(unittest.TestCase):
     @patch("create_notification.logger")
     def test_get_practitioner_success(self, mock_logger, mock_pds_get):
         """Test successful retrieval of GP ODS code."""
-        mock_pds_get.return_value = {"generalPractitioner": {"value": "Y12345"}}
+        mock_pds_get.return_value = {"generalPractitioner": [{"identifier": {"value": "Y12345"}}]}
 
         result = get_practitioner_details_from_pds("9481152782")
 
@@ -103,7 +103,7 @@ class TestGetPractitionerDetailsFromPds(unittest.TestCase):
         result = get_practitioner_details_from_pds("9481152782")
 
         self.assertIsNone(result)
-        mock_logger.warning.assert_called_once_with("No patient details found for NHS number")
+        mock_logger.warning.assert_called_once_with("No GP details found for patient")
 
     @patch("create_notification.pds_get_patient_details")
     @patch("create_notification.logger")
@@ -120,7 +120,7 @@ class TestGetPractitionerDetailsFromPds(unittest.TestCase):
     @patch("create_notification.logger")
     def test_get_practitioner_no_value_field(self, mock_logger, mock_pds_get):
         """Test when value field is missing from generalPractitioner."""
-        mock_pds_get.return_value = {"generalPractitioner": {"system": "https://fhir.nhs.uk"}}
+        mock_pds_get.return_value = {"generalPractitioner": [{"identifier": {}}]}
 
         result = get_practitioner_details_from_pds("9481152782")
 
@@ -131,7 +131,7 @@ class TestGetPractitionerDetailsFromPds(unittest.TestCase):
     @patch("create_notification.logger")
     def test_get_practitioner_empty_value(self, mock_logger, mock_pds_get):
         """Test when value is empty string."""
-        mock_pds_get.return_value = {"generalPractitioner": {"value": ""}}
+        mock_pds_get.return_value = {"generalPractitioner": [{"identifier": {"value": ""}}]}
 
         result = get_practitioner_details_from_pds("9481152782")
 
@@ -340,6 +340,86 @@ def test_create_mns_notification_with_update_action(self, mock_get_service_url, 
     self.assertEqual(result["filtering"]["action"], "UPDATE")
     mock_get_service_url.assert_called()
     mock_get_gp.assert_called()
+
+
+@patch("create_notification.pds_get_patient_details")
+@patch("create_notification.logger")
+def test_get_practitioner_success_no_end_date(self, mock_logger, mock_pds_get):
+    """Test successful retrieval when no end date (current registration)."""
+    mock_pds_get.return_value = {
+        "generalPractitioner": [{"identifier": {"value": "Y12345", "period": {"start": "2024-01-01"}}}]
+    }
+
+    result = get_practitioner_details_from_pds("9481152782")
+
+    self.assertEqual(result, "Y12345")
+    mock_logger.warning.assert_not_called()
+
+
+@patch("create_notification.pds_get_patient_details")
+@patch("create_notification.logger")
+def test_get_practitioner_success_future_end_date(self, mock_logger, mock_pds_get):
+    """Test successful retrieval when end date is in the future."""
+    mock_pds_get.return_value = {
+        "generalPractitioner": [
+            {"identifier": {"value": "Y12345", "period": {"start": "2024-01-01", "end": "2030-12-31"}}}
+        ]
+    }
+
+    result = get_practitioner_details_from_pds("9481152782")
+
+    self.assertEqual(result, "Y12345")
+    mock_logger.warning.assert_not_called()
+
+
+@patch("create_notification.pds_get_patient_details")
+@patch("create_notification.logger")
+def test_get_practitioner_expired_registration(self, mock_logger, mock_pds_get):
+    """Test when GP registration has ended (expired)."""
+    mock_pds_get.return_value = {
+        "generalPractitioner": [
+            {"identifier": {"value": "Y12345", "period": {"start": "2020-01-01", "end": "2023-12-31"}}}
+        ]
+    }
+
+    result = get_practitioner_details_from_pds("9481152782")
+
+    self.assertIsNone(result)
+    mock_logger.warning.assert_called_with(
+        "GP registration has ended",
+        extra={"nhs_number": "9481152782", "gp_ods_code": "Y12345", "end_date": "2023-12-31"},
+    )
+
+
+@patch("create_notification.pds_get_patient_details")
+@patch("create_notification.logger")
+def test_get_practitioner_invalid_end_date_format(self, mock_logger, mock_pds_get):
+    """Test when end date has invalid format - should still return GP."""
+    mock_pds_get.return_value = {
+        "generalPractitioner": [
+            {"identifier": {"value": "Y12345", "period": {"start": "2024-01-01", "end": "invalid-date"}}}
+        ]
+    }
+
+    result = get_practitioner_details_from_pds("9481152782")
+
+    # Should still return GP even with invalid date
+    self.assertEqual(result, "Y12345")
+    mock_logger.warning.assert_called_with(
+        "Invalid end date format in GP registration", extra={"nhs_number": "9481152782", "end_date": "invalid-date"}
+    )
+
+
+@patch("create_notification.pds_get_patient_details")
+@patch("create_notification.logger")
+def test_get_practitioner_no_period_field(self, mock_logger, mock_pds_get):
+    """Test when period field is missing entirely."""
+    mock_pds_get.return_value = {"generalPractitioner": [{"identifier": {"value": "Y12345"}}]}
+
+    result = get_practitioner_details_from_pds("9481152782")
+
+    self.assertEqual(result, "Y12345")
+    mock_logger.warning.assert_not_called()
 
 
 if __name__ == "__main__":

@@ -75,10 +75,25 @@ def get_practitioner_details_from_pds(nhs_number: str) -> str | None:
             return None
 
         patient_gp = general_practitioners[0]
-        gp_ods_code = patient_gp.get("identifier", {}).get("value")
+        patient_gp_identifier = patient_gp.get("identifier", {})
+
+        gp_ods_code = patient_gp_identifier.get("value")
         if not gp_ods_code:
             logger.warning("GP ODS code not found in practitioner details")
             return None
+
+        # Check if registration is current
+        period = patient_gp_identifier.get("period", {})
+        gp_period_end_date = period.get("end", None)
+
+        if gp_period_end_date:
+            # Parse end date (format: YYYY-MM-DD)
+            end_date = datetime.strptime(gp_period_end_date, "%Y-%m-%d").date()
+            today = datetime.now().date()
+
+            if end_date < today:
+                logger.warning("GP registration has ended")
+                return None
 
         return gp_ods_code
     except Exception as error:
