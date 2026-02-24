@@ -1,1 +1,0 @@
-✅ Step Passed: **Send a search request with POST method with invalid Date From '2025-05-32' and valid Date To '2025-06-01'

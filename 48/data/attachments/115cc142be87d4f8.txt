@@ -1,1 +1,0 @@
-✅ Step Passed: **Send a search request with GET method with invalid Date From '999-06-01' and invalid Date To '999-06-01'
