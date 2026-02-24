@@ -12,7 +12,6 @@ from sqs_dynamo_utils import extract_sqs_imms_data
 
 IMMUNIZATION_ENV = os.getenv("IMMUNIZATION_ENV")
 IMMUNIZATION_BASE_PATH = os.getenv("IMMUNIZATION_BASE_PATH")
-PDS_BASE_URL = os.getenv("PDS_BASE_URL")
 
 
 def create_mns_notification(sqs_event: SQSMessage) -> MnsNotificationPayload:
@@ -48,7 +47,7 @@ def create_mns_notification(sqs_event: SQSMessage) -> MnsNotificationPayload:
 def calculate_age_at_vaccination(birth_date: str, vaccination_date: str) -> int:
     """
     Calculate patient age in years at time of vaccination.
-    Expects dates in format: YYYYMMDD or YYYYMMDDTHHmmss
+    Expects dates in format: YYYYMMDD or YYYYMMDDThhmmsszz
     """
     birth_date_str = birth_date[:8] if len(birth_date) >= 8 else birth_date
     vacc_date_str = vaccination_date[:8] if len(vaccination_date) >= 8 else vaccination_date

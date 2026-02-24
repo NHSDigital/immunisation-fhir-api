@@ -85,3 +85,11 @@ variable "sub_environment" {
   type        = string
   description = "Sub-environment name, e.g. internal-dev, internal-qa. The value is set in the Makefile"
 }
+
+variable "mns_environment" {
+  type = string
+}
+
+variable "pds_environment" {
+  type = string
+}

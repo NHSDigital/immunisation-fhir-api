@@ -12,9 +12,10 @@ from common.api_clients.retry import request_with_retry_backoff
 SQS_ARN = os.getenv("SQS_ARN")
 
 apigee_env = os.getenv("APIGEE_ENVIRONMENT", "int")
+mns_env = os.getenv("MNS_ENV", "int")
 MNS_BASE_URL = (
     "https://api.service.nhs.uk/multicast-notification-service"
-    if apigee_env == "prod"
+    if apigee_env or mns_env == "prod"
     else "https://int.api.service.nhs.uk/multicast-notification-service"
 )
 

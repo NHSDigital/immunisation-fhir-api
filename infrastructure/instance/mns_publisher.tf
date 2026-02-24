@@ -11,6 +11,8 @@ module "mns_publisher" {
   sub_environment                    = strcontains(var.sub_environment, "pr-") ? "immunisation-fhir-api/FHIR/R4-${var.sub_environment}" : "immunisation-fhir-api/FHIR/R4"
   lambda_kms_encryption_key_arn      = data.aws_kms_key.existing_lambda_encryption_key.arn
   mns_publisher_resource_name_prefix = "${local.resource_scope}-mns-outbound-events"
+  pds_environment                    = var.pds_environment
+  mns_environment                    = var.mns_environment
 
   private_subnet_ids = local.private_subnet_ids
   security_group_id  = data.aws_security_group.existing_securitygroup.id

@@ -194,6 +194,8 @@ resource "aws_lambda_function" "mns_publisher_lambda" {
       SPLUNK_FIREHOSE_NAME   = var.splunk_firehose_stream_name
       IMMUNIZATION_ENV       = var.resource_scope,
       IMMUNIZATION_BASE_PATH = var.sub_environment
+      PDS_ENV                = var.pds_environment
+      MNS_ENV                = var.mns_environment
     }
   }
 
