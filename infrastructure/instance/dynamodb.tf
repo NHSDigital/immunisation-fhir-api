@@ -31,19 +31,31 @@ resource "aws_dynamodb_table" "audit-table" {
 
   global_secondary_index {
     name            = "filename_index"
-    hash_key        = "filename"
     projection_type = "ALL"
+
+    key_schema {
+      attribute_name = "filename"
+      key_type       = "HASH"
+    }
   }
 
   global_secondary_index {
     name            = "queue_name_index"
-    hash_key        = "queue_name"
-    range_key       = "status"
     projection_type = "ALL"
+
+    key_schema {
+      attribute_name = "queue_name"
+      key_type       = "HASH"
+    }
+
+    key_schema {
+      attribute_name = "status"
+      key_type       = "RANGE"
+    }
   }
 
   point_in_time_recovery {
-    enabled = var.environment == "prod"
+    enabled = var.dynamodb_point_in_time_recovery_enabled
   }
 
   server_side_encryption {
@@ -95,26 +107,46 @@ resource "aws_dynamodb_table" "delta-dynamodb-table" {
 
   global_secondary_index {
     name            = "SearchIndex"
-    hash_key        = "Operation"
-    range_key       = "DateTimeStamp"
     projection_type = "ALL"
+
+    key_schema {
+      attribute_name = "Operation"
+      key_type       = "HASH"
+    }
+
+    key_schema {
+      attribute_name = "DateTimeStamp"
+      key_type       = "RANGE"
+    }
   }
 
   global_secondary_index {
     name            = "SecondarySearchIndex"
-    hash_key        = "SupplierSystem"
-    range_key       = "VaccineType"
     projection_type = "ALL"
+
+    key_schema {
+      attribute_name = "SupplierSystem"
+      key_type       = "HASH"
+    }
+
+    key_schema {
+      attribute_name = "VaccineType"
+      key_type       = "RANGE"
+    }
   }
 
   global_secondary_index {
     name            = "ImmunisationIdIndex"
-    hash_key        = "ImmsID"
     projection_type = "ALL"
+
+    key_schema {
+      attribute_name = "ImmsID"
+      key_type       = "HASH"
+    }
   }
 
   point_in_time_recovery {
-    enabled = var.environment == "prod"
+    enabled = var.dynamodb_point_in_time_recovery_enabled
   }
 
   server_side_encryption {
@@ -154,19 +186,31 @@ resource "aws_dynamodb_table" "events-dynamodb-table" {
 
   global_secondary_index {
     name            = "PatientGSI"
-    hash_key        = "PatientPK"
-    range_key       = "PatientSK"
     projection_type = "ALL"
+
+    key_schema {
+      attribute_name = "PatientPK"
+      key_type       = "HASH"
+    }
+
+    key_schema {
+      attribute_name = "PatientSK"
+      key_type       = "RANGE"
+    }
   }
 
   global_secondary_index {
     name            = "IdentifierGSI"
-    hash_key        = "IdentifierPK"
     projection_type = "ALL"
+
+    key_schema {
+      attribute_name = "IdentifierPK"
+      key_type       = "HASH"
+    }
   }
 
   point_in_time_recovery {
-    enabled = var.environment == "prod"
+    enabled = var.dynamodb_point_in_time_recovery_enabled
   }
 
   server_side_encryption {
