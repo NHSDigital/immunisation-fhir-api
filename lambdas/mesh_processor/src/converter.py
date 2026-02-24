@@ -11,15 +11,13 @@ UNEXPECTED_EOF_ERROR = "Unexpected EOF"
 
 
 def parse_headers(headers_str: str) -> dict[str, str]:
-    headers = dict(  # NOSONAR(S7494) force this to dict
-        header_str.split(":", 1) for header_str in headers_str.split("\r\n") if ":" in header_str
-    )
+    headers = dict(header_str.split(":", 1) for header_str in headers_str.split("\r\n") if ":" in header_str)
     return {k.strip(): v.strip() for k, v in headers.items()}
 
 
 def parse_header_value(header_value: str) -> tuple[str, dict[str, str]]:
     main_value, *params = header_value.split(";")
-    parsed_params = dict(param.strip().split("=", 1) for param in params)  # NOSONAR(S7494) force this to dict
+    parsed_params = dict(param.strip().split("=", 1) for param in params)
     parsed_params = {k: v.strip('"') for k, v in parsed_params.items()}
     return main_value, parsed_params
 

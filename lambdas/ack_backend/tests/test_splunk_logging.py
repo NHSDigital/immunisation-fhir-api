@@ -167,13 +167,12 @@ class TestLoggingDecorators(unittest.TestCase):
 
     def test_splunk_logging_missing_data(self):
         """Tests missing key values in the body of the event"""
-
         with (  # noqa: E999
             patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
             patch("ack_processor.increment_records_failed_count"),  # noqa: E999
         ):  # noqa: E999
-            with self.assertRaises(AttributeError):
+            with self.assertRaises(TypeError):
                 lambda_handler(event={"Records": [{"body": json.dumps([{"": "456", "row_id": "test^1"}])}]}, context={})
 
             expected_first_logger_info_data = {**InvalidValues.logging_with_no_values}
@@ -182,7 +181,7 @@ class TestLoggingDecorators(unittest.TestCase):
                 success=False,
                 number_of_rows=1,
                 ingestion_complete=False,
-                diagnostics="'NoneType' object has no attribute 'replace'",
+                diagnostics="expected str, bytes or os.PathLike object, not NoneType",
             )
 
             first_logger_info_call_args = json.loads(self.extract_all_call_args_for_logger_info(mock_logger)[0])

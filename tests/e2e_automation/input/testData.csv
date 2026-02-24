@@ -1,6 +1,6 @@
 id,nhs_number,family_name,given_name,gender,birth_date,address_text,address_line,city,district,state,postal_code,country,start_date,end_date
 ValidNHS,9449309981,test1,test2,unknown,1980-11-01,Validate Obf,"1, obf_2",obf_3,obf_4,obf_5,LS01 1AB,obf_7,2000-01-01,2025-01-01
-NUllNHS,,test1,test2,unknown,1980-11-01,Validate Obf,"1, obf_2",obf_3,obf_4,obf_5,LS01 1AB,obf_7,2000-01-01,2025-01-01
+NullNHS,none,test1,test2,unknown,1980-11-01,Validate Obf,"1, obf_2",obf_3,obf_4,obf_5,LS01 1AB,obf_7,2000-01-01,2025-01-01
 SFlag,9449310475,test1,test2,unknown,1980-11-01,Validate Obf,"1, obf_2",obf_3,obf_4,obf_5,LS01 1AB,obf_7,2000-01-01,2025-01-01
 InvalidInPDS,9449310599,test1,test2,unknown,1980-11-01,Validate Obf,"1, obf_2",obf_3,obf_4,obf_5,LS01 1AB,obf_7,2000-01-01,2025-01-01
 InvalidMOD11Check,1234567890,test1,test2,unknown,1980-11-01,Validate Obf,"1, obf_2",obf_3,obf_4,obf_5,LS01 1AB,obf_7,2000-01-01,2025-01-01

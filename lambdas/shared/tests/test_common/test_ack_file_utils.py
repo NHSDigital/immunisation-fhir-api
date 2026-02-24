@@ -145,6 +145,24 @@ class TestMakeAndUploadAckFile(unittest.TestCase):
         )
         self.assertEqual(list(csv_dict_reader), expected_result)
 
+    def test_upload_ack_file_with_dat_extension(self):
+        """Test that upload_ack_file generates correct filename when source file has .dat extension"""
+
+        # Create a file_key with .dat extension
+        file_key_with_dat = "flu_Vaccinations_v5_YGA_20210730T12000000.dat"
+        expected_ack_file_key = "ack/flu_Vaccinations_v5_YGA_20210730T12000000_InfAck_20211120T12000000.csv"
+        upload_ack_file(
+            file_key=file_key_with_dat,
+            ack_data=deepcopy(self.ack_data_validation_passed_and_message_delivered),
+            created_at_formatted_string=self.created_at_formatted_string,
+        )
+
+        expected_result = [deepcopy(self.ack_data_validation_passed_and_message_delivered)]
+        # Note that the data downloaded from the CSV will contain the bool as a string
+        expected_result[0]["MESSAGE_DELIVERY"] = "True"
+        csv_dict_reader = get_csv_file_dict_reader(self.s3_client, BucketNames.DESTINATION, expected_ack_file_key)
+        self.assertEqual(list(csv_dict_reader), expected_result)
+
     def test_make_and_upload_ack_file_success(self):
         """Test that make_and_upload_ack_file uploads an ack file containing the correct values"""
         make_and_upload_ack_file(

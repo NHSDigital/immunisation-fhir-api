@@ -12,7 +12,7 @@ from exceptions.id_sync_exception import IdSyncException
 from os_vars import get_pds_env
 
 pds_env = get_pds_env()
-safe_tmp_dir = tempfile.mkdtemp(dir="/tmp")  # NOSONAR(S5443)
+safe_tmp_dir = tempfile.mkdtemp(dir="/tmp")
 
 
 # Get Patient details from external service PDS using NHS number from MNS notification

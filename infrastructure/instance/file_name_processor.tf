@@ -17,7 +17,7 @@ resource "aws_ecr_repository" "file_name_processor_lambda_repository" {
 # Module for building and pushing Docker image to ECR
 module "file_processor_docker_image" {
   source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version          = "8.5.0"
+  version          = "8.7.0"
   docker_file_path = "./filenameprocessor/Dockerfile"
 
   create_ecr_repo = false
@@ -167,7 +167,8 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
       {
         "Effect" : "Allow",
         "Action" : [
-          "s3:PutObject"
+          "s3:PutObject",
+          "s3:PutObjectAcl"
         ],
         "Resource" : ["arn:aws:s3:::${var.dspp_submission_s3_bucket_name}/*"]
       }

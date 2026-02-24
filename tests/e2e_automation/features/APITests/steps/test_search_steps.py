@@ -20,7 +20,7 @@ from .common_steps import normalize_param
 scenarios("APITests/search.feature")
 
 
-@when("Send a search request with Post method using identifier header for Immunization event created")
+@when("I send a search request with Post method using identifier parameter for Immunization event created")
 def send_search_post_request_with_identifier_header(context):
     get_search_post_url_header(context)
     context.request = {
@@ -30,7 +30,9 @@ def send_search_post_request_with_identifier_header(context):
     context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
 
 
-@when("Send a search request with Post method using identifier and _elements header for Immunization event created")
+@when(
+    "I send a search request with Post method using identifier and _elements parameters for Immunization event created"
+)
 def send_search_post_request_with_identifier_and_elements_header(context):
     get_search_post_url_header(context)
     context.request = {
@@ -41,7 +43,7 @@ def send_search_post_request_with_identifier_and_elements_header(context):
     context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
 
 
-@when("Send a search request with post method using invalid identifier header for Immunization event created")
+@when("I send a search request with Post method using an invalid identifier header for Immunization event created")
 def send_search_post_request_with_invalid_identifier_header(context):
     get_search_post_url_header(context)
     context.request = {"identifier": f"https://www.ieds.england.nhs.uk/|{str(uuid.uuid4())}", "_elements": "meta,id"}

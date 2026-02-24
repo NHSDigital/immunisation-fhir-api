@@ -93,6 +93,12 @@ variable "has_sub_environment_scope" {
   default     = false
 }
 
+variable "dynamodb_point_in_time_recovery_enabled" {
+  description = "Whether to enable PITR on DynamoDB tables"
+  type        = bool
+  default     = false
+}
+
 locals {
   prefix              = "${var.project_name}-${var.service}-${var.sub_environment}"
   short_prefix        = "${var.project_short_name}-${var.sub_environment}"
