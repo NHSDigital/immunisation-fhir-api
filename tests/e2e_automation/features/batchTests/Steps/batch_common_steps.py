@@ -29,7 +29,11 @@ from utilities.batch_file_helper import (
     validate_json_bus_ack_file_failure_records,
     validate_json_bus_ack_file_structure_and_metadata,
 )
-from utilities.batch_S3_buckets import upload_file_to_S3, wait_and_read_ack_file, wait_for_file_to_move_archive
+from utilities.batch_S3_buckets import (
+    upload_file_to_S3,
+    wait_and_read_ack_file,
+    wait_for_file_to_move_archive,
+)
 from utilities.enums import ActionFlag, ActionMap, Operation
 
 
@@ -86,6 +90,13 @@ def valid_batch_file_is_created_with_details(datatable, context):
     create_batch_file(context)
 
 
+@given("batch file is created for below data as full dataset with file extension dat")
+@ignore_if_local_run
+def valid_batch_file_is_created_with_details_and_dat_extension(datatable, context):
+    build_dataFrame_using_datatable(datatable, context)
+    create_batch_file(context, file_ext="dat")
+
+
 @when("same batch file is uploaded again in s3 bucket")
 @when("batch file is uploaded in s3 bucket")
 @ignore_local_run_set_test_data
@@ -140,7 +151,9 @@ def json_bus_ack_will_only_contain_file_metadata_and_no_record_entries(context):
 
 
 @then("Json bus ack will only contain file metadata and correct failure record entries")
-def json_bus_ack_will_only_contain_file_metadata_and_correct_failure_record_entries(context):
+def json_bus_ack_will_only_contain_file_metadata_and_correct_failure_record_entries(
+    context,
+):
     json_content = context.fileContentJson
     assert json_content is not None, "BUS Ack JSON content is None"
     validate_json_bus_ack_file_structure_and_metadata(context)
@@ -225,7 +238,11 @@ def validate_imms_event_table_for_all_records_in_batch_file(context, operation: 
             ("Operation", Operation[operation].value, item.get("Operation")),
             ("SupplierSystem", context.supplier_name, item.get("SupplierSystem")),
             ("PatientPK", f"Patient#{nhs_number}", item.get("PatientPK")),
-            ("PatientSK", f"{context.vaccine_type.upper()}#{context.ImmsID}", item.get("PatientSK")),
+            (
+                "PatientSK",
+                f"{context.vaccine_type.upper()}#{context.ImmsID}",
+                item.get("PatientSK"),
+            ),
             ("Version", int(context.expected_version), int(item.get("Version"))),
         ]
 
@@ -269,7 +286,13 @@ def build_dataFrame_using_datatable(datatable, context):
     headers = datatable[0]
     rows = datatable[1:]
 
-    table_list = [(row[headers.index("patient_id")], f"{row[headers.index('unique_id')]}-{timestamp}") for row in rows]
+    table_list = [
+        (
+            row[headers.index("patient_id")],
+            f"{row[headers.index('unique_id')]}-{timestamp}",
+        )
+        for row in rows
+    ]
     records = []
     for patient_id, unique_id in table_list:
         context.patient_id = patient_id
@@ -315,7 +338,8 @@ def validate_imms_delta_table_for_newly_created_records_in_batch_file(context):
         create_items = [i for i in delta_items if i.get("Operation") == "CREATE"]
 
         check.is_true(
-            len(create_items) == 1, f"Expected exactly 1 CREATE record for IMMS_ID {clean_id}, found {len(create_items)}"
+            len(create_items) == 1,
+            f"Expected exactly 1 CREATE record for IMMS_ID {clean_id}, found {len(create_items)}",
         )
 
         create_item = create_items[0]
@@ -324,7 +348,11 @@ def validate_imms_delta_table_for_newly_created_records_in_batch_file(context):
             batch_record = {k: normalize(v) for k, v in row.to_dict().items()}
 
             validate_imms_delta_record_with_batch_record(
-                context, batch_record, create_item, Operation.created.value, ActionFlag.created.value
+                context,
+                batch_record,
+                create_item,
+                Operation.created.value,
+                ActionFlag.created.value,
             )
 
 
@@ -341,7 +369,11 @@ def validate_imms_delta_table_for_updated_records_in_batch_file(context):
             item = update_items.pop(updated_index)
 
             validate_imms_delta_record_with_batch_record(
-                context, batch_record, item, Operation.updated.value, ActionFlag.updated.value
+                context,
+                batch_record,
+                item,
+                Operation.updated.value,
+                ActionFlag.updated.value,
             )
 
 
@@ -365,5 +397,9 @@ def validate_imms_delta_table_for_deleted_records_in_batch_file(context):
         batch_record = {k: normalize(v) for k, v in row.to_dict().items()}
 
         validate_imms_delta_record_with_batch_record(
-            context, batch_record, delete_item, Operation.deleted.value, ActionFlag.deleted.value
+            context,
+            batch_record,
+            delete_item,
+            Operation.deleted.value,
+            ActionFlag.deleted.value,
         )

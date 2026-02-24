@@ -1,11 +1,11 @@
 """Module for the batch file repository"""
 
-import os
 from csv import writer
 from io import BytesIO, StringIO
 
 from batch_file_created_event import BatchFileCreatedEvent
 from common.clients import get_s3_client
+from common.file_utils import get_file_key_without_ext
 from common.models.batch_constants import ACK_BUCKET_NAME, SOURCE_BUCKET_NAME
 
 
@@ -49,7 +49,7 @@ class BatchFileRepository:
     def upload_failure_ack(self, batch_file_created_event: BatchFileCreatedEvent) -> None:
         ack_failure_data = self._create_ack_failure_data(batch_file_created_event)
 
-        filename_without_ext = os.path.splitext(batch_file_created_event["filename"])[0]
+        filename_without_ext = get_file_key_without_ext(batch_file_created_event["filename"])
         ack_filename = f"ack/{filename_without_ext}_InfAck_{batch_file_created_event['created_at_formatted_string']}.csv"
 
         # Create CSV file with | delimiter, filetype .csv
