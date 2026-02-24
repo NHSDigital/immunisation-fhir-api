@@ -60,7 +60,7 @@ def get_items_from_patient_id(id: str) -> list:
     """Public wrapper: build PatientPK and return all matching items.
 
     Delegates actual paging to the internal helper `_paginate_items_for_patient_pk`.
-    Raises PdsSyncException on error.
+    Raises IdSyncException on error.
     """
     patient_pk = f"Patient#{id}"
     try:
@@ -77,7 +77,7 @@ def get_items_from_patient_id(id: str) -> list:
 def paginate_items_for_patient_pk(patient_pk: str) -> list:
     """Internal helper that pages through the PatientGSI and returns all items.
 
-    Raises PdsSyncException when the DynamoDB response is malformed.
+    Raises IdSyncException when the DynamoDB response is malformed.
     """
     all_items: list = []
     last_evaluated_key = None
@@ -92,7 +92,7 @@ def paginate_items_for_patient_pk(patient_pk: str) -> list:
         response = get_ieds_table().query(**query_args)
 
         if "Items" not in response:
-            # Unexpected DynamoDB response shape - surface as PdsSyncException
+            # Unexpected DynamoDB response shape - surface as IdSyncException
             logger.exception("Unexpected DynamoDB response: missing 'Items'")
             raise IdSyncException(
                 message="No Items in DynamoDB response",
