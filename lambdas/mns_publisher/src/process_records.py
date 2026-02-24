@@ -29,7 +29,7 @@ def process_records(records: events.SQSEvent) -> list[dict]:
     return batch_item_failures
 
 
-def process_record(record: SQSMessage, mns_service) -> str | None:
+def process_record(record: SQSMessage, mns_service) -> dict | None:
     """
     Process a single SQS record.
     Args:

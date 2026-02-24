@@ -13,9 +13,10 @@ SQS_ARN = os.getenv("SQS_ARN")
 
 apigee_env = os.getenv("APIGEE_ENVIRONMENT", "int")
 mns_env = os.getenv("MNS_ENV", "int")
+env = apigee_env or mns_env
 MNS_BASE_URL = (
     "https://api.service.nhs.uk/multicast-notification-service"
-    if apigee_env or mns_env == "prod"
+    if env == "prod"
     else "https://int.api.service.nhs.uk/multicast-notification-service"
 )
 

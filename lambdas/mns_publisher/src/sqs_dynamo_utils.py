@@ -1,4 +1,5 @@
 import json
+from typing import Any
 
 from constants import DYNAMO_DB_TYPE_DESCRIPTORS, ImmsData
 
@@ -32,7 +33,7 @@ def extract_sqs_imms_data(sqs_record: dict) -> ImmsData:
     }
 
 
-def _unwrap_dynamodb_value(value) -> None:
+def _unwrap_dynamodb_value(value) -> Any:
     """
     Unwrap DynamoDB type descriptor to get the actual value.
     DynamoDB types: S (String), N (Number), BOOL, M (Map), L (List), NULL
