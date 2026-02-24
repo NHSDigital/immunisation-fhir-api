@@ -5,7 +5,15 @@ on:
     types: [opened, synchronize, reopened]
 
 jobs:
+  # TODO - discuss with team whether we want this constraint on PRs. My gut feel is no, but not just up to me!
+  run-quality-checks:
+    uses: ./.github/workflows/quality-checks.yml
+    secrets:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
   deploy-pr-backend:
+    needs: [run-quality-checks]
     uses: ./.github/workflows/deploy-backend.yml
     with:
       apigee_environment: internal-dev

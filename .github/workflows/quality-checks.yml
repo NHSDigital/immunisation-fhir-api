@@ -1,11 +1,14 @@
 name: Quality Checks
 
 on:
-  push:
-    branches:
-      - master
-  pull_request:
-    types: [labeled, opened, synchronize, reopened, unlabeled]
+#  pull_request:
+#    types: [opened, synchronize, reopened]
+  workflow_call:
+    secrets:
+      GITHUB_TOKEN:
+        required: true
+      SONAR_TOKEN:
+        required: true
 
 env:
   SHARED_PATH: ${{ github.workspace }}/lambdas/shared

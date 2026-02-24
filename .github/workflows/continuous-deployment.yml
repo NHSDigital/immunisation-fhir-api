@@ -6,7 +6,14 @@ on:
       - master
 
 jobs:
+  run-quality-checks:
+    uses: ./.github/workflows/quality-checks.yml
+    secrets:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
   deploy-internal-dev-backend:
+    needs: [run-quality-checks]
     uses: ./.github/workflows/deploy-backend.yml
     with:
       apigee_environment: internal-dev
