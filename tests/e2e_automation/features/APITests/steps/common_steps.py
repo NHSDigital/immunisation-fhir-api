@@ -1,6 +1,5 @@
 import json
 import random
-import time
 from urllib.parse import parse_qs
 from venv import logger
 
@@ -296,12 +295,6 @@ def validate_etag_in_header(context):
 
 @when("I subsequently update the vaccination details of the original immunization event")
 def send_update_for_vaccination_detail(context):
-    # We retrieve the delta records for a given event e.g. CREATE - UPDATE - UPDATE and then order them by timestamp
-    # to ensure we are using the latest one for assertions. The timestamp we assign, based on the DynamoDB stream
-    # ApproximateCreationDateTime is rounded to the nearest second: https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_streams_StreamRecord.html
-    # Therefore, using a sleep to ensure ordering is maintained to avoid intermittent errors when the system runs fast.
-    time.sleep(1)
-
     get_update_url_header(context, str(context.expected_version))
     context.update_object = convert_to_update(context.immunization_object, context.ImmsID)
     context.update_object.extension = [build_vaccine_procedure_extension(context.vaccine_type.upper())]
