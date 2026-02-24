@@ -1,10 +1,10 @@
 """Create ack file and upload to S3 bucket"""
 
-import os
 from csv import writer
 from io import BytesIO, StringIO
 
 from common.clients import get_s3_client
+from common.file_utils import get_file_key_without_ext
 from common.models.batch_constants import ACK_BUCKET_NAME
 
 
@@ -36,7 +36,7 @@ def make_ack_data(
 
 def upload_ack_file(file_key: str, ack_data: dict, created_at_formatted_string: str) -> None:
     """Formats the ack data into a csv file and uploads it to the ack bucket"""
-    file_key_without_ext = os.path.splitext(file_key)[0]
+    file_key_without_ext = get_file_key_without_ext(file_key)
     ack_filename = f"ack/{file_key_without_ext}_InfAck_{created_at_formatted_string}.csv"
 
     # Create CSV file with | delimiter, filetype .csv
