@@ -163,6 +163,7 @@ class FhirController:
             validated_search_params.date_from,
             validated_search_params.date_to,
             validated_search_params.include,
+            validated_search_params.invalid_immunization_targets,
         )
 
         if self._has_too_many_search_results(search_bundle):

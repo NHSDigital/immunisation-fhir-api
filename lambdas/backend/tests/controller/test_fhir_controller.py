@@ -995,7 +995,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
 
         # Then
         self.service.search_immunizations.assert_called_once_with(
-            self.nhs_number_valid_value, {vaccine_type}, "test", None, None, None
+            self.nhs_number_valid_value, {vaccine_type}, "test", None, None, None, []
         )
         self.assertEqual(response["statusCode"], 200)
         self.assertEqual(
@@ -1038,7 +1038,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
 
         # Then
         self.service.search_immunizations.assert_called_once_with(
-            self.nhs_number_valid_value, {vaccine_type}, "test", None, None, None
+            self.nhs_number_valid_value, {vaccine_type}, "test", None, None, None, []
         )
         self.assertEqual(response["statusCode"], 200)
         self.assertEqual(
@@ -1111,17 +1111,17 @@ class TestSearchImmunizations(TestFhirControllerBase):
                 )
                 self.service.search_immunizations.assert_not_called()
 
-    def test_search_immunizations_returns_a_validation_error_when_immunization_target_invalid(self):
-        """it should return a 400 invalid error for multiple invalid -immunization.target scenarios"""
+    def test_search_immunizations_returns_400_when_immunization_target_empty_or_all_invalid(self):
+        """it should return 400 when -immunization.target has no values or only invalid values"""
         test_cases = [
             ([], "Search parameter -immunization.target must have one or more values."),
-            (["COVID,FLU,CHICKENS"], "-immunization.target must be one or more of the following: COVID, FLU"),
+            (["CHICKENS"], "-immunization.target must be one or more of the following: COVID, FLU"),
         ]
 
-        for test_patient_id, expected_error in test_cases:
+        for target_values, expected_error in test_cases:
             with self.subTest(msg=expected_error):
                 test_lambda_event = copy.deepcopy(self.test_lambda_event)
-                test_lambda_event["multiValueQueryStringParameters"]["-immunization.target"] = test_patient_id
+                test_lambda_event["multiValueQueryStringParameters"]["-immunization.target"] = target_values
 
                 # When
                 response = self.controller.search_immunizations(test_lambda_event)
@@ -1133,6 +1133,32 @@ class TestSearchImmunizations(TestFhirControllerBase):
                     expected_error,
                 )
                 self.service.search_immunizations.assert_not_called()
+
+    def test_search_immunizations_returns_200_with_operation_outcome_for_invalid_targets(self):
+        """it should return searchset with data for valid targets and OperationOutcome for invalid -immunization.target"""
+        self.service.search_immunizations.return_value = Bundle.construct(
+            entry=[BundleEntry.construct(resource=Immunization.construct(**{"id": "something"}))],
+            link=[BundleLink.construct(relation="self", url="patient-search-url")],
+            type="searchset",
+            total=1,
+        )
+        test_lambda_event = copy.deepcopy(self.test_lambda_event)
+        test_lambda_event["multiValueQueryStringParameters"]["-immunization.target"] = ["COVID,FLU,CHICKENS"]
+
+        # When
+        response = self.controller.search_immunizations(test_lambda_event)
+
+        # Then
+        self.assertEqual(response["statusCode"], 200)
+        self.service.search_immunizations.assert_called_once_with(
+            self.nhs_number_valid_value,
+            {"COVID", "FLU"},
+            "test",
+            datetime.date(2000, 1, 1),
+            datetime.date(2024, 1, 1),
+            "Immunization:patient",
+            ["CHICKENS"],
+        )
 
     def test_search_immunizations_returns_a_validation_error_when_optional_params_invalid(self):
         """it should return a 400 invalid error for multiple invalid optional parameter scenarios"""
@@ -1186,6 +1212,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
             datetime.date(2000, 1, 1),
             datetime.date(2024, 1, 1),
             "Immunization:patient",
+            [],
         )
         self.assertEqual(response["statusCode"], 400)
         self.assertEqual(

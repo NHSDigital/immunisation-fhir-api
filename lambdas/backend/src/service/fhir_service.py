@@ -198,6 +198,7 @@ class FhirService:
         date_from: Optional[datetime.date],
         date_to: Optional[datetime.date],
         include: Optional[str],
+        invalid_immunization_targets: Optional[list[str]] = None,
     ) -> FhirBundle:
         """
         Finds all instances of Immunization(s) for a specified patient for the given specified vaccine type(s).
@@ -257,6 +258,21 @@ class FhirService:
                             severity=Severity.warning,
                             code=Code.unauthorized,
                             diagnostics="Your search contains details that you are not authorised to request",
+                        )
+                    )
+                )
+            )
+
+        if invalid_immunization_targets:
+            invalid_list = ", ".join(sorted(invalid_immunization_targets))
+            entries.append(
+                BundleEntry(
+                    resource=OperationOutcome.construct(
+                        **create_operation_outcome(
+                            resource_id=str(uuid.uuid4()),
+                            severity=Severity.warning,
+                            code=Code.invalid,
+                            diagnostics=f"Your search included invalid -immunization.target value(s) that were ignored: {invalid_list}. The search was performed using the valid value(s) only.",
                         )
                     )
                 )
