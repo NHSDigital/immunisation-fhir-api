@@ -33,7 +33,7 @@ def extract_sqs_imms_data(sqs_record: dict) -> ImmsData:
     }
 
 
-def _unwrap_dynamodb_value(value) -> Any:
+def _unwrap_dynamodb_value(value: dict) -> Any:
     """
     Unwrap DynamoDB type descriptor to get the actual value.
     DynamoDB types: S (String), N (Number), BOOL, M (Map), L (List), NULL

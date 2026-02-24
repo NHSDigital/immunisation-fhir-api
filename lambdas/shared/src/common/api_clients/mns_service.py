@@ -79,7 +79,6 @@ class MnsService:
         headers = self._build_headers()
         response = request_with_retry_backoff("GET", f"{MNS_BASE_URL}/subscriptions", headers, timeout=10)
         logging.info(f"GET {MNS_BASE_URL}/subscriptions")
-        logging.debug(f"Headers: {headers}")
 
         if response.status_code == 200:
             bundle = response.json()

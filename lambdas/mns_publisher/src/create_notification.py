@@ -63,36 +63,32 @@ def calculate_age_at_vaccination(birth_date: str, vaccination_date: str) -> int:
 
 
 def get_practitioner_details_from_pds(nhs_number: str) -> str | None:
-    try:
-        patient_details = pds_get_patient_details(nhs_number)
+    patient_details = pds_get_patient_details(nhs_number)
 
-        general_practitioners = patient_details.get("generalPractitioner", [])
-        if not general_practitioners or len(general_practitioners) == 0:
-            logger.warning("No GP details found for patient")
+    general_practitioners = patient_details.get("generalPractitioner", [])
+    if not general_practitioners or len(general_practitioners) == 0:
+        logger.warning("No GP details found for patient")
+        return None
+
+    patient_gp = general_practitioners[0]
+    patient_gp_identifier = patient_gp.get("identifier", {})
+
+    gp_ods_code = patient_gp_identifier.get("value")
+    if not gp_ods_code:
+        logger.warning("GP ODS code not found in practitioner details")
+        return None
+
+    # Check if registration is current
+    period = patient_gp_identifier.get("period", {})
+    gp_period_end_date = period.get("end", None)
+
+    if gp_period_end_date:
+        # Parse end date (format: YYYY-MM-DD)
+        end_date = datetime.strptime(gp_period_end_date, "%Y-%m-%d").date()
+        today = datetime.now().date()
+
+        if end_date < today:
+            logger.warning("No current GP registration found for patient")
             return None
 
-        patient_gp = general_practitioners[0]
-        patient_gp_identifier = patient_gp.get("identifier", {})
-
-        gp_ods_code = patient_gp_identifier.get("value")
-        if not gp_ods_code:
-            logger.warning("GP ODS code not found in practitioner details")
-            return None
-
-        # Check if registration is current
-        period = patient_gp_identifier.get("period", {})
-        gp_period_end_date = period.get("end", None)
-
-        if gp_period_end_date:
-            # Parse end date (format: YYYY-MM-DD)
-            end_date = datetime.strptime(gp_period_end_date, "%Y-%m-%d").date()
-            today = datetime.now().date()
-
-            if end_date < today:
-                logger.warning("GP registration has ended")
-                return None
-
-        return gp_ods_code
-    except Exception as error:
-        logger.exception("Failed to get practitioner details from pds", error)
-        raise
+    return gp_ods_code

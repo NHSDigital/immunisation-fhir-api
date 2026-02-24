@@ -87,7 +87,7 @@ class TestProcessRecord(unittest.TestCase):
         self.sample_notification = {
             "id": "notif-789",
             "specversion": "1.0",
-            "type": "imms-vaccinations-2",
+            "type": "imms-vaccinations-1",
             "filtering": {"action": "CREATE"},
         }
         self.mock_mns_service = Mock()
@@ -97,11 +97,11 @@ class TestProcessRecord(unittest.TestCase):
     def test_process_record_success(self, mock_logger, mock_create_notification):
         """Test successful processing of a single record."""
         mock_create_notification.return_value = self.sample_notification
-        self.mock_mns_service.publish_notification.return_value = {"status_code": 200}
+        self.mock_mns_service.publish_notification.return_value = None
 
-        result = process_record(self.sample_sqs_record, self.mock_mns_service)
+        # Should not raise exception
+        process_record(self.sample_sqs_record, self.mock_mns_service)
 
-        self.assertIsNone(result)
         mock_create_notification.assert_called_once_with(self.sample_sqs_record)
         self.mock_mns_service.publish_notification.assert_called_once_with(self.sample_notification)
         mock_logger.exception.assert_not_called()
@@ -112,10 +112,10 @@ class TestProcessRecord(unittest.TestCase):
         """Test handling when notification creation fails."""
         mock_create_notification.side_effect = Exception("Creation error")
 
-        result = process_record(self.sample_sqs_record, self.mock_mns_service)
+        # Should raise exception
+        with self.assertRaises(Exception):
+            process_record(self.sample_sqs_record, self.mock_mns_service)
 
-        self.assertEqual(result, {"itemIdentifier": "98ed30eb-829f-41df-8a73-57fef70cf161"})
-        mock_logger.exception.assert_called_once()
         self.mock_mns_service.publish_notification.assert_not_called()
 
     @patch("process_records.create_mns_notification")
@@ -125,22 +125,9 @@ class TestProcessRecord(unittest.TestCase):
         mock_create_notification.return_value = self.sample_notification
         self.mock_mns_service.publish_notification.side_effect = Exception("Publish error")
 
-        result = process_record(self.sample_sqs_record, self.mock_mns_service)
-
-        self.assertEqual(result, {"itemIdentifier": "98ed30eb-829f-41df-8a73-57fef70cf161"})
-        mock_logger.exception.assert_called_once()
-
-    @patch("process_records.create_mns_notification")
-    @patch("process_records.logger")
-    def test_process_record_logs_trace_ids(self, mock_logger, mock_create_notification):
-        """Test that trace IDs are logged correctly."""
-        mock_create_notification.return_value = self.sample_notification
-
-        process_record(self.sample_sqs_record, self.mock_mns_service)
-
-        # Check info log was called with trace IDs
-        info_calls = [call for call in mock_logger.info.call_args_list if "Processing message" in str(call)]
-        self.assertEqual(len(info_calls), 1)
+        # Should raise exception
+        with self.assertRaises(Exception):
+            process_record(self.sample_sqs_record, self.mock_mns_service)
 
 
 class TestProcessRecords(unittest.TestCase):
@@ -158,13 +145,14 @@ class TestProcessRecords(unittest.TestCase):
 
         cls.sample_sqs_record = raw_event
 
+    @patch("process_records.logger")
     @patch("process_records.get_mns_service")
     @patch("process_records.process_record")
-    def test_process_records_all_success(self, mock_process_record, mock_get_mns):
+    def test_process_records_all_success(self, mock_process_record, mock_get_mns, mock_logger):
         """Test processing multiple records with all successes."""
         mock_mns_service = Mock()
         mock_get_mns.return_value = mock_mns_service
-        mock_process_record.return_value = None  # Success
+        mock_process_record.return_value = None  # No exception
 
         record_2 = self.sample_sqs_record.copy()
         record_2["messageId"] = "different-id"
@@ -172,19 +160,21 @@ class TestProcessRecords(unittest.TestCase):
 
         result = process_records(records)
 
-        self.assertEqual(result, [])
+        self.assertEqual(result, {"batchItemFailures": []})
         self.assertEqual(mock_process_record.call_count, 2)
         mock_get_mns.assert_called_once()
+        mock_logger.info.assert_called_with("Successfully processed all 2 messages")
 
+    @patch("process_records.logger")
     @patch("process_records.get_mns_service")
     @patch("process_records.process_record")
-    def test_process_records_partial_failure(self, mock_process_record, mock_get_mns):
+    def test_process_records_partial_failure(self, mock_process_record, mock_get_mns, mock_logger):
         """Test processing with some failures."""
         mock_mns_service = Mock()
         mock_get_mns.return_value = mock_mns_service
         mock_process_record.side_effect = [
             None,  # Success
-            {"itemIdentifier": "msg-456"},  # Failure
+            Exception("Processing error"),  # Failure
         ]
 
         record_2 = self.sample_sqs_record.copy()
@@ -193,24 +183,28 @@ class TestProcessRecords(unittest.TestCase):
 
         result = process_records(records)
 
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]["itemIdentifier"], "msg-456")
+        self.assertEqual(len(result["batchItemFailures"]), 1)
+        self.assertEqual(result["batchItemFailures"][0]["itemIdentifier"], "msg-456")
+        mock_logger.warning.assert_called_with("Batch completed with 1 failures")
 
+    @patch("process_records.logger")
     @patch("process_records.get_mns_service")
     @patch("process_records.process_record")
-    def test_process_records_empty_list(self, mock_process_record, mock_get_mns):
+    def test_process_records_empty_list(self, mock_process_record, mock_get_mns, mock_logger):
         """Test processing empty record list."""
         mock_mns_service = Mock()
         mock_get_mns.return_value = mock_mns_service
 
         result = process_records([])
 
-        self.assertEqual(result, [])
+        self.assertEqual(result, {"batchItemFailures": []})
         mock_process_record.assert_not_called()
+        mock_logger.info.assert_called_with("Successfully processed all 0 messages")
 
+    @patch("process_records.logger")
     @patch("process_records.get_mns_service")
     @patch("process_records.process_record")
-    def test_process_records_mns_service_created_once(self, mock_process_record, mock_get_mns):
+    def test_process_records_mns_service_created_once(self, mock_process_record, mock_get_mns, mock_logger):
         """Test that MNS service is created only once for batch."""
         mock_mns_service = Mock()
         mock_get_mns.return_value = mock_mns_service
@@ -239,35 +233,30 @@ class TestLambdaHandler(unittest.TestCase):
         cls.sample_sqs_record = raw_event
 
     @patch("lambda_handler.process_records")
-    @patch("lambda_handler.logger")
-    def test_lambda_handler_all_success(self, mock_logger, mock_process_records):
+    def test_lambda_handler_all_success(self, mock_process_records):
         """Test lambda handler with all records succeeding."""
-        mock_process_records.return_value = []
+        mock_process_records.return_value = {"batchItemFailures": []}
 
         event = {"Records": [self.sample_sqs_record]}
         result = lambda_handler(event, Mock())
 
         self.assertEqual(result, {"batchItemFailures": []})
         mock_process_records.assert_called_once_with([self.sample_sqs_record])
-        mock_logger.info.assert_called_with("Successfully processed all 1 messages")
 
     @patch("lambda_handler.process_records")
-    @patch("lambda_handler.logger")
-    def test_lambda_handler_with_failures(self, mock_logger, mock_process_records):
+    def test_lambda_handler_with_failures(self, mock_process_records):
         """Test lambda handler with some failures."""
-        mock_process_records.return_value = [{"itemIdentifier": "msg-123"}]
+        mock_process_records.return_value = {"batchItemFailures": [{"itemIdentifier": "msg-123"}]}
 
         event = {"Records": [self.sample_sqs_record]}
         result = lambda_handler(event, Mock())
 
         self.assertEqual(result, {"batchItemFailures": [{"itemIdentifier": "msg-123"}]})
-        mock_logger.warning.assert_called_with("Batch completed with 1 failures")
 
     @patch("lambda_handler.process_records")
-    @patch("lambda_handler.logger")
-    def test_lambda_handler_empty_records(self, mock_logger, mock_process_records):
+    def test_lambda_handler_empty_records(self, mock_process_records):
         """Test lambda handler with no records."""
-        mock_process_records.return_value = []
+        mock_process_records.return_value = {"batchItemFailures": []}
 
         event = {"Records": []}
         result = lambda_handler(event, Mock())

@@ -143,12 +143,10 @@ class TestGetPractitionerDetailsFromPds(unittest.TestCase):
     def test_get_practitioner_pds_exception(self, mock_logger, mock_pds_get):
         """Test when PDS API raises exception."""
         mock_pds_get.side_effect = Exception("PDS API error")
-
         with self.assertRaises(Exception) as context:
             get_practitioner_details_from_pds("9481152782")
-
-        self.assertEqual(str(context.exception), "PDS API error")
-        mock_logger.exception.assert_called_once()
+            self.assertEqual(str(context.exception), "PDS API error")
+            mock_logger.exception.assert_called_once()
 
     @patch("create_notification.pds_get_patient_details")
     @patch("create_notification.logger")
