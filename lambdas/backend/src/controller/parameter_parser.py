@@ -28,10 +28,15 @@ class SearchParams:
     date_from: Optional[datetime.date]
     date_to: Optional[datetime.date]
     include: Optional[str]
-    invalid_immunization_targets: list[str] = field(default_factory=list)
 
     def __repr__(self):
         return str(self.__dict__)
+
+
+@dataclass
+class SearchParamsResult:
+    params: SearchParams
+    invalid_immunization_targets: list[str] = field(default_factory=list)
 
 
 def process_patient_identifier(identifier_params: dict[str, list[str]]) -> str:
@@ -66,7 +71,7 @@ def process_patient_identifier(identifier_params: dict[str, list[str]]) -> str:
     return nhs_number
 
 
-def process_immunization_target(imms_params: dict[str, list[str]]) -> tuple[set[str], list[str]]:
+def process_immunization_target(imms_params: dict[str, list[str]]) -> tuple[list[str], list[str]]:
     """Validate and parse immunization target parameter. Returns (valid_vaccine_types, invalid_vaccine_types).
     Raises ParameterExceptionError only when no values provided or all values are invalid.
     """
@@ -91,10 +96,10 @@ def process_immunization_target(imms_params: dict[str, list[str]]) -> tuple[set[
             f"{', '.join(sorted(valid_vaccine_types_set))}"
         )
 
-    return set(valid), invalid
+    return valid, invalid
 
 
-def process_mandatory_params(params: dict[str, list[str]]) -> tuple[str, set[str], list[str]]:
+def process_mandatory_params(params: dict[str, list[str]]) -> tuple[str, list[str], list[str]]:
     """Validate mandatory params and return (patient_identifier, valid_vaccine_types, invalid_vaccine_types).
     Raises ParameterExceptionError for any validation error.
     """
@@ -149,7 +154,7 @@ def process_optional_params(
     return date_from, date_to, include
 
 
-def validate_and_retrieve_search_params(params: dict[str, list[str]]) -> SearchParams:
+def validate_and_retrieve_search_params(params: dict[str, list[str]]) -> SearchParamsResult:
     """Validate and retrieve search parameters.
     :raises ParameterExceptionError:
     """
@@ -162,7 +167,8 @@ def validate_and_retrieve_search_params(params: dict[str, list[str]]) -> SearchP
             f"{ImmunizationSearchParameterName.DATE_TO}"
         )
 
-    return SearchParams(patient_identifier, vaccine_types, date_from, date_to, include, invalid_vaccine_types)
+    search_params = SearchParams(patient_identifier, set(vaccine_types), date_from, date_to, include)
+    return SearchParamsResult(params=search_params, invalid_immunization_targets=invalid_vaccine_types)
 
 
 def parse_search_params(search_params_in_req: dict[str, list[str]]) -> dict[str, list[str]]:

@@ -6,7 +6,8 @@ from enum import Enum
 class Code(str, Enum):
     forbidden = "forbidden"
     not_found = "not-found"
-    invalid = "invalid or missing access token"
+    invalid = "invalid"
+    invalid_access_token = "invalid access token"
     exception = "exception"
     server_error = "internal server error"
     invariant = "invariant"
