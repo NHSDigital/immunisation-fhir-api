@@ -1,5 +1,6 @@
 """Create ack file and upload to S3 bucket"""
 
+import os
 from csv import writer
 from io import BytesIO, StringIO
 

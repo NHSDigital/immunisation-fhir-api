@@ -1,5 +1,6 @@
 """Module for the batch file repository"""
 
+import os
 from csv import writer
 from io import BytesIO, StringIO
 

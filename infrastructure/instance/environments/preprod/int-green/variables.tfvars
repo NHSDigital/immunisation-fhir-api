@@ -5,6 +5,7 @@ pds_environment                   = "int"
 error_alarm_notifications_enabled = true
 
 # mesh no invocation period metric set to 3 days (in seconds) for preprod environment i.e 3 * 24 * 60 * 60
-mesh_no_invocation_period_seconds = 259200
-create_mesh_processor             = true
-has_sub_environment_scope         = false
+mesh_no_invocation_period_seconds       = 259200
+create_mesh_processor                   = true
+has_sub_environment_scope               = false
+dynamodb_point_in_time_recovery_enabled = true
