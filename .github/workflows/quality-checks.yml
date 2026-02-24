@@ -1,12 +1,10 @@
 name: Quality Checks
 
 on:
-#  pull_request:
-#    types: [opened, synchronize, reopened]
+  #  pull_request:
+  #    types: [opened, synchronize, reopened]
   workflow_call:
     secrets:
-      GITHUB_TOKEN:
-        required: true
       SONAR_TOKEN:
         required: true
 
@@ -252,5 +250,5 @@ jobs:
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
+          GITHUB_TOKEN: ${{ github.token }} # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
