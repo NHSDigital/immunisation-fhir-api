@@ -16,6 +16,7 @@ from common.batch.audit_table import (
     update_audit_table_item,
 )
 from common.clients import get_s3_client, logger
+from common.file_utils import get_file_key_without_ext
 from common.log_decorator import generate_and_send_logs
 from common.models.batch_constants import (
     ACK_BUCKET_NAME,
@@ -142,7 +143,7 @@ def complete_batch_file_process(
     start_time = time.time()
 
     # finish CSV file
-    file_key_without_ext = os.path.splitext(file_key)[0]
+    file_key_without_ext = get_file_key_without_ext(file_key)
     ack_filename = f"{file_key_without_ext}_BusAck_{created_at_formatted_string}.csv"
 
     move_file(ACK_BUCKET_NAME, f"{TEMP_ACK_DIR}/{ack_filename}", f"{COMPLETED_ACK_DIR}/{ack_filename}")
@@ -247,7 +248,7 @@ def obtain_current_json_ack_content(message_id: str, supplier: str, file_key: st
             logger.info("No existing JSON ack file found in S3 - creating new file")
 
             ingestion_start_time = get_ingestion_start_time_by_message_id(message_id)
-            raw_ack_filename = os.path.splitext(file_key)[0]
+            raw_ack_filename = get_file_key_without_ext(file_key)
 
             # Generate the initial fields
             return _make_ack_data_dict_identifier_information(
@@ -269,7 +270,7 @@ def update_csv_ack_file(
     ack_data_rows: list,
 ) -> None:
     """Updates the ack file with the new data row based on the given arguments"""
-    file_key_without_ext = os.path.splitext(file_key)[0]
+    file_key_without_ext = get_file_key_without_ext(file_key)
     ack_filename = f"{file_key_without_ext}_BusAck_{created_at_formatted_string}.csv"
     temp_ack_file_key = f"{TEMP_ACK_DIR}/{ack_filename}"
     accumulated_csv_content = obtain_current_csv_ack_content(temp_ack_file_key)
@@ -293,7 +294,7 @@ def update_json_ack_file(
     ack_data_rows: list,
 ) -> None:
     """Updates the ack file with the new data row based on the given arguments"""
-    file_key_without_ext = os.path.splitext(file_key)[0]
+    file_key_without_ext = get_file_key_without_ext(file_key)
     ack_filename = f"{file_key_without_ext}_BusAck_{created_at_formatted_string}.json"
     temp_ack_file_key = f"{TEMP_ACK_DIR}/{ack_filename}"
     ack_data_dict = obtain_current_json_ack_content(message_id, supplier, file_key, temp_ack_file_key)
