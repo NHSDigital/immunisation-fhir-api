@@ -1,0 +1,1 @@
+✅ Step Passed: **Send a search request with GET method with invalid NHS Number '1234567890' and invalid Disease Type 'ABC'
