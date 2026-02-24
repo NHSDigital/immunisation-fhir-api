@@ -101,9 +101,8 @@ class TestConvertToFlatJson(unittest.TestCase):
     ):
         """
         Asserts that a record with the expected structure exists in DynamoDB.
-        Ignores the dynamically generated field PK.
-        Ensures that the 'Imms' field matches exactly.
-        Ensures that the ExpiresAt field has been calculated correctly.
+        Ignores dynamic fields: PK, DateTimeStamp, ExpiresAt.
+        Validates exact Imms payload and TTL offset.
         """
         self.assertTrue(response)
 
@@ -116,20 +115,21 @@ class TestConvertToFlatJson(unittest.TestCase):
         filtered_items = [
             {k: v for k, v in item.items() if k not in ["PK", "DateTimeStamp", "ExpiresAt"]} for item in unfiltered_items
         ]
+
         self.assertGreater(len(filtered_items), 0, f"No matching item found for {operation_flag}")
 
         imms_data = filtered_items[0]["Imms"]
+        if isinstance(imms_data, str):
+            imms_data = json.loads(imms_data)
+
         self.assertIsInstance(imms_data, dict)
         self.assertGreater(len(imms_data), 0)
-
-        # Check Imms JSON structure matches exactly
         self.assertEqual(imms_data, expected_imms, "Imms data does not match expected JSON structure")
 
         for key, expected_value in expected_values.items():
             self.assertIn(key, filtered_items[0], f"{key} is missing")
             self.assertEqual(filtered_items[0][key], expected_value, f"{key} mismatch")
 
-        # Check that the value of ExpiresAt is DELTA_TTL_DAYS after DateTimeStamp
         expected_seconds = int(os.environ["DELTA_TTL_DAYS"]) * 24 * 60 * 60
         date_time = int(datetime.fromisoformat(unfiltered_items[0]["DateTimeStamp"]).timestamp())
         expires_at = unfiltered_items[0]["ExpiresAt"]
@@ -240,11 +240,30 @@ class TestConvertToFlatJson(unittest.TestCase):
                 items = result.get("Items", [])
                 self.clear_table()
 
+    def test_handler_imms_convert_to_flat_json_legacy_patientsk_compatibility(self):
+        """
+        Ensures legacy PatientSK input is still accepted (backward compatibility).
+        """
+        event = self.get_event(operation=Operation.CREATE)
+
+        new_image = event["Records"][0]["dynamodb"]["NewImage"]
+
+        # Some fixtures already provide PatientSK and no SK
+        if "SK" in new_image:
+            new_image["PatientSK"] = deepcopy(new_image["SK"])
+            del new_image["SK"]
+        elif "PatientSK" not in new_image:
+            self.fail("Fixture must contain either SK or PatientSK")
+
+        response = handler(event, None)
+
+        result = self.table.scan()
+        items = result.get("Items", [])
+        self.assertGreater(len(items), 0)
+        self.assertTrue(response)
+
     def clear_table(self):
         scan = self.table.scan()
         with self.table.batch_writer() as batch:
             for item in scan.get("Items", []):
                 batch.delete_item(Key={"PK": item["PK"]})
-
-    if __name__ == "__main__":
-        unittest.main()

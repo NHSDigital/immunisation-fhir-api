@@ -40,6 +40,85 @@ Note: Paths are relative to this directory, `delta_backend`.
 
 4. Run `make test` to run unit tests or `make coverage-run`. To see the unit test coverage, run `make coverage-run` first and then `make coverage-report`.
 
+## Delta Stream Input Contract
+
+This lambda consumes DynamoDB Stream records from `imms-<env>-imms-events` (`NEW_IMAGE`).
+
+## Delta table indexing contract
+
+For ordering-safe reads and backward compatibility, the delta table uses:
+
+- Legacy GSI: `SearchIndex`
+    - PK: `Operation`
+    - SK: `DateTimeStamp`
+- New GSI: `OperationSequenceIndex`
+    - PK: `Operation`
+    - SK: `DateTimeStampWithSequence`
+
+`DateTimeStamp` is retained for DPS backward compatibility.
+`DateTimeStampWithSequence` is for deterministic ordering of same-second events.
+
+### Expected shape
+
+```json
+{
+    "eventID": "stream-id",
+    "eventName": "INSERT | MODIFY | REMOVE",
+    "dynamodb": {
+        "ApproximateCreationDateTime": 1690896000,
+        "SequenceNumber": "4959...",
+        "NewImage": {
+            "PK": { "S": "covid#<imms-id>" },
+            "SK": { "S": "covid#<patient-id>" },
+            "Operation": { "S": "CREATE | UPDATE | DELETE | DELETE_LOGICAL" },
+            "SupplierSystem": { "S": "EMIS | RAVS | ..." },
+            "Resource": { "S": "{\"resourceType\":\"Immunization\", ... }" }
+        },
+        "Keys": {
+            "PK": { "S": "covid#<imms-id>" }
+        }
+    }
+}
+```
+
+### Compatibility rules
+
+The processor accepts the following legacy/fallback inputs:
+
+1. **Patient key fallback**
+    - Preferred: `NewImage.SK`
+    - Fallback: `NewImage.PatientSK`
+
+2. **Operation fallback**
+    - Preferred: `NewImage.Operation`
+    - Fallback: mapped from `eventName`:
+        - `INSERT -> CREATE`
+        - `MODIFY -> UPDATE`
+        - `REMOVE -> DELETE`
+
+3. **Payload fallback**
+    - Preferred: `NewImage.Resource` (FHIR JSON string, converted via `Converter`)
+    - Fallback: `NewImage.Imms` (already-flat or JSON string), with `ACTION_FLAG` added when missing
+
+4. **Sequence fallback**
+    - Preferred: `dynamodb.SequenceNumber`
+    - Fallback: `NewImage.SequenceNumber`
+    - Final fallback: `"0"`
+
+5. **Skip rules**
+    - If `SupplierSystem` is `DPSFULL` or `DPSREDUCED`, record is skipped (logged, no DDB write)
+
+### Output/behavior contract
+
+- `process_record(...)` returns:
+    - `tuple[bool, dict]` → `(success, operation_outcome)`
+- `operation_outcome` always includes:
+    - `record`
+    - `operation_type`
+    - `statusCode`
+    - `statusDesc`
+- Failed records are sent to DLQ.
+
 ## 🛠️ Key Features
 
 - Schema-driven field extraction and formatting

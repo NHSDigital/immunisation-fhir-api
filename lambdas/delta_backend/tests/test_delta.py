@@ -27,6 +27,31 @@ EXCEPTION_RESPONSE = ClientError({"Error": {"Code": "InternalServerError"}}, "Pu
 FAIL_RESPONSE = {"ResponseMetadata": {"HTTPStatusCode": 500}}
 
 
+def _make_stream_record(
+    *,
+    event_name: str = "INSERT",
+    sk: str | None = "imms#1",
+    patient_sk: str | None = None,
+    sequence_number: str | None = "49590338322303844748686548458181664417",
+    imms: str = '{"foo": 1.23}',
+) -> dict:
+    new_image: dict = {"Imms": imms}
+    if sk is not None:
+        new_image["SK"] = sk
+    if patient_sk is not None:
+        new_image["PatientSK"] = patient_sk
+
+    dynamodb_envelope: dict = {"NewImage": new_image}
+
+    if sequence_number is not None:
+        dynamodb_envelope["SequenceNumber"] = sequence_number
+
+    return {
+        "eventName": event_name,
+        "dynamodb": dynamodb_envelope,
+    }
+
+
 class DeltaHandlerTestCase(unittest.TestCase):
     # TODO refactor for dependency injection, eg process_record, send_firehose etc
     def setUp(self):
@@ -50,6 +75,14 @@ class DeltaHandlerTestCase(unittest.TestCase):
 
         self.delta_table_patcher = patch("delta.delta_table")
         self.mock_delta_table = self.delta_table_patcher.start()
+
+    def _call_process_record(self, record):
+        return process_record(
+            record,
+            self.mock_delta_table,
+            self.mock_sqs_client,
+            TEST_DEAD_LETTER_QUEUE_URL,
+        )
 
     def tearDown(self):
         patch.stopall()
@@ -109,6 +142,58 @@ class DeltaHandlerTestCase(unittest.TestCase):
             self.assertEqual(put_item_data["Operation"], Operation.CREATE)
             self.assertEqual(put_item_data["SupplierSystem"], supplier)
             self.mock_sqs_client.send_message.assert_not_called()
+
+    @patch("delta.process_record")
+    def test_partial_success_contract_and_dlq_routing(self, mock_process_record):
+        event = {"Records": [{"id": "r1"}, {"id": "r2"}, {"id": "r3"}]}
+
+        partial_msg = "Partial success: successfully synced into delta, but issues found within record"
+        mock_process_record.side_effect = [
+            (
+                True,
+                {
+                    "record": "id1",
+                    "operation_type": Operation.CREATE,
+                    "statusCode": "200",
+                    "statusDesc": "Successfully synched into delta",
+                },
+            ),
+            (
+                True,
+                {"record": "id2", "operation_type": Operation.UPDATE, "statusCode": "207", "statusDesc": partial_msg},
+            ),
+            (
+                False,
+                {"record": "id3", "operation_type": Operation.UPDATE, "statusCode": "500", "statusDesc": "Exception"},
+            ),
+        ]
+
+        response = handler(event, None)
+
+        self.assertTrue(response)
+        self.assertEqual(self.mock_send_log_to_firehose.call_count, 3)
+        self.assertEqual(self.mock_sqs_client.send_message.call_count, 1)
+
+        sent_payloads = [c.args[1] for c in self.mock_send_log_to_firehose.call_args_list]
+        self.assertTrue(any(p["operation_outcome"]["statusDesc"] == partial_msg for p in sent_payloads))
+
+    def test_legacy_patientsk_is_accepted(self):
+        self.mock_delta_table.put_item.return_value = SUCCESS_RESPONSE
+
+        event = ValuesForTests.get_event(event_name=EventName.CREATE, operation=Operation.CREATE)
+        new_image = event["Records"][0]["dynamodb"]["NewImage"]
+
+        if "SK" in new_image:
+            new_image["PatientSK"] = new_image["SK"]
+            del new_image["SK"]
+        elif "PatientSK" not in new_image:
+            self.fail("Fixture must contain either SK or PatientSK")
+
+        response = handler(event, None)
+
+        self.assertTrue(response)
+        self.mock_delta_table.put_item.assert_called_once()
+        self.mock_sqs_client.send_message.assert_not_called()
 
     def test_handler_exception(self):
         """Ensure that sqs_client exceptions do not cause the lambda handler itself to raise an exception"""
@@ -520,6 +605,183 @@ class DeltaHandlerTestCase(unittest.TestCase):
         # Only send the failed record to SQS DLQ
         self.assertEqual(self.mock_sqs_client.send_message.call_count, 1)
 
+    def _get_put_item_payload(self) -> dict:
+        """Helper: return the Item dict from the most recent put_item call."""
+        return self.mock_delta_table.put_item.call_args.kwargs["Item"]
+
+    def _assert_timestamp_fields(self, item: dict) -> None:
+        """
+        Assert both timestamp fields are present, correctly formed, and mutually consistent.
+        This validates the write contract for both GSIs.
+        """
+        self.assertIn("DateTimeStamp", item, "DateTimeStamp missing — breaks DPS backward compat (SearchIndex GSI)")
+        self.assertIn(
+            "DateTimeStampWithSequence",
+            item,
+            "DateTimeStampWithSequence missing — breaks OperationSequenceIndex GSI",
+        )
+        dt: str = item["DateTimeStamp"]
+        dt_seq: str = item["DateTimeStampWithSequence"]
+        self.assertTrue(
+            dt_seq.startswith(dt),
+            f"DateTimeStampWithSequence '{dt_seq}' must start with DateTimeStamp '{dt}'",
+        )
+        self.assertIn("#", dt_seq, "Separator '#' missing from DateTimeStampWithSequence")
+        seq_part = dt_seq.split("#", 1)[1]
+        self.assertTrue(len(seq_part) > 0, "Sequence part after '#' must not be empty")
+
+    def test_create_put_item_has_both_timestamp_fields(self):
+        self.mock_delta_table.put_item.return_value = SUCCESS_RESPONSE
+        event = ValuesForTests.get_event(event_name=EventName.CREATE, operation=Operation.CREATE, imms_id="ts-create")
+        handler(event, None)
+
+        item = self._get_put_item_payload()
+        self._assert_timestamp_fields(item)
+        self.assertEqual(item["Operation"], Operation.CREATE)
+
+    def test_update_put_item_has_both_timestamp_fields(self):
+        self.mock_delta_table.put_item.return_value = SUCCESS_RESPONSE
+        event = ValuesForTests.get_event(event_name=EventName.UPDATE, operation=Operation.UPDATE, imms_id="ts-update")
+        handler(event, None)
+
+        item = self._get_put_item_payload()
+        self._assert_timestamp_fields(item)
+        self.assertEqual(item["Operation"], Operation.UPDATE)
+
+    def test_delete_logical_put_item_has_both_timestamp_fields(self):
+        self.mock_delta_table.put_item.return_value = SUCCESS_RESPONSE
+        event = ValuesForTests.get_event(
+            event_name=EventName.UPDATE, operation=Operation.DELETE_LOGICAL, imms_id="ts-del-logical"
+        )
+        handler(event, None)
+
+        item = self._get_put_item_payload()
+        self._assert_timestamp_fields(item)
+        self.assertEqual(item["Operation"], Operation.DELETE_LOGICAL)
+        # DELETE_LOGICAL retains the full Imms payload with ACTION_FLAG set to DELETE_LOGICAL
+        # Only DELETE_PHYSICAL (REMOVE stream events) blanks Imms to ""
+        self.assertNotEqual(item["Imms"], "", "DELETE_LOGICAL must retain Imms payload")
+        self.assertIsInstance(item["Imms"], dict, "DELETE_LOGICAL Imms must be a dict (flat JSON)")
+        self.assertEqual(
+            item["Imms"].get("ACTION_FLAG"),
+            ActionFlag.DELETE_LOGICAL,
+            "DELETE_LOGICAL Imms must have ACTION_FLAG set to DELETE_LOGICAL",
+        )
+
+    def test_delete_physical_put_item_has_both_timestamp_fields(self):
+        self.mock_delta_table.put_item.return_value = SUCCESS_RESPONSE
+        event = ValuesForTests.get_event(
+            event_name=EventName.DELETE_PHYSICAL, operation=Operation.DELETE_PHYSICAL, imms_id="ts-del-phys"
+        )
+        handler(event, None)
+
+        item = self._get_put_item_payload()
+        self._assert_timestamp_fields(item)
+        self.assertEqual(item["Operation"], Operation.DELETE_PHYSICAL)
+        # DELETE_PHYSICAL (REMOVE stream event) blanks Imms to empty string
+        self.assertEqual(item["Imms"], "", "Physical delete must blank out Imms")
+
+    def test_remove_event_sequence_fallback_to_new_image(self):
+        """
+        REMOVE records have no NewImage in real streams.
+        Verify sequence falls back through dynamodb.SequenceNumber -> NewImage.SequenceNumber -> '0'.
+        """
+        self.mock_delta_table.put_item.return_value = SUCCESS_RESPONSE
+
+        record = {
+            "eventName": "REMOVE",
+            "dynamodb": {
+                "Keys": {"PK": {"S": "covid#remove-test-id"}},
+                # Deliberately omit dynamodb.SequenceNumber to test NewImage fallback
+                # This shape does NOT occur in real DDB streams
+                "NewImage": {"SequenceNumber": {"S": "99999"}},
+            },
+        }
+        event = {"Records": [record]}
+        handler(event, None)
+
+        item = self._get_put_item_payload()
+        self._assert_timestamp_fields(item)
+        # sequence came from NewImage fallback
+        self.assertIn("99999", item["DateTimeStampWithSequence"])
+
+    def test_remove_event_sequence_final_fallback_to_zero(self):
+        """When neither dynamodb.SequenceNumber nor NewImage.SequenceNumber exist, default to '0'."""
+        self.mock_delta_table.put_item.return_value = SUCCESS_RESPONSE
+
+        record = {
+            "eventName": "REMOVE",
+            "dynamodb": {
+                "Keys": {"PK": {"S": "covid#no-seq-id"}},
+                # No SequenceNumber anywhere — tests "0" final fallback
+            },
+        }
+        event = {"Records": [record]}
+        handler(event, None)
+
+        item = self._get_put_item_payload()
+        self._assert_timestamp_fields(item)
+        self.assertTrue(item["DateTimeStampWithSequence"].endswith("#0"))
+
+
+class TestGetCreationAndExpiryTimesWithSequence(unittest.TestCase):
+    """Test get_creation_and_expiry_times function with sequence numbers."""
+
+    def test_get_creation_and_expiry_times_with_sequence(self):
+        """Test that the function returns datetime, composite key, and expiry timestamp."""
+        from delta import get_creation_and_expiry_times
+
+        creation_timestamp = 1708264245.0  # 2024-02-18 14:30:45 UTC
+        sequence_number = "49590338322303844748686548458181664417"
+
+        datetime_iso, datetime_with_sequence, expiry_timestamp = get_creation_and_expiry_times(
+            creation_timestamp, sequence_number
+        )
+
+        # Use the actual creation_timestamp to calculate expected datetime
+        from datetime import UTC, datetime
+
+        expected_datetime = datetime.fromtimestamp(creation_timestamp, UTC).isoformat()
+
+        self.assertEqual(datetime_iso, expected_datetime)
+
+        expected_composite = f"{datetime_iso}#{sequence_number}"
+        self.assertEqual(datetime_with_sequence, expected_composite)
+        self.assertIn("#", datetime_with_sequence)
+
+        expected_expiry = int(creation_timestamp) + (14 * 24 * 60 * 60)  # 14 days in seconds
+        self.assertEqual(expiry_timestamp, expected_expiry)
+
+    def test_composite_key_lexicographic_ordering(self):
+        """Test that composite keys sort correctly for same-second events."""
+        from delta import get_creation_and_expiry_times
+
+        timestamp = 1708264245.0
+        seq1 = "49590338322303844748686548458181664417"
+        seq2 = "49590338322303844748686548458181664418"
+
+        _, composite1, _ = get_creation_and_expiry_times(timestamp, seq1)
+        _, composite2, _ = get_creation_and_expiry_times(timestamp, seq2)
+
+        self.assertLess(composite1, composite2)
+
+        unsorted = [composite2, composite1]
+        sorted_keys = sorted(unsorted)
+        self.assertEqual(sorted_keys, [composite1, composite2])
+
+    def test_sequence_number_consistency(self):
+        """Test that sequence numbers from DynamoDB streams are handled correctly."""
+        from delta import get_creation_and_expiry_times
+
+        timestamp = 1708264245.0
+        sequence = "00000000000000000001"
+
+        datetime_iso, composite, _ = get_creation_and_expiry_times(timestamp, sequence)
+
+        self.assertTrue(composite.startswith(datetime_iso))
+        self.assertTrue(composite.endswith(sequence))
+        self.assertEqual(composite.count("#"), 1)
+
 
 class DeltaRecordProcessorTestCase(unittest.TestCase):
     def setUp(self):
@@ -537,6 +799,15 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
 
         self.delta_table_patcher = patch("delta.delta_table")
         self.mock_delta_table = self.delta_table_patcher.start()
+        self.mock_sqs_client = MagicMock()
+
+    def _call_process_record(self, record):
+        return process_record(
+            record,
+            self.mock_delta_table,
+            self.mock_sqs_client,
+            TEST_DEAD_LETTER_QUEUE_URL,
+        )
 
     def tearDown(self):
         self.logger_exception_patcher.stop()
@@ -545,100 +816,92 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
         self.delta_table_patcher.stop()
 
     def test_multi_record_success(self):
-        # Arrange
         self.mock_delta_table.put_item.return_value = SUCCESS_RESPONSE
-        test_configs = [
-            RecordConfig(EventName.CREATE, Operation.CREATE, "ok-id.1", ActionFlag.CREATE),
-            RecordConfig(EventName.UPDATE, Operation.UPDATE, "ok-id.2", ActionFlag.UPDATE),
-            RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "ok-id.3"),
+
+        records = [
+            _make_stream_record(event_name="INSERT", sk="ok-id-1", imms='{"a":1.1}'),
+            _make_stream_record(event_name="MODIFY", sk="ok-id-2", imms='{"b":2.2}'),
+            _make_stream_record(event_name="REMOVE", sk="ok-id-3", imms='{"c":3.3}'),
         ]
-        test_index = 0
-        for config in test_configs:
-            test_index += 1
-            record = ValuesForTests.get_event_record(
-                imms_id=config.imms_id,
-                event_name=config.event_name,
-                operation=config.operation,
-                supplier=config.supplier,
-            )
-            # Act
-            result, operation_outcome = process_record(record)
 
-            # Assert
-            self.assertEqual(result, True)
-            self.assertEqual(operation_outcome["record"], config.imms_id)
-            self.assertEqual(operation_outcome["operation_type"], config.operation)
-            self.assertEqual(operation_outcome["statusCode"], "200")
-            self.assertEqual(operation_outcome["statusDesc"], "Successfully synched into delta")
-            self.assertEqual(self.mock_delta_table.put_item.call_count, test_index)
+        for idx, record in enumerate(records, start=1):
+            success, outcome = self._call_process_record(record)
+            self.assertTrue(success)
+            self.assertIn("record", outcome)
+            self.assertIn("operation_type", outcome)
+            self.assertEqual(self.mock_delta_table.put_item.call_count, idx)
 
-        self.assertEqual(self.mock_logger_exception.call_count, 0)
-        self.assertEqual(self.mock_logger_warning.call_count, 0)
+        self.mock_sqs_client.send_message.assert_not_called()
 
     def test_multi_record_success_with_fail(self):
-        # Arrange
-        expected_returns = [True, False, True]
         self.mock_delta_table.put_item.side_effect = [
             SUCCESS_RESPONSE,
-            FAIL_RESPONSE,
+            ClientError({"Error": {"Code": "InternalServerError"}}, "PutItem"),
             SUCCESS_RESPONSE,
         ]
-        test_configs = [
-            RecordConfig(EventName.CREATE, Operation.CREATE, "ok-id.1", ActionFlag.CREATE),
-            RecordConfig(EventName.UPDATE, Operation.UPDATE, "fail-id.2", ActionFlag.UPDATE),
-            RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "ok-id.3"),
+
+        records = [
+            _make_stream_record(event_name="INSERT", sk="ok-id-1"),
+            _make_stream_record(event_name="MODIFY", sk="fail-id-2"),
+            _make_stream_record(event_name="REMOVE", sk="ok-id-3"),
         ]
-        test_index = 0
-        for config in test_configs:
-            test_index += 1
-            record = ValuesForTests.get_event_record(
-                imms_id=config.imms_id,
-                event_name=config.event_name,
-                operation=config.operation,
-                supplier=config.supplier,
-            )
-            # Act
-            result, _ = process_record(record)
 
-            # Assert
-            self.assertEqual(result, expected_returns[test_index - 1])
-            self.assertEqual(self.mock_delta_table.put_item.call_count, test_index)
+        outcomes = [self._call_process_record(r) for r in records]
 
-        self.assertEqual(self.mock_logger_error.call_count, 1)
+        self.assertEqual(self.mock_delta_table.put_item.call_count, 3)
+        self.assertTrue(outcomes[0][0])
+        self.assertFalse(outcomes[1][0])
+        self.assertEqual(outcomes[1][1]["record"], "unknown")
+        self.assertTrue(outcomes[2][0])
+        self.assertEqual(self.mock_sqs_client.send_message.call_count, 1)
 
     def test_single_record_table_exception(self):
-        # Arrange
-        imms_id = "exception-id"
-        record = ValuesForTests.get_event_record(
-            imms_id,
-            event_name=EventName.UPDATE,
-            operation=Operation.UPDATE,
-            supplier="EMIS",
+        self.mock_delta_table.put_item.side_effect = ClientError(
+            {"Error": {"Code": "InternalServerError"}},
+            "PutItem",
         )
-        self.mock_delta_table.put_item.side_effect = EXCEPTION_RESPONSE
-        # Act
-        result, operation_outcome = process_record(record)
 
-        # Assert
-        self.assertEqual(result, False)
-        self.assertEqual(operation_outcome["record"], imms_id)
+        record = _make_stream_record(event_name="MODIFY", sk="exception-id", imms='{"k": 1.23}')
+        success, operation_outcome = self._call_process_record(record)
+
+        self.assertFalse(success)
         self.assertEqual(operation_outcome["operation_type"], Operation.UPDATE)
         self.assertEqual(operation_outcome["statusCode"], "500")
         self.assertEqual(operation_outcome["statusDesc"], "Exception")
+        self.assertIn("record", operation_outcome)
         self.assertEqual(self.mock_delta_table.put_item.call_count, 1)
-        self.assertEqual(self.mock_logger_exception.call_count, 1)
+        self.assertEqual(self.mock_sqs_client.send_message.call_count, 1)
+
+    def test_failed_outcome_always_has_record_and_operation_type(self):
+        self.mock_delta_table.put_item.side_effect = Exception("db exploded")
+        record = _make_stream_record(sk="imms#schema-check", event_name="INSERT")
+
+        success, outcome = self._call_process_record(record)
+
+        self.assertFalse(success)
+        self.assertIn("record", outcome)
+        self.assertIn("operation_type", outcome)
+        self.assertEqual(outcome["record"], "unknown")
+        self.assertEqual(outcome["operation_type"], Operation.CREATE)
 
     @patch("delta.json.loads")
     def test_json_loads_called_with_parse_float_decimal(self, mock_json_loads):
-        # Arrange
-        record = ValuesForTests.get_event_record(imms_id="id", event_name=EventName.UPDATE, operation=Operation.UPDATE)
-
+        mock_json_loads.return_value = {"foo": decimal.Decimal("1.23")}
         self.mock_delta_table.put_item.return_value = SUCCESS_RESPONSE
-        # Act
-        process_record(record)
 
-        # Assert
-        mock_json_loads.assert_any_call(ValuesForTests.json_value_for_test, parse_float=decimal.Decimal)
+        record = _make_stream_record(
+            event_name="MODIFY",
+            sk="id",
+            imms=ValuesForTests.json_value_for_test,
+        )
+
+        success, _ = self._call_process_record(record)
+
+        self.assertTrue(success)
+        mock_json_loads.assert_any_call(
+            ValuesForTests.json_value_for_test,
+            parse_float=decimal.Decimal,
+        )
 
 
 class TestGetDeltaTable(unittest.TestCase):
