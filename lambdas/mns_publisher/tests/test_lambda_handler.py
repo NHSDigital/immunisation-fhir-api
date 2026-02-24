@@ -90,7 +90,7 @@ class TestLambdaHandler(unittest.TestCase):
             "type": "imms-vaccinations-2",
         }
 
-        self.successful_mns_response = {"status_code": 201, "message": "Published"}
+        self.successful_mns_response = {"status_code": 200, "message": "Published"}
 
     @patch("lambda_handler.get_mns_service")
     @patch("lambda_handler.create_mns_notification")

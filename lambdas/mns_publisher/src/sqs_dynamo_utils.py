@@ -1,32 +1,38 @@
-from constants import DYNAMO_DB_TYPE_DESCRIPTORS
+import json
 
-"""
-Recursion to fetch deeply nested values from DynamoDB stream events.
-Time complexity: O(n) where n is the total number of keys in the nested structure.
-For typical SQS payloads (~50-100 keys per iteration), this is negligible.
-Cleaner than hardcoded path references like data['body']['dynamodb']['NewImage']['Imms']['M']['NHS_NUMBER']['S'].
-"""
+from constants import DYNAMO_DB_TYPE_DESCRIPTORS, ImmsData
 
 
-def find_imms_value_in_stream(sqs_event_data: dict, target_key: str):
+def extract_sqs_imms_data(sqs_record: dict) -> ImmsData:
     """
-    Recursively search for a key and unwrap DynamoDB type descriptors.
-    Args:
-        sqs_event_data: Nested dict from SQS DynamoDB stream event
-        target_key: The key to find (e.g., 'NHS_NUMBER', 'ImmsID')
-    Returns: Unwrapped value if found, None otherwise
+    Extract immunisation data from SQS DynamoDB stream event.
+    Args: sqs_record: SQS record containing DynamoDB stream data
+    Returns: Dict with unwrapped values ready to use
     """
-    if isinstance(sqs_event_data, dict):
-        for key, value in sqs_event_data.items():
-            if key == target_key:
-                return _unwrap_dynamodb_value(value)
-            result = find_imms_value_in_stream(value, target_key)
-            if result is not None:
-                return result
-    return None
+    body = json.loads(sqs_record.get("body", "{}"))
+    new_image = body.get("dynamodb", {}).get("NewImage", {})
+
+    # Get top-level fields
+    imms_id = _unwrap_dynamodb_value(new_image.get("ImmsID", {}))
+    supplier_system = _unwrap_dynamodb_value(new_image.get("SupplierSystem", {}))
+    vaccine_type = _unwrap_dynamodb_value(new_image.get("VaccineType", {}))
+    operation = _unwrap_dynamodb_value(new_image.get("Operation", {}))
+
+    imms_map = new_image.get("Imms", {}).get("M", {})
+
+    return {
+        "imms_id": imms_id,
+        "supplier_system": supplier_system,
+        "vaccine_type": vaccine_type,
+        "operation": operation,
+        "nhs_number": _unwrap_dynamodb_value(imms_map.get("NHS_NUMBER", {})),
+        "person_dob": _unwrap_dynamodb_value(imms_map.get("PERSON_DOB", {})),
+        "date_and_time": _unwrap_dynamodb_value(imms_map.get("DATE_AND_TIME", {})),
+        "site_code": _unwrap_dynamodb_value(imms_map.get("SITE_CODE", {})),
+    }
 
 
-def _unwrap_dynamodb_value(value):
+def _unwrap_dynamodb_value(value) -> str:
     """
     Unwrap DynamoDB type descriptor to get the actual value.
     DynamoDB types: S (String), N (Number), BOOL, M (Map), L (List), NULL

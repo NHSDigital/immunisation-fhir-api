@@ -1,4 +1,3 @@
-import json
 import os
 import uuid
 from datetime import datetime
@@ -8,43 +7,40 @@ from aws_lambda_typing.events.sqs import SQSMessage
 from common.api_clients.get_pds_details import pds_get_patient_details
 from common.clients import logger
 from common.get_service_url import get_service_url
-from constants import IMMUNISATION_TYPE, SPEC_VERSION, SQSEventFields
-from sqs_dynamo_utils import find_imms_value_in_stream
+from constants import IMMUNISATION_TYPE, SPEC_VERSION, MnsNotificationPayload
+from sqs_dynamo_utils import extract_sqs_imms_data
 
 IMMUNIZATION_ENV = os.getenv("IMMUNIZATION_ENV")
 IMMUNIZATION_BASE_PATH = os.getenv("IMMUNIZATION_BASE_PATH")
 PDS_BASE_URL = os.getenv("PDS_BASE_URL")
 
 
-def create_mns_notification(sqs_event: SQSMessage) -> dict:
+def create_mns_notification(sqs_event: SQSMessage) -> MnsNotificationPayload:
     """Create a notification payload for MNS."""
-
     immunisation_url = get_service_url(IMMUNIZATION_ENV, IMMUNIZATION_BASE_PATH)
-    incoming_sqs_message = json.loads(sqs_event["body"])
 
-    imms_data = {field: find_imms_value_in_stream(incoming_sqs_message, field.value) for field in SQSEventFields}
+    # Simple, direct extraction
+    imms_data = extract_sqs_imms_data(sqs_event)
 
-    patient_age = calculate_age_at_vaccination(
-        imms_data[SQSEventFields.BIRTH_DATE_KEY], imms_data[SQSEventFields.DATE_AND_TIME_KEY]
-    )
+    patient_age = calculate_age_at_vaccination(imms_data["person_dob"], imms_data["date_and_time"])
 
-    gp_ods_code = get_practitioner_details_from_pds(imms_data[SQSEventFields.NHS_NUMBER_KEY])
+    gp_ods_code = get_practitioner_details_from_pds(imms_data["nhs_number"])
 
     return {
         "specversion": SPEC_VERSION,
         "id": str(uuid.uuid4()),
         "source": immunisation_url,
         "type": IMMUNISATION_TYPE,
-        "time": imms_data[SQSEventFields.DATE_AND_TIME_KEY],
-        "subject": imms_data[SQSEventFields.NHS_NUMBER_KEY],
-        "dataref": f"{immunisation_url}/Immunization/{imms_data[SQSEventFields.IMMUNISATION_ID_KEY]}",
+        "time": imms_data["date_and_time"],
+        "subject": imms_data["nhs_number"],
+        "dataref": f"{immunisation_url}/Immunization/{imms_data['imms_id']}",
         "filtering": {
             "generalpractitioner": gp_ods_code,
-            "sourceorganisation": imms_data[SQSEventFields.SOURCE_ORGANISATION_KEY],
-            "sourceapplication": imms_data[SQSEventFields.SOURCE_APPLICATION_KEY],
+            "sourceorganisation": imms_data["site_code"],
+            "sourceapplication": imms_data["supplier_system"],
             "subjectage": str(patient_age),
-            "immunisationtype": imms_data[SQSEventFields.VACCINE_TYPE],
-            "action": imms_data[SQSEventFields.ACTION],
+            "immunisationtype": imms_data["vaccine_type"],
+            "action": imms_data["operation"],
         },
     }
 
