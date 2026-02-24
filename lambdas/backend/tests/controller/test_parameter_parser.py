@@ -43,7 +43,7 @@ class TestParameterParser(unittest.TestCase):
             }
         )
 
-    def test_process_search_params_raises_when_all_immunization_targets_invalid(self):
+    def test_process_search_params_raises_error_when_all_immunization_targets_invalid(self):
         self.mock_redis.hkeys.return_value = ["RSV"]
         self.mock_redis_getter.return_value = self.mock_redis
 
