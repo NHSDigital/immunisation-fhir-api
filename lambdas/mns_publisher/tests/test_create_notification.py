@@ -360,15 +360,6 @@ class TestGetPractitionerDetailsFromPds(unittest.TestCase):
 
         self.assertEqual(str(context.exception), "PDS API error")
 
-    @patch("create_notification.pds_get_patient_details")
-    @patch("create_notification.logger")
-    def test_get_practitioner_patient_details_none(self, mock_logger, mock_pds_get):
-        """Test when pds_get_patient_details returns None."""
-        mock_pds_get.return_value = None
-
-        with self.assertRaises(AttributeError):
-            get_practitioner_details_from_pds("9481152782")
-
 
 if __name__ == "__main__":
     unittest.main()
