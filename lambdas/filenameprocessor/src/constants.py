@@ -23,7 +23,7 @@ EXTENDED_ATTRIBUTES_VACC_TYPE = "COVID"
 
 DPS_DESTINATION_PREFIX = "generic/EXTENDED_ATTRIBUTES_DAILY_1"
 EXTENDED_ATTRIBUTES_ARCHIVE_PREFIX = "extended-attributes-archive"
-VALID_EA_VERSIONS = ["V1_5"]
+VALID_EA_VERSIONS = ["V1_4", "V1_5"]
 ERROR_TYPE_TO_STATUS_CODE_MAP = {
     VaccineTypePermissionsError: 403,
     InvalidFileKeyError: 400,  # Includes invalid ODS code, therefore unable to identify supplier
