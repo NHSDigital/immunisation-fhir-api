@@ -110,6 +110,9 @@ locals {
   ]))
   sqs_queue_metrics = [for queue in local.sqs_queues : ["AWS/SQS", "NumberOfMessagesSent", "QueueName", queue, { region : var.aws_region }]]
 
+  # ECS (cluster names match instance short_prefix: imms-<sub_env>-ecs-cluster)
+  ecs_clusters = [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-ecs-cluster"]
+
   # Alarms
   alarms = [
     "_create_imms-lambda-error",
@@ -292,7 +295,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : local.api_lambda_duration_metrics
+          "metrics" : local.api_lambda_duration_metrics,
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
@@ -624,13 +627,87 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 24,
         "height" : 1,
         "properties" : {
-          "markdown" : "## Other"
+          "markdown" : "## ECS"
         }
       },
       {
         "type" : "metric",
         "x" : 0,
         "y" : 44,
+        "width" : 8,
+        "height" : 6,
+        "properties" : {
+          "metrics" : [for cluster in local.ecs_clusters : ["AWS/ECS", "RunningTaskCount", "ClusterName", cluster, { region : var.aws_region }]],
+          "view" : "timeSeries",
+          "stacked" : false,
+          "region" : var.aws_region,
+          "stat" : "Average",
+          "period" : 300,
+          "title" : "ECS - Running Task Count"
+        }
+      },
+      {
+        "type" : "metric",
+        "x" : 8,
+        "y" : 44,
+        "width" : 8,
+        "height" : 6,
+        "properties" : {
+          "metrics" : [for cluster in local.ecs_clusters : ["AWS/ECS", "PendingTaskCount", "ClusterName", cluster, { region : var.aws_region }]],
+          "view" : "timeSeries",
+          "stacked" : false,
+          "region" : var.aws_region,
+          "stat" : "Average",
+          "period" : 300,
+          "title" : "ECS - Pending Task Count"
+        }
+      },
+      {
+        "type" : "metric",
+        "x" : 16,
+        "y" : 44,
+        "width" : 8,
+        "height" : 6,
+        "properties" : {
+          "metrics" : [for cluster in local.ecs_clusters : ["ECS/ContainerInsights", "ContainerCpuUtilized", "ClusterName", cluster, { region : var.aws_region }]],
+          "view" : "timeSeries",
+          "stacked" : false,
+          "region" : var.aws_region,
+          "stat" : "Average",
+          "period" : 300,
+          "title" : "ECS Container Insights - CPU Utilized"
+        }
+      },
+      {
+        "type" : "metric",
+        "x" : 0,
+        "y" : 50,
+        "width" : 12,
+        "height" : 6,
+        "properties" : {
+          "metrics" : [for cluster in local.ecs_clusters : ["ECS/ContainerInsights", "ContainerMemoryUtilized", "ClusterName", cluster, { region : var.aws_region }]],
+          "view" : "timeSeries",
+          "stacked" : false,
+          "region" : var.aws_region,
+          "stat" : "Average",
+          "period" : 300,
+          "title" : "ECS Container Insights - Memory Utilized"
+        }
+      },
+      {
+        "type" : "text",
+        "x" : 0,
+        "y" : 56,
+        "width" : 24,
+        "height" : 1,
+        "properties" : {
+          "markdown" : "## Other"
+        }
+      },
+      {
+        "type" : "metric",
+        "x" : 0,
+        "y" : 57,
         "width" : 6,
         "height" : 6,
         "properties" : {
@@ -644,7 +721,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "metric",
         "x" : 6,
-        "y" : 44,
+        "y" : 57,
         "width" : 6,
         "height" : 6,
         "properties" : {
@@ -658,7 +735,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "metric",
         "x" : 12,
-        "y" : 44,
+        "y" : 57,
         "width" : 6,
         "height" : 6,
         "properties" : {
@@ -674,7 +751,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "metric",
         "x" : 0,
-        "y" : 50,
+        "y" : 63,
         "width" : 6,
         "height" : 6,
         "properties" : {
@@ -684,14 +761,14 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
             ["AWS/ElastiCache", "CacheHits", "CacheClusterId", "immunisation-redis-cluster", "CacheNodeId", "0001"]
           ],
           "region" : var.aws_region,
-          "title" : "ElastiCache - CacheHits"
+          "title" : "ElastiCache - CacheHits",
           "period" : 300,
         }
       },
       {
         "type" : "metric",
         "x" : 6,
-        "y" : 50,
+        "y" : 63,
         "width" : 6,
         "height" : 6,
         "properties" : {
@@ -709,7 +786,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "text",
         "x" : 0,
-        "y" : 56,
+        "y" : 69,
         "width" : 24,
         "height" : 1,
         "properties" : {
@@ -719,7 +796,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "alarm",
         "x" : 0,
-        "y" : 57,
+        "y" : 70,
         "width" : 24,
         "height" : var.environment == "dev" ? 5 : 10,
         "properties" : {

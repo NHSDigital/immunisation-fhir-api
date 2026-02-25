@@ -1,6 +1,11 @@
 # Define the ECS Cluster
 resource "aws_ecs_cluster" "ecs_cluster" {
   name = "${local.short_prefix}-ecs-cluster"
+
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
 }
 
 # Locals for Lambda processing paths and hash
