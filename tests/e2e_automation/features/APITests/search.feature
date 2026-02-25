@@ -132,6 +132,17 @@ Feature: Search the immunization of a patient
             | 1234567890 | ABC         |
             | ""         | ""          |
 
+    @smoke
+    @Delete_cleanUp @supplier_name_Postman_Auth
+    Scenario: Verify that Search API returns 200 with results and OperationOutcome when both valid and invalid Disease Type are provided
+        Given Valid vaccination record is created with Patient 'Random' and vaccine_type 'COVID'
+        When Send a search request with GET method with valid NHS Number and mixed valid and invalid Disease Type
+        Then The request will be successful with the status code '200'
+        And The Search Response should contain search results and OperationOutcome for invalid immunization targets
+        When Send a search request with POST method with valid NHS Number and mixed valid and invalid Disease Type
+        Then The request will be successful with the status code '200'
+        And The Search Response should contain search results and OperationOutcome for invalid immunization targets
+
     @supplier_name_MAVIS @vaccine_type_RSV
     Scenario Outline: Verify that Search API will throw error if date from is invalid
         When Send a search request with GET method with invalid Date From '<DateFrom>' and valid Date To '<DateTo>'
