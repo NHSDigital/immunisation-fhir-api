@@ -4,8 +4,18 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  run-quality-checks:
+    uses: ./.github/workflows/quality-checks.yml
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
   deploy-pr-backend:
+    needs: [run-quality-checks]
     uses: ./.github/workflows/deploy-backend.yml
     with:
       apigee_environment: internal-dev
