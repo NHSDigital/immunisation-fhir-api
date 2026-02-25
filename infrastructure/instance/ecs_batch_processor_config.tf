@@ -2,9 +2,12 @@
 resource "aws_ecs_cluster" "ecs_cluster" {
   name = "${local.short_prefix}-ecs-cluster"
 
-  setting {
-    name  = "containerInsights"
-    value = "enabled"
+  dynamic "setting" {
+    for_each = local.is_temp ? [] : [1]
+    content {
+      name  = "containerInsights"
+      value = "enabled"
+    }
   }
 }
 
