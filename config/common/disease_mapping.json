@@ -112,6 +112,19 @@
     ]
   },
   {
+    "vacc_type": "HIBMENC",
+    "diseases": [
+      {
+        "code": "709410003",
+        "term": "Haemophilus influenzae type b infection"
+      },
+      {
+        "code": "23511006",
+        "term": "Meningococcal infectious disease"
+      }
+    ]
+  },
+  {
     "vacc_type": "HPV",
     "diseases": [
       {
