@@ -93,3 +93,13 @@ variable "mns_environment" {
 variable "pds_environment" {
   type = string
 }
+
+variable "account_id" {
+  type        = string
+  description = "AWS account ID used for IAM policy templating (e.g., Secrets Manager ARNs)."
+}
+
+variable "secrets_manager_policy_path" {
+  type        = string
+  description = "Path to the IAM policy JSON template for Secrets Manager access (e.g., ./policies/secret_manager.json)."
+}

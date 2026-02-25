@@ -210,8 +210,8 @@ resource "aws_lambda_function" "mns_publisher_lambda" {
 
 data "aws_iam_policy_document" "mns_publisher_secrets_policy_document" {
   source_policy_documents = [
-    templatefile("${local.policy_path}/secret_manager.json", {
-      "account_id" : data.aws_caller_identity.current.account_id,
+    templatefile("${var.secrets_manager_policy_path}", {
+      "account_id" : var.account_id,
       "pds_environment" : var.pds_environment
     }),
   ]
@@ -227,7 +227,7 @@ resource "aws_iam_policy" "mns_publisher_lambda_secrets_policy" {
 # Attach the secrets/dynamodb access policy to the Lambda role
 resource "aws_iam_role_policy_attachment" "mns_publisher_lambda_secrets_policy_attachment" {
   role       = aws_iam_role.mns_publisher_lambda_exec_role.name
-  policy_arn = aws_iam_policy.mns_publish_lambda_secrets_policy.arn
+  policy_arn = aws_iam_policy.mns_publisher_lambda_secrets_policy.arn
 }
 
 
