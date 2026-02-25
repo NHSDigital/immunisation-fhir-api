@@ -43,43 +43,50 @@ class TestParameterParser(unittest.TestCase):
             }
         )
 
-    def test_process_search_params_whitelists_immunization_target(self):
-        mock_redis_key = "RSV"
-        self.mock_redis.hkeys.return_value = [mock_redis_key]
+    def test_process_search_params_raises_error_when_all_immunization_targets_invalid(self):
+        self.mock_redis.hkeys.return_value = ["RSV"]
         self.mock_redis_getter.return_value = self.mock_redis
 
         with self.assertRaises(ParameterExceptionError) as e:
             validate_and_retrieve_search_params(
                 {
                     self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
-                    self.immunization_target_key: [
-                        "FLU",
-                        "COVID",
-                        "NOT-A-REAL-VALUE",
-                    ],
+                    self.immunization_target_key: ["NOT-A-REAL-VALUE"],
                 }
             )
-        self.assertEqual(
-            str(e.exception), f"-immunization.target must be one or more of the following: {mock_redis_key}"
+        self.assertEqual(str(e.exception), "-immunization.target must be one or more of the following: RSV")
+
+    def test_process_search_params_filters_invalid_immunization_targets_and_returns_valid_plus_invalid_list(self):
+        self.mock_redis.hkeys.return_value = ["RSV", "FLU", "COVID"]
+        self.mock_redis_getter.return_value = self.mock_redis
+
+        result = validate_and_retrieve_search_params(
+            {
+                self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
+                self.immunization_target_key: ["FLU", "COVID", "NOT-A-REAL-VALUE"],
+            }
         )
+        self.assertCountEqual(result.params.immunization_targets, {"FLU", "COVID"})
+        self.assertCountEqual(result.invalid_immunization_targets, ["NOT-A-REAL-VALUE"])
 
     def test_process_search_params_immunization_target(self):
         mock_redis_key = "RSV"
         self.mock_redis.hkeys.return_value = [mock_redis_key]
         self.mock_redis_getter.return_value = self.mock_redis
-        params = validate_and_retrieve_search_params(
+        result = validate_and_retrieve_search_params(
             {
                 self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
                 self.immunization_target_key: ["RSV"],
             }
         )
 
-        self.assertIsNotNone(params)
+        self.assertIsNotNone(result.params)
+        self.assertEqual(result.invalid_immunization_targets, [])
 
     def test_search_params_date_from_must_be_before_date_to(self):
         self.mock_redis.hkeys.return_value = ["RSV"]
         self.mock_redis_getter.return_value = self.mock_redis
-        params = validate_and_retrieve_search_params(
+        result = validate_and_retrieve_search_params(
             {
                 self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
                 self.immunization_target_key: ["RSV"],
@@ -88,9 +95,9 @@ class TestParameterParser(unittest.TestCase):
             }
         )
 
-        self.assertIsNotNone(params)
+        self.assertIsNotNone(result.params)
 
-        params = validate_and_retrieve_search_params(
+        result = validate_and_retrieve_search_params(
             {
                 self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
                 self.immunization_target_key: ["RSV"],
@@ -99,7 +106,7 @@ class TestParameterParser(unittest.TestCase):
             }
         )
 
-        self.assertIsNotNone(params)
+        self.assertIsNotNone(result.params)
 
         with self.assertRaises(ParameterExceptionError) as e:
             _ = validate_and_retrieve_search_params(
@@ -149,7 +156,7 @@ class TestParameterParser(unittest.TestCase):
         self.mock_redis.hkeys.return_value = ["RSV", "FLU"]
         self.mock_redis_getter.return_value = self.mock_redis
 
-        params = validate_and_retrieve_search_params(
+        result = validate_and_retrieve_search_params(
             {
                 self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
                 self.immunization_target_key: ["RSV", "RSV", "FLU"],
@@ -158,11 +165,11 @@ class TestParameterParser(unittest.TestCase):
         )
 
         # immunization targets should be deduped and preserve valid entries
-        self.assertIsInstance(params.immunization_targets, set)
-        self.assertCountEqual(params.immunization_targets, {"RSV", "FLU"})
+        self.assertIsInstance(result.params.immunization_targets, set)
+        self.assertCountEqual(result.params.immunization_targets, {"RSV", "FLU"})
 
         # include should be returned as provided
-        self.assertEqual(params.include, "immunization:patient")
+        self.assertEqual(result.params.include, "immunization:patient")
 
     def test_process_search_params_raises_date_errors(self):
         """When multiple date-related errors occur they should be returned together."""
