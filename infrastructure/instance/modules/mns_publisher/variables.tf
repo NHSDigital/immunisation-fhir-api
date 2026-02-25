@@ -81,9 +81,9 @@ variable "resource_scope" {
   EOT
 }
 
-variable "sub_environment" {
+variable "imms_base_path" {
   type        = string
-  description = "Sub-environment name, e.g. internal-dev, internal-qa. The value is set in the Makefile"
+  description = "Base path for the Immunisation FHIR API. Used to construct environment-specific routes (e.g. PR preview paths or default R4 path)."
 }
 
 variable "mns_environment" {

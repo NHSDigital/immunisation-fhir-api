@@ -12,7 +12,7 @@ from create_notification import create_mns_notification
 mns_env = os.getenv("MNS_ENV", "int")
 
 
-def process_records(records: list[SQSMessage]) -> list[dict]:
+def process_records(records: list[SQSMessage]) -> dict[str, list]:
     """
     Process multiple SQS records.
     Args: records: List of SQS records to process
@@ -23,9 +23,7 @@ def process_records(records: list[SQSMessage]) -> list[dict]:
 
     for record in records:
         try:
-            failed_batch_item = process_record(record, mns_service)
-            if failed_batch_item:
-                batch_item_failures.append(failed_batch_item)
+            process_record(record, mns_service)
         except Exception:
             message_id = record.get("messageId", "unknown")
             batch_item_failures.append({"itemIdentifier": message_id})
