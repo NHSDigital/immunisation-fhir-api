@@ -1,11 +1,10 @@
 name: Quality Checks
 
 on:
-  push:
-    branches:
-      - master
-  pull_request:
-    types: [labeled, opened, synchronize, reopened, unlabeled]
+  workflow_call:
+    secrets:
+      SONAR_TOKEN:
+        required: true
 
 env:
   SHARED_PATH: ${{ github.workspace }}/lambdas/shared
@@ -249,5 +248,5 @@ jobs:
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
+          GITHUB_TOKEN: ${{ github.token }} # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

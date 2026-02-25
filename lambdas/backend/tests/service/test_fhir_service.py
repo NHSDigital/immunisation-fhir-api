@@ -966,3 +966,39 @@ class TestSearchImmunizations(TestFhirServiceBase):
             self.MOCK_SUPPLIER_SYSTEM_NAME, ApiOperationCode.SEARCH, {vaccine_type}
         )
         self.imms_repo.find_immunizations.assert_not_called()
+
+    def test_search_immunizations_includes_operation_outcome_when_invalid_immunization_targets_provided(self):
+        """it should include an OperationOutcome in the bundle when invalid -immunization.target values were provided"""
+        mock_resource = create_covid_immunization_dict("1234-some-id")
+        vaccine_type = "COVID"
+        self.authoriser.filter_permitted_vacc_types.return_value = {vaccine_type}
+        self.imms_repo.find_immunizations.return_value = [mock_resource]
+
+        result = self.fhir_service.search_immunizations(
+            VALID_NHS_NUMBER,
+            {vaccine_type},
+            self.MOCK_SUPPLIER_SYSTEM_NAME,
+            None,
+            None,
+            None,
+            invalid_immunization_targets=["TEST_VALUE", "CHICKENS"],
+        )
+
+        self.assertEqual(result.type, "searchset")
+        self.assertEqual(result.total, 1)
+        self.assertEqual(len(result.entry), 3)
+        self.assertEqual(result.entry[0].resource.resource_type, "Immunization")
+        self.assertEqual(result.entry[1].resource.resource_type, "Patient")
+        self.assertEqual(result.entry[2].resource.resource_type, "OperationOutcome")
+        issue_0 = result.entry[2].resource.issue[0]
+        diagnostics = issue_0["diagnostics"] if isinstance(issue_0, dict) else issue_0.diagnostics
+        self.assertIn("TEST_VALUE", diagnostics)
+        self.assertIn("CHICKENS", diagnostics)
+        self.assertIn("invalid -immunization.target value(s) that were ignored", diagnostics)
+        self.assertEqual(
+            result.link[0].url,
+            "https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization"
+            "?immunization.target=COVID"
+            "&-immunization.target=COVID"
+            "&patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C9990548609",
+        )
