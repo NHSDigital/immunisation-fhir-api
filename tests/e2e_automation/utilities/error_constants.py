@@ -31,7 +31,7 @@ ERROR_MAP = {
     },
     "invalid_DiseaseType": {
         "code": "INVALID",
-        "diagnostics": "-immunization.target must be one or more of the following: ROTAVIRUS, RSV, SHINGLES, 6IN1, MMR, FLU, 3IN1, PERTUSSIS, MENB, HIB, MMRV, BCG, MENACWY, 4IN1, COVID, PNEUMOCOCCAL, HPV, HEPB",
+        "diagnostics": "-immunization.target must be one or more of the following: ROTAVIRUS, RSV, SHINGLES, 6IN1, MMR, HIBMENC, FLU, 3IN1, PERTUSSIS, MENB, HIB, MMRV, BCG, MENACWY, 4IN1, COVID, PNEUMOCOCCAL, HPV, HEPB",
     },
     "invalid_DateFrom": {
         "code": "INVALID",
