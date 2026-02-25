@@ -4,6 +4,7 @@ from urllib.parse import parse_qs
 
 import pytest_check as check
 from pytest_bdd import parsers, scenarios, then, when
+
 from src.objectModels.api_search_object import convert_to_form_data, set_request_data
 from utilities.api_fhir_immunization_helper import (
     find_entry_by_Imms_id,
@@ -75,6 +76,36 @@ def TriggerSearchPostRequest(context):
     print(f"\n Search Post Request - \n {context.request}")
     context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
     print(f"\n Search Post Response - \n {context.response.json()}")
+
+
+@when("Send a search request with GET method with valid NHS Number and mixed valid and invalid Disease Type")
+def send_search_get_with_mixed_targets(context):
+    get_search_get_url_header(context)
+    mixed_target = f"{context.vaccine_type},INVALID_TYPE"
+    context.params = convert_to_form_data(
+        set_request_data(
+            context.patient.identifier[0].value,
+            mixed_target,
+            datetime.today().strftime("%Y-%m-%d"),
+        )
+    )
+    print(f"\n Search Get Parameters (mixed targets) - \n {context.params}")
+    context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
+
+
+@when("Send a search request with POST method with valid NHS Number and mixed valid and invalid Disease Type")
+def send_search_post_with_mixed_targets(context):
+    get_search_post_url_header(context)
+    mixed_target = f"{context.vaccine_type},INVALID_TYPE"
+    context.request = convert_to_form_data(
+        set_request_data(
+            context.patient.identifier[0].value,
+            mixed_target,
+            datetime.today().strftime("%Y-%m-%d"),
+        )
+    )
+    print(f"\n Search Post Request (mixed targets) - \n {context.request}")
+    context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
 
 
 @when(
@@ -389,3 +420,33 @@ def validate_empty_immunization_event(context):
         f"link[0].url should be '{context.baseUrl}/Immunization?identifier=None', got '{link_url}'"
     )
     assert response.get("total") == 0, "total should be 0"
+
+
+@then("The Search Response should contain search results and OperationOutcome for invalid immunization targets")
+def validate_search_response_with_invalid_targets_operation_outcome(context):
+    response = context.response.json()
+    assert response.get("resourceType") == "Bundle", "resourceType should be 'Bundle'"
+    assert response.get("type") == "searchset", "type should be 'searchset'"
+    entries = response.get("entry", [])
+    assert len(entries) >= 1, "Bundle should contain at least one entry"
+
+    imms_entry = next(
+        (
+            e
+            for e in entries
+            if e.get("resource", {}).get("resourceType") == "Immunization"
+            and e.get("resource", {}).get("id") == context.ImmsID
+        ),
+        None,
+    )
+    assert imms_entry is not None, f"Expected to find Immunization entry with id {context.ImmsID} in search response"
+
+    oo_entries = [e for e in entries if e.get("resource", {}).get("resourceType") == "OperationOutcome"]
+    assert len(oo_entries) >= 1, "Bundle should contain at least one OperationOutcome entry for invalid targets"
+    diagnostics = oo_entries[0].get("resource", {}).get("issue", [{}])[0].get("diagnostics", "")
+    assert "invalid -immunization.target value(s) that were ignored" in diagnostics, (
+        f"Expected OperationOutcome diagnostics to mention invalid targets, got: {diagnostics}"
+    )
+    assert "INVALID_TYPE" in diagnostics, (
+        f"Expected OperationOutcome diagnostics to mention INVALID_TYPE, got: {diagnostics}"
+    )
