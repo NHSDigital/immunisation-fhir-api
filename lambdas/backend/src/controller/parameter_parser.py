@@ -85,7 +85,7 @@ def process_immunization_target(imms_params: dict[str, list[str]]) -> set[str]:
     if any(x not in valid_vaccine_types for x in vaccine_types):
         raise ParameterExceptionError(
             f"{ImmunizationSearchParameterName.IMMUNIZATION_TARGET} must be one or more of the following: "
-            f"{', '.join(valid_vaccine_types)}"
+            f"{', '.join(sorted(valid_vaccine_types))}"
         )
 
     return set(vaccine_types)
