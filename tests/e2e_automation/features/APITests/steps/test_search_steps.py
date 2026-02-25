@@ -1,6 +1,6 @@
-import uuid
 from datetime import datetime
 from urllib.parse import parse_qs
+import uuid
 
 import pytest_check as check
 from pytest_bdd import parsers, scenarios, then, when
