@@ -154,15 +154,16 @@ class FhirController:
         return create_response(200, prepared_search_bundle)
 
     def _search_immunizations(self, search_params: dict[str, list[str]], supplier_system: str) -> dict:
-        validated_search_params = validate_and_retrieve_search_params(search_params)
+        result = validate_and_retrieve_search_params(search_params)
 
         search_bundle = self.fhir_service.search_immunizations(
-            validated_search_params.patient_identifier,
-            validated_search_params.immunization_targets,
+            result.params.patient_identifier,
+            result.params.immunization_targets,
             supplier_system,
-            validated_search_params.date_from,
-            validated_search_params.date_to,
-            validated_search_params.include,
+            result.params.date_from,
+            result.params.date_to,
+            result.params.include,
+            result.invalid_immunization_targets,
         )
 
         if self._has_too_many_search_results(search_bundle):
