@@ -1,0 +1,1 @@
+✅ Step Passed: **Valid json payload is created with Patient 'Random' and vaccine_type '6IN1'
