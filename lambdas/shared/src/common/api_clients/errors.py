@@ -38,7 +38,7 @@ class TokenValidationError(RuntimeError):
         return create_operation_outcome(
             resource_id=str(uuid.uuid4()),
             severity=Severity.error,
-            code=Code.invalid,
+            code=Code.invalid_access_token,
             diagnostics=msg,
         )
 
