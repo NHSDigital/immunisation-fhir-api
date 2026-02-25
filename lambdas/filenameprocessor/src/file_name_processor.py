@@ -212,9 +212,6 @@ def handle_batch_file(
             error_details=str(error),
         )
 
-        # make a bad change to check quality checks job blocks deployment
-        chicken_nugget
-
         # Create ack file
         make_and_upload_ack_file(message_id, file_key, False, False, created_at_formatted_string)
 

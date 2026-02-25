@@ -4,8 +4,11 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  # TODO - discuss with team whether we want this constraint on PRs. My gut feel is no, but not just up to me!
   run-quality-checks:
     uses: ./.github/workflows/quality-checks.yml
     secrets:
