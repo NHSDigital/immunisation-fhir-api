@@ -27,6 +27,7 @@ def process_records(records: list[SQSMessage]) -> dict[str, list]:
         except Exception:
             message_id = record.get("messageId", "unknown")
             batch_item_failures.append({"itemIdentifier": message_id})
+            logger.error(Exception)
 
     if batch_item_failures:
         logger.warning(f"Batch completed with {len(batch_item_failures)} failures")

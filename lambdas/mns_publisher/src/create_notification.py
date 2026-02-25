@@ -64,6 +64,9 @@ def calculate_age_at_vaccination(birth_date: str, vaccination_date: str) -> int:
 
 def get_practitioner_details_from_pds(nhs_number: str) -> str | None:
     patient_details = pds_get_patient_details(nhs_number)
+    if not patient_details:
+        logger.info("Unable to retrieve patient details")
+        return None
 
     general_practitioners = patient_details.get("generalPractitioner", [])
     if not general_practitioners or len(general_practitioners) == 0:
