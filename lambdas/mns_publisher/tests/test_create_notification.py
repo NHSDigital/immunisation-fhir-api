@@ -21,7 +21,6 @@ def _load_sample_sqs_event() -> dict:
     with open(sample_event_path, "r") as f:
         raw_event = json.load(f)
 
-    # Ensure body is a JSON string (SQS behaviour)
     if isinstance(raw_event.get("body"), dict):
         raw_event["body"] = json.dumps(raw_event["body"])
 
@@ -226,7 +225,6 @@ class TestCreateMnsNotification(unittest.TestCase):
 
         update_event = copy.deepcopy(self.sample_sqs_event)
 
-        # Body is a JSON string; parse -> modify -> dump back
         body = json.loads(update_event["body"])
         body["dynamodb"]["NewImage"]["Operation"]["S"] = "UPDATE"
         update_event["body"] = json.dumps(body)

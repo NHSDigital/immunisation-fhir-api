@@ -17,7 +17,6 @@ class TestExtractTraceIds(unittest.TestCase):
         with open(sample_event_path, "r") as f:
             raw_event = json.load(f)
 
-        # Convert body to JSON string if it's a dict
         if isinstance(raw_event.get("body"), dict):
             raw_event["body"] = json.dumps(raw_event["body"])
 
@@ -99,7 +98,6 @@ class TestProcessRecord(unittest.TestCase):
         mock_create_notification.return_value = self.sample_notification
         self.mock_mns_service.publish_notification.return_value = None
 
-        # Should not raise exception
         process_record(self.sample_sqs_record, self.mock_mns_service)
 
         mock_create_notification.assert_called_once_with(self.sample_sqs_record)
@@ -112,7 +110,6 @@ class TestProcessRecord(unittest.TestCase):
         """Test handling when notification creation fails."""
         mock_create_notification.side_effect = Exception("Creation error")
 
-        # Should raise exception
         with self.assertRaises(Exception):
             process_record(self.sample_sqs_record, self.mock_mns_service)
 
@@ -125,7 +122,6 @@ class TestProcessRecord(unittest.TestCase):
         mock_create_notification.return_value = self.sample_notification
         self.mock_mns_service.publish_notification.side_effect = Exception("Publish error")
 
-        # Should raise exception
         with self.assertRaises(Exception):
             process_record(self.sample_sqs_record, self.mock_mns_service)
 
@@ -152,7 +148,7 @@ class TestProcessRecords(unittest.TestCase):
         """Test processing multiple records with all successes."""
         mock_mns_service = Mock()
         mock_get_mns.return_value = mock_mns_service
-        mock_process_record.return_value = None  # No exception
+        mock_process_record.return_value = None
 
         record_2 = self.sample_sqs_record.copy()
         record_2["messageId"] = "different-id"
@@ -173,8 +169,8 @@ class TestProcessRecords(unittest.TestCase):
         mock_mns_service = Mock()
         mock_get_mns.return_value = mock_mns_service
         mock_process_record.side_effect = [
-            None,  # Success
-            Exception("Processing error"),  # Failure
+            None,
+            Exception("Processing error"),
         ]
 
         record_2 = self.sample_sqs_record.copy()
@@ -214,7 +210,7 @@ class TestProcessRecords(unittest.TestCase):
 
         process_records(records)
 
-        mock_get_mns.assert_called_once()  # Only created once
+        mock_get_mns.assert_called_once()
 
 
 class TestLambdaHandler(unittest.TestCase):
