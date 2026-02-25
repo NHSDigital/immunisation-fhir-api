@@ -69,7 +69,7 @@ resource "aws_ecr_repository_policy" "filenameprocessor_lambda_ECRImageRetreival
         ],
         "Condition" : {
           "StringLike" : {
-            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${var.immunisation_account_id}:function:${local.short_prefix}-filenameproc_lambda"
+            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${var.immunisation_account_id}:function:${local.short_prefix}-filenameproc-lambda"
           }
         }
       }
@@ -106,7 +106,7 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-filenameproc_lambda:*"
+        Resource = "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-filenameproc-lambda:*"
       },
       {
         Effect = "Allow"
@@ -302,7 +302,7 @@ resource "aws_iam_role_policy_attachment" "filenameprocessor_lambda_dynamo_acces
 
 # Lambda Function with Security Group and VPC.
 resource "aws_lambda_function" "file_processor_lambda" {
-  function_name = "${local.short_prefix}-filenameproc_lambda"
+  function_name = "${local.short_prefix}-filenameproc-lambda"
   role          = aws_iam_role.filenameprocessor_lambda_exec_role.arn
   package_type  = "Image"
   image_uri     = module.file_processor_docker_image.image_uri
@@ -362,7 +362,7 @@ resource "aws_s3_bucket_notification" "datasources_lambda_notification" {
 }
 
 resource "aws_cloudwatch_log_group" "file_name_processor_log_group" {
-  name              = "/aws/lambda/${local.short_prefix}-filenameproc_lambda"
+  name              = "/aws/lambda/${local.short_prefix}-filenameproc-lambda"
   retention_in_days = 30
 }
 
