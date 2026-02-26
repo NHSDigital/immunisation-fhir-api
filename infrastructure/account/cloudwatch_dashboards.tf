@@ -636,27 +636,9 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
-          "stat" : "Average",
+          "stat" : "SampleCount",
           "period" : 300,
           "title" : "ECS - Running Task Count"
-        }
-      },
-      {
-        "type" : "metric",
-        "x" : 8,
-        "y" : 44,
-        "width" : 8,
-        "height" : 6,
-        "properties" : {
-          "metrics" : [
-            for cluster in local.ecs_clusters : ["AWS/ECS", "PendingTaskCount", "ClusterName", cluster, { region : var.aws_region }]
-          ],
-          "view" : "timeSeries",
-          "stacked" : false,
-          "region" : var.aws_region,
-          "stat" : "Average",
-          "period" : 300,
-          "title" : "ECS - Pending Task Count"
         }
       },
       {
@@ -667,14 +649,14 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "height" : 6,
         "properties" : {
           "metrics" : [
-            for cluster in local.ecs_clusters : ["ECS/ContainerInsights", "ContainerCpuUtilized", "ClusterName", cluster, { region : var.aws_region }]
+            for cluster in local.ecs_clusters : ["AWS/ECS", "CPUUtilization", "ClusterName", cluster, { region : var.aws_region }]
           ],
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
-          "stat" : "Average",
+          "stat" : "Maximum",
           "period" : 300,
-          "title" : "ECS Container Insights - CPU Utilized"
+          "title" : "ECS - CPU Utilization"
         }
       },
       {
@@ -685,14 +667,14 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "height" : 6,
         "properties" : {
           "metrics" : [
-            for cluster in local.ecs_clusters : ["ECS/ContainerInsights", "ContainerMemoryUtilized", "ClusterName", cluster, { region : var.aws_region }]
+            for cluster in local.ecs_clusters : ["AWS/ECS", "MemoryUtilization", "ClusterName", cluster, { region : var.aws_region }]
           ],
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
-          "stat" : "Average",
+          "stat" : "Maximum",
           "period" : 300,
-          "title" : "ECS Container Insights - Memory Utilized"
+          "title" : "ECS - Memory Utilization"
         }
       },
       {
