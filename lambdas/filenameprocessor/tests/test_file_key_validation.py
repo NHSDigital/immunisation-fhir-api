@@ -129,6 +129,11 @@ class TestFileKeyValidation(TestCase):
                 "Vaccination_Extended_Attributes_v1_5_YGM41_20221231T23595900.csv",
                 "YGM41",
             ),
+            # Valid extended attributes file key with version v1_4
+            (
+                "Vaccination_Extended_Attributes_v1_4_X8E5B_20000101T00000001.csv",
+                "X8E5B",
+            ),
         ]
 
         for file_key, expected_result in test_cases_for_success_scenarios:
