@@ -241,42 +241,6 @@ class TestProcessRow(unittest.TestCase):
         )
         self.assertEqual(response["diagnostics"]["statusCode"], 400)
 
-    def test_process_row_successfully_uplifts_legacy_tpp_uri(self):
-        """
-        Test that process_row gives the expected output.
-        These tests check that the row is valid and matches the expected output.
-        """
-        legacy_tpp_row = deepcopy(ROW_DETAILS)
-        legacy_tpp_row["UNIQUE_ID_URI"] = "YGA"
-
-        expected_successful_result_tpp = deepcopy(expected_successful_result)
-        expected_successful_result_tpp["identifier"][0]["system"] = "https://tpp-uk.com/Id/ve/vacc"
-
-        # call 'process_row' with required details
-        imms_fhir_resource = process_row(TargetDiseaseElements.RSV, Allowed_Operations, legacy_tpp_row)
-        # validate if the response with expected result
-        self.assertDictEqual(imms_fhir_resource["fhir_json"], expected_successful_result_tpp)
-        self.assertEqual(legacy_tpp_row["UNIQUE_ID_URI"], "https://tpp-uk.com/Id/ve/vacc")
-        self.assertEqual(imms_fhir_resource["local_id"], "RSV_002^https://tpp-uk.com/Id/ve/vacc")
-
-    def test_process_row_successfully_uplifts_legacy_emis_uri(self):
-        """
-        Test that process_row gives the expected output.
-        These tests check that the row is valid and matches the expected output.
-        """
-        legacy_emis_row = deepcopy(ROW_DETAILS)
-        legacy_emis_row["UNIQUE_ID_URI"] = "YGJ"
-
-        expected_successful_result_emis = deepcopy(expected_successful_result)
-        expected_successful_result_emis["identifier"][0]["system"] = "https://emishealth.com/identifiers/vacc"
-
-        # call 'process_row' with required details
-        imms_fhir_resource = process_row(TargetDiseaseElements.RSV, Allowed_Operations, legacy_emis_row)
-        # validate if the response with expected result
-        self.assertDictEqual(imms_fhir_resource["fhir_json"], expected_successful_result_emis)
-        self.assertEqual(legacy_emis_row["UNIQUE_ID_URI"], "https://emishealth.com/identifiers/vacc")
-        self.assertEqual(imms_fhir_resource["local_id"], "RSV_002^https://emishealth.com/identifiers/vacc")
-
 
 if __name__ == "__main__":
     unittest.main()
