@@ -667,7 +667,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "height" : 6,
         "properties" : {
           "metrics" : [
-            for cluster in local.ecs_clusters : ["AWS/ECS", "MemoryUtilization", "ClusterName", cluster, { region : var.aws_region }]
+            for cluster in local.ecs_clusters : ["ECS/ContainerInsights", "MemoryUtilized", "ClusterName", cluster, { region : var.aws_region }]
           ],
           "view" : "timeSeries",
           "stacked" : false,
