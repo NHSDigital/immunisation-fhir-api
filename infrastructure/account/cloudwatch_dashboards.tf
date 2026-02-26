@@ -17,19 +17,6 @@ locals {
     [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}_not_found"],
   ])
 
-  api_lambda_invocations_metrics            = [for lambda in local.api_lambdas : ["AWS/Lambda", "Invocations", "FunctionName", lambda, { region : var.aws_region }]]
-  api_lambda_errors_metrics                 = [for lambda in local.api_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.errors_colour_code, region : var.aws_region }]]
-  api_lambda_invocations_and_errors_metrics = concat(local.api_lambda_invocations_metrics, local.api_lambda_errors_metrics)
-  api_lambda_duration_metrics = concat(
-    [[{ expression : "AVG(METRICS())", label : "Average Duration", id : "e1", stat : "Maximum", region : var.aws_region }]],
-    [for i, lambda in local.api_lambdas : ["AWS/Lambda", "Duration", "FunctionName", lambda, { stat : "Maximum", id : "m${i + 1}", region : var.aws_region }]],
-  )
-  api_lambda_concurrent_execution_metrics = [for lambda in local.api_lambdas : ["AWS/Lambda", "ConcurrentExecutions", "FunctionName", lambda, { region : var.aws_region }]]
-  api_lambda_total_errors_metrics = concat(
-    [[{ expression : "SUM(METRICS())", label : "API Errors", id : "e1", region : var.aws_region, color : local.errors_colour_code }]],
-    [for i, lambda in local.api_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.errors_colour_code, region : var.aws_region, id : "m${i + 1}", visible : false }]]
-  )
-
   # Batch Lambda
   batch_lambdas = flatten([
     [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-batch-processor-filter-lambda"],
@@ -37,19 +24,6 @@ locals {
     [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-forwarding-lambda"],
     [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-filenameproc-lambda"],
   ])
-
-  batch_lambda_invocations_metrics            = [for lambda in local.batch_lambdas : ["AWS/Lambda", "Invocations", "FunctionName", lambda, { region : var.aws_region }]]
-  batch_lambda_errors_metrics                 = [for lambda in local.batch_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.errors_colour_code, region : var.aws_region }]]
-  batch_lambda_invocations_and_errors_metrics = concat(local.batch_lambda_invocations_metrics, local.batch_lambda_errors_metrics)
-  batch_lambda_duration_metrics = concat(
-    [[{ expression : "AVG(METRICS())", label : "Average Duration", id : "e1", stat : "Maximum", region : var.aws_region }]],
-    [for i, lambda in local.batch_lambdas : ["AWS/Lambda", "Duration", "FunctionName", lambda, { stat : "Maximum", id : "m${i + 1}", region : var.aws_region }]]
-  )
-  batch_lambda_concurrent_execution_metrics = [for lambda in local.batch_lambdas : ["AWS/Lambda", "ConcurrentExecutions", "FunctionName", lambda, { region : var.aws_region }]]
-  batch_lambda_total_errors_metrics = concat(
-    [[{ expression : "SUM(METRICS())", label : "API Errors", id : "e1", region : var.aws_region, color : local.errors_colour_code }]],
-    [for i, lambda in local.batch_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.errors_colour_code, region : var.aws_region, id : "m${i + 1}", visible : false }]]
-  )
 
   # Ancillary Lambda
   ancillary_lambdas = flatten([
@@ -59,19 +33,6 @@ locals {
     [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-redis-sync-lambda"],
     [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-mesh-processor-lambda" if var.environment != "dev"],
   ])
-
-  ancillary_lambda_invocations_metrics            = [for lambda in local.ancillary_lambdas : ["AWS/Lambda", "Invocations", "FunctionName", lambda, { region : var.aws_region }]]
-  ancillary_lambda_errors_metrics                 = [for lambda in local.ancillary_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.errors_colour_code, region : var.aws_region }]]
-  ancillary_lambda_invocations_and_errors_metrics = concat(local.ancillary_lambda_invocations_metrics, local.ancillary_lambda_errors_metrics)
-  ancillary_lambda_duration_metrics = concat(
-    [[{ expression : "AVG(METRICS())", label : "Average Duration", id : "e1", stat : "Maximum", region : var.aws_region }]],
-    [for i, lambda in local.ancillary_lambdas : ["AWS/Lambda", "Duration", "FunctionName", lambda, { stat : "Maximum", id : "m${i + 1}", region : var.aws_region }]]
-  )
-  ancillary_lambda_concurrent_execution_metrics = [for lambda in local.ancillary_lambdas : ["AWS/Lambda", "ConcurrentExecutions", "FunctionName", lambda, { region : var.aws_region }]]
-  ancillary_lambda_total_errors_metrics = concat(
-    [[{ expression : "SUM(METRICS())", label : "API Errors", id : "e1", region : var.aws_region, color : local.errors_colour_code }]],
-    [for i, lambda in local.ancillary_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.errors_colour_code, region : var.aws_region, id : "m${i + 1}", visible : false }]]
-  )
 
   # DynamoDB
   # We only have tables by sub-environment in dev
@@ -84,22 +45,6 @@ locals {
     var.environment == "dev" ? "imms-internal-qa-audit-table" : "",
   ])
 
-  dynamodb_getitems_metrics      = [for table in local.dynamodb_tables : ["AWS/DynamoDB", "SuccessfulRequestLatency", "TableName", table, "Operation", "GetItem", { region : var.aws_region }]]
-  dynamodb_query_metrics         = [for table in local.dynamodb_tables : ["AWS/DynamoDB", "SuccessfulRequestLatency", "TableName", table, "Operation", "Query", { region : var.aws_region }]]
-  dynamodb_read_metrics          = concat(local.dynamodb_getitems_metrics, local.dynamodb_query_metrics)
-  dynamodb_read_capacity_metrics = [for table in local.dynamodb_tables : ["AWS/DynamoDB", "ConsumedReadCapacityUnits", "TableName", table]]
-
-  dynamodb_putitems_metrics       = [for table in local.dynamodb_tables : ["AWS/DynamoDB", "SuccessfulRequestLatency", "TableName", table, "Operation", "PutItem", { region : var.aws_region }]]
-  dynamodb_updateitem_metrics     = [for table in local.dynamodb_tables : ["AWS/DynamoDB", "SuccessfulRequestLatency", "TableName", table, "Operation", "UpdateItem", { region : var.aws_region }]]
-  dynamodb_write_metrics          = concat(local.dynamodb_putitems_metrics, local.dynamodb_updateitem_metrics)
-  dynamodb_write_capacity_metrics = [for table in local.dynamodb_tables : ["AWS/DynamoDB", "ConsumedWriteCapacityUnits", "TableName", table]]
-
-  # Kinesis
-  kinesis_metrics = [for sub_env in local.sub_environments_map[var.environment] :
-    ["AWS/Kinesis", "IncomingBytes", "StreamName", "imms-${sub_env}-processingdata-stream"]
-  ]
-
-  # SQS
   sqs_queues = distinct(flatten([
     [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-ack-metadata-queue.fifo"],
     [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-batch-file-created-queue.fifo"],
@@ -108,7 +53,9 @@ locals {
     var.environment == "dev" ? [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-id-sync-dlq"] : ["imms-${var.environment}-id-sync-dlq"],
     var.environment == "dev" ? [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-id-sync-queue"] : ["imms-${var.environment}-id-sync-queue"],
   ]))
-  sqs_queue_metrics = [for queue in local.sqs_queues : ["AWS/SQS", "NumberOfMessagesSent", "QueueName", queue, { region : var.aws_region }]]
+
+  # ECS (cluster names match instance short_prefix: imms-<sub_env>-ecs-cluster)
+  ecs_clusters = [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-ecs-cluster"]
 
   # Alarms
   alarms = [
@@ -276,7 +223,10 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : local.api_lambda_invocations_and_errors_metrics,
+          "metrics" : concat(
+            [for lambda in local.api_lambdas : ["AWS/Lambda", "Invocations", "FunctionName", lambda, { region : var.aws_region }]],
+            [for lambda in local.api_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.errors_colour_code, region : var.aws_region }]]
+          ),
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
@@ -292,7 +242,10 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : local.api_lambda_duration_metrics
+          "metrics" : concat(
+            [[{ expression : "AVG(METRICS())", label : "Average Duration", id : "e1", stat : "Maximum", region : var.aws_region }]],
+            [for i, lambda in local.api_lambdas : ["AWS/Lambda", "Duration", "FunctionName", lambda, { stat : "Maximum", id : "m${i + 1}", region : var.aws_region }]]
+          ),
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
@@ -308,7 +261,9 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : local.api_lambda_concurrent_execution_metrics,
+          "metrics" : [
+            for lambda in local.api_lambdas : ["AWS/Lambda", "ConcurrentExecutions", "FunctionName", lambda, { region : var.aws_region }]
+          ],
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
@@ -324,7 +279,10 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 2,
         "height" : 3,
         "properties" : {
-          "metrics" : local.api_lambda_total_errors_metrics,
+          "metrics" : concat(
+            [[{ expression : "SUM(METRICS())", label : "API Errors", id : "e1", region : var.aws_region, color : local.errors_colour_code }]],
+            [for i, lambda in local.api_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.errors_colour_code, region : var.aws_region, id : "m${i + 1}", visible : false }]]
+          ),
           "sparkline" : true,
           "view" : "singleValue",
           "region" : var.aws_region,
@@ -349,7 +307,10 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : local.batch_lambda_invocations_and_errors_metrics,
+          "metrics" : concat(
+            [for lambda in local.batch_lambdas : ["AWS/Lambda", "Invocations", "FunctionName", lambda, { region : var.aws_region }]],
+            [for lambda in local.batch_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.errors_colour_code, region : var.aws_region }]]
+          ),
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
@@ -365,7 +326,10 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : local.batch_lambda_duration_metrics,
+          "metrics" : concat(
+            [[{ expression : "AVG(METRICS())", label : "Average Duration", id : "e1", stat : "Maximum", region : var.aws_region }]],
+            [for i, lambda in local.batch_lambdas : ["AWS/Lambda", "Duration", "FunctionName", lambda, { stat : "Maximum", id : "m${i + 1}", region : var.aws_region }]]
+          ),
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
@@ -381,7 +345,9 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : local.batch_lambda_concurrent_execution_metrics,
+          "metrics" : [
+            for lambda in local.batch_lambdas : ["AWS/Lambda", "ConcurrentExecutions", "FunctionName", lambda, { region : var.aws_region }]
+          ],
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
@@ -397,7 +363,10 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 2,
         "height" : 3,
         "properties" : {
-          "metrics" : local.batch_lambda_total_errors_metrics,
+          "metrics" : concat(
+            [[{ expression : "SUM(METRICS())", label : "API Errors", id : "e1", region : var.aws_region, color : local.errors_colour_code }]],
+            [for i, lambda in local.batch_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.errors_colour_code, region : var.aws_region, id : "m${i + 1}", visible : false }]]
+          ),
           "sparkline" : true,
           "view" : "singleValue",
           "region" : var.aws_region,
@@ -422,7 +391,10 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : local.ancillary_lambda_invocations_and_errors_metrics,
+          "metrics" : concat(
+            [for lambda in local.ancillary_lambdas : ["AWS/Lambda", "Invocations", "FunctionName", lambda, { region : var.aws_region }]],
+            [for lambda in local.ancillary_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.errors_colour_code, region : var.aws_region }]]
+          ),
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
@@ -438,7 +410,10 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : local.ancillary_lambda_duration_metrics,
+          "metrics" : concat(
+            [[{ expression : "AVG(METRICS())", label : "Average Duration", id : "e1", stat : "Maximum", region : var.aws_region }]],
+            [for i, lambda in local.ancillary_lambdas : ["AWS/Lambda", "Duration", "FunctionName", lambda, { stat : "Maximum", id : "m${i + 1}", region : var.aws_region }]]
+          ),
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
@@ -454,7 +429,9 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : local.ancillary_lambda_concurrent_execution_metrics,
+          "metrics" : [
+            for lambda in local.ancillary_lambdas : ["AWS/Lambda", "ConcurrentExecutions", "FunctionName", lambda, { region : var.aws_region }]
+          ],
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
@@ -470,7 +447,10 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 2,
         "height" : 3,
         "properties" : {
-          "metrics" : local.ancillary_lambda_total_errors_metrics,
+          "metrics" : concat(
+            [[{ expression : "SUM(METRICS())", label : "API Errors", id : "e1", region : var.aws_region, color : local.errors_colour_code }]],
+            [for i, lambda in local.ancillary_lambdas : ["AWS/Lambda", "Errors", "FunctionName", lambda, { color : local.errors_colour_code, region : var.aws_region, id : "m${i + 1}", visible : false }]]
+          ),
           "sparkline" : true,
           "view" : "singleValue",
           "region" : var.aws_region,
@@ -495,7 +475,10 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : local.dynamodb_read_metrics,
+          "metrics" : concat(
+            [for table in local.dynamodb_tables : ["AWS/DynamoDB", "SuccessfulRequestLatency", "TableName", table, "Operation", "GetItem", { region : var.aws_region }]],
+            [for table in local.dynamodb_tables : ["AWS/DynamoDB", "SuccessfulRequestLatency", "TableName", table, "Operation", "Query", { region : var.aws_region }]]
+          ),
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
@@ -516,7 +499,10 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : local.dynamodb_read_metrics,
+          "metrics" : concat(
+            [for table in local.dynamodb_tables : ["AWS/DynamoDB", "SuccessfulRequestLatency", "TableName", table, "Operation", "GetItem", { region : var.aws_region }]],
+            [for table in local.dynamodb_tables : ["AWS/DynamoDB", "SuccessfulRequestLatency", "TableName", table, "Operation", "Query", { region : var.aws_region }]]
+          ),
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
@@ -532,7 +518,9 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : local.dynamodb_read_capacity_metrics,
+          "metrics" : [
+            for table in local.dynamodb_tables : ["AWS/DynamoDB", "ConsumedReadCapacityUnits", "TableName", table]
+          ],
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
@@ -571,7 +559,10 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : local.dynamodb_write_metrics,
+          "metrics" : concat(
+            [for table in local.dynamodb_tables : ["AWS/DynamoDB", "SuccessfulRequestLatency", "TableName", table, "Operation", "PutItem", { region : var.aws_region }]],
+            [for table in local.dynamodb_tables : ["AWS/DynamoDB", "SuccessfulRequestLatency", "TableName", table, "Operation", "UpdateItem", { region : var.aws_region }]]
+          ),
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
@@ -592,7 +583,10 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : local.dynamodb_write_metrics,
+          "metrics" : concat(
+            [for table in local.dynamodb_tables : ["AWS/DynamoDB", "SuccessfulRequestLatency", "TableName", table, "Operation", "PutItem", { region : var.aws_region }]],
+            [for table in local.dynamodb_tables : ["AWS/DynamoDB", "SuccessfulRequestLatency", "TableName", table, "Operation", "UpdateItem", { region : var.aws_region }]]
+          ),
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
@@ -608,7 +602,9 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : local.dynamodb_write_capacity_metrics,
+          "metrics" : [
+            for table in local.dynamodb_tables : ["AWS/DynamoDB", "ConsumedWriteCapacityUnits", "TableName", table]
+          ],
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
@@ -624,13 +620,95 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "width" : 24,
         "height" : 1,
         "properties" : {
-          "markdown" : "## Other"
+          "markdown" : "## ECS"
         }
       },
       {
         "type" : "metric",
         "x" : 0,
         "y" : 44,
+        "width" : 8,
+        "height" : 6,
+        "properties" : {
+          "metrics" : [
+            for cluster in local.ecs_clusters : ["AWS/ECS", "RunningTaskCount", "ClusterName", cluster, { region : var.aws_region }]
+          ],
+          "view" : "timeSeries",
+          "stacked" : false,
+          "region" : var.aws_region,
+          "stat" : "Average",
+          "period" : 300,
+          "title" : "ECS - Running Task Count"
+        }
+      },
+      {
+        "type" : "metric",
+        "x" : 8,
+        "y" : 44,
+        "width" : 8,
+        "height" : 6,
+        "properties" : {
+          "metrics" : [
+            for cluster in local.ecs_clusters : ["AWS/ECS", "PendingTaskCount", "ClusterName", cluster, { region : var.aws_region }]
+          ],
+          "view" : "timeSeries",
+          "stacked" : false,
+          "region" : var.aws_region,
+          "stat" : "Average",
+          "period" : 300,
+          "title" : "ECS - Pending Task Count"
+        }
+      },
+      {
+        "type" : "metric",
+        "x" : 16,
+        "y" : 44,
+        "width" : 8,
+        "height" : 6,
+        "properties" : {
+          "metrics" : [
+            for cluster in local.ecs_clusters : ["ECS/ContainerInsights", "ContainerCpuUtilized", "ClusterName", cluster, { region : var.aws_region }]
+          ],
+          "view" : "timeSeries",
+          "stacked" : false,
+          "region" : var.aws_region,
+          "stat" : "Average",
+          "period" : 300,
+          "title" : "ECS Container Insights - CPU Utilized"
+        }
+      },
+      {
+        "type" : "metric",
+        "x" : 0,
+        "y" : 50,
+        "width" : 12,
+        "height" : 6,
+        "properties" : {
+          "metrics" : [
+            for cluster in local.ecs_clusters : ["ECS/ContainerInsights", "ContainerMemoryUtilized", "ClusterName", cluster, { region : var.aws_region }]
+          ],
+          "view" : "timeSeries",
+          "stacked" : false,
+          "region" : var.aws_region,
+          "stat" : "Average",
+          "period" : 300,
+          "title" : "ECS Container Insights - Memory Utilized"
+        }
+      },
+      {
+        "type" : "text",
+        "x" : 0,
+        "y" : 56,
+        "width" : 24,
+        "height" : 1,
+        "properties" : {
+          "markdown" : "## Other"
+        }
+      },
+      {
+        "type" : "metric",
+        "x" : 0,
+        "y" : 57,
         "width" : 6,
         "height" : 6,
         "properties" : {
@@ -644,13 +722,15 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "metric",
         "x" : 6,
-        "y" : 44,
+        "y" : 57,
         "width" : 6,
         "height" : 6,
         "properties" : {
           "view" : "timeSeries",
           "stacked" : false,
-          "metrics" : local.kinesis_metrics,
+          "metrics" : [
+            for sub_env in local.sub_environments_map[var.environment] : ["AWS/Kinesis", "IncomingBytes", "StreamName", "imms-${sub_env}-processingdata-stream"]
+          ],
           "region" : var.aws_region,
           "title" : "Kinesis - IncomingBytes"
         }
@@ -658,11 +738,13 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "metric",
         "x" : 12,
-        "y" : 44,
+        "y" : 57,
         "width" : 6,
         "height" : 6,
         "properties" : {
-          "metrics" : local.sqs_queue_metrics,
+          "metrics" : [
+            for queue in local.sqs_queues : ["AWS/SQS", "NumberOfMessagesSent", "QueueName", queue, { region : var.aws_region }]
+          ],
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
@@ -674,7 +756,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "metric",
         "x" : 0,
-        "y" : 50,
+        "y" : 63,
         "width" : 6,
         "height" : 6,
         "properties" : {
@@ -684,14 +766,14 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
             ["AWS/ElastiCache", "CacheHits", "CacheClusterId", "immunisation-redis-cluster", "CacheNodeId", "0001"]
           ],
           "region" : var.aws_region,
-          "title" : "ElastiCache - CacheHits"
+          "title" : "ElastiCache - CacheHits",
           "period" : 300,
         }
       },
       {
         "type" : "metric",
         "x" : 6,
-        "y" : 50,
+        "y" : 63,
         "width" : 6,
         "height" : 6,
         "properties" : {
@@ -709,7 +791,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "text",
         "x" : 0,
-        "y" : 56,
+        "y" : 69,
         "width" : 24,
         "height" : 1,
         "properties" : {
@@ -719,7 +801,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "alarm",
         "x" : 0,
-        "y" : 57,
+        "y" : 70,
         "width" : 24,
         "height" : var.environment == "dev" ? 5 : 10,
         "properties" : {
