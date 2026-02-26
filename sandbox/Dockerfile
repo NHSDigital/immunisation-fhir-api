@@ -1,5 +1,5 @@
 # First Stage
-FROM alpine:latest
+FROM alpine:3.23.3
 
 # Create a non-root user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup && apk add --no-cache jq
@@ -17,7 +17,7 @@ COPY ./specification ./specification
 RUN jq ".paths += $(cat HealthStatusEndpoint.json)" immunisation-fhir-api.json > updated-spec.json
 
 # Second Stage
-FROM stoplight/prism:latest
+FROM stoplight/prism:5.14.2
 
 # Create a non-root user in the Prism container
 USER root

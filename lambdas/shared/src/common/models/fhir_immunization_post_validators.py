@@ -21,6 +21,16 @@ class PostValidators:
         # Status is mandatory in FHIR, so there is no post-validation for status as it is handled by the FHIR validator.
         # NOTE: SOME FIELDS ARE COMMENTED OUT AS THEY ARE REQUIRED ELEMENTS (VALIDATION SHOULD ALWAYS PASS), AND THE
         # MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE FIELDS, THEY MAY NEED REINSTATED LATER.
+
+        # These are the fields that we may require to reinstate in the future:
+        #   vaccination_procedure_display
+        #   vaccine_code_coding_code
+        #   vaccine_code_coding_display
+        #   site_coding_code
+        #   site_coding_display
+        #   route_coding_code
+        #   route_coding_display
+
         self.fields_with_standard_validation = [
             FieldNames.patient_identifier_value,
             FieldNames.patient_name_given,
@@ -38,17 +48,10 @@ class PostValidators:
             FieldNames.recorded,
             FieldNames.primary_source,
             FieldNames.vaccination_procedure_code,
-            # FieldNames.vaccination_procedure_display,
             FieldNames.dose_number_positive_int,
-            # FieldNames.vaccine_code_coding_code,
-            # FieldNames.vaccine_code_coding_display,
             FieldNames.manufacturer_display,
             FieldNames.lot_number,
             FieldNames.expiration_date,
-            # FieldNames.site_coding_code,
-            # FieldNames.site_coding_display,
-            # FieldNames.route_coding_code,
-            # FieldNames.route_coding_display,
             FieldNames.dose_quantity_value,
             FieldNames.dose_quantity_code,
             FieldNames.dose_quantity_unit,

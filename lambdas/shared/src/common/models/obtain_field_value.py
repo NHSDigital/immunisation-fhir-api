@@ -136,11 +136,6 @@ class ObtainFieldValue:
         """Obtains vaccination_procedure_code value"""
         return get_generic_extension_value(imms, Urls.VACCINATION_PROCEDURE, Urls.SNOMED, "code")
 
-    # @staticmethod
-    # def vaccination_procedure_display(imms: dict):
-    #     """Obtains vaccination_procedure_display value"""
-    #     return get_generic_extension_value(imms, Urls.vaccination_procedure, Urls.snomed, "display")
-
     @staticmethod
     def dose_number_positive_int(imms: dict):
         """Obtains dose_number_positive_int value"""

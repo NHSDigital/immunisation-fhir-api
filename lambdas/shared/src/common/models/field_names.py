@@ -7,6 +7,8 @@ from dataclasses import dataclass
 class FieldNames:
     """Stores the field name strings for fields of note within the FHIR Immunization Resource JSON data"""
 
+    # Note: vaccination_procedure_display is no longer used
+
     target_disease = "target_disease"
     target_disease_codes = "target_disease_codes"
     patient_identifier_value = "patient_identifier_value"
@@ -25,7 +27,6 @@ class FieldNames:
     recorded = "recorded"
     primary_source = "primary_source"
     vaccination_procedure_code = "vaccination_procedure_code"
-    # vaccination_procedure_display = "vaccination_procedure_display"
     dose_number_positive_int = "dose_number_positive_int"
     vaccine_code_coding_code = "vaccine_code_coding_code"
     vaccine_code_coding_display = "vaccine_code_coding_display"
