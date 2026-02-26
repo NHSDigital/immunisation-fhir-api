@@ -5,6 +5,7 @@ from unittest.mock import Mock, patch
 
 from lambda_handler import lambda_handler
 from process_records import extract_trace_ids, process_record, process_records
+from test_utils import load_sample_sqs_event
 
 
 class TestExtractTraceIds(unittest.TestCase):
@@ -13,14 +14,7 @@ class TestExtractTraceIds(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Load the sample SQS event once for all tests."""
-        sample_event_path = Path(__file__).parent.parent / "tests/sqs_event.json"
-        with open(sample_event_path, "r") as f:
-            raw_event = json.load(f)
-
-        if isinstance(raw_event.get("body"), dict):
-            raw_event["body"] = json.dumps(raw_event["body"])
-
-        cls.sample_sqs_event = raw_event
+        cls.sample_sqs_event = load_sample_sqs_event()
 
     def test_extract_trace_ids_success_from_real_payload(self):
         """Test successful extraction using real SQS event structure."""
@@ -72,14 +66,7 @@ class TestProcessRecord(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Load the sample SQS event once for all tests."""
-        sample_event_path = Path(__file__).parent.parent / "tests/sqs_event.json"
-        with open(sample_event_path, "r") as f:
-            raw_event = json.load(f)
-
-        if isinstance(raw_event.get("body"), dict):
-            raw_event["body"] = json.dumps(raw_event["body"])
-
-        cls.sample_sqs_record = raw_event
+        cls.sample_sqs_record = load_sample_sqs_event()
 
     def setUp(self):
         """Set up test fixtures."""
@@ -181,7 +168,7 @@ class TestProcessRecords(unittest.TestCase):
 
         self.assertEqual(len(result["batchItemFailures"]), 1)
         self.assertEqual(result["batchItemFailures"][0]["itemIdentifier"], "msg-456")
-        mock_logger.warning.assert_called_with("Batch completed with 1 failures")
+        mock_logger.exception.assert_called_once()
 
     @patch("process_records.logger")
     @patch("process_records.get_mns_service")
@@ -219,14 +206,7 @@ class TestLambdaHandler(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Load the sample SQS event once for all tests."""
-        sample_event_path = Path(__file__).parent.parent / "tests/sqs_event.json"
-        with open(sample_event_path, "r") as f:
-            raw_event = json.load(f)
-
-        if isinstance(raw_event.get("body"), dict):
-            raw_event["body"] = json.dumps(raw_event["body"])
-
-        cls.sample_sqs_record = raw_event
+        cls.sample_sqs_record = load_sample_sqs_event()
 
     @patch("lambda_handler.process_records")
     def test_lambda_handler_all_success(self, mock_process_records):

@@ -1,14 +1,15 @@
+import json
 import os
 import uuid
 from datetime import datetime
+from typing import Any
 
 from aws_lambda_typing.events.sqs import SQSMessage
 
 from common.api_clients.get_pds_details import pds_get_patient_details
 from common.clients import logger
 from common.get_service_url import get_service_url
-from constants import IMMUNISATION_TYPE, SPEC_VERSION, MnsNotificationPayload
-from sqs_dynamo_utils import extract_sqs_imms_data
+from constants import DYNAMO_DB_TYPE_DESCRIPTORS, IMMUNISATION_TYPE, SPEC_VERSION, MnsNotificationPayload
 
 IMMUNIZATION_ENV = os.getenv("IMMUNIZATION_ENV")
 IMMUNIZATION_BASE_PATH = os.getenv("IMMUNIZATION_BASE_PATH")
@@ -18,28 +19,37 @@ def create_mns_notification(sqs_event: SQSMessage) -> MnsNotificationPayload:
     """Create a notification payload for MNS."""
     immunisation_url = get_service_url(IMMUNIZATION_ENV, IMMUNIZATION_BASE_PATH)
 
-    # Simple, direct extraction
-    imms_data = extract_sqs_imms_data(sqs_event)
+    body = json.loads(sqs_event.get("body", "{}"))
+    new_image = body.get("dynamodb", {}).get("NewImage", {})
+    imms_id = _unwrap_dynamodb_value(new_image.get("ImmsID", {}))
+    supplier_system = _unwrap_dynamodb_value(new_image.get("SupplierSystem", {}))
+    vaccine_type = _unwrap_dynamodb_value(new_image.get("VaccineType", {}))
+    operation = _unwrap_dynamodb_value(new_image.get("Operation", {}))
 
-    patient_age = calculate_age_at_vaccination(imms_data["person_dob"], imms_data["date_and_time"])
+    imms_map = new_image.get("Imms", {}).get("M", {})
+    nhs_number = _unwrap_dynamodb_value(imms_map.get("NHS_NUMBER", {}))
+    person_dob = _unwrap_dynamodb_value(imms_map.get("PERSON_DOB", {}))
+    date_and_time = _unwrap_dynamodb_value(imms_map.get("DATE_AND_TIME", {}))
+    site_code = _unwrap_dynamodb_value(imms_map.get("SITE_CODE", {}))
 
-    gp_ods_code = get_practitioner_details_from_pds(imms_data["nhs_number"])
+    patient_age = calculate_age_at_vaccination(person_dob, date_and_time)
+    gp_ods_code = get_practitioner_details_from_pds(nhs_number)
 
     return {
         "specversion": SPEC_VERSION,
         "id": str(uuid.uuid4()),
         "source": immunisation_url,
         "type": IMMUNISATION_TYPE,
-        "time": imms_data["date_and_time"],
-        "subject": imms_data["nhs_number"],
-        "dataref": f"{immunisation_url}/Immunization/{imms_data['imms_id']}",
+        "time": date_and_time,
+        "subject": nhs_number,
+        "dataref": f"{immunisation_url}/Immunization/{imms_id}",
         "filtering": {
             "generalpractitioner": gp_ods_code,
-            "sourceorganisation": imms_data["site_code"],
-            "sourceapplication": imms_data["supplier_system"],
+            "sourceorganisation": site_code,
+            "sourceapplication": supplier_system,
             "subjectage": str(patient_age),
-            "immunisationtype": imms_data["vaccine_type"],
-            "action": imms_data["operation"],
+            "immunisationtype": vaccine_type,
+            "action": operation,
         },
     }
 
@@ -95,3 +105,24 @@ def get_practitioner_details_from_pds(nhs_number: str) -> str | None:
             return None
 
     return gp_ods_code
+
+
+def _unwrap_dynamodb_value(value: dict) -> Any:
+    """
+    Unwrap DynamoDB type descriptor to get the actual value.
+    DynamoDB types: S (String), N (Number), BOOL, M (Map), L (List), NULL
+    """
+    if not isinstance(value, dict):
+        return value
+
+    # DynamoDB type descriptors
+    if "NULL" in value:
+        return None
+
+    # Check other DynamoDB types
+    for key in DYNAMO_DB_TYPE_DESCRIPTORS:
+        if key in value:
+            return value[key]
+
+    # Not a DynamoDB type, return as-is
+    return value

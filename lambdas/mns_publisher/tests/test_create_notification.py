@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 
 from constants import IMMUNISATION_TYPE, SPEC_VERSION
 from create_notification import (
+    _unwrap_dynamodb_value,
     calculate_age_at_vaccination,
     create_mns_notification,
     get_practitioner_details_from_pds,
@@ -344,6 +345,46 @@ class TestGetPractitionerDetailsFromPds(unittest.TestCase):
             get_practitioner_details_from_pds("9481152782")
 
         self.assertEqual(str(context.exception), "PDS API error")
+
+
+class TestUnwrapDynamodbValue(unittest.TestCase):
+    """Tests for _unwrap_dynamodb_value helper function."""
+
+    def test_unwrap_string_type(self):
+        """Test unwrapping DynamoDB String type."""
+        value = {"S": "test-value"}
+        result = _unwrap_dynamodb_value(value)
+        self.assertEqual(result, "test-value")
+
+    def test_unwrap_number_type(self):
+        """Test unwrapping DynamoDB Number type."""
+        value = {"N": "123"}
+        result = _unwrap_dynamodb_value(value)
+        self.assertEqual(result, "123")
+
+    def test_unwrap_boolean_type(self):
+        """Test unwrapping DynamoDB Boolean type."""
+        value = {"BOOL": True}
+        result = _unwrap_dynamodb_value(value)
+        self.assertTrue(result)
+
+    def test_unwrap_null_type(self):
+        """Test unwrapping DynamoDB NULL type."""
+        value = {"NULL": True}
+        result = _unwrap_dynamodb_value(value)
+        self.assertIsNone(result)
+
+    def test_unwrap_map_type(self):
+        """Test unwrapping DynamoDB Map type."""
+        value = {"M": {"key": {"S": "value"}}}
+        result = _unwrap_dynamodb_value(value)
+        self.assertEqual(result, {"key": {"S": "value"}})
+
+    def test_unwrap_list_type(self):
+        """Test unwrapping DynamoDB List type."""
+        value = {"L": [{"S": "item1"}, {"S": "item2"}]}
+        result = _unwrap_dynamodb_value(value)
+        self.assertEqual(result, [{"S": "item1"}, {"S": "item2"}])
 
 
 if __name__ == "__main__":

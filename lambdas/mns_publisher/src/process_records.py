@@ -27,7 +27,7 @@ def process_records(records: list[SQSMessage]) -> dict[str, list]:
         except Exception:
             message_id = record.get("messageId", "unknown")
             batch_item_failures.append({"itemIdentifier": message_id})
-            logger.exception("Failed to process record", trace_id={"message_id": message_id})
+            logger.exception("Failed to process record", extra={"message_id": message_id})
 
     if batch_item_failures:
         logger.warning(f"Batch completed with {len(batch_item_failures)} failures")
@@ -37,7 +37,7 @@ def process_records(records: list[SQSMessage]) -> dict[str, list]:
     return {"batchItemFailures": batch_item_failures}
 
 
-def process_record(record: SQSMessage, mns_service: MnsService) -> dict | None:
+def process_record(record: SQSMessage, mns_service: MnsService) -> None:
     """
     Process a single SQS record.
     Args:
@@ -48,13 +48,12 @@ def process_record(record: SQSMessage, mns_service: MnsService) -> dict | None:
     message_id, immunisation_id = extract_trace_ids(record)
     notification_id = None
 
-    # Create notification payload
     mns_notification_payload = create_mns_notification(record)
     notification_id = mns_notification_payload.get("id")
     action_flag = mns_notification_payload.get("filtering", {}).get("action")
     logger.info(
         "Processing message",
-        trace_ids={
+        extra={
             "notification_id": notification_id,
             "message_id": message_id,
             "immunisation_id": immunisation_id,
@@ -63,7 +62,7 @@ def process_record(record: SQSMessage, mns_service: MnsService) -> dict | None:
     )
 
     mns_service.publish_notification(mns_notification_payload)
-    logger.info("Successfully created MNS notification", trace_ids={"mns_notification_id": notification_id})
+    logger.info("Successfully created MNS notification", extra={"mns_notification_id": notification_id})
 
     return None
 
