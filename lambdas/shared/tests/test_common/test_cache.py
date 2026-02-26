@@ -70,7 +70,7 @@ class TestCache(unittest.TestCase):
         self.cache.put(key, new_value)
 
         # Then
-        with open(self.cache.cache_file.name, "r") as stored:
+        with open(self.cache.cache_file.name) as stored:
             content = json.loads(stored.read())
             self.assertDictEqual(content[key], new_value)
 
@@ -83,6 +83,6 @@ class TestCache(unittest.TestCase):
         self.cache = Cache(tempfile.gettempdir())
 
         # Then
-        with open(self.cache.cache_file.name, "r") as stored:
+        with open(self.cache.cache_file.name) as stored:
             content = stored.read()
             self.assertEqual(len(content), 0)

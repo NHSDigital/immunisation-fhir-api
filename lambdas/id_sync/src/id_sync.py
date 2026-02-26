@@ -5,7 +5,7 @@
 - Any unexpected error is wrapped into `IdSyncException(message="Error processing id_sync event")`.
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from common.aws_lambda_event import AwsLambdaEvent
 from common.clients import STREAM_NAME, logger
@@ -15,7 +15,7 @@ from record_processor import process_record
 
 
 @logging_decorator(prefix="id_sync", stream_name=STREAM_NAME)
-def handler(event_data: Dict[str, Any], _context) -> Dict[str, Any]:
+def handler(event_data: dict[str, Any], _context) -> dict[str, Any]:
     try:
         event = AwsLambdaEvent(event_data)
         records = event.records

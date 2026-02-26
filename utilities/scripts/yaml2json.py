@@ -15,7 +15,7 @@ import yaml
 def date_converter(obj):
     """Date and datetime converter to correctly render dates in json"""
     if isinstance(obj, datetime.datetime):
-        return obj.replace(tzinfo=datetime.timezone.utc).isoformat()
+        return obj.replace(tzinfo=datetime.UTC).isoformat()
     if isinstance(obj, datetime.date):
         return obj.isoformat()
     return obj

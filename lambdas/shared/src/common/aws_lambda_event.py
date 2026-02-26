@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict
+from typing import Any
 
 
 class AwsEventType(Enum):
@@ -10,7 +10,7 @@ class AwsEventType(Enum):
 
 
 class AwsLambdaEvent:
-    def __init__(self, event: Dict[str, Any]):
+    def __init__(self, event: dict[str, Any]):
         self.event_source = None
         self.event_type = AwsEventType.UNKNOWN
         self.event_source = event.get("eventSource")

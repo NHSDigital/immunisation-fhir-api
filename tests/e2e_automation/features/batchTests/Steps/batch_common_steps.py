@@ -2,7 +2,7 @@ import functools
 import json
 import os
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pandas as pd
 import pytest_check as check
@@ -282,7 +282,7 @@ def create_batch_file(context, file_ext: str = "csv", fileName: str = None, deli
 
 
 def build_dataFrame_using_datatable(datatable, context):
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
+    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S")
     headers = datatable[0]
     rows = datatable[1:]
 

@@ -1,6 +1,5 @@
 import datetime
 from dataclasses import dataclass, field
-from typing import Optional
 
 from common.models.constants import RedisHashKeys
 from common.models.utils.generic_utils import nhs_number_mod11_check
@@ -25,9 +24,9 @@ PATIENT_IDENTIFIER_SYSTEM = "https://fhir.nhs.uk/Id/nhs-number"
 class SearchParams:
     patient_identifier: str
     immunization_targets: set[str]
-    date_from: Optional[datetime.date]
-    date_to: Optional[datetime.date]
-    include: Optional[str]
+    date_from: datetime.date | None
+    date_to: datetime.date | None
+    include: str | None
 
     def __repr__(self):
         return str(self.__dict__)
@@ -111,7 +110,7 @@ def process_mandatory_params(params: dict[str, list[str]]) -> tuple[str, list[st
 
 def process_optional_params(
     params: dict[str, list[str]],
-) -> tuple[Optional[datetime.date], Optional[datetime.date], Optional[str]]:
+) -> tuple[datetime.date | None, datetime.date | None, str | None]:
     """Parse optional params (date.from, date.to, _include).
     Raises ParameterExceptionError for any validation error.
     """
@@ -205,7 +204,7 @@ def check_elements_valid(elements: list[str]) -> bool:
     return set(elements).issubset({IdentifierSearchElement.ID, IdentifierSearchElement.META})
 
 
-def validate_and_retrieve_identifier_search_params(params: dict[str, list[str]]) -> tuple[str, Optional[set[str]]]:
+def validate_and_retrieve_identifier_search_params(params: dict[str, list[str]]) -> tuple[str, set[str] | None]:
     contains_no_patient_vacc_type_params = check_identifier_search_params_contain_no_incorrect_keys(params)
 
     if not contains_no_patient_vacc_type_params:

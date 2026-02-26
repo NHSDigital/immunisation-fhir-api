@@ -3,7 +3,7 @@ import datetime
 import logging
 import os
 import uuid
-from typing import Any, Optional, cast
+from typing import Any, cast
 from uuid import uuid4
 
 from fhir.resources.R4B.bundle import (
@@ -73,7 +73,7 @@ class FhirService:
         self.validator = validator
 
     def get_immunization_by_identifier(
-        self, identifier: Identifier, supplier_name: str, elements: Optional[set[str]]
+        self, identifier: Identifier, supplier_name: str, elements: set[str] | None
     ) -> FhirBundle:
         """
         Get an Immunization by its ID. Returns a FHIR Bundle containing the search results.
@@ -195,10 +195,10 @@ class FhirService:
         nhs_number: str,
         vaccine_types: set[str],
         supplier_system: str,
-        date_from: Optional[datetime.date],
-        date_to: Optional[datetime.date],
-        include: Optional[str],
-        invalid_immunization_targets: Optional[list[str]] = None,
+        date_from: datetime.date | None,
+        date_to: datetime.date | None,
+        include: str | None,
+        invalid_immunization_targets: list[str] | None = None,
     ) -> FhirBundle:
         """
         Finds all instances of Immunization(s) for a specified patient for the given specified vaccine type(s).
@@ -301,9 +301,9 @@ class FhirService:
     def _filter_search_results_by_date_and_status(
         self,
         immunizations: list[dict],
-        date_from: Optional[datetime.date],
-        date_to: Optional[datetime.date],
-        status: Optional[str],
+        date_from: datetime.date | None,
+        date_to: datetime.date | None,
+        status: str | None,
     ) -> list[dict]:
         return [
             immunization
@@ -313,7 +313,7 @@ class FhirService:
             and validate_has_status(immunization, status)
         ]
 
-    def is_valid_date_from(self, immunization: dict, date_from: Optional[datetime.date]):
+    def is_valid_date_from(self, immunization: dict, date_from: datetime.date | None):
         """
         Returns False if immunization occurrence is earlier than the date_from, or True otherwise
         (also returns True if date_from is None)
@@ -327,7 +327,7 @@ class FhirService:
 
         return occurrence_datetime.date() >= date_from
 
-    def is_valid_date_to(self, immunization: dict, date_to: Optional[datetime.date]):
+    def is_valid_date_to(self, immunization: dict, date_to: datetime.date | None):
         """
         Returns False if immunization occurrence is later than the date_to, or True otherwise
         (also returns True if date_to is None)
@@ -343,9 +343,9 @@ class FhirService:
 
     @staticmethod
     def make_identifier_search_bundle(
-        resource: Optional[dict],
-        version_id: Optional[int],
-        elements: Optional[set[str]],
+        resource: dict | None,
+        version_id: int | None,
+        elements: set[str] | None,
         identifier: Identifier,
         base_url: str,
     ) -> FhirBundle:
