@@ -151,7 +151,7 @@ jobs:
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
           role-session-name: github-actions
 
-      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
+      - uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85
         if: ${{ env.TF_OUTPUTS_REQUIRED == 'true' }}
         with:
           terraform_version: "1.12.2"
