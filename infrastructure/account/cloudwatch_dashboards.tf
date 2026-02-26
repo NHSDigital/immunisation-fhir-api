@@ -638,7 +638,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
           "region" : var.aws_region,
           "stat" : "SampleCount",
           "period" : 300,
-          "title" : "ECS - Running Task Count"
+          "title" : "ECS - Task Count"
         }
       },
       {
