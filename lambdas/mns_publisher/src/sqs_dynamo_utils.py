@@ -1,6 +1,7 @@
 import json
 from typing import Any
 
+from common.clients import logger
 from constants import DYNAMO_DB_TYPE_DESCRIPTORS, ImmsData
 
 
@@ -18,6 +19,7 @@ def extract_sqs_imms_data(sqs_record: dict) -> ImmsData:
     supplier_system = _unwrap_dynamodb_value(new_image.get("SupplierSystem", {}))
     vaccine_type = _unwrap_dynamodb_value(new_image.get("VaccineType", {}))
     operation = _unwrap_dynamodb_value(new_image.get("Operation", {}))
+    logger.info("Top Level Fields retrieved successfully")
 
     imms_map = new_image.get("Imms", {}).get("M", {})
 

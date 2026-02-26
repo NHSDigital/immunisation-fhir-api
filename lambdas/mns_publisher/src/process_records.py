@@ -27,7 +27,7 @@ def process_records(records: list[SQSMessage]) -> dict[str, list]:
         except Exception:
             message_id = record.get("messageId", "unknown")
             batch_item_failures.append({"itemIdentifier": message_id})
-            logger.error(Exception)
+            logger.exception("Failed to process record", trace_id={"message_id": message_id})
 
     if batch_item_failures:
         logger.warning(f"Batch completed with {len(batch_item_failures)} failures")
@@ -62,7 +62,6 @@ def process_record(record: SQSMessage, mns_service: MnsService) -> dict | None:
         },
     )
 
-    # Publish to MNS
     mns_service.publish_notification(mns_notification_payload)
     logger.info("Successfully created MNS notification", trace_ids={"mns_notification_id": notification_id})
 

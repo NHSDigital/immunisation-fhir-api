@@ -1,7 +1,6 @@
 import copy
 import json
 import unittest
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from constants import IMMUNISATION_TYPE, SPEC_VERSION
@@ -10,21 +9,7 @@ from create_notification import (
     create_mns_notification,
     get_practitioner_details_from_pds,
 )
-
-
-def _load_sample_sqs_event() -> dict:
-    """
-    Loads the sample SQS event and normalises body to a JSON string (as SQS delivers it).
-    Expects: lambdas/mns_publisher/tests/sqs_event.json
-    """
-    sample_event_path = Path(__file__).parent / "sqs_event.json"
-    with open(sample_event_path, "r") as f:
-        raw_event = json.load(f)
-
-    if isinstance(raw_event.get("body"), dict):
-        raw_event["body"] = json.dumps(raw_event["body"])
-
-    return raw_event
+from test_utils import load_sample_sqs_event
 
 
 class TestCalculateAgeAtVaccination(unittest.TestCase):
@@ -78,7 +63,7 @@ class TestCreateMnsNotification(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.sample_sqs_event = _load_sample_sqs_event()
+        cls.sample_sqs_event = load_sample_sqs_event()
 
     def setUp(self):
         self.expected_gp_ods_code = "Y12345"
