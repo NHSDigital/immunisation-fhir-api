@@ -3,6 +3,8 @@
 import uuid
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3 import Retry
 
 from utilities.apigee.apigee_env_helpers import (
     get_apigee_access_token,
@@ -11,6 +13,8 @@ from utilities.apigee.apigee_env_helpers import (
     get_proxy_name,
 )
 from utilities.apigee.ApigeeApp import ApigeeApp
+
+_DEFAULT_RETRIES = 3
 
 
 class ApigeeOnDemandAppManager:
@@ -25,20 +29,27 @@ class ApigeeOnDemandAppManager:
     _INTERNAL_DEV_ID_SERVICE_PRODUCT = "identity-service-internal-dev"
     _TEST_APP_SUPPLIERS = ("EMIS", "MAVIS", "MEDICUS", "Postman_Auth", "RAVS", "SONAR", "TPP")
 
-    def __init__(self):
+    def __init__(self, retries: int = _DEFAULT_RETRIES):
         self.proxy_name = get_proxy_name()
         self.apigee_environment = get_apigee_environment()
         self.created_product_name_uuid: str = ""
         self.created_app_name_uuids = []
         self.display_name = f"test-{self.proxy_name}"
+        self.retries = retries
 
         self.logged_in_username = get_apigee_username()
         self.access_token = get_apigee_access_token()
 
-        self.requests_session = requests.Session()
-        self.requests_session.headers.update({"Authorization": f"Bearer {self.access_token}"})
+    def _build_req_session(self) -> requests.Session:
+        """Creates a fresh requests.Session with basic retry behaviour and the Apigee auth header set. A new session
+        should be created for teardown as long-lived connections may be closed."""
+        requests_session = requests.Session()
+        requests_session.mount("https://", HTTPAdapter(max_retries=Retry(total=self.retries)))
+        requests_session.headers.update({"Authorization": f"Bearer {self.access_token}"})
 
-    def _create_app(self, target_product_name: str, supplier_name: str) -> ApigeeApp:
+        return requests_session
+
+    def _create_app(self, target_product_name: str, supplier_name: str, http_session: requests.Session) -> ApigeeApp:
         app_name_uuid = str(uuid.uuid4())
         app_data = {
             "name": app_name_uuid,
@@ -51,7 +62,7 @@ class ApigeeOnDemandAppManager:
             "apiProducts": [target_product_name, self._INTERNAL_DEV_ID_SERVICE_PRODUCT],
         }
 
-        response = self.requests_session.post(
+        response = http_session.post(
             url=f"{self._BASE_URL}/{self._DEVELOPERS_PATH}/{self.logged_in_username}/{self._APPS_PATH}", json=app_data
         )
         response.raise_for_status()
@@ -66,7 +77,7 @@ class ApigeeOnDemandAppManager:
             supplier=supplier_name,
         )
 
-    def _create_product(self) -> str:
+    def _create_product(self, http_session: requests.Session) -> str:
         product_name_uuid = str(uuid.uuid4())
         apigee_product_data = {
             "name": product_name_uuid,
@@ -82,7 +93,7 @@ class ApigeeOnDemandAppManager:
             ],
         }
 
-        response = self.requests_session.post(
+        response = http_session.post(
             url=f"{self._BASE_URL}/{self._PRODUCTS_PATH}",
             json=apigee_product_data,
         )
@@ -93,19 +104,25 @@ class ApigeeOnDemandAppManager:
 
     def setup_apps_and_product(self) -> list[ApigeeApp]:
         """Orchestration method to set up the required product and on-demand apps required for PR testing"""
+        http_session = self._build_req_session()
         created_apps: list[ApigeeApp] = []
-        product_name_uuid = self._create_product()
+        product_name_uuid = self._create_product(http_session)
 
         for supplier_name in self._TEST_APP_SUPPLIERS:
-            created_apps.append(self._create_app(product_name_uuid, supplier_name))
+            created_apps.append(self._create_app(product_name_uuid, supplier_name, http_session))
 
+        http_session.close()
         return created_apps
 
     def teardown_apps_and_product(self):
         """Orchestration method to remove the Apigee resources in a teardown step"""
+        http_session = self._build_req_session()
+
         for created_app_name_uuid in self.created_app_name_uuids:
-            self.requests_session.delete(
-                url=f"{self._BASE_URL}/{self._DEVELOPERS_PATH}/{self.logged_in_username}/{self._APPS_PATH}/{created_app_name_uuid}"
+            http_session.delete(
+                url=f"{self._BASE_URL}/{self._DEVELOPERS_PATH}/{self.logged_in_username}/{self._APPS_PATH}/{created_app_name_uuid}",
+                timeout=5,
             )
 
-        self.requests_session.delete(url=f"{self._BASE_URL}/{self._PRODUCTS_PATH}/{self.created_product_name_uuid}")
+        http_session.delete(url=f"{self._BASE_URL}/{self._PRODUCTS_PATH}/{self.created_product_name_uuid}")
+        http_session.close()
