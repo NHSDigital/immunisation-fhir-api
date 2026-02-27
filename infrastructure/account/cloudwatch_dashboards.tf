@@ -631,14 +631,14 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "height" : 6,
         "properties" : {
           "metrics" : [
-            for cluster in local.ecs_clusters : ["AWS/ECS", "RunningTaskCount", "ClusterName", cluster, { region : var.aws_region }]
+            for cluster in local.ecs_clusters : ["ECS/ContainerInsights", "TaskCount", "ClusterName", cluster, { region : var.aws_region }]
           ],
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
-          "stat" : "Average",
+          "stat" : "SampleCount",
           "period" : 300,
-          "title" : "ECS - Running Task Count"
+          "title" : "ECS - Task Count"
         }
       },
       {
@@ -649,14 +649,14 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "height" : 6,
         "properties" : {
           "metrics" : [
-            for cluster in local.ecs_clusters : ["AWS/ECS", "PendingTaskCount", "ClusterName", cluster, { region : var.aws_region }]
+            for cluster in local.ecs_clusters : ["ECS/ContainerInsights", "CpuUtilized", "ClusterName", cluster, { region : var.aws_region }]
           ],
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
-          "stat" : "Average",
+          "stat" : "Maximum",
           "period" : 300,
-          "title" : "ECS - Pending Task Count"
+          "title" : "ECS - CPU Utilization"
         }
       },
       {
@@ -667,38 +667,20 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "height" : 6,
         "properties" : {
           "metrics" : [
-            for cluster in local.ecs_clusters : ["ECS/ContainerInsights", "ContainerCpuUtilized", "ClusterName", cluster, { region : var.aws_region }]
+            for cluster in local.ecs_clusters : ["ECS/ContainerInsights", "MemoryUtilized", "ClusterName", cluster, { region : var.aws_region }]
           ],
           "view" : "timeSeries",
           "stacked" : false,
           "region" : var.aws_region,
-          "stat" : "Average",
+          "stat" : "Maximum",
           "period" : 300,
-          "title" : "ECS Container Insights - CPU Utilized"
-        }
-      },
-      {
-        "type" : "metric",
-        "x" : 0,
-        "y" : 50,
-        "width" : 12,
-        "height" : 6,
-        "properties" : {
-          "metrics" : [
-            for cluster in local.ecs_clusters : ["ECS/ContainerInsights", "ContainerMemoryUtilized", "ClusterName", cluster, { region : var.aws_region }]
-          ],
-          "view" : "timeSeries",
-          "stacked" : false,
-          "region" : var.aws_region,
-          "stat" : "Average",
-          "period" : 300,
-          "title" : "ECS Container Insights - Memory Utilized"
+          "title" : "ECS - Memory Utilization"
         }
       },
       {
         "type" : "text",
         "x" : 0,
-        "y" : 56,
+        "y" : 50,
         "width" : 24,
         "height" : 1,
         "properties" : {
@@ -708,7 +690,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "metric",
         "x" : 0,
-        "y" : 57,
+        "y" : 51,
         "width" : 6,
         "height" : 6,
         "properties" : {
@@ -722,7 +704,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "metric",
         "x" : 6,
-        "y" : 57,
+        "y" : 51,
         "width" : 6,
         "height" : 6,
         "properties" : {
@@ -738,7 +720,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "metric",
         "x" : 12,
-        "y" : 57,
+        "y" : 51,
         "width" : 6,
         "height" : 6,
         "properties" : {
@@ -756,7 +738,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "metric",
         "x" : 0,
-        "y" : 63,
+        "y" : 57,
         "width" : 6,
         "height" : 6,
         "properties" : {
@@ -773,7 +755,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "metric",
         "x" : 6,
-        "y" : 63,
+        "y" : 57,
         "width" : 6,
         "height" : 6,
         "properties" : {
@@ -791,7 +773,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "text",
         "x" : 0,
-        "y" : 69,
+        "y" : 63,
         "width" : 24,
         "height" : 1,
         "properties" : {
@@ -801,7 +783,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
       {
         "type" : "alarm",
         "x" : 0,
-        "y" : 70,
+        "y" : 64,
         "width" : 24,
         "height" : var.environment == "dev" ? 5 : 10,
         "properties" : {
