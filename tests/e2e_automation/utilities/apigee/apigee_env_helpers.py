@@ -9,7 +9,7 @@ def get_env_var(var_name: str) -> str:
     value = os.getenv(var_name)
 
     if not value:
-        raise EnvironmentError(f"{var_name} environment variable is required")
+        raise ValueError(f"{var_name} environment variable is required")
 
     return value
 

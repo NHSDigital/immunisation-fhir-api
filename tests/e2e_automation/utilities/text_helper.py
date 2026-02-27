@@ -1,9 +1,8 @@
 import random
 import string
-from typing import Optional, Union
 
 
-def get_text(text_str: str) -> Optional[Union[str, int]]:
+def get_text(text_str: str) -> str | int | None:
     match text_str:
         case "missing":
             return None

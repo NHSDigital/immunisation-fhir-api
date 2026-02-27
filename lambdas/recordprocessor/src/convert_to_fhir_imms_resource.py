@@ -1,12 +1,12 @@
 """Decorators to add the relevant fields to the FHIR immunization resource from the batch stream"""
 
-from typing import Callable, Dict, List
+from collections.abc import Callable
 
 from common.models.batch_constants import Operation
 from common.models.constants import Urls
 from utils_for_fhir_conversion import Add, Convert, Generate, _is_not_empty
 
-ImmunizationDecorator = Callable[[Dict, Dict[str, str]], None]
+ImmunizationDecorator = Callable[[dict, dict[str, str]], None]
 """
 A decorator function (Callable) takes the current immunization resource and adds appropriate fields to it.
 NOTE: NO VALIDATION should be performed. Validation is left to the Imms API validator.
@@ -15,7 +15,7 @@ resource. Therefore before adding an element it is necessary to check that at le
 """
 
 
-def _decorate_immunization(imms: dict, row: Dict[str, str]) -> None:
+def _decorate_immunization(imms: dict, row: dict[str, str]) -> None:
     """Adds the reasonCode, recorded and identifier elements (where non-empty data is provided)"""
     indication_code = row.get("INDICATION_CODE")
     reason_code_value = [{"coding": [{"system": Urls.SNOMED, "code": indication_code}]}]
@@ -30,7 +30,7 @@ def _decorate_immunization(imms: dict, row: Dict[str, str]) -> None:
     )
 
 
-def _decorate_patient(imms: dict, row: Dict[str, str]) -> None:
+def _decorate_patient(imms: dict, row: dict[str, str]) -> None:
     """Creates the patient resource and appends it the to 'contained' list"""
     patient_values = [
         person_surname := row.get("PERSON_SURNAME"),
@@ -71,7 +71,7 @@ def _decorate_patient(imms: dict, row: Dict[str, str]) -> None:
         imms.setdefault("contained", []).append(patient)
 
 
-def _decorate_vaccine(imms: dict, row: Dict[str, str]) -> None:
+def _decorate_vaccine(imms: dict, row: dict[str, str]) -> None:
     """Adds fields relating to the physical product"""
 
     vax_prod_code = row.get("VACCINE_PRODUCT_CODE")
@@ -103,7 +103,7 @@ def _decorate_vaccine(imms: dict, row: Dict[str, str]) -> None:
     Add.item(imms, "lotNumber", row.get("BATCH_NUMBER"))
 
 
-def _decorate_vaccination(imms: dict, row: Dict[str, str]) -> None:
+def _decorate_vaccination(imms: dict, row: dict[str, str]) -> None:
     """Adds fields relating to the administration of the vaccine"""
     vaccination_extension_values = [
         vaccination_procedure_code := row.get("VACCINATION_PROCEDURE_CODE"),
@@ -173,7 +173,7 @@ def _decorate_vaccination(imms: dict, row: Dict[str, str]) -> None:
         Add.item(imms["protocolApplied"][0], "doseNumberString", "Dose sequence not recorded")
 
 
-def _decorate_performer(imms: dict, row: Dict[str, str]) -> None:
+def _decorate_performer(imms: dict, row: dict[str, str]) -> None:
     """
     Adds the performer field, including organization, and where relevant creates the practitioner resource
     and adds it to the 'contained' list
@@ -239,7 +239,7 @@ def _decorate_performer(imms: dict, row: Dict[str, str]) -> None:
     )
 
 
-all_decorators: List[ImmunizationDecorator] = [
+all_decorators: list[ImmunizationDecorator] = [
     _decorate_immunization,
     _decorate_patient,
     _decorate_vaccine,
@@ -250,7 +250,7 @@ all_decorators: List[ImmunizationDecorator] = [
 
 def _get_decorators_for_action_flag(
     action_flag: Operation,
-) -> List[ImmunizationDecorator]:
+) -> list[ImmunizationDecorator]:
     # VED-32 DELETE action only requires the immunisation decorator
     if action_flag == Operation.DELETE:
         return [_decorate_immunization]

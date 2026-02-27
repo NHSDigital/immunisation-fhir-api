@@ -5,7 +5,6 @@ import os
 import time
 from csv import DictReader
 from json import JSONDecodeError
-from typing import Optional
 
 from common.aws_s3_utils import move_file
 from common.batch.audit_table import update_audit_table_item
@@ -125,7 +124,7 @@ def process_rows(
     csv_reader: DictReader,
     target_disease: list[dict],
     total_rows_processed_count: int = 0,
-) -> tuple[int, Optional[Exception]]:
+) -> tuple[int, Exception | None]:
     """
     Processes each row in the csv_reader starting from start_row.
     """

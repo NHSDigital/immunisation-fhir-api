@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 
 def format_timestamp(timestamp):
@@ -33,7 +33,7 @@ def is_valid_date(date_str: str) -> bool:
 
 
 def generate_date(date_str: str) -> str:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     match date_str:
         case "future_occurrence":
             return (now + timedelta(seconds=500)).isoformat(timespec="milliseconds")

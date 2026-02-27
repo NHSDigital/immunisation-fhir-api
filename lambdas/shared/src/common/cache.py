@@ -1,5 +1,4 @@
 import json
-from typing import Optional
 
 
 class Cache:
@@ -19,7 +18,7 @@ class Cache:
         self.cache_dict[key] = value
         self._overwrite()
 
-    def get(self, key: str) -> Optional[dict]:
+    def get(self, key: str) -> dict | None:
         return self.cache_dict.get(key, None)
 
     def delete(self, key: str):

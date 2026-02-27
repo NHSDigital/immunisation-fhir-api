@@ -155,7 +155,7 @@ class TestAuditTable(TestCase):
             file_key=ravs_rsv_test_file.file_key,
             message_id=ravs_rsv_test_file.message_id,
             attrs_to_update={
-                AuditTableKeys.ERROR_DETAILS: str("Test error details"),
+                AuditTableKeys.ERROR_DETAILS: "Test error details",
                 AuditTableKeys.STATUS: FileStatus.FAILED,
             },
         )
