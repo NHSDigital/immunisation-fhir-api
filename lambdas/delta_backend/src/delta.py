@@ -40,7 +40,7 @@ class OperationOutcomeDict(TypedDict):
 class NormalizedRecord:
     event_id: str
     sequence_number: str
-    operation: str
+    operation: str | None  #  None for REMOVE events
     primary_key: str
     imms_id: str
     patient_sort_key: str
@@ -53,57 +53,33 @@ class NormalizedRecord:
 def _normalize_record(record: dict[str, Any]) -> NormalizedRecord:
     """
     Contract-first normalization of a raw DynamoDB stream record.
-    All fallback chains are applied once here - fallbacks are used for order in tests. Processors consume NormalizedRecord only.
+    Processors consume NormalizedRecord only.
 
-    Fallback chains (in order of precedence):
-      sequence:      dynamodb.SequenceNumber -> NewImage.SequenceNumber -> "0"
-      patient key:   NewImage.SK -> NewImage.PatientSK -> "default#unknown"
-      operation:     NewImage.Operation -> mapped from eventName
-      payload:       NewImage.Resource -> NewImage.Imms -> None
+    Fields:
+      sequence_number: dynamodb.SequenceNumber
+      patient_sort_key: NewImage.PatientSK
+      operation:        NewImage.Operation
+      payload:          NewImage.Resource preferred, NewImage.Imms fallback, None for REMOVE
     """
     dynamodb = record.get("dynamodb", {})
     new_image = dynamodb.get("NewImage", {})
     keys = dynamodb.get("Keys", {})
 
     event_id = record.get("eventID", f"evt-{int(time.time() * 1000)}")
+    sequence_number: str = str(_extract_value(dynamodb.get("SequenceNumber")))
+    primary_key = _extract_value(new_image.get("PK")) or _extract_value(keys.get("PK"))
+    imms_id = get_imms_id(primary_key)
+    patient_sort_key = _extract_value(new_image.get("PatientSK"))
+    vaccine_type = get_vaccine_type(patient_sort_key)
 
-    # final fallback 0 ensures write is successful but losing sub-second ordering guatantee in edge cases where SequenceNumber is missing from stream record (should not happen in normal DynamoDB streams but added for robustness)
-    sequence_number = (
-        _extract_value(dynamodb.get("SequenceNumber")) or _extract_value(new_image.get("SequenceNumber")) or "0"
-    )
-
-    primary_key = _extract_value(new_image.get("PK")) or _extract_value(keys.get("PK")) or ""
-
-    imms_id = (
-        get_imms_id(primary_key)
-        if isinstance(primary_key, str) and "#" in primary_key
-        else str(_extract_value(new_image.get("ImmsID")) or "unknown")
-    )
-
-    patient_sort_key = (
-        _extract_value(new_image.get("SK")) or _extract_value(new_image.get("PatientSK")) or "default#unknown"
-    )
-
-    vaccine_type = get_vaccine_type(str(patient_sort_key))
-
-    operation = _extract_value(new_image.get("Operation")) or _event_to_operation(
-        str(record.get("eventName", EventName.UPDATE))
-    )
-
-    supplier_system = _extract_value(new_image.get("SupplierSystem")) or "default"
-
+    operation: str | None = _extract_value(new_image.get("Operation")) or None
+    supplier_system = _extract_value(new_image.get("SupplierSystem"))
     creation_timestamp = float(dynamodb.get("ApproximateCreationDateTime", time.time()))
 
-    # Payload: Resource preferred, Imms fallback, None for REMOVE
-    resource_raw = _extract_value(new_image.get("Resource"))
-    imms_raw_field = _extract_value(new_image.get("Imms"))
-    imms_raw: str | None
-    if resource_raw is not None:
-        imms_raw = resource_raw if isinstance(resource_raw, str) else json.dumps(resource_raw)
-    elif imms_raw_field is not None:
-        imms_raw = imms_raw_field if isinstance(imms_raw_field, str) else json.dumps(imms_raw_field)
-    else:
-        imms_raw = None
+    # For REMOVE events NewImage is absent — both will be None.
+    resource_raw: str | None = _extract_value(new_image.get("Resource"))
+    imms_raw_field: str | None = _extract_value(new_image.get("Imms"))
+    imms_raw: str | None = resource_raw if resource_raw is not None else imms_raw_field
 
     return NormalizedRecord(
         event_id=event_id,
@@ -143,11 +119,15 @@ def send_record_to_dlq(record: dict) -> None:
 
 
 def get_vaccine_type(patient_sort_key: str) -> str:
+    if not patient_sort_key:
+        return "unknown"
     vaccine_type = patient_sort_key.split("#")[0]
     return str.strip(str.lower(vaccine_type))
 
 
 def get_imms_id(primary_key: str) -> str:
+    if not primary_key or "#" not in primary_key:
+        return "unknown"
     return primary_key.split("#")[1]
 
 
@@ -157,24 +137,21 @@ def _extract_value(raw: Any) -> Any:
     return raw
 
 
-def get_creation_and_expiry_times(creation_timestamp: float, sequence_number: str) -> tuple[str, str, int]:
+def get_creation_and_expiry_times(creation_timestamp: float) -> tuple[str, int]:
     """
-    Generate timestamps and composite sort key for delta records.
+    Generate timestamps for delta records.
     Args:
-        creation_timestamp: Unix timestamp from DynamoDB stream (seconds precision)
-        sequence_number: Sequence number from DynamoDB stream record for ordering guarantee
+        creation_timestamp: Unix timestamp from DynamoDB stream (seconds precision).
     Returns:
         Tuple of:
-        - datetime_iso: ISO8601 datetime string (for backward compatibility)
-        - datetime_with_sequence: Composite sort key with format "ISO8601#SEQUENCE" (for precise ordering)
-        - expiry_timestamp: Unix timestamp for TTL (DELTA_TTL_DAYS)
+        - datetime_iso: ISO8601 datetime string (range key for SearchIndex GSI).
+        - expiry_timestamp: Unix timestamp for TTL (DELTA_TTL_DAYS days from creation).
     """
     creation_datetime = datetime.fromtimestamp(creation_timestamp, UTC)
     expiry_datetime = creation_datetime + timedelta(days=int(delta_ttl_days))
     expiry_timestamp = int(expiry_datetime.timestamp())
     datetime_iso = creation_datetime.isoformat()
-    datetime_with_sequence = f"{datetime_iso}#{sequence_number}"
-    return datetime_iso, datetime_with_sequence, expiry_timestamp
+    return datetime_iso, expiry_timestamp
 
 
 def handle_dynamodb_response(response, error_records):
@@ -224,11 +201,8 @@ def handle_exception_response(response):
 def _event_to_operation(event_name: str) -> str:
     if event_name == EventName.CREATE:
         return Operation.CREATE
-    if event_name == EventName.UPDATE:
-        return Operation.UPDATE
     if event_name == EventName.DELETE_PHYSICAL:
         return Operation.DELETE_PHYSICAL
-    # DynamoDB stream REMOVE should map to physical delete
     if event_name == "REMOVE":
         return Operation.DELETE_PHYSICAL
     return Operation.UPDATE
@@ -236,9 +210,7 @@ def _event_to_operation(event_name: str) -> str:
 
 def process_remove(record: dict[str, Any], table: Any | None = None) -> tuple[bool, dict[str, Any]]:
     norm = _normalize_record(record)
-    creation_datetime_str, datetime_with_sequence, expiry_timestamp = get_creation_and_expiry_times(
-        norm.creation_timestamp, norm.sequence_number
-    )
+    creation_datetime_str, expiry_timestamp = get_creation_and_expiry_times(norm.creation_timestamp)
     operation_outcome: dict[str, Any] = {"operation_type": Operation.DELETE_PHYSICAL, "record": norm.imms_id}
 
     target_table = table or get_delta_table()
@@ -255,7 +227,7 @@ def process_remove(record: dict[str, Any], table: Any | None = None) -> tuple[bo
                 "VaccineType": norm.vaccine_type,
                 "SupplierSystem": norm.supplier_system,
                 "DateTimeStamp": creation_datetime_str,
-                "DateTimeStampWithSequence": datetime_with_sequence,
+                "SequenceNumber": norm.sequence_number,
                 "Source": delta_source,
                 "Imms": "",
                 "ExpiresAt": expiry_timestamp,
@@ -274,9 +246,10 @@ def process_remove(record: dict[str, Any], table: Any | None = None) -> tuple[bo
 def process_skip(record: dict[str, Any]) -> tuple[bool, dict[str, Any]]:
     norm = _normalize_record(record)
     logger.info("Record from DPS skipped")
+    # norm.operation may be None for a skipped DPS record — log "UNKNOWN" rather than raising, since skipped records are not written to the delta table.
     return True, {
         "record": norm.imms_id,
-        "operation_type": norm.operation,
+        "operation_type": norm.operation or "UNKNOWN",
         "statusCode": "200",
         "statusDesc": "Record from DPS skipped",
     }
@@ -284,9 +257,14 @@ def process_skip(record: dict[str, Any]) -> tuple[bool, dict[str, Any]]:
 
 def process_create_update_delete(record: dict[str, Any], table: Any | None = None) -> tuple[bool, dict[str, Any]]:
     norm = _normalize_record(record)
-    creation_datetime_str, datetime_with_sequence, expiry_timestamp = get_creation_and_expiry_times(
-        norm.creation_timestamp, norm.sequence_number
-    )
+
+    if norm.operation is None:
+        raise ValidationError(
+            f"Operation field missing from NewImage for event_id={norm.event_id}. "
+            "Record cannot be safely classified — routing to DLQ."
+        )
+
+    creation_datetime_str, expiry_timestamp = get_creation_and_expiry_times(norm.creation_timestamp)
     operation_outcome: dict[str, Any] = {"record": norm.imms_id, "operation_type": norm.operation}
 
     error_records: list[dict[str, Any]] | None = None
@@ -330,7 +308,7 @@ def process_create_update_delete(record: dict[str, Any], table: Any | None = Non
                 "VaccineType": norm.vaccine_type,
                 "SupplierSystem": norm.supplier_system,
                 "DateTimeStamp": creation_datetime_str,
-                "DateTimeStampWithSequence": datetime_with_sequence,
+                "SequenceNumber": norm.sequence_number,
                 "Source": delta_source,
                 "Imms": flat_json,
                 "ExpiresAt": expiry_timestamp,
@@ -346,6 +324,74 @@ def process_create_update_delete(record: dict[str, Any], table: Any | None = Non
         return success, operation_outcome
 
 
+def _route_record(
+    record: dict[str, Any],
+    table: Any | None,
+) -> tuple[bool, dict[str, Any]]:
+    """
+    Decide which processor handles this record and call it.
+
+    Raises:
+        ValidationError: propagated from process_create_update_delete when Operation is absent.
+        Any other exception: propagated to process_record's except block.
+    """
+    event_name = str(record.get("eventName", ""))
+
+    if event_name == EventName.DELETE_PHYSICAL:
+        return process_remove(record, table=table)
+
+    supplier_system = _extract_value(record.get("dynamodb", {}).get("NewImage", {}).get("SupplierSystem")) or ""
+    if supplier_system in ("DPSFULL", "DPSREDUCED"):
+        return process_skip(record)
+
+    return process_create_update_delete(record, table=table)
+
+
+def _stable_outcome(
+    outcome: Any,
+    success: bool,
+    record: dict[str, Any],
+) -> dict[str, Any]:
+    """
+    Guarantee the operation outcome dict always has the four required keys.
+    """
+    if not isinstance(outcome, dict):
+        outcome = {}
+
+    outcome.setdefault("record", "unknown")
+    outcome.setdefault(
+        "operation_type",
+        _event_to_operation(str(record.get("eventName", EventName.UPDATE))),
+    )
+    outcome.setdefault("statusCode", "200" if success else "500")
+    outcome.setdefault(
+        "statusDesc",
+        "Successfully synched into delta" if success else "Exception",
+    )
+    return outcome
+
+
+def _send_to_dlq_if_failed(
+    success: bool,
+    record: dict[str, Any],
+    sqs_client: Any | None,
+    dlq_url: str | None,
+) -> None:
+    """
+    Optionally send a failed record to the DLQ via an injected SQS client.
+    No-op when success is True or when sqs_client / dlq_url are not provided.
+    """
+    if success or sqs_client is None or not dlq_url:
+        return
+    try:
+        sqs_client.send_message(
+            QueueUrl=dlq_url,
+            MessageBody=json.dumps(record, default=str),
+        )
+    except Exception:
+        logger.exception("Error sending record to DLQ")
+
+
 def process_record(
     record: dict[str, Any],
     table: Any | None = None,
@@ -353,52 +399,24 @@ def process_record(
     dlq_url: str | None = None,
 ) -> tuple[bool, dict[str, Any]]:
     """
-    Backward-compatible contract:
-      - returns (success: bool, operation_outcome: dict)
-      - optional dependency injection for tests
-      - optional direct DLQ send when sqs_client + dlq_url are provided
+    Orchestrate processing of a single DDB stream record.
     """
     try:
-        event_name = str(record.get("eventName", ""))
-        if event_name in (EventName.DELETE_PHYSICAL, "REMOVE"):
-            success, outcome = process_remove(record, table=table)
-        else:
-            supplier_system = _extract_value(record.get("dynamodb", {}).get("NewImage", {}).get("SupplierSystem")) or ""
-            if supplier_system in ("DPSFULL", "DPSREDUCED"):
-                success, outcome = process_skip(record)
-            else:
-                success, outcome = process_create_update_delete(record, table=table)
+        success, outcome = _route_record(record, table)
     except Exception as exc:
         logger.exception("Exception during processing")
         success = False
         outcome = {
             "record": "unknown",
+            # _event_to_operation used here for error-path logging
             "operation_type": _event_to_operation(str(record.get("eventName", EventName.UPDATE))),
             "statusCode": "500",
             "statusDesc": "Exception",
             "diagnostics": str(exc),
         }
 
-    # Ensure stable schema keys
-    if not isinstance(outcome, dict):
-        outcome = {}
-
-    if "record" not in outcome:
-        outcome["record"] = "unknown"
-    if "operation_type" not in outcome:
-        outcome["operation_type"] = _event_to_operation(str(record.get("eventName", EventName.UPDATE)))
-    if "statusCode" not in outcome:
-        outcome["statusCode"] = "200" if success else "500"
-    if "statusDesc" not in outcome:
-        outcome["statusDesc"] = "Successfully synched into delta" if success else "Exception"
-
-    # Optional direct DLQ path for tests/injected usage
-    if not success and sqs_client is not None and dlq_url:
-        try:
-            sqs_client.send_message(QueueUrl=dlq_url, MessageBody=json.dumps(record, default=str))
-        except Exception:
-            logger.exception("Error sending record to DLQ")
-
+    outcome = _stable_outcome(outcome, success, record)
+    _send_to_dlq_if_failed(success, record, sqs_client, dlq_url)
     return success, outcome
 
 
