@@ -19,8 +19,9 @@ class PostValidators:
         # Note that the majority of fields require standard validation. Exception not included in the below list is
         # reason_code_coding_code, which has its own bespoke validation function.
         # Status is mandatory in FHIR, so there is no post-validation for status as it is handled by the FHIR validator.
-        # NOTE: SOME FIELDS ARE COMMENTED OUT AS THEY ARE REQUIRED ELEMENTS (VALIDATION SHOULD ALWAYS PASS), AND THE
-        # MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE FIELDS, THEY MAY NEED REINSTATED LATER.
+
+        # Note: some fields are commented out as they are required elements (validation should always pass), and the
+        # means to access the value has not been confirmed. Do not delete the fields, they may need reinstating later.
 
         # These are the fields that we may require to reinstate in the future:
         #   vaccination_procedure_display
@@ -96,8 +97,8 @@ class PostValidators:
         field_value = obtain_field_value(self.imms, field_name)
         self.run_field_validation(mandation_functions, validation_set, field_name, field_location, field_value)
 
-    # NOTE: THIS METHOD IS COMMENTED OUT AS IT IS for A REQUIRED ELEMENT (VALIDATION SHOULD ALWAYS PASS),
-    # AND THE MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE METHOD, IT MAY NEED REINSTATED LATER.
+    # Note: this method is commented out as it is for a required element (validation should always pass),
+    # and the means to access the value has not been confirmed. Do not delete the method, it may need reinstating later.
     # def validate_reason_code_coding_code(self, mandation_functions: MandationFunctions, validation_set: dict):
     #     """
     #     Runs standard validation for each instance of reason_code_coding_code (note that, because reason_code
@@ -145,8 +146,9 @@ class PostValidators:
 
         # Validate reason_code_coding_code fields. Note that there may be multiple of each of these
         # - all instances of the field will be validated by the validate_reason_code_coding_field validator
-        # NOTE: THIS METHOD IS COMMENTED OUT AS IT IS for A REQUIRED ELEMENT (VALIDATION SHOULD ALWAYS PASS), AND THE
-        # MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE METHOD, IT MAY NEED REINSTATED LATER.
+
+        # Note: this method is commented out as it is for a required element (validation should always pass), and the
+        # means to access the value has not been confirmed. Do not delete the method, it may need reinstating later.
         # self.validate_reason_code_coding_code(mandation_functions, validation_set)
 
         # Raise any errors
