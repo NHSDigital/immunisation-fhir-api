@@ -110,8 +110,20 @@ def batch_file_upload_in_s3_bucket(context):
 @then("file will be moved to destination bucket and inf ack file will be created")
 def ack_file_will_be_moved_to_destination_bucket(context):
     result = wait_and_read_ack_file(context, "ack")
-    context.fileContent = result["csv"]
-    assert context.fileContent, f"File not found in destination bucket after timeout:  {context.forwarded_prefix}"
+    actual_file_name = result["csv"]["key"]
+    check.is_true(
+        actual_file_name.endswith(".csv"),
+        f"Expected ACK file extension is .csv but got {actual_file_name}",
+    )
+    check.is_true(
+        actual_file_name.startswith(context.forwarded_prefix),
+        f"Expected ACK file name to start with {context.forwarded_prefix} but got {actual_file_name}",
+    )
+    check.is_true(
+        "_InfAck_" in actual_file_name,
+        f"Expected ACK file name to contain '_InfAck_actual_file_name' but got {actual_file_name}",
+    )
+    context.fileContent = result["csv"]["content"]
 
 
 @then("inf ack file has success status for processed batch file")
@@ -124,8 +136,36 @@ def all_records_are_processed_successfully_in_the_inf_ack_file(context):
 def file_will_be_moved_to_destination_bucket(context):
     result = wait_and_read_ack_file(context, "forwardedFile")
     assert isinstance(result, dict), f"Expected both CSV and JSON ACK files but got: {type(result)}"
-    context.fileContent = result.get("csv")
-    context.fileContentJson = result.get("json")
+
+    actual_file_name = result["csv"]["key"]
+    check.is_true(
+        actual_file_name.endswith(".csv"),
+        f"Expected ACK file extension is .csv but got {actual_file_name}",
+    )
+    check.is_true(
+        actual_file_name.startswith(context.forwarded_prefix),
+        f"Expected ACK file name to start with {context.forwarded_prefix} but got {actual_file_name}",
+    )
+    check.is_true(
+        "_BusAck_" in actual_file_name,
+        f"Expected ACK file name to contain '_BusAck_actual_file_name' but got {actual_file_name}",
+    )
+    context.fileContent = result["csv"]["content"]
+    actual_file_name = result["json"]["key"]
+    check.is_true(
+        actual_file_name.endswith(".json"),
+        f"Expected ACK file extension is .json but got {actual_file_name}",
+    )
+    check.is_true(
+        actual_file_name.startswith(context.forwarded_prefix),
+        f"Expected ACK file name to start with {context.forwarded_prefix} but got {actual_file_name}",
+    )
+    check.is_true(
+        "_BusAck_" in actual_file_name,
+        f"Expected ACK file name to contain '_BusAck_actual_file_name' but got {actual_file_name}",
+    )
+    context.fileContentJson = result["json"]["content"]
+
     assert context.fileContent, (
         f"BUS Ack csv File not found in destination bucket after timeout: {context.forwarded_prefix}"
     )
