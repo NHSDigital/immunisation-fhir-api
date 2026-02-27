@@ -33,7 +33,7 @@ class ImmunizationValidator:
         if error := PostValidators(immunization, vaccine_type).validate():
             raise ValueError(error)
 
-    # TODO: Update this function as reduce_validation_code is no longer found in the payload after data minimisation
+    # VED-000 TODO: Update this function as reduce_validation_code is no longer found in the payload after data minimisation
     @staticmethod
     def is_reduce_validation():
         """Identify if reduced validation applies (default to false if no reduce validation information is given)"""
