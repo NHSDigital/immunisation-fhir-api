@@ -136,29 +136,10 @@ class ObtainFieldValue:
         """Obtains vaccination_procedure_code value"""
         return get_generic_extension_value(imms, Urls.VACCINATION_PROCEDURE, Urls.SNOMED, "code")
 
-    # @staticmethod
-    # def vaccination_procedure_display(imms: dict):
-    #     """Obtains vaccination_procedure_display value"""
-    #     return get_generic_extension_value(imms, Urls.vaccination_procedure, Urls.snomed, "display")
-
     @staticmethod
     def dose_number_positive_int(imms: dict):
         """Obtains dose_number_positive_int value"""
         return imms["protocolApplied"][0]["doseNumberPositiveInt"]
-
-    # NOTE: THIS METHOD IS COMMENTED OUT AS IT IS for A REQUIRED ELEMENT (VALIDATION SHOULD ALWAYS PASS),
-    # AND THE MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE METHOD, IT MAY NEED REINSTATED LATER.
-    # @staticmethod
-    # def vaccine_code_coding_code(imms: dict):
-    #     """Obtains vaccine_code_coding_code value"""
-    #     return [x for x in imms["vaccineCode"]["coding"] if x.get("system") == Urls.snomed][0]["code"]
-
-    # NOTE: THIS METHOD IS COMMENTED OUT AS IT IS for A REQUIRED ELEMENT (VALIDATION SHOULD ALWAYS PASS),
-    # AND THE MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE METHOD, IT MAY NEED REINSTATED LATER.
-    # @staticmethod
-    # def vaccine_code_coding_display(imms: dict):
-    #     """Obtains vaccine_code_coding_display value"""
-    #     return [x for x in imms["vaccineCode"]["coding"] if x.get("system") == Urls.snomed][0]["display"]
 
     @staticmethod
     def manufacturer_display(imms: dict):
@@ -174,34 +155,6 @@ class ObtainFieldValue:
     def expiration_date(imms: dict):
         """Obtains expiration_date value"""
         return imms["expirationDate"]
-
-    # NOTE: THIS METHOD IS COMMENTED OUT AS IT IS for A REQUIRED ELEMENT (VALIDATION SHOULD ALWAYS PASS),
-    # AND THE MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE METHOD, IT MAY NEED REINSTATED LATER.
-    # @staticmethod
-    # def site_coding_code(imms: dict):
-    #     """Obtains site_coding_code value"""
-    #     return [x for x in imms["site"]["coding"] if x.get("system") == Urls.snomed][0]["code"]
-
-    # NOTE: THIS METHOD IS COMMENTED OUT AS IT IS for A REQUIRED ELEMENT (VALIDATION SHOULD ALWAYS PASS),
-    # AND THE MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE METHOD, IT MAY NEED REINSTATED LATER.
-    # @staticmethod
-    # def site_coding_display(imms: dict):
-    #     """Obtains site_coding_display value"""
-    #     return [x for x in imms["site"]["coding"] if x.get("system") == Urls.snomed][0]["display"]
-
-    # NOTE: THIS METHOD IS COMMENTED OUT AS IT IS for A REQUIRED ELEMENT (VALIDATION SHOULD ALWAYS PASS),
-    # AND THE MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE METHOD, IT MAY NEED REINSTATED LATER.
-    # @staticmethod
-    # def route_coding_code(imms: dict):
-    #     """Obtains route_coding_code value"""
-    #     return [x for x in imms["route"]["coding"] if x.get("system") == Urls.snomed][0]["code"]
-
-    # NOTE: THIS METHOD IS COMMENTED OUT AS IT IS for A REQUIRED ELEMENT (VALIDATION SHOULD ALWAYS PASS),
-    # AND THE MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE METHOD, IT MAY NEED REINSTATED LATER.
-    # @staticmethod
-    # def route_coding_display(imms: dict):
-    #     """Obtains route_coding_display value"""
-    #     return [x for x in imms["route"]["coding"] if x.get("system") == Urls.snomed][0]["display"]
 
     @staticmethod
     def dose_quantity_value(imms: dict):
@@ -233,8 +186,43 @@ class ObtainFieldValue:
         """Obtains location_identifier_system value"""
         return imms["location"]["identifier"]["system"]
 
-    # NOTE: THIS METHOD IS COMMENTED OUT AS IT IS for A REQUIRED ELEMENT (VALIDATION SHOULD ALWAYS PASS),
-    # AND THE MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE METHOD, IT MAY NEED REINSTATED LATER.
+    # Note: these methods are commented out as they are for required elements (validation should always pass),
+    # and the means to access the values have not been confirmed. Do not delete the methods, they may need reinstating later.
+    # @staticmethod
+    # def vaccination_procedure_display(imms: dict):
+    #     """Obtains vaccination_procedure_display value"""
+    #     return get_generic_extension_value(imms, Urls.vaccination_procedure, Urls.snomed, "display")
+    #
+    # @staticmethod
+    # def vaccine_code_coding_code(imms: dict):
+    #     """Obtains vaccine_code_coding_code value"""
+    #     return [x for x in imms["vaccineCode"]["coding"] if x.get("system") == Urls.snomed][0]["code"]
+    #
+    # @staticmethod
+    # def vaccine_code_coding_display(imms: dict):
+    #     """Obtains vaccine_code_coding_display value"""
+    #     return [x for x in imms["vaccineCode"]["coding"] if x.get("system") == Urls.snomed][0]["display"]
+    #
+    # @staticmethod
+    # def site_coding_code(imms: dict):
+    #     """Obtains site_coding_code value"""
+    #     return [x for x in imms["site"]["coding"] if x.get("system") == Urls.snomed][0]["code"]
+    #
+    # @staticmethod
+    # def site_coding_display(imms: dict):
+    #     """Obtains site_coding_display value"""
+    #     return [x for x in imms["site"]["coding"] if x.get("system") == Urls.snomed][0]["display"]
+    #
+    # @staticmethod
+    # def route_coding_code(imms: dict):
+    #     """Obtains route_coding_code value"""
+    #     return [x for x in imms["route"]["coding"] if x.get("system") == Urls.snomed][0]["code"]
+    #
+    # @staticmethod
+    # def route_coding_display(imms: dict):
+    #     """Obtains route_coding_display value"""
+    #     return [x for x in imms["route"]["coding"] if x.get("system") == Urls.snomed][0]["display"]
+    #
     # @staticmethod
     # def reason_code_coding_code(imms: dict, index: int):
     #     """Obtains reason_code_coding_code value"""
