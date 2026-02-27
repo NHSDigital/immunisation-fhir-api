@@ -15,6 +15,7 @@ from utilities.apigee.apigee_env_helpers import (
 from utilities.apigee.ApigeeApp import ApigeeApp
 
 _DEFAULT_RETRIES = 3
+_DEFAULT_TIMEOUT_SECONDS = 30
 
 
 class ApigeeOnDemandAppManager:
@@ -29,13 +30,14 @@ class ApigeeOnDemandAppManager:
     _INTERNAL_DEV_ID_SERVICE_PRODUCT = "identity-service-internal-dev"
     _TEST_APP_SUPPLIERS = ("EMIS", "MAVIS", "MEDICUS", "Postman_Auth", "RAVS", "SONAR", "TPP")
 
-    def __init__(self, retries: int = _DEFAULT_RETRIES):
+    def __init__(self, retries: int = _DEFAULT_RETRIES, timeout: float = _DEFAULT_TIMEOUT_SECONDS):
         self.proxy_name = get_proxy_name()
         self.apigee_environment = get_apigee_environment()
         self.created_product_name_uuid: str = ""
         self.created_app_name_uuids = []
         self.display_name = f"test-{self.proxy_name}"
         self.retries = retries
+        self.timeout = timeout
 
         self.logged_in_username = get_apigee_username()
         self.access_token = get_apigee_access_token()
@@ -63,7 +65,9 @@ class ApigeeOnDemandAppManager:
         }
 
         response = http_session.post(
-            url=f"{self._BASE_URL}/{self._DEVELOPERS_PATH}/{self.logged_in_username}/{self._APPS_PATH}", json=app_data
+            url=f"{self._BASE_URL}/{self._DEVELOPERS_PATH}/{self.logged_in_username}/{self._APPS_PATH}",
+            json=app_data,
+            timeout=self.timeout,
         )
         response.raise_for_status()
 
@@ -96,6 +100,7 @@ class ApigeeOnDemandAppManager:
         response = http_session.post(
             url=f"{self._BASE_URL}/{self._PRODUCTS_PATH}",
             json=apigee_product_data,
+            timeout=self.timeout,
         )
         response.raise_for_status()
 
@@ -121,7 +126,7 @@ class ApigeeOnDemandAppManager:
         for created_app_name_uuid in self.created_app_name_uuids:
             http_session.delete(
                 url=f"{self._BASE_URL}/{self._DEVELOPERS_PATH}/{self.logged_in_username}/{self._APPS_PATH}/{created_app_name_uuid}",
-                timeout=5,
+                timeout=self.timeout,
             )
 
         http_session.delete(url=f"{self._BASE_URL}/{self._PRODUCTS_PATH}/{self.created_product_name_uuid}")
