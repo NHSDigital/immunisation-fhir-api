@@ -14,7 +14,7 @@ def timed(func):
         start = time.time()
         result = func(*args, **kwargs)
         end = time.time()
-        log = {"time_taken": "{} ran in {}s".format(func.__name__, round(end - start, 5))}
+        log = {"time_taken": f"{func.__name__} ran in {round(end - start, 5)}s"}
         logger.info(log)
         return result
 

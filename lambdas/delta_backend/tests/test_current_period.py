@@ -1,5 +1,5 @@
 import unittest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from extractor import Extractor
 
@@ -7,7 +7,7 @@ from extractor import Extractor
 class TestIsCurrentPeriod(unittest.TestCase):
     def setUp(self):
         self.extractor = Extractor(fhir_json_data={})
-        self.occurrence = datetime(2025, 6, 12, 13, 0, 0, tzinfo=timezone.utc)
+        self.occurrence = datetime(2025, 6, 12, 13, 0, 0, tzinfo=UTC)
 
     def test_valid_period_in_range(self):
         name = {"period": {"start": "2025-06-01", "end": "2025-06-12"}}

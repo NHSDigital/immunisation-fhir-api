@@ -1,7 +1,6 @@
 import os
 import time
 from dataclasses import dataclass
-from typing import Optional
 
 import boto3
 import botocore.exceptions
@@ -96,7 +95,7 @@ class ImmunizationRepository:
 
     def get_immunization_by_identifier(
         self, identifier: Identifier
-    ) -> tuple[Optional[dict], Optional[ImmunizationRecordMetadata]]:
+    ) -> tuple[dict | None, ImmunizationRecordMetadata | None]:
         response = self.table.query(
             IndexName="IdentifierGSI",
             KeyConditionExpression=Key("IdentifierPK").eq(self._make_identifier_pk(identifier)),
@@ -120,7 +119,7 @@ class ImmunizationRepository:
 
     def get_immunization_resource_and_metadata_by_id(
         self, imms_id: str, include_deleted: bool = False
-    ) -> tuple[Optional[dict], Optional[ImmunizationRecordMetadata]]:
+    ) -> tuple[dict | None, ImmunizationRecordMetadata | None]:
         """Retrieves the immunization resource and metadata from the VEDS table"""
         response = self.table.get_item(Key={"PK": _make_immunization_pk(imms_id)})
         item = response.get("Item")

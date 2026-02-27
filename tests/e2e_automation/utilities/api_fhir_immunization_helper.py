@@ -2,7 +2,6 @@ import os
 import re
 import shutil
 import uuid
-from typing import Dict, Optional, Type
 
 import pytest_check as check
 from pydantic import BaseModel
@@ -25,7 +24,7 @@ def empty_folder(path):
     os.makedirs(path)
 
 
-def find_entry_by_Imms_id(parsed_data, imms_id) -> Optional[object]:
+def find_entry_by_Imms_id(parsed_data, imms_id) -> object | None:
     return next(
         (
             entry
@@ -36,14 +35,14 @@ def find_entry_by_Imms_id(parsed_data, imms_id) -> Optional[object]:
     )
 
 
-def find_patient_by_fullurl(parsed_data) -> Optional[Entry]:
+def find_patient_by_fullurl(parsed_data) -> Entry | None:
     for entry in parsed_data.entry:
         if entry.resource.resourceType == "Patient":
             return entry
     return None
 
 
-RESOURCE_MAP: Dict[str, Type[BaseModel]] = {
+RESOURCE_MAP: dict[str, type[BaseModel]] = {
     "Immunization": FHIRImmunizationResponse,
     "Patient": PatientResource,
 }

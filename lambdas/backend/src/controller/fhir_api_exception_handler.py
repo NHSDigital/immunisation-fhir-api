@@ -2,7 +2,7 @@
 
 import functools
 import uuid
-from typing import Callable, Type
+from collections.abc import Callable
 
 from common.clients import logger
 from common.models.errors import (
@@ -31,7 +31,7 @@ from models.errors import (
     create_operation_outcome,
 )
 
-_CUSTOM_EXCEPTION_TO_STATUS_MAP: dict[Type[Exception], int] = {
+_CUSTOM_EXCEPTION_TO_STATUS_MAP: dict[type[Exception], int] = {
     InconsistentResourceVersionError: 400,
     InconsistentIdentifierError: 400,  # Identifier refers to the local FHIR identifier composed of system and value.
     InconsistentIdError: 400,  # ID refers to the top-level ID of the FHIR resource.

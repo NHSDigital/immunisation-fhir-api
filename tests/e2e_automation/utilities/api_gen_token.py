@@ -1,6 +1,6 @@
 import os
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from urllib.parse import parse_qs, urlparse
 
 import requests
@@ -68,7 +68,7 @@ def is_token_valid(token_expires_in_time, token_generated_time):
     if token_expires_in_time is None or token_generated_time is None:
         return False
     expiration_time = token_generated_time + timedelta(seconds=int(token_expires_in_time))
-    return datetime.now(timezone.utc) < expiration_time
+    return datetime.now(UTC) < expiration_time
 
 
 def get_tokens(context, supplier_name):

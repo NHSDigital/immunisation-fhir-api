@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional, Tuple
 
 from common.clients import get_dynamodb_client, logger
 from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys, audit_table_key_data_types_map
@@ -18,7 +17,7 @@ def create_audit_table_item(
     expiry_timestamp: int,
     queue_name: str,
     file_status: str,
-    error_details: Optional[str] = None,
+    error_details: str | None = None,
 ) -> None:
     """
     Creates an audit table item with the file details
@@ -79,7 +78,7 @@ def update_audit_table_item(
 
 def _build_ddb_update_parameters(
     attrs_to_update: dict[AuditTableKeys, any],
-) -> Tuple[str, dict[str, any], dict[str, any]]:
+) -> tuple[str, dict[str, any], dict[str, any]]:
     """Assembles an UpdateExpression, ExpressionAttributeNames and ExpressionAttributeValues for the DynamoDB Update"""
     update_expression = "SET "
     expression_attr_names = {}

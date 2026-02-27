@@ -4,7 +4,7 @@ import json
 import os
 import time
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from io import BytesIO, StringIO
 
 from botocore.exceptions import ClientError
@@ -40,7 +40,7 @@ STREAM_NAME = os.getenv("SPLUNK_FIREHOSE_NAME", DEFAULT_STREAM_NAME)
 
 
 def _generated_date() -> str:
-    return datetime.now(timezone.utc).isoformat()[:-13] + ".000Z"
+    return datetime.now(UTC).isoformat()[:-13] + ".000Z"
 
 
 def _make_ack_data_dict_identifier_information(

@@ -1,6 +1,5 @@
 import time
 from collections import Counter
-from typing import Dict, List
 
 import boto3
 import pytest_check as check
@@ -994,12 +993,12 @@ def validate_to_compare_batch_record_with_event_table_record(context, batch_reco
         )
 
 
-def normalize_coding(coding) -> Dict[str, str]:
+def normalize_coding(coding) -> dict[str, str]:
     """Extracts and normalizes a coding dict from a Coding object."""
     return {"system": coding.system, "code": coding.code, "display": coding.display}
 
 
-def extract_protocol_codings(protocol_applied) -> List[Dict[str, str]]:
+def extract_protocol_codings(protocol_applied) -> list[dict[str, str]]:
     """Flattens all codings from protocolApplied into a list of normalized dicts."""
     codings = []
     for protocol in protocol_applied:
@@ -1010,7 +1009,7 @@ def extract_protocol_codings(protocol_applied) -> List[Dict[str, str]]:
 
 
 def compare_protocol_codings_to_reference(
-    protocol_applied: List[ProtocolApplied], reference_codings: List[Dict[str, str]]
+    protocol_applied: list[ProtocolApplied], reference_codings: list[dict[str, str]]
 ) -> bool:
     extracted = extract_protocol_codings(protocol_applied)
 
