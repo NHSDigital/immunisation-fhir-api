@@ -7,6 +7,19 @@ from dataclasses import dataclass
 class FieldNames:
     """Stores the field name strings for fields of note within the FHIR Immunization Resource JSON data"""
 
+    # Note: some field names are commented out as they are required elements (validation should always pass), and the
+    # means to access the value has not been confirmed. Do not delete the field names, they may need reinstating later.
+
+    # These are the field names that we may require to reinstate in the future:
+    #   vaccination_procedure_display
+    #   vaccine_code_coding_code
+    #   vaccine_code_coding_display
+    #   site_coding_code
+    #   site_coding_display
+    #   route_coding_code
+    #   route_coding_display
+    #   reason_code_coding_code
+
     target_disease = "target_disease"
     target_disease_codes = "target_disease_codes"
     patient_identifier_value = "patient_identifier_value"
@@ -25,20 +38,12 @@ class FieldNames:
     recorded = "recorded"
     primary_source = "primary_source"
     vaccination_procedure_code = "vaccination_procedure_code"
-    # vaccination_procedure_display = "vaccination_procedure_display"
     dose_number_positive_int = "dose_number_positive_int"
-    vaccine_code_coding_code = "vaccine_code_coding_code"
-    vaccine_code_coding_display = "vaccine_code_coding_display"
     manufacturer_display = "manufacturer_display"
     lot_number = "lot_number"
     expiration_date = "expiration_date"
-    site_coding_code = "site_coding_code"
-    site_coding_display = "site_coding_display"
-    route_coding_code = "route_coding_code"
-    route_coding_display = "route_coding_display"
     dose_quantity_value = "dose_quantity_value"
     dose_quantity_code = "dose_quantity_code"
     dose_quantity_unit = "dose_quantity_unit"
-    reason_code_coding_code = "reason_code_coding_code"
     location_identifier_value = "location_identifier_value"
     location_identifier_system = "location_identifier_system"
