@@ -123,7 +123,7 @@ def create_ack_data(
             "Success" if successful_api_response else "Business Level Response Value - Processing Error"
         ),
         "RECEIVED_TIME": created_at_formatted_string,
-        "MAILBOX_FROM": "",  # TODO: Leave blank for DPS, use mailbox name if picked up from MESH mail box
+        "MAILBOX_FROM": "",  # VED-197 TODO: Leave blank for DPS, use mailbox name if picked up from MESH mail box
         "LOCAL_ID": local_id,
         "IMMS_ID": imms_id or "",
         "OPERATION_OUTCOME": diagnostics or "",
