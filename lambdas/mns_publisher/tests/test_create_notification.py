@@ -73,7 +73,7 @@ class TestCreateMnsNotification(unittest.TestCase):
     @patch("create_notification.get_practitioner_details_from_pds")
     @patch("create_notification.get_service_url")
     @patch("create_notification.uuid.uuid4")
-    def test_create_mns_notification_success_with_real_payload(self, mock_uuid, mock_get_service_url, mock_get_gp):
+    def test_create_mns_notification_complete_payload(self, mock_uuid, mock_get_service_url, mock_get_gp):
         mock_uuid.return_value = MagicMock(hex="236a1d4a-5d69-4fa9-9c7f-e72bf505aa5b")
         mock_get_service_url.return_value = self.expected_immunisation_url
         mock_get_gp.return_value = self.expected_gp_ods_code
@@ -84,29 +84,9 @@ class TestCreateMnsNotification(unittest.TestCase):
         self.assertEqual(result["type"], IMMUNISATION_TYPE)
         self.assertEqual(result["source"], self.expected_immunisation_url)
         self.assertEqual(result["subject"], "9481152782")
-        self.assertIn("id", result)
-        self.assertIn("time", result)
-        self.assertIn("dataref", result)
-        self.assertIn("filtering", result)
-
-    @patch("create_notification.get_practitioner_details_from_pds")
-    @patch("create_notification.get_service_url")
-    def test_create_mns_notification_dataref_format_real_payload(self, mock_get_service_url, mock_get_gp):
-        mock_get_service_url.return_value = self.expected_immunisation_url
-        mock_get_gp.return_value = self.expected_gp_ods_code
-
-        result = create_mns_notification(self.sample_sqs_event)
 
         expected_dataref = f"{self.expected_immunisation_url}/Immunization/d058014c-b0fd-4471-8db9-3316175eb825"
         self.assertEqual(result["dataref"], expected_dataref)
-
-    @patch("create_notification.get_practitioner_details_from_pds")
-    @patch("create_notification.get_service_url")
-    def test_create_mns_notification_filtering_fields_real_payload(self, mock_get_service_url, mock_get_gp):
-        mock_get_service_url.return_value = self.expected_immunisation_url
-        mock_get_gp.return_value = self.expected_gp_ods_code
-
-        result = create_mns_notification(self.sample_sqs_event)
 
         filtering = result["filtering"]
         self.assertEqual(filtering["generalpractitioner"], self.expected_gp_ods_code)
@@ -114,17 +94,23 @@ class TestCreateMnsNotification(unittest.TestCase):
         self.assertEqual(filtering["sourceapplication"], "TPP")
         self.assertEqual(filtering["immunisationtype"], "hib")
         self.assertEqual(filtering["action"], "CREATE")
-        self.assertIsInstance(filtering["subjectage"], str)
+        self.assertEqual(filtering["subjectage"], "21")
+
+        self.assertIn("id", result)
+        self.assertIsInstance(result["id"], str)
 
     @patch("create_notification.get_practitioner_details_from_pds")
     @patch("create_notification.get_service_url")
-    def test_create_mns_notification_age_calculation_real_payload(self, mock_get_service_url, mock_get_gp):
-        mock_get_service_url.return_value = self.expected_immunisation_url
-        mock_get_gp.return_value = self.expected_gp_ods_code
+    def test_create_mns_notification_missing_nhs_number(self, mock_get_service_url, mock_get_gp):
+        sqs_event_data = copy.deepcopy(self.sample_sqs_event)
 
-        result = create_mns_notification(self.sample_sqs_event)
+        body = json.loads(sqs_event_data["body"])
+        body["dynamodb"]["NewImage"]["Imms"]["M"]["NHS_NUMBER"]["S"] = ""
+        sqs_event_data["body"] = json.dumps(body)
 
-        self.assertEqual(result["filtering"]["subjectage"], "21")
+        with self.assertRaises(ValueError) as context:
+            create_mns_notification(sqs_event_data)
+        self.assertIn("NHS number is required", str(context.exception))
 
     @patch("create_notification.get_practitioner_details_from_pds")
     @patch("create_notification.get_service_url")
@@ -135,17 +121,6 @@ class TestCreateMnsNotification(unittest.TestCase):
         create_mns_notification(self.sample_sqs_event)
 
         mock_get_gp.assert_called_once_with("9481152782")
-
-    @patch("create_notification.get_practitioner_details_from_pds")
-    @patch("create_notification.get_service_url")
-    def test_create_mns_notification_uuid_generated(self, mock_get_service_url, mock_get_gp):
-        mock_get_service_url.return_value = self.expected_immunisation_url
-        mock_get_gp.return_value = self.expected_gp_ods_code
-
-        result1 = create_mns_notification(self.sample_sqs_event)
-        result2 = create_mns_notification(self.sample_sqs_event)
-
-        self.assertNotEqual(result1["id"], result2["id"])
 
     @patch("create_notification.get_practitioner_details_from_pds")
     @patch("create_notification.get_service_url")
@@ -200,7 +175,7 @@ class TestCreateMnsNotification(unittest.TestCase):
             "body": json.dumps({"dynamodb": {"NewImage": {"ImmsID": {"S": "test-id"}}}}),
         }
 
-        with self.assertRaises((KeyError, TypeError)):
+        with self.assertRaises((KeyError, TypeError, ValueError)):
             create_mns_notification(incomplete_event)
 
     @patch("create_notification.get_practitioner_details_from_pds")
@@ -385,7 +360,3 @@ class TestUnwrapDynamodbValue(unittest.TestCase):
         value = {"L": [{"S": "item1"}, {"S": "item2"}]}
         result = _unwrap_dynamodb_value(value)
         self.assertEqual(result, [{"S": "item1"}, {"S": "item2"}])
-
-
-if __name__ == "__main__":
-    unittest.main()

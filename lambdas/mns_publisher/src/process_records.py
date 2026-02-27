@@ -50,6 +50,7 @@ def process_record(record: SQSMessage, mns_service: MnsService) -> None:
 
     mns_notification_payload = create_mns_notification(record)
     notification_id = mns_notification_payload.get("id")
+
     action_flag = mns_notification_payload.get("filtering", {}).get("action")
     logger.info(
         "Processing message",

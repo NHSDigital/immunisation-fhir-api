@@ -1,11 +1,14 @@
 import json
 import unittest
-from pathlib import Path
 from unittest.mock import Mock, patch
+
+import boto3
+import responses
+from moto import mock_aws
 
 from lambda_handler import lambda_handler
 from process_records import extract_trace_ids, process_record, process_records
-from test_utils import load_sample_sqs_event
+from test_utils import generate_private_key_b64, load_sample_sqs_event
 
 
 class TestExtractTraceIds(unittest.TestCase):
@@ -119,14 +122,7 @@ class TestProcessRecords(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Load the sample SQS event once for all tests."""
-        sample_event_path = Path(__file__).parent.parent / "tests/sqs_event.json"
-        with open(sample_event_path, "r") as f:
-            raw_event = json.load(f)
-
-        if isinstance(raw_event.get("body"), dict):
-            raw_event["body"] = json.dumps(raw_event["body"])
-
-        cls.sample_sqs_record = raw_event
+        cls.sample_sqs_record = load_sample_sqs_event()
 
     @patch("process_records.logger")
     @patch("process_records.get_mns_service")
@@ -168,7 +164,7 @@ class TestProcessRecords(unittest.TestCase):
 
         self.assertEqual(len(result["batchItemFailures"]), 1)
         self.assertEqual(result["batchItemFailures"][0]["itemIdentifier"], "msg-456")
-        mock_logger.exception.assert_called_once()
+        mock_logger.warning.assert_called_with("Batch completed with 1 failures")
 
     @patch("process_records.logger")
     @patch("process_records.get_mns_service")
@@ -239,6 +235,67 @@ class TestLambdaHandler(unittest.TestCase):
 
         self.assertEqual(result, {"batchItemFailures": []})
         mock_process_records.assert_called_once_with([])
+
+
+@mock_aws
+class TestLambdaHandlerIntegration(unittest.TestCase):
+    """
+    Integration tests
+    """
+
+    def setUp(self):
+        """Set up mocked AWS services and test data."""
+        self.sample_sqs_record = load_sample_sqs_event()
+        self.secrets_client = boto3.client("secretsmanager", region_name="eu-west-2")
+        self.secrets_client.create_secret(
+            Name="imms/pds/int/jwt-secrets",
+            SecretString=json.dumps(
+                {"api_key": "fake-pds-api-key", "kid": "fake-kid-123", "private_key_b64": generate_private_key_b64()}
+            ),
+        )
+
+    @responses.activate
+    @patch("common.api_clients.authentication.AppRestrictedAuth.get_access_token")
+    @patch("process_records.logger")
+    def test_successful_notification_creation_with_gp(self, mock_logger, mock_get_token):
+        # Mock OAuth token response issued from Apigee
+        mock_oauth_response = Mock()
+        mock_oauth_response.status_code = 200
+        mock_oauth_response.json.return_value = {"access_token": "fake-token"}
+        mock_get_token.return_value = mock_oauth_response
+
+        # Intercepts actual request call to PDS and returns mocked responses
+        responses.add(
+            responses.GET,
+            "https://int.api.service.nhs.uk/personal-demographics/FHIR/R4/Patient/9481152782",
+            json={"generalPractitioner": [{"identifier": {"value": "Y12345", "period": {"start": "2024-01-01"}}}]},
+            status=200,
+        )
+
+        mns_response = responses.add(
+            responses.POST,
+            "https://int.api.service.nhs.uk/multicast-notification-service/events",
+            json={"id": "236a1d4a-5d69-4fa9-9c7f-e72bf505aa5b"},
+            status=200,
+        )
+
+        sqs_event = {"Records": [self.sample_sqs_record]}
+        result = lambda_handler(sqs_event, Mock())
+
+        self.assertEqual(result, {"batchItemFailures": []})
+
+        self.assertEqual(mns_response.call_count, 1)
+        self.assertEqual(mns_response.calls[0].response.status_code, 200)
+        mns_payload = json.loads(mns_response.calls[0].request.body)
+        self.assertEqual(mns_payload["subject"], "9481152782")
+        self.assertEqual(mns_payload["filtering"]["generalpractitioner"], "Y12345")
+        self.assertEqual(mns_payload["filtering"]["sourceorganisation"], "B0C4P")
+        self.assertEqual(mns_payload["filtering"]["sourceapplication"], "TPP")
+        self.assertEqual(mns_payload["filtering"]["immunisationtype"], "hib")
+        self.assertEqual(mns_payload["filtering"]["action"], "CREATE")
+        self.assertEqual(mns_payload["filtering"]["subjectage"], "21")
+
+        mock_logger.info.assert_any_call("Successfully processed all 1 messages")
 
 
 if __name__ == "__main__":

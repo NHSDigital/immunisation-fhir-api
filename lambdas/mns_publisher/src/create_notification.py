@@ -28,6 +28,10 @@ def create_mns_notification(sqs_event: SQSMessage) -> MnsNotificationPayload:
 
     imms_map = new_image.get("Imms", {}).get("M", {})
     nhs_number = _unwrap_dynamodb_value(imms_map.get("NHS_NUMBER", {}))
+    if not nhs_number:
+        logger.error("Missing required field: Nhs Number")
+        raise ValueError("NHS number is required to create MNS notification")
+
     person_dob = _unwrap_dynamodb_value(imms_map.get("PERSON_DOB", {}))
     date_and_time = _unwrap_dynamodb_value(imms_map.get("DATE_AND_TIME", {}))
     site_code = _unwrap_dynamodb_value(imms_map.get("SITE_CODE", {}))
@@ -115,14 +119,11 @@ def _unwrap_dynamodb_value(value: dict) -> Any:
     if not isinstance(value, dict):
         return value
 
-    # DynamoDB type descriptors
     if "NULL" in value:
         return None
 
-    # Check other DynamoDB types
     for key in DYNAMO_DB_TYPE_DESCRIPTORS:
         if key in value:
             return value[key]
 
-    # Not a DynamoDB type, return as-is
     return value
