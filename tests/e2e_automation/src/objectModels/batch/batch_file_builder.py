@@ -2,7 +2,7 @@ import csv
 import random
 import re
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any
 
 from src.objectModels.batch.batch_data_object import BatchVaccinationRecord
 from src.objectModels.patient_loader import load_patient_by_id
@@ -11,7 +11,7 @@ from utilities.enums import GenderCode
 from utilities.vaccination_constants import ROUTE_MAP, SITE_MAP, VACCINATION_PROCEDURE_MAP, VACCINE_CODE_MAP
 
 
-def build_procedure_code(vaccine_type: str) -> Dict[str, str]:
+def build_procedure_code(vaccine_type: str) -> dict[str, str]:
     try:
         selected = random.choice(VACCINATION_PROCEDURE_MAP[vaccine_type.upper()])
         return {"term": selected["display"], "code": selected["code"]}
@@ -19,7 +19,7 @@ def build_procedure_code(vaccine_type: str) -> Dict[str, str]:
         raise ValueError(f"Unsupported vaccine type: {vaccine_type}")
 
 
-def build_vaccine_details(vaccine_type: str, lot_number: str = "", expiry_date: str = "") -> Dict[str, Any]:
+def build_vaccine_details(vaccine_type: str, lot_number: str = "", expiry_date: str = "") -> dict[str, Any]:
     try:
         selected = random.choice(VACCINE_CODE_MAP[vaccine_type.upper()])
     except KeyError:
@@ -34,7 +34,7 @@ def build_vaccine_details(vaccine_type: str, lot_number: str = "", expiry_date: 
     }
 
 
-def build_location_site_identifier(value: str = "X99999") -> Dict[str, str]:
+def build_location_site_identifier(value: str = "X99999") -> dict[str, str]:
     return {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": value}
 
 
@@ -44,23 +44,23 @@ def get_batch_date(date_str: str = "current_occurrence") -> str:
     return cleaned_date
 
 
-def get_performing_professional(forename: str = "Automation", surname: str = "Tests") -> Dict[str, str]:
+def get_performing_professional(forename: str = "Automation", surname: str = "Tests") -> dict[str, str]:
     return {"performing_professional_forename": forename, "performing_professional_surname": surname}
 
 
-def build_site_of_vaccination() -> Dict[str, str]:
+def build_site_of_vaccination() -> dict[str, str]:
     selected = random.choice(SITE_MAP)
     return {"site_of_vaccination_code": selected["code"], "site_of_vaccination_term": selected["display"]}
 
 
-def build_route_of_vaccination() -> Dict[str, str]:
+def build_route_of_vaccination() -> dict[str, str]:
     selected = random.choice(ROUTE_MAP)
     return {"route_of_vaccination_code": selected["code"], "route_of_vaccination_term": selected["display"]}
 
 
 def build_dose_details(
     dose_sequence: str = "1", dose_amount: str = "0.5", dose_unit_code: str = "ml", dose_unit_term: str = "millilitre"
-) -> Dict[str, str]:
+) -> dict[str, str]:
     return {
         "dose_sequence": dose_sequence,
         "dose_amount": dose_amount,
@@ -69,12 +69,12 @@ def build_dose_details(
     }
 
 
-def build_unique_reference(unique_id: Optional[str] = None) -> Dict[str, str]:
+def build_unique_reference(unique_id: str | None = None) -> dict[str, str]:
     uid = unique_id or str(uuid.uuid4())
     return {"unique_id": uid, "unique_id_uri": "https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk"}
 
 
-def get_patient_details(context) -> Dict[str, str]:
+def get_patient_details(context) -> dict[str, str]:
     patient = load_patient_by_id(context.patient_id)
     return {
         "first_name": patient.name[0].given[0],

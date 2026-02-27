@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import List, Optional
 
 from pydantic import BaseModel, validator
 
@@ -40,7 +39,7 @@ class BatchReport(BaseModel):
     provider: str
     messageHeaderId: str
     summary: Summary
-    failures: Optional[List[FailureDetail]]
+    failures: list[FailureDetail] | None
 
     @validator("generatedDate")
     def validate_generated_date(cls, v):

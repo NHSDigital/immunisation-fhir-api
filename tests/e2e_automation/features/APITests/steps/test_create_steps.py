@@ -1,6 +1,6 @@
 import json
 import random
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from venv import logger
 
 import pytest_check as check
@@ -39,7 +39,7 @@ def createValidJsonPayloadWithDoseNumberPositiveInt(context, doseNumberPositiveI
 @given("Valid json payload is created where date fields has past date")
 def create_valid_json_payload_with_past_dates(context):
     valid_json_payload_is_created(context)
-    today = datetime.now(timezone.utc)
+    today = datetime.now(UTC)
     context.immunization_object.contained[1].birthDate = str((today - timedelta(days=150)).date())
     context.immunization_object.occurrenceDateTime = str((today - timedelta(days=15)).isoformat(timespec="milliseconds"))
     context.immunization_object.recorded = str((today - timedelta(days=20)).date())

@@ -3,7 +3,6 @@ import copy
 import json
 import os
 import unittest
-from typing import Optional
 from unittest import TestCase
 from unittest.mock import ANY, MagicMock, Mock, patch
 
@@ -124,7 +123,7 @@ class TestForwardLambdaHandler(TestCase):
     @staticmethod
     def generate_input(
         row_id: int,
-        identifier_value: Optional[str] = None,
+        identifier_value: str | None = None,
         file_key: str = "test_file_key",
         created_at_formatted_string: str = "2025-01-24T12:00:00Z",
         include_fhir_json: bool = True,

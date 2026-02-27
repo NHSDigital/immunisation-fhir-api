@@ -1,7 +1,6 @@
 import json
 import uuid
 from decimal import Decimal
-from typing import List
 
 from mappings import EventName, Operation
 
@@ -166,7 +165,7 @@ class ValuesForTests:
         return {"Records": [ValuesForTests.get_event_record(imms_id, event_name, operation, supplier)]}
 
     @staticmethod
-    def get_multi_record_event(records_config: List[RecordConfig]):
+    def get_multi_record_event(records_config: list[RecordConfig]):
         records = []
         for config in records_config:
             # Extract values from the config dictionary

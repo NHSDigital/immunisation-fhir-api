@@ -1,30 +1,28 @@
-from typing import List, Optional
-
 from pydantic import BaseModel
 
 
 class Coding(BaseModel):
-    system: Optional[str] = None
-    code: Optional[str] = None
+    system: str | None = None
+    code: str | None = None
 
 
 class Details(BaseModel):
-    coding: List[Coding]
+    coding: list[Coding]
 
 
 class Issue(BaseModel):
-    severity: Optional[str] = None
-    code: Optional[str] = None
-    details: Optional[Details] = None
-    diagnostics: Optional[str] = None
+    severity: str | None = None
+    code: str | None = None
+    details: Details | None = None
+    diagnostics: str | None = None
 
 
 class Meta(BaseModel):
-    profile: List[str]
+    profile: list[str]
 
 
 class OperationOutcome(BaseModel):
     resourceType: str
-    id: Optional[str] = None
-    meta: Optional[Meta] = None
-    issue: List[Issue]
+    id: str | None = None
+    meta: Meta | None = None
+    issue: list[Issue]

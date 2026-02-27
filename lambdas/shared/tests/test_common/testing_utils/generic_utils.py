@@ -5,7 +5,7 @@ import os
 import unittest
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, List, Literal, Union
+from typing import Any, Literal
 
 from jsonpath_ng.ext import parse
 
@@ -14,7 +14,7 @@ def load_json_data(filename: str):
     """Load the json data"""
     data_path = f"{os.path.dirname(os.path.abspath(__file__))}/../sample_data"
     immunization_file_path = f"{data_path}/{filename}"
-    with open(immunization_file_path, "r", encoding="utf-8") as f:
+    with open(immunization_file_path, encoding="utf-8") as f:
         return json.load(f, parse_float=Decimal)
 
 
@@ -98,7 +98,7 @@ def update_contained_resource_field(
     return json_data
 
 
-def format_date_types(dates: List[Union[date, datetime]], mode: str = "auto") -> List[str]:
+def format_date_types(dates: list[date | datetime], mode: str = "auto") -> list[str]:
     """
     Accepts a list of date or datetime objects and returns them as strings:
     - datetime → ISO 8601 string with timezone if present

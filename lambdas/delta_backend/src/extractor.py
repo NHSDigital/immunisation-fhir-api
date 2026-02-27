@@ -1,6 +1,6 @@
 import decimal
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import exception_messages
 from mappings import ConversionFieldName, Gender
@@ -97,20 +97,20 @@ class Extractor:
         end = datetime.fromisoformat(period.get("end")) if end_str else None
         # Ensure all datetime objects are timezone-aware
         if start and start.tzinfo is None:
-            start = start.replace(tzinfo=timezone.utc)
+            start = start.replace(tzinfo=UTC)
         if end and "T" not in end_str:
             # If end is a date-only string like "2025-06-12", upgrade to full end-of-day
             end = end.replace(hour=23, minute=59, second=59, microsecond=999999)
         if end and end.tzinfo is None:
             # If end still has no timezone info, assign UTC
-            end = end.replace(tzinfo=timezone.utc)
+            end = end.replace(tzinfo=UTC)
 
         return (not start or start <= occurrence_time) and (not end or occurrence_time <= end)
 
     def _get_occurrence_date_time(self) -> datetime:
         occurrence_time = datetime.fromisoformat(self.fhir_json_data.get("occurrenceDateTime", ""))
         if occurrence_time and occurrence_time.tzinfo is None:
-            occurrence_time = occurrence_time.replace(tzinfo=timezone.utc)
+            occurrence_time = occurrence_time.replace(tzinfo=UTC)
         return occurrence_time
 
     def _get_first_snomed_code(self, coding_container: dict) -> str:
@@ -209,7 +209,7 @@ class Extractor:
         try:
             dt = datetime.fromisoformat(date)
             if dt.tzinfo is None:
-                dt = dt.replace(tzinfo=timezone.utc)
+                dt = dt.replace(tzinfo=UTC)
         except Exception as e:
             self._log_error(field_name, date, e)
             return ""

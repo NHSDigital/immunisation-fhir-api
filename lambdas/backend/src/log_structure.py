@@ -33,8 +33,8 @@ def _get_operation_outcome(result) -> dict:
     operation_outcome = {}
     status = "500"
     status_code = "Exception"
-    diagnostics = str()
-    record = str()
+    diagnostics = ""
+    record = ""
     if isinstance(result, dict):
         status = str(result["statusCode"])
         status_code = "Completed successfully"

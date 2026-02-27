@@ -1,5 +1,4 @@
 import os
-from typing import Optional
 
 
 def get_ieds_table_name() -> str:
@@ -13,8 +12,8 @@ def get_pds_env() -> str:
 
 
 # Optional: Cached versions for performance
-_ieds_table_name: Optional[str] = None
-_pds_env: Optional[str] = None
+_ieds_table_name: str | None = None
+_pds_env: str | None = None
 
 
 def get_ieds_table_name_cached() -> str:

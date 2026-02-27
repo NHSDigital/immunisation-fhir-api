@@ -2,7 +2,6 @@
 
 import json
 from copy import deepcopy
-from typing import Optional
 
 from boto3 import client as boto3_client
 
@@ -12,7 +11,7 @@ from tests.utils.values_for_ack_backend_tests import MOCK_MESSAGE_DETAILS, Valid
 firehose_client = boto3_client("firehose", region_name=REGION_NAME)
 
 
-def add_audit_entry_to_table(dynamodb_client, batch_event_message_id: str, record_count: Optional[int] = None) -> None:
+def add_audit_entry_to_table(dynamodb_client, batch_event_message_id: str, record_count: int | None = None) -> None:
     """Add an entry to the audit table"""
     audit_table_entry = {"status": {"S": "Preprocessed"}, "message_id": {"S": batch_event_message_id}}
 
