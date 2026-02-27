@@ -22,9 +22,8 @@ def upload_file_to_S3(context):
 
 def wait_for_file_to_move_archive(context, timeout=120, interval=5):
     s3 = boto3.client("s3")
-    # Use the same bucket naming convention as upload_file_to_S3 to avoid
-    # mismatches between upload and archive polling (especially in preprod).
-    source_bucket = f"immunisation-batch-{context.S3_env}-data-sources"
+    bucket_scope = context.S3_env if context.S3_env != "preprod" else context.sub_environment
+    source_bucket = f"immunisation-batch-{bucket_scope}-data-sources"
     archive_key = f"archive/{context.filename}"
     print(f"Waiting for file in archive: s3://{source_bucket}/{archive_key}")
     elapsed = 0
