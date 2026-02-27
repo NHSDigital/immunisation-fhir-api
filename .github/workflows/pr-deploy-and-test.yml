@@ -4,20 +4,17 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   run-quality-checks:
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}
-      cancel-in-progress: true
     uses: ./.github/workflows/quality-checks.yml
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   deploy-pr-backend:
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}
-      # Avoid automatic cancellation while Terraform holds a state lock
-      cancel-in-progress: false
     needs: [run-quality-checks]
     uses: ./.github/workflows/deploy-backend.yml
     with:
@@ -27,9 +24,6 @@ jobs:
       sub_environment: pr-${{github.event.pull_request.number}}
 
   run-e2e-automation-tests:
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}
-      cancel-in-progress: true
     needs: [deploy-pr-backend]
     strategy:
       matrix:
