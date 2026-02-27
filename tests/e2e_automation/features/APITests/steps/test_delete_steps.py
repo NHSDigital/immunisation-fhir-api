@@ -6,7 +6,10 @@ from src.dynamoDB.dynamo_db_helper import (
     fetch_immunization_int_delta_detail_by_immsID,
     validate_imms_delta_record_with_created_event,
 )
-from utilities.api_fhir_immunization_helper import find_entry_by_Imms_id, parse_FHIR_immunization_response
+from utilities.api_fhir_immunization_helper import (
+    find_entry_by_Imms_id,
+    parse_FHIR_immunization_response,
+)
 from utilities.api_get_header import get_delete_url_header
 from utilities.enums import ActionFlag, Operation
 from utilities.http_requests_session import http_requests_session
@@ -16,7 +19,7 @@ from .common_steps import (
     send_delete_for_immunization_event_created,
     valid_token_is_generated,
 )
-from .test_search_steps import TriggerSearchGetRequest, TriggerSearchPostRequest
+from .test_search_steps import trigger_search_request
 
 logging.basicConfig(filename="debugLog.log", level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -53,13 +56,17 @@ def validate_imms_delta_table_by_deleted_ImmsID(context):
     latest_delta_record = max(deleted_items, key=lambda x: x.get("timestamp", 0))
 
     validate_imms_delta_record_with_created_event(
-        context, create_obj, latest_delta_record, Operation.deleted.value, ActionFlag.deleted.value
+        context,
+        create_obj,
+        latest_delta_record,
+        Operation.deleted.value,
+        ActionFlag.deleted.value,
     )
 
 
 @then("Deleted Immunization event will not be present in Get method Search API response")
 def validate_deleted_immunization_event_not_present(context):
-    TriggerSearchGetRequest(context)
+    trigger_search_request(context, httpMethod="GET")
     The_request_will_have_status_code(context, "200")
 
     data = context.response.json()
@@ -74,7 +81,7 @@ def validate_deleted_immunization_event_not_present(context):
 
 @then("Deleted Immunization event will not be present in Post method Search API response")
 def validate_deleted_immunization_event_not_present_using_post(context):
-    TriggerSearchPostRequest(context)
+    trigger_search_request(context, httpMethod="POST")
     The_request_will_have_status_code(context, "200")
 
     data = context.response.json()

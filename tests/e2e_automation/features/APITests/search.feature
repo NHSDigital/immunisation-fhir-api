@@ -4,7 +4,7 @@ Feature: Search the immunization of a patient
     @Delete_cleanUp @supplier_name_TPP
     Scenario Outline: Verify that the GET method of Search API will be successful with all the valid parameters
         Given Valid vaccination record is created with Patient '<Patient>' and vaccine_type '<Vaccine_type>'
-        When Send a search request with GET method for Immunization event created
+        When Send a search request with 'GET' method for Immunization event created
         Then The request will be successful with the status code '200'
         And The Search Response JSONs should contain the detail of the immunization events created above
         And The Search Response JSONs field values should match with the input JSONs field values for resourceType Immunization
@@ -28,7 +28,7 @@ Feature: Search the immunization of a patient
     @Delete_cleanUp @supplier_name_EMIS
     Scenario Outline: Verify that the POST method of Search API will be successful with all the valid parameters
         Given Valid vaccination record is created with Patient '<Patient>' and vaccine_type '<Vaccine_type>'
-        When Send a search request with POST method for Immunization event created
+        When Send a search request with 'POST' method for Immunization event created
         Then The request will be successful with the status code '200'
         And The Search Response JSONs should contain the detail of the immunization events created above
         And The Search Response JSONs field values should match with the input JSONs field values for resourceType Immunization
@@ -49,10 +49,10 @@ Feature: Search the immunization of a patient
     @Delete_cleanUp @supplier_name_Postman_Auth
     Scenario Outline: Verify that the immunization events retrieved in the response of Search API should be within Date From and Date To range
         Given Valid vaccination record is created for '<NHSNumber>' and Disease Type '<vaccine_type>' with recorded date as '<DateFrom>'
-        When Send a search request with GET method with valid NHS Number '<NHSNumber>' and Disease Type '<vaccine_type>' and Date From '<DateFrom>' and Date To '<DateTo>'
+        When Send a search request with 'GET' method with valid NHS Number '<NHSNumber>' and Disease Type '<vaccine_type>' and Date From '<DateFrom>' and Date To '<DateTo>'
         Then The request will be successful with the status code '200'
         And The occurrenceDateTime of the immunization events should be within the Date From and Date To range
-        When Send a search request with POST method with valid NHS Number '<NHSNumber>' and Disease Type '<vaccine_type>' and Date From '<DateFrom>' and Date To '<DateTo>'
+        When Send a search request with 'POST' method with valid NHS Number '<NHSNumber>' and Disease Type '<vaccine_type>' and Date From '<DateFrom>' and Date To '<DateTo>'
         Then The request will be successful with the status code '200'
         And The occurrenceDateTime of the immunization events should be within the Date From and Date To range
         Examples:
@@ -62,10 +62,10 @@ Feature: Search the immunization of a patient
     # Negative Scenarios
     @supplier_name_Postman_Auth
     Scenario Outline: Verify that Search API will throw error if NHS Number is invalid
-        When Send a search request with GET method with invalid NHS Number '<NHSNumber>' and valid Disease Type '<DiseaseType>'
+        When Send a search request with 'GET' method with invalid NHS Number '<NHSNumber>' and valid Disease Type '<DiseaseType>'
         Then The request will be unsuccessful with the status code '400'
         And The Search Response JSONs should contain correct error message for invalid NHS Number
-        When Send a search request with POST method with invalid NHS Number '<NHSNumber>' and valid Disease Type '<DiseaseType>'
+        When Send a search request with 'POST' method with invalid NHS Number '<NHSNumber>' and valid Disease Type '<DiseaseType>'
         Then The request will be unsuccessful with the status code '400'
         And The Search Response JSONs should contain correct error message for invalid NHS Number
         Examples:
@@ -78,10 +78,10 @@ Feature: Search the immunization of a patient
     @smoke
     @supplier_name_Postman_Auth
     Scenario Outline: Verify that Search API will throw error if include is invalid
-        When Send a search request with GET method with valid NHS Number '<NHSNumber>' and valid Disease Type '<vaccine_type>' and invalid include '<include>'
+        When Send a search request with 'GET' method with valid NHS Number '<NHSNumber>' and valid Disease Type '<vaccine_type>' and invalid include '<include>'
         Then The request will be unsuccessful with the status code '400'
         And The Search Response JSONs should contain correct error message for invalid include
-        When Send a search request with POST method with valid NHS Number '<NHSNumber>' and valid Disease Type '<vaccine_type>' and invalid include '<include>'
+        When Send a search request with 'POST' method with valid NHS Number '<NHSNumber>' and valid Disease Type '<vaccine_type>' and invalid include '<include>'
         Then The request will be unsuccessful with the status code '400'
         And The Search Response JSONs should contain correct error message for invalid include
         Examples:
@@ -91,10 +91,10 @@ Feature: Search the immunization of a patient
     @smoke
     @supplier_name_Postman_Auth
     Scenario Outline: Verify that Search API will throw error if both different combination of dates and include is invalid
-        When Send a search request with GET method with valid NHS Number '<NHSNumber>' and valid Disease Type '<vaccine_type>' and Date From '<DateFrom>' and Date To '<DateTo>' and include '<include>'
+        When Send a search request with 'GET' method with valid NHS Number '<NHSNumber>' and valid Disease Type '<vaccine_type>' and Date From '<DateFrom>' and Date To '<DateTo>' and include '<include>'
         Then The request will be unsuccessful with the status code '400'
         And The Search Response JSONs should contain correct error message for invalid Date From, Date To and include
-        When Send a search request with POST method with valid NHS Number '<NHSNumber>' and valid Disease Type '<vaccine_type>' and Date From '<DateFrom>' and Date To '<DateTo>' and include '<include>'
+        When Send a search request with 'POST' method with valid NHS Number '<NHSNumber>' and valid Disease Type '<vaccine_type>' and Date From '<DateFrom>' and Date To '<DateTo>' and include '<include>'
         Then The request will be unsuccessful with the status code '400'
         And The Search Response JSONs should contain correct error message for invalid Date From, Date To and include
         Examples:
@@ -107,10 +107,10 @@ Feature: Search the immunization of a patient
     @smoke
     @supplier_name_Postman_Auth
     Scenario Outline: Verify that Search API will throw error if Disease Type is invalid
-        When Send a search request with GET method with valid NHS Number '<NHSNumber>' and invalid Disease Type '<DiseaseType>'
+        When Send a search request with 'GET' method with valid NHS Number '<NHSNumber>' and invalid Disease Type '<DiseaseType>'
         Then The request will be unsuccessful with the status code '400'
         And The Search Response JSONs should contain correct error message for invalid Disease Type
-        When Send a search request with POST method with valid NHS Number '<NHSNumber>' and invalid Disease Type '<DiseaseType>'
+        When Send a search request with 'POST' method with valid NHS Number '<NHSNumber>' and invalid Disease Type '<DiseaseType>'
         Then The request will be unsuccessful with the status code '400'
         And The Search Response JSONs should contain correct error message for invalid Disease Type
         Examples:
@@ -121,10 +121,10 @@ Feature: Search the immunization of a patient
 
     @supplier_name_Postman_Auth
     Scenario Outline: Verify that Search API will throw error if both NHS Number and Disease Type are invalid
-        When Send a search request with GET method with invalid NHS Number '<NHSNumber>' and invalid Disease Type '<DiseaseType>'
+        When Send a search request with 'GET' method with invalid NHS Number '<NHSNumber>' and invalid Disease Type '<DiseaseType>'
         Then The request will be unsuccessful with the status code '400'
         And The Search Response JSONs should contain correct error message for invalid NHS Number as higher priority
-        When Send a search request with POST method with invalid NHS Number '<NHSNumber>' and invalid Disease Type '<DiseaseType>'
+        When Send a search request with 'POST' method with invalid NHS Number '<NHSNumber>' and invalid Disease Type '<DiseaseType>'
         Then The request will be unsuccessful with the status code '400'
         And The Search Response JSONs should contain correct error message for invalid NHS Number as higher priority
         Examples:
@@ -136,10 +136,10 @@ Feature: Search the immunization of a patient
     @Delete_cleanUp @supplier_name_Postman_Auth
     Scenario: Verify that Search API returns 200 with results and OperationOutcome when both valid and invalid Disease Type are provided
         Given Valid vaccination record is created with Patient 'Random' and vaccine_type 'COVID'
-        When Send a search request with GET method with valid NHS Number and mixed valid and invalid Disease Type
+        When Send a search request with 'GET' method with valid NHS Number and mixed valid and invalid Disease Type
         Then The request will be successful with the status code '200'
         And The Search Response should contain search results and OperationOutcome for invalid immunization targets
-        When Send a search request with POST method with valid NHS Number and mixed valid and invalid Disease Type
+        When Send a search request with 'POST' method with valid NHS Number and mixed valid and invalid Disease Type
         Then The request will be successful with the status code '200'
         And The Search Response should contain search results and OperationOutcome for invalid immunization targets
 
@@ -147,20 +147,20 @@ Feature: Search the immunization of a patient
     @Delete_cleanUp @supplier_name_MAVIS
     Scenario: Verify that Search API returns 200 with results and OperationOutcome where one of the Disease Type is not authorized for the supplier
         Given Valid vaccination record is created with Patient 'Random' and vaccine_type 'FLU'
-        When Send a search request with GET method with valid NHS Number and multiple Disease Type
+        When Send a search request with 'GET' method with valid NHS Number and multiple Disease Type
         Then The request will be successful with the status code '200'
         And The Search Response should contain search results and OperationOutcome for unauthorized immunization targets
-        When Send a search request with POST method with valid NHS Number and multiple Disease Type
+        When Send a search request with 'POST' method with valid NHS Number and multiple Disease Type
         Then The request will be successful with the status code '200'
         And The Search Response should contain search results and OperationOutcome for unauthorized immunization targets
 
 
     @supplier_name_MAVIS @vaccine_type_RSV
     Scenario Outline: Verify that Search API will throw error if date from is invalid
-        When Send a search request with GET method with invalid Date From '<DateFrom>' and valid Date To '<DateTo>'
+        When Send a search request with 'GET' method with invalid Date From '<DateFrom>' and valid Date To '<DateTo>'
         Then The request will be unsuccessful with the status code '400'
         And The Search Response JSONs should contain correct error message for invalid Date From
-        When Send a search request with POST method with invalid Date From '<DateFrom>' and valid Date To '<DateTo>'
+        When Send a search request with 'POST' method with invalid Date From '<DateFrom>' and valid Date To '<DateTo>'
         Then The request will be unsuccessful with the status code '400'
         And The Search Response JSONs should contain correct error message for invalid Date From
         Examples:
@@ -171,10 +171,10 @@ Feature: Search the immunization of a patient
 
     @supplier_name_RAVS @vaccine_type_RSV
     Scenario Outline: Verify that Search API will throw error if date to is invalid
-        When Send a search request with GET method with valid Date From '<DateFrom>' and invalid Date To '<DateTo>'
+        When Send a search request with 'GET' method with valid Date From '<DateFrom>' and invalid Date To '<DateTo>'
         Then The request will be unsuccessful with the status code '400'
         And The Search Response JSONs should contain correct error message for invalid Date To
-        When Send a search request with POST method with valid Date From '<DateFrom>' and invalid Date To '<DateTo>'
+        When Send a search request with 'POST' method with valid Date From '<DateFrom>' and invalid Date To '<DateTo>'
         Then The request will be unsuccessful with the status code '400'
         And The Search Response JSONs should contain correct error message for invalid Date To
         Examples:
@@ -185,10 +185,10 @@ Feature: Search the immunization of a patient
 
     @supplier_name_MAVIS @vaccine_type_RSV
     Scenario Outline: Verify that Search API will throw error if both date from and date to are invalid
-        When Send a search request with GET method with invalid Date From '<DateFrom>' and invalid Date To '<DateTo>'
+        When Send a search request with 'GET' method with invalid Date From '<DateFrom>' and invalid Date To '<DateTo>'
         Then The request will be unsuccessful with the status code '400'
         And The Search Response JSONs should contain correct error message for invalid Date From
-        When Send a search request with POST method with invalid Date From '<DateFrom>' and invalid Date To '<DateTo>'
+        When Send a search request with 'POST' method with invalid Date From '<DateFrom>' and invalid Date To '<DateTo>'
         Then The request will be unsuccessful with the status code '400'
         And The Search Response JSONs should contain correct error message for invalid Date From
         Examples:
@@ -200,10 +200,10 @@ Feature: Search the immunization of a patient
     @smoke
     @supplier_name_SONAR
     Scenario Outline: Verify that Search API will throw error supplier is not authorized to make Search
-        When Send a search request with GET method with invalid NHS Number '<NHSNumber>' and valid Disease Type '<DiseaseType>'
+        When Send a search request with 'GET' method with invalid NHS Number '<NHSNumber>' and valid Disease Type '<DiseaseType>'
         Then The request will be unsuccessful with the status code '403'
         And The Response JSONs should contain correct error message for 'unauthorized_access' access
-        When Send a search request with POST method with invalid NHS Number '<NHSNumber>' and valid Disease Type '<DiseaseType>'
+        When Send a search request with 'POST' method with invalid NHS Number '<NHSNumber>' and valid Disease Type '<DiseaseType>'
         Then The request will be unsuccessful with the status code '403'
         And The Response JSONs should contain correct error message for 'unauthorized_access' access
         Examples:
@@ -215,7 +215,7 @@ Feature: Search the immunization of a patient
     Scenario: Flu event is created and updated twice and search request fetch the latest meta version and Etag
         Given I have created a valid vaccination record
         And created event is being updated twice
-        When Send a search request with GET method for Immunization event created
+        When Send a search request with 'GET' method for Immunization event created
         Then The request will be successful with the status code '200'
         And The Search Response JSONs should contain the detail of the immunization events created above
         And The Search Response JSONs field values should match with the input JSONs field values for resourceType Immunization

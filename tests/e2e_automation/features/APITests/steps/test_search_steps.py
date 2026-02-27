@@ -57,268 +57,182 @@ def send_search_post_request_with_invalid_identifier_header(context):
     context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
 
 
-@when("Send a search request with GET method for Immunization event created")
-def TriggerSearchGetRequest(context):
-    get_search_get_url_header(context)
-    context.params = convert_to_form_data(
+@when(parsers.parse("Send a search request with '{httpMethod}' method for Immunization event created"))
+def trigger_search_request(context, httpMethod):
+    context.params = context.request = convert_to_form_data(
         set_request_data(
             context.patient.identifier[0].value,
             context.vaccine_type,
             datetime.today().strftime("%Y-%m-%d"),
         )
     )
-    print(f"\n Search Get Parameters - \n {context.params}")
-    context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
-    print(f"\n Search Get Response - \n {context.response.json()}")
+    print(f"\n Search {httpMethod} Request - \n {context.request}")
+    if httpMethod == "POST":
+        get_search_post_url_header(context)
+        print(f"\n Search Post Request - \n {context.request}")
+        context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
+    else:
+        get_search_get_url_header(context)
+        context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
+    print(f"\n Search {httpMethod} Response - \n {context.response.json()}")
 
 
-@when("Send a search request with POST method for Immunization event created")
-def TriggerSearchPostRequest(context):
-    get_search_post_url_header(context)
-    context.request = convert_to_form_data(
-        set_request_data(
-            context.patient.identifier[0].value,
-            context.vaccine_type,
-            datetime.today().strftime("%Y-%m-%d"),
-        )
+@when(
+    parsers.parse(
+        "Send a search request with '{httpMethod}' method with valid NHS Number and mixed valid and invalid Disease Type"
     )
-    print(f"\n Search Post Request - \n {context.request}")
-    context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
-    print(f"\n Search Post Response - \n {context.response.json()}")
-
-
-@when("Send a search request with GET method with valid NHS Number and mixed valid and invalid Disease Type")
-def send_search_get_with_mixed_targets(context):
-    get_search_get_url_header(context)
+)
+def send_search_request_with_mixed_targets(context, httpMethod):
     mixed_target = f"{context.vaccine_type},INVALID_TYPE"
-    context.params = convert_to_form_data(
+    context.params = context.request = convert_to_form_data(
         set_request_data(
             context.patient.identifier[0].value,
             mixed_target,
             datetime.today().strftime("%Y-%m-%d"),
         )
     )
-    print(f"\n Search Get Parameters (mixed targets) - \n {context.params}")
-    context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
+    print(f"\n Search {httpMethod} Request (mixed targets) - \n {context.request}")
+    if httpMethod == "GET":
+        get_search_get_url_header(context)
+        context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
+    else:
+        get_search_post_url_header(context)
+        context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
 
 
-@when("Send a search request with POST method with valid NHS Number and mixed valid and invalid Disease Type")
-def send_search_post_with_mixed_targets(context):
-    get_search_post_url_header(context)
-    mixed_target = f"{context.vaccine_type},INVALID_TYPE"
-    context.request = convert_to_form_data(
-        set_request_data(
-            context.patient.identifier[0].value,
-            mixed_target,
-            datetime.today().strftime("%Y-%m-%d"),
-        )
-    )
-    print(f"\n Search Post Request (mixed targets) - \n {context.request}")
-    context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
-
-
-@when("Send a search request with POST method with valid NHS Number and multiple Disease Type")
-def send_search_post_with_mixed_valid_unauthorized_targets(context):
-    get_search_post_url_header(context)
+@when(parsers.parse("Send a search request with '{httpMethod}' method with valid NHS Number and multiple Disease Type"))
+def send_search_post_with_mixed_valid_unauthorized_targets(context, httpMethod):
     mixed_target = f"{context.vaccine_type},6IN1"
-    context.request = convert_to_form_data(
+    context.params = context.request = convert_to_form_data(
         set_request_data(
             context.patient.identifier[0].value,
             mixed_target,
             datetime.today().strftime("%Y-%m-%d"),
         )
     )
-    print(f"\n Search Post Request (mixed targets) - \n {context.request}")
-    context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
-
-
-@when("Send a search request with GET method with valid NHS Number and multiple Disease Type")
-def send_search_get_with_mixed_valid_unauthorized_targets(context):
-    get_search_get_url_header(context)
-    mixed_target = f"{context.vaccine_type},6IN1"
-    context.params = convert_to_form_data(
-        set_request_data(
-            context.patient.identifier[0].value,
-            mixed_target,
-            datetime.today().strftime("%Y-%m-%d"),
-        )
-    )
-    print(f"\n Search Get Parameters (mixed targets) - \n {context.params}")
-    context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
+    print(f"\n Search {httpMethod} parameters - \n {context.params}")
+    if httpMethod == "GET":
+        get_search_get_url_header(context)
+        context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
+    else:
+        get_search_post_url_header(context)
+        context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
 
 
 @when(
     parsers.parse(
-        "Send a search request with GET method with invalid NHS Number '{NHSNumber}' and valid Disease Type '{DiseaseType}'"
+        "Send a search request with '{httpMethod}' method with invalid NHS Number '{NHSNumber}' and valid Disease Type '{DiseaseType}'"
     )
 )
 @when(
     parsers.parse(
-        "Send a search request with GET method with valid NHS Number '{NHSNumber}' and invalid Disease Type '{DiseaseType}'"
+        "Send a search request with '{httpMethod}' method with valid NHS Number '{NHSNumber}' and invalid Disease Type '{DiseaseType}'"
     )
 )
 @when(
     parsers.parse(
-        "Send a search request with GET method with invalid NHS Number '{NHSNumber}' and invalid Disease Type '{DiseaseType}'"
+        "Send a search request with '{httpMethod}' method with invalid NHS Number '{NHSNumber}' and invalid Disease Type '{DiseaseType}'"
     )
 )
-def send_invalid_param_get_request(context, NHSNumber, DiseaseType):
-    get_search_get_url_header(context)
-    NHSNumber = normalize_param(NHSNumber)
-    DiseaseType = normalize_param(DiseaseType)
-    context.params = convert_to_form_data(
-        set_request_data(NHSNumber, DiseaseType, datetime.today().strftime("%Y-%m-%d"))
-    )
-    print(f"\n Search Get parameters - \n {context.params}")
-    context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
-
-
-@when(
-    parsers.parse(
-        "Send a search request with POST method with invalid NHS Number '{NHSNumber}' and valid Disease Type '{DiseaseType}'"
-    )
-)
-@when(
-    parsers.parse(
-        "Send a search request with POST method with valid NHS Number '{NHSNumber}' and invalid Disease Type '{DiseaseType}'"
-    )
-)
-@when(
-    parsers.parse(
-        "Send a search request with POST method with invalid NHS Number '{NHSNumber}' and invalid Disease Type '{DiseaseType}'"
-    )
-)
-def send_invalid_param_post_request(context, NHSNumber, DiseaseType):
-    get_search_post_url_header(context)
+def send_invalid_param_get_request(context, httpMethod, NHSNumber, DiseaseType):
 
     NHSNumber = normalize_param(NHSNumber)
     DiseaseType = normalize_param(DiseaseType)
-
-    context.request = convert_to_form_data(
+    context.params = context.request = convert_to_form_data(
         set_request_data(NHSNumber, DiseaseType, datetime.today().strftime("%Y-%m-%d"))
     )
-    print(f"\n Search Post request - \n {context.request}")
-    context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
+    print(f"\n Search {httpMethod} parameters - \n {context.params}")
+    if httpMethod == "GET":
+        get_search_get_url_header(context)
+        context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
+    else:
+        get_search_post_url_header(context)
+        context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
 
 
 @when(
     parsers.parse(
-        "Send a search request with GET method with invalid Date From '{DateFrom}' and valid Date To '{DateTo}'"
+        "Send a search request with '{httpMethod}' method with invalid Date From '{DateFrom}' and valid Date To '{DateTo}'"
     )
 )
 @when(
     parsers.parse(
-        "Send a search request with GET method with valid Date From '{DateFrom}' and invalid Date To '{DateTo}'"
+        "Send a search request with '{httpMethod}' method with valid Date From '{DateFrom}' and invalid Date To '{DateTo}'"
     )
 )
 @when(
     parsers.parse(
-        "Send a search request with GET method with invalid Date From '{DateFrom}' and invalid Date To '{DateTo}'"
+        "Send a search request with '{httpMethod}' method with invalid Date From '{DateFrom}' and invalid Date To '{DateTo}'"
     )
 )
-def send_invalid_date_get_request(context, DateFrom, DateTo):
-    get_search_get_url_header(context)
-    context.params = convert_to_form_data(set_request_data(9001066569, context.vaccine_type, DateFrom, DateTo))
-    print(f"\n Search Get parameters - \n {context.params}")
-    context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
+def send_invalid_date_get_request(context, httpMethod, DateFrom, DateTo):
+    context.params = context.request = convert_to_form_data(
+        set_request_data(9001066569, context.vaccine_type, DateFrom, DateTo)
+    )
+    print(f"\n Search {httpMethod} parameters - \n {context.params}")
+    if httpMethod == "GET":
+        get_search_get_url_header(context)
+        context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
+    else:
+        get_search_post_url_header(context)
+        context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
 
 
 @when(
     parsers.parse(
-        "Send a search request with POST method with invalid Date From '{DateFrom}' and valid Date To '{DateTo}'"
+        "Send a search request with '{httpMethod}' method with valid NHS Number '{NHSNumber}' and Disease Type '{vaccine_type}' and Date From '{DateFrom}' and Date To '{DateTo}'"
     )
 )
-@when(
-    parsers.parse(
-        "Send a search request with POST method with valid Date From '{DateFrom}' and invalid Date To '{DateTo}'"
-    )
-)
-@when(
-    parsers.parse(
-        "Send a search request with POST method with invalid Date From '{DateFrom}' and invalid Date To '{DateTo}'"
-    )
-)
-def send_invalid_param_post_request_with_dates(context, DateFrom, DateTo):
-    get_search_post_url_header(context)
-    context.request = convert_to_form_data(set_request_data(9001066569, context.vaccine_type, DateFrom, DateTo))
-    print(f"\n Search Post request - \n {context.request}")
-    context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
+def send_valid_param_get_request(context, httpMethod, NHSNumber, vaccine_type, DateFrom, DateTo):
+    context.params = context.request = convert_to_form_data(set_request_data(NHSNumber, vaccine_type, DateFrom, DateTo))
+    print(f"\n Search {httpMethod} parameters - \n {context.params}")
+    if httpMethod == "GET":
+        get_search_get_url_header(context)
+        context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
+    else:
+        get_search_post_url_header(context)
+        context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
 
 
 @when(
     parsers.parse(
-        "Send a search request with GET method with valid NHS Number '{NHSNumber}' and Disease Type '{vaccine_type}' and Date From '{DateFrom}' and Date To '{DateTo}'"
+        "Send a search request with '{httpMethod}' method with valid NHS Number '{NHSNumber}' and valid Disease Type '{vaccine_type}' and invalid include '{include}'"
     )
 )
-def send_valid_param_get_request(context, NHSNumber, vaccine_type, DateFrom, DateTo):
-    get_search_get_url_header(context)
-    context.params = convert_to_form_data(set_request_data(NHSNumber, vaccine_type, DateFrom, DateTo))
-    print(f"\n Search Get parameters - \n {context.params}")
-    context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
+def send_valid_param_get_request_with_include(context, httpMethod, NHSNumber, vaccine_type, include):
+    context.params = context.request = convert_to_form_data(set_request_data(NHSNumber, vaccine_type, include=include))
+    print(f"\n Search {httpMethod} parameters - \n {context.params}")
+    if httpMethod == "GET":
+        get_search_get_url_header(context)
+        context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
+    else:
+        get_search_post_url_header(context)
+        context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
 
 
 @when(
     parsers.parse(
-        "Send a search request with POST method with valid NHS Number '{NHSNumber}' and Disease Type '{vaccine_type}' and Date From '{DateFrom}' and Date To '{DateTo}'"
+        "Send a search request with '{httpMethod}' method with valid NHS Number '{NHSNumber}' and valid Disease Type '{vaccine_type}' and Date From '{DateFrom}' and Date To '{DateTo}' and include '{include}'"
     )
 )
-def send_valid_param_post_request(context, NHSNumber, vaccine_type, DateFrom, DateTo):
-    get_search_post_url_header(context)
-    context.request = convert_to_form_data(set_request_data(NHSNumber, vaccine_type, DateFrom, DateTo))
-    print(f"\n Search Get parameters - \n {context.request}")
-    context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
-
-
-@when(
-    parsers.parse(
-        "Send a search request with GET method with valid NHS Number '{NHSNumber}' and valid Disease Type '{vaccine_type}' and invalid include '{include}'"
+def send_valid_param_get_request_with_include_and_dates(
+    context, httpMethod, NHSNumber, vaccine_type, DateFrom, DateTo, include
+):
+    context.params = context.request = convert_to_form_data(
+        set_request_data(NHSNumber, vaccine_type, DateFrom, DateTo, include)
     )
-)
-def send_valid_param_get_request_with_include(context, NHSNumber, vaccine_type, include):
-    get_search_get_url_header(context)
-    context.params = convert_to_form_data(set_request_data(NHSNumber, vaccine_type, include=include))
-    print(f"\n Search Get parameters - \n {context.params}")
-    context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
-
-
-@when(
-    parsers.parse(
-        "Send a search request with POST method with valid NHS Number '{NHSNumber}' and valid Disease Type '{vaccine_type}' and invalid include '{include}'"
-    )
-)
-def send_valid_param_post_request_with_include(context, NHSNumber, vaccine_type, include):
-    get_search_post_url_header(context)
-    context.request = convert_to_form_data(set_request_data(NHSNumber, vaccine_type, include=include))
-    print(f"\n Search Post parameters - \n {context.request}")
-    context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
-
-
-@when(
-    parsers.parse(
-        "Send a search request with POST method with valid NHS Number '{NHSNumber}' and valid Disease Type '{vaccine_type}' and Date From '{DateFrom}' and Date To '{DateTo}' and include '{include}'"
-    )
-)
-def send_valid_param_post_request_with_include_and_dates(context, NHSNumber, vaccine_type, DateFrom, DateTo, include):
-    get_search_post_url_header(context)
-    context.request = convert_to_form_data(set_request_data(NHSNumber, vaccine_type, DateFrom, DateTo, include))
-    print(f"\n Search Post parameters - \n {context.request}")
-    context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
-
-
-@when(
-    parsers.parse(
-        "Send a search request with GET method with valid NHS Number '{NHSNumber}' and valid Disease Type '{vaccine_type}' and Date From '{DateFrom}' and Date To '{DateTo}' and include '{include}'"
-    )
-)
-def send_valid_param_get_request_with_include_and_dates(context, NHSNumber, vaccine_type, DateFrom, DateTo, include):
-    get_search_get_url_header(context)
-    context.params = convert_to_form_data(set_request_data(NHSNumber, vaccine_type, DateFrom, DateTo, include))
-    print(f"\n Search Get parameters - \n {context.params}")
-    context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
+    print(f"\n Search {httpMethod} parameters - \n {context.params}")
+    if httpMethod == "GET":
+        get_search_get_url_header(context)
+        context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
+    else:
+        get_search_post_url_header(context)
+        context.request = convert_to_form_data(set_request_data(NHSNumber, vaccine_type, DateFrom, DateTo, include))
+        context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
 
 
 @then("The occurrenceDateTime of the immunization events should be within the Date From and Date To range")
-def validateDateRange(context):
+def validate_date_range(context):
     data = context.response.json()
     context.parsed_search_object = parse_FHIR_immunization_response(data)
     params = getattr(context, "params", getattr(context, "request", {}))
