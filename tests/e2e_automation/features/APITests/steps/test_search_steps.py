@@ -11,7 +11,10 @@ from utilities.api_fhir_immunization_helper import (
     parse_FHIR_immunization_response,
     validate_to_compare_request_and_response,
 )
-from utilities.api_get_header import get_search_get_url_header, get_search_post_url_header
+from utilities.api_get_header import (
+    get_search_get_url_header,
+    get_search_post_url_header,
+)
 from utilities.date_helper import iso_to_compact
 from utilities.http_requests_session import http_requests_session
 
@@ -46,7 +49,10 @@ def send_search_post_request_with_identifier_and_elements_header(context):
 @when("I send a search request with Post method using an invalid identifier header for Immunization event created")
 def send_search_post_request_with_invalid_identifier_header(context):
     get_search_post_url_header(context)
-    context.request = {"identifier": f"https://www.ieds.england.nhs.uk/|{str(uuid.uuid4())}", "_elements": "meta,id"}
+    context.request = {
+        "identifier": f"https://www.ieds.england.nhs.uk/|{str(uuid.uuid4())}",
+        "_elements": "meta,id",
+    }
     print(f"\n Search Post Request - \n {context.request}")
     context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
 
@@ -56,7 +62,9 @@ def TriggerSearchGetRequest(context):
     get_search_get_url_header(context)
     context.params = convert_to_form_data(
         set_request_data(
-            context.patient.identifier[0].value, context.vaccine_type, datetime.today().strftime("%Y-%m-%d")
+            context.patient.identifier[0].value,
+            context.vaccine_type,
+            datetime.today().strftime("%Y-%m-%d"),
         )
     )
     print(f"\n Search Get Parameters - \n {context.params}")
@@ -69,7 +77,9 @@ def TriggerSearchPostRequest(context):
     get_search_post_url_header(context)
     context.request = convert_to_form_data(
         set_request_data(
-            context.patient.identifier[0].value, context.vaccine_type, datetime.today().strftime("%Y-%m-%d")
+            context.patient.identifier[0].value,
+            context.vaccine_type,
+            datetime.today().strftime("%Y-%m-%d"),
         )
     )
     print(f"\n Search Post Request - \n {context.request}")
@@ -105,6 +115,36 @@ def send_search_post_with_mixed_targets(context):
     )
     print(f"\n Search Post Request (mixed targets) - \n {context.request}")
     context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
+
+
+@when("Send a search request with POST method with valid NHS Number and multiple Disease Type")
+def send_search_post_with_mixed_valid_unauthorized_targets(context):
+    get_search_post_url_header(context)
+    mixed_target = f"{context.vaccine_type},6IN1"
+    context.request = convert_to_form_data(
+        set_request_data(
+            context.patient.identifier[0].value,
+            mixed_target,
+            datetime.today().strftime("%Y-%m-%d"),
+        )
+    )
+    print(f"\n Search Post Request (mixed targets) - \n {context.request}")
+    context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
+
+
+@when("Send a search request with GET method with valid NHS Number and multiple Disease Type")
+def send_search_get_with_mixed_valid_unauthorized_targets(context):
+    get_search_get_url_header(context)
+    mixed_target = f"{context.vaccine_type},6IN1"
+    context.params = convert_to_form_data(
+        set_request_data(
+            context.patient.identifier[0].value,
+            mixed_target,
+            datetime.today().strftime("%Y-%m-%d"),
+        )
+    )
+    print(f"\n Search Get Parameters (mixed targets) - \n {context.params}")
+    context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
 
 
 @when(
@@ -423,12 +463,29 @@ def validate_empty_immunization_event(context):
 
 @then("The Search Response should contain search results and OperationOutcome for invalid immunization targets")
 def validate_search_response_with_invalid_targets_operation_outcome(context):
+    issue = read_issue_from_response(context)
+    expected_diagnostics = "Your search included invalid -immunization.target value(s) that were ignored: INVALID_TYPE. The search was performed using the valid value(s) only."
+    validate_issue(issue, expected_code="invalid", expected_diag=expected_diagnostics)
+
+
+@then("The Search Response should contain search results and OperationOutcome for unauthorized immunization targets")
+def validate_search_response_with_unauthorized_targets_operation_outcome(context):
+    issue = read_issue_from_response(context)
+    expected_diagnostics = "Your search contains details that you are not authorised to request"
+    validate_issue(issue, expected_code="unauthorized", expected_diag=expected_diagnostics)
+
+
+def read_issue_from_response(context):
     response = context.response.json()
+
+    # Basic bundle checks
     assert response.get("resourceType") == "Bundle", "resourceType should be 'Bundle'"
     assert response.get("type") == "searchset", "type should be 'searchset'"
+
     entries = response.get("entry", [])
     assert len(entries) >= 1, "Bundle should contain at least one entry"
 
+    # Immunization entry check
     imms_entry = next(
         (
             e
@@ -438,14 +495,20 @@ def validate_search_response_with_invalid_targets_operation_outcome(context):
         ),
         None,
     )
-    assert imms_entry is not None, f"Expected to find Immunization entry with id {context.ImmsID} in search response"
+    assert imms_entry is not None, f"Expected Immunization entry with id {context.ImmsID} in search response"
 
+    # OperationOutcome check
     oo_entries = [e for e in entries if e.get("resource", {}).get("resourceType") == "OperationOutcome"]
-    assert len(oo_entries) >= 1, "Bundle should contain at least one OperationOutcome entry for invalid targets"
-    diagnostics = oo_entries[0].get("resource", {}).get("issue", [{}])[0].get("diagnostics", "")
-    assert "invalid -immunization.target value(s) that were ignored" in diagnostics, (
-        f"Expected OperationOutcome diagnostics to mention invalid targets, got: {diagnostics}"
-    )
-    assert "INVALID_TYPE" in diagnostics, (
-        f"Expected OperationOutcome diagnostics to mention INVALID_TYPE, got: {diagnostics}"
-    )
+    assert len(oo_entries) >= 1, "Bundle should contain at least one OperationOutcome entry"
+
+    issue = oo_entries[0].get("resource", {}).get("issue", [{}])[0]
+
+    assert issue is not None, "OperationOutcome issue is missing"
+
+    return issue
+
+
+def validate_issue(issue, expected_code, expected_diag):
+    assert issue.get("severity") == "warning"
+    assert issue.get("code") == expected_code
+    assert issue.get("diagnostics") == expected_diag

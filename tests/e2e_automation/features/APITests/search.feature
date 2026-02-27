@@ -143,6 +143,18 @@ Feature: Search the immunization of a patient
         Then The request will be successful with the status code '200'
         And The Search Response should contain search results and OperationOutcome for invalid immunization targets
 
+    @smoke
+    @Delete_cleanUp @supplier_name_MAVIS
+    Scenario: Verify that Search API returns 200 with results and OperationOutcome where one of the Disease Type is not authorized for the supplier
+        Given Valid vaccination record is created with Patient 'Random' and vaccine_type 'FLU'
+        When Send a search request with GET method with valid NHS Number and multiple Disease Type
+        Then The request will be successful with the status code '200'
+        And The Search Response should contain search results and OperationOutcome for unauthorized immunization targets
+        When Send a search request with POST method with valid NHS Number and multiple Disease Type
+        Then The request will be successful with the status code '200'
+        And The Search Response should contain search results and OperationOutcome for unauthorized immunization targets
+
+
     @supplier_name_MAVIS @vaccine_type_RSV
     Scenario Outline: Verify that Search API will throw error if date from is invalid
         When Send a search request with GET method with invalid Date From '<DateFrom>' and valid Date To '<DateTo>'
