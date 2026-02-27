@@ -15,7 +15,7 @@ from utilities.apigee.apigee_env_helpers import (
 from utilities.apigee.ApigeeApp import ApigeeApp
 
 _DEFAULT_RETRIES = 3
-_DEFAULT_TIMEOUT_SECONDS = 30
+_DEFAULT_TIMEOUT_SECONDS = 10
 
 
 class ApigeeOnDemandAppManager:
@@ -30,7 +30,7 @@ class ApigeeOnDemandAppManager:
     _INTERNAL_DEV_ID_SERVICE_PRODUCT = "identity-service-internal-dev"
     _TEST_APP_SUPPLIERS = ("EMIS", "MAVIS", "MEDICUS", "Postman_Auth", "RAVS", "SONAR", "TPP")
 
-    def __init__(self, retries: int = _DEFAULT_RETRIES, timeout: float = _DEFAULT_TIMEOUT_SECONDS):
+    def __init__(self, retries: int = _DEFAULT_RETRIES, timeout: int = _DEFAULT_TIMEOUT_SECONDS):
         self.proxy_name = get_proxy_name()
         self.apigee_environment = get_apigee_environment()
         self.created_product_name_uuid: str = ""
@@ -46,7 +46,7 @@ class ApigeeOnDemandAppManager:
         """Creates a fresh requests.Session with basic retry behaviour and the Apigee auth header set. A new session
         should be created for teardown as long-lived connections may be closed."""
         requests_session = requests.Session()
-        requests_session.mount("https://", HTTPAdapter(max_retries=Retry(total=self.retries)))
+        requests_session.mount("https://", HTTPAdapter(max_retries=Retry(total=self.retries, backoff_factor=1)))
         requests_session.headers.update({"Authorization": f"Bearer {self.access_token}"})
 
         return requests_session
