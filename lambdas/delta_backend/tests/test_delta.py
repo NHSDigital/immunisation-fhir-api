@@ -918,7 +918,6 @@ class DeltaHandlerTestCase(unittest.TestCase):
         self.assertEqual(item["Imms"], "", "Physical delete must blank out Imms")
 
     def test_missing_operation_on_modify_routes_to_dlq(self):
-
         self.mock_delta_table.put_item.return_value = SUCCESS_RESPONSE
 
         record = _make_stream_record(
