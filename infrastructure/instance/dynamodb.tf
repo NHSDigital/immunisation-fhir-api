@@ -101,7 +101,7 @@ resource "aws_dynamodb_table" "delta-dynamodb-table" {
   }
 
   attribute {
-    name = "DateTimeStampWithSequence"
+    name = "SequenceNumber"
     type = "S"
   }
 
@@ -127,9 +127,22 @@ resource "aws_dynamodb_table" "delta-dynamodb-table" {
 
   global_secondary_index {
     name            = "OperationSequenceIndex"
-    hash_key        = "Operation"
-    range_key       = "DateTimeStampWithSequence"
     projection_type = "ALL"
+
+    key_schema {
+      attribute_name = "Operation"
+      key_type       = "HASH"
+    }
+
+    key_schema {
+      attribute_name = "DateTimeStamp"
+      key_type       = "RANGE"
+    }
+
+    key_schema {
+      attribute_name = "SequenceNumber"
+      key_type       = "RANGE"
+    }
   }
 
   global_secondary_index {
