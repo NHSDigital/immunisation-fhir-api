@@ -1,1 +1,0 @@
-✅ Step Passed: **Send a search request with POST method with invalid NHS Number '""' and valid Disease Type 'COVID'
