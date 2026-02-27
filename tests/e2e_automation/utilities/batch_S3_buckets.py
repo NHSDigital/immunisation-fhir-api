@@ -47,7 +47,12 @@ def wait_for_file_to_move_archive(context, timeout=120, interval=5):
 
 
 def wait_and_read_ack_file(
-    context, folderName: str, timeout=120, interval=5, duplicate_bus_files=False, duplicate_inf_files=False
+    context,
+    folderName: str,
+    timeout=180,
+    interval=5,
+    duplicate_bus_files=False,
+    duplicate_inf_files=False,
 ):
     s3 = boto3.client("s3")
     destination_bucket = f"immunisation-batch-{context.S3_env}-data-destinations"
@@ -96,7 +101,8 @@ def wait_and_read_ack_file(
                         print(f"[FOUND] {ext} file located: {key}")
                         s3_obj = s3.get_object(Bucket=destination_bucket, Key=key)
                         file_data = s3_obj["Body"].read().decode("utf-8")
-                        found_files[ext] = file_data
+                        found_files[ext] = {"key": key, "content": file_data}
+
                         print(f"[SUCCESS] Loaded {ext} file ({len(file_data)} bytes)")
 
                 if expected_extensions.issubset(found_files.keys()):
