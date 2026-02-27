@@ -1,0 +1,1 @@
+✅ Step Passed: **Send a search request with GET method with valid NHS Number '9728403348' and valid Disease Type 'COVID' and Date From '999-06-01' and Date To '999-06-01' and include 'Immunization:patient'

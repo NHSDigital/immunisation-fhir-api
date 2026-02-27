@@ -1,0 +1,1 @@
+✅ Step Passed: **Send a search request with GET method with valid NHS Number '9728403348' and valid Disease Type 'COVID' and invalid include 'abc'
