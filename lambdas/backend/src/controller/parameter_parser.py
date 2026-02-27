@@ -1,11 +1,13 @@
 import datetime
+import json
+import logging
 from dataclasses import dataclass, field
 
-from common.models.constants import RedisHashKeys
+from common.models.constants import RedisHashKeys, Urls
 from common.models.utils.generic_utils import nhs_number_mod11_check
 from common.redis_client import get_redis_client
 from controller.constants import IdentifierSearchElement, IdentifierSearchParameterName, ImmunizationSearchParameterName
-from models.errors import ParameterExceptionError
+from models.errors import InvalidStoredDataError, ParameterExceptionError
 
 DUPLICATED_PARAMETERS_ERROR_MESSAGE = 'Parameters may not be duplicated. Use commas for "or".'
 INVALID_IDENTIFIER_ERROR_MESSAGE = (
@@ -16,8 +18,25 @@ NO_PARAMETERS_ERROR_MESSAGE = (
     f"No parameter provided. Search using either {IdentifierSearchParameterName.IDENTIFIER} or "
     f"{ImmunizationSearchParameterName.PATIENT_IDENTIFIER}"
 )
+TARGET_DISEASE_MUTUAL_EXCLUSIVITY_ERROR = (
+    f"Search parameter {ImmunizationSearchParameterName.TARGET_DISEASE} cannot be used with "
+    f"{ImmunizationSearchParameterName.IMMUNIZATION_TARGET} or {IdentifierSearchParameterName.IDENTIFIER}. "
+    "Use one search type only."
+)
+TARGET_DISEASE_FORMAT_ERROR = (
+    f"Search parameter {ImmunizationSearchParameterName.TARGET_DISEASE} must be in the format "
+    f'"{Urls.SNOMED}|{{SNOMED code}}" e.g. "{Urls.SNOMED}|14189004"'
+)
+TARGET_DISEASE_ALL_INVALID_ERROR = (
+    f"Search parameter {ImmunizationSearchParameterName.TARGET_DISEASE} must be one or more valid SNOMED codes "
+    "from the supported target disease list."
+)
 
 PATIENT_IDENTIFIER_SYSTEM = "https://fhir.nhs.uk/Id/nhs-number"
+
+TARGET_DISEASE_CODES_FIELD = "codes"
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -27,6 +46,7 @@ class SearchParams:
     date_from: datetime.date | None
     date_to: datetime.date | None
     include: str | None
+    target_disease_codes_for_url: set[str] | None = None
 
     def __repr__(self):
         return str(self.__dict__)
@@ -36,6 +56,8 @@ class SearchParams:
 class SearchParamsResult:
     params: SearchParams
     invalid_immunization_targets: list[str] = field(default_factory=list)
+    invalid_target_diseases: list[str] = field(default_factory=list)
+    all_target_diseases_not_in_mapping: bool = field(default=False)
 
 
 def process_patient_identifier(identifier_params: dict[str, list[str]]) -> str:
@@ -96,6 +118,127 @@ def process_immunization_target(imms_params: dict[str, list[str]]) -> tuple[list
         )
 
     return valid, invalid
+
+
+def validate_search_param_mutual_exclusivity(params: dict[str, list[str]]) -> None:
+    """Raises ParameterExceptionError if target-disease is used with -immunization.target or identifier."""
+    if ImmunizationSearchParameterName.TARGET_DISEASE not in params:
+        return
+    if ImmunizationSearchParameterName.IMMUNIZATION_TARGET in params:
+        raise ParameterExceptionError(TARGET_DISEASE_MUTUAL_EXCLUSIVITY_ERROR)
+    if IdentifierSearchParameterName.IDENTIFIER in params:
+        raise ParameterExceptionError(TARGET_DISEASE_MUTUAL_EXCLUSIVITY_ERROR)
+
+
+def process_target_disease(params: dict[str, list[str]]) -> tuple[list[str], set[str], list[str], bool]:
+    """Parse target-disease parameter. Returns (valid_raw_for_url, vaccine_types, invalid_diagnostics, all_not_in_mapping).
+    Raises ParameterExceptionError when no values or all format invalid.
+    """
+    values = [
+        v.strip() for v in params.get(ImmunizationSearchParameterName.TARGET_DISEASE, []) if v is not None and v.strip()
+    ]
+    if not values:
+        raise ParameterExceptionError(
+            f"Search parameter {ImmunizationSearchParameterName.TARGET_DISEASE} must have one or more values."
+        )
+
+    redis = get_redis_client()
+    codes_json = redis.hget(RedisHashKeys.TARGET_DISEASE_LIST_KEY, TARGET_DISEASE_CODES_FIELD)
+    cache_list_missing = codes_json is None
+    valid_codes_set = set(json.loads(codes_json)) if codes_json else set()
+
+    disease_to_vaccs_raw = redis.hgetall(RedisHashKeys.TARGET_DISEASE_TO_VACCS_KEY) or {}
+    disease_to_vaccs_map = {}
+    for k, v in disease_to_vaccs_raw.items():
+        key = k.decode() if isinstance(k, bytes) else k
+        val = v.decode() if isinstance(v, bytes) else v
+        disease_to_vaccs_map[key] = val
+
+    valid_raw: list[str] = []
+    vaccine_types: set[str] = set()
+    invalid_diagnostics: list[str] = []
+    unmapped_format_valid: list[str] = []
+    format_invalid_count = 0
+
+    for raw in values:
+        if "|" not in raw:
+            invalid_diagnostics.append(f"Invalid format for '{raw}': {TARGET_DISEASE_FORMAT_ERROR}")
+            format_invalid_count += 1
+            continue
+        parts = raw.split("|", 1)
+        system, code = parts[0].strip(), parts[1].strip() if len(parts) > 1 else ""
+        if system != Urls.SNOMED or not code:
+            invalid_diagnostics.append(f"Invalid format for '{raw}': {TARGET_DISEASE_FORMAT_ERROR}")
+            format_invalid_count += 1
+            continue
+        if code not in valid_codes_set:
+            invalid_diagnostics.append(
+                f"Target disease code '{code}' is not a supported target disease in this service."
+            )
+            unmapped_format_valid.append(raw)
+            continue
+        valid_raw.append(raw)
+        vaccs_json = disease_to_vaccs_map.get(code)
+        if vaccs_json:
+            vaccine_types.update(json.loads(vaccs_json))
+        else:
+            logger.warning(
+                "Target disease code '%s' is in target_disease_list but has no mapping in target_disease_to_vaccs",
+                code,
+            )
+
+    if format_invalid_count != len(values) and cache_list_missing:
+        raise InvalidStoredDataError(data_type="target disease list")
+
+    if format_invalid_count == len(values):
+        raise ParameterExceptionError(TARGET_DISEASE_ALL_INVALID_ERROR)
+
+    all_not_in_mapping = len(valid_raw) == 0 and len(unmapped_format_valid) > 0 and format_invalid_count == 0
+    if all_not_in_mapping:
+        # For all-not-in-mapping case, still echo the user's valid-format target-disease values in the self link.
+        valid_raw = list(unmapped_format_valid)
+
+    if not all_not_in_mapping and len(valid_raw) == 0:
+        raise ParameterExceptionError(TARGET_DISEASE_ALL_INVALID_ERROR)
+
+    return valid_raw, vaccine_types, invalid_diagnostics, all_not_in_mapping
+
+
+def process_mandatory_params_by_disease(
+    params: dict[str, list[str]],
+) -> tuple[str, list[str], set[str], list[str], bool]:
+    """For target-disease search. Returns (patient_identifier, valid_raw_for_url, vaccine_types, invalid_diagnostics, all_not_in_mapping)."""
+    patient_identifier = process_patient_identifier(params)
+    valid_raw, vaccine_types, invalid_diagnostics, all_not_in_mapping = process_target_disease(params)
+    return patient_identifier, valid_raw, vaccine_types, invalid_diagnostics, all_not_in_mapping
+
+
+def validate_and_retrieve_search_params_by_disease(params: dict[str, list[str]]) -> SearchParamsResult:
+    """Validate and retrieve search parameters for target-disease search."""
+    patient_identifier, valid_raw, vaccine_types, invalid_diagnostics, all_not_in_mapping = (
+        process_mandatory_params_by_disease(params)
+    )
+    date_from, date_to, include = process_optional_params(params)
+
+    if date_from and date_to and date_from > date_to:
+        raise ParameterExceptionError(
+            f"Search parameter {ImmunizationSearchParameterName.DATE_FROM} must be before "
+            f"{ImmunizationSearchParameterName.DATE_TO}"
+        )
+
+    search_params = SearchParams(
+        patient_identifier,
+        vaccine_types,
+        date_from,
+        date_to,
+        include,
+        target_disease_codes_for_url=set(valid_raw) if valid_raw else None,
+    )
+    return SearchParamsResult(
+        params=search_params,
+        invalid_target_diseases=invalid_diagnostics,
+        all_target_diseases_not_in_mapping=all_not_in_mapping,
+    )
 
 
 def process_mandatory_params(params: dict[str, list[str]]) -> tuple[str, list[str], list[str]]:
@@ -174,7 +317,21 @@ def parse_search_params(search_params_in_req: dict[str, list[str]]) -> dict[str,
     """Ensures the search params provided in the event do not contain duplicated keys. Will split the parameters
     provided by comma separators. Raises a ParameterExceptionError for duplicated keys. Existing business logic stipulated
     that the API only accepts comma separated values rather than multi-value."""
-    if any(len(values) > 1 for _, values in search_params_in_req.items()):
+
+    def _param_disallows_multi_values(param_name: str) -> bool:
+        """Returns True when a parameter should be treated as duplicated if
+        multiple values are provided via the multi-value querystring
+        representation.
+
+        Target-disease is allowed to be provided multiple times so that mixed
+        valid and invalid values can be processed together, while other
+        parameters (such as patient.identifier and identifier) continue to
+        use the historical "no duplicated keys" rule.
+        """
+
+        return param_name != ImmunizationSearchParameterName.TARGET_DISEASE
+
+    if any(len(values) > 1 and _param_disallows_multi_values(key) for key, values in search_params_in_req.items()):
         raise ParameterExceptionError(DUPLICATED_PARAMETERS_ERROR_MESSAGE)
 
     parsed_params = {}

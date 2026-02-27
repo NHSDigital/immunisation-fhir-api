@@ -16,6 +16,7 @@ class IdentifierSearchParameterName(StrEnum):
 class ImmunizationSearchParameterName(StrEnum):
     PATIENT_IDENTIFIER = "patient.identifier"
     IMMUNIZATION_TARGET = "-immunization.target"
+    TARGET_DISEASE = "target-disease"
     DATE_FROM = "-date.from"
     DATE_TO = "-date.to"
     INCLUDE = "_include"

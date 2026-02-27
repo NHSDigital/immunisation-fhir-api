@@ -86,3 +86,5 @@ class RedisHashKeys:
     DISEASES_TO_VACCINE_TYPE_HASH_KEY = "diseases_to_vacc"
     SUPPLIER_PERMISSIONS_HASH_KEY = "supplier_permissions"
     VACCINE_TYPE_TO_DISEASES_HASH_KEY = "vacc_to_diseases"
+    TARGET_DISEASE_LIST_KEY = "target_disease_list"
+    TARGET_DISEASE_TO_VACCS_KEY = "target_disease_to_vaccs"

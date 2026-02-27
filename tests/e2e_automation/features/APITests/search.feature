@@ -255,3 +255,30 @@ Feature: Search the immunization of a patient
         When I send a search request with Post method using an invalid identifier header for Immunization event created
         Then The request will be successful with the status code '200'
         And Empty immunization event is returned in the response
+
+    @smoke
+    @Delete_cleanUp @supplier_name_Postman_Auth
+    Scenario: Verify that Search API returns immunization events when searching by target-disease (GET)
+        Given Valid vaccination record is created with Patient 'Random' and vaccine_type 'MMR'
+        When Send a search request with GET method using target-disease for Immunization event created
+        Then The request will be successful with the status code '200'
+        And The Search Response JSONs should contain the detail of the immunization events created above
+
+    @Delete_cleanUp @supplier_name_Postman_Auth
+    Scenario: Verify that Search API returns immunization events when searching by target-disease (POST)
+        Given Valid vaccination record is created with Patient 'Random' and vaccine_type 'MMR'
+        When Send a search request with POST method using target-disease for Immunization event created
+        Then The request will be successful with the status code '200'
+        And The Search Response JSONs should contain the detail of the immunization events created above
+
+    @supplier_name_Postman_Auth
+    Scenario: Verify that Search API will throw error if target-disease is used together with -immunization.target
+        When Send a search request with GET method using target-disease and -immunization.target for Immunization event created
+        Then The request will be unsuccessful with the status code '400'
+        And The Response JSONs should contain correct error message for invalid target-disease usage
+
+    @supplier_name_Postman_Auth
+    Scenario: Verify that Search API will throw error if target-disease is used together with identifier
+        When Send a search request with GET method using target-disease and identifier for Immunization event created
+        Then The request will be unsuccessful with the status code '400'
+        And The Response JSONs should contain correct error message for invalid target-disease usage
