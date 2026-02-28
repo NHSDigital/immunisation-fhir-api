@@ -201,7 +201,7 @@ def validate_date_range(context):
 
 
 @then("The Search Response JSONs should contain the detail of the immunization events created above")
-def validateImmsID(context):
+def validate_imms_id(context):
     data = context.response.json()
     context.parsed_search_object = parse_FHIR_immunization_response(data)
     assert context.parsed_search_object.resourceType == "Bundle", (
@@ -231,14 +231,14 @@ def validateImmsID(context):
 @then(
     "The Search Response JSONs field values should match with the input JSONs field values for resourceType Immunization"
 )
-def validateJsonImms(context):
+def validate_json_imms(context):
     create_obj = context.create_object
     created_event = context.created_event.resource
     validate_to_compare_request_and_response(context, create_obj, created_event)
 
 
 @then("The Search Response JSONs field values should match with the input JSONs field values for resourceType Patient")
-def validateJsonPat(context):
+def validate_json_patient(context):
     response_patient_entry = find_patient_by_fullurl(context.parsed_search_object)
     assert response_patient_entry is not None, f"No Patient found with fullUrl {context.Patient_fullUrl}"
     response_patient = response_patient_entry.resource
@@ -264,7 +264,7 @@ def validate_correct_immunization_event(context):
     context.created_event = context.parsed_search_object.entry[0] if context.parsed_search_object.entry else None
     if context.created_event is None:
         raise AssertionError(f"No object found with Immunisation ID {context.ImmsID} in the search response.")
-    validateJsonImms(context)
+    validate_json_imms(context)
     assert context.parsed_search_object.resourceType == "Bundle", (
         f"expected resourceType to be 'Bundle' but got {context.parsed_search_object.resourceType}"
     )
@@ -334,15 +334,12 @@ def validate_search_response_with_unauthorized_targets_operation_outcome(context
 
 def read_issue_from_response(context):
     response = context.response.json()
-
-    # Basic bundle checks
     assert response.get("resourceType") == "Bundle", "resourceType should be 'Bundle'"
     assert response.get("type") == "searchset", "type should be 'searchset'"
 
     entries = response.get("entry", [])
     assert len(entries) >= 1, "Bundle should contain at least one entry"
 
-    # Immunization entry check
     imms_entry = next(
         (
             e
@@ -354,7 +351,6 @@ def read_issue_from_response(context):
     )
     assert imms_entry is not None, f"Expected Immunization entry with id {context.ImmsID} in search response"
 
-    # OperationOutcome check
     oo_entries = [e for e in entries if e.get("resource", {}).get("resourceType") == "OperationOutcome"]
     assert len(oo_entries) >= 1, "Bundle should contain at least one OperationOutcome entry"
 
