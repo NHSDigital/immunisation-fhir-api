@@ -362,9 +362,9 @@ def read_issue_from_response(context):
 
 
 def validate_issue(issue, expected_code, expected_diag):
-    assert issue.get("severity") == "warning"
-    assert issue.get("code") == expected_code
-    assert issue.get("diagnostics") == expected_diag
+    assert issue.get("severity") == "warning", "issue severity should be 'warning'"
+    assert issue.get("code") == expected_code, f"issue code should be '{expected_code}'"
+    assert issue.get("diagnostics") == expected_diag, f"issue diagnostics should be '{expected_diag}'"
 
 
 def trigger_search_request_by_httpMethod(context, httpMethod="GET"):
