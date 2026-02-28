@@ -372,6 +372,7 @@ def trigger_search_request_by_httpMethod(context, httpMethod="GET"):
         get_search_post_url_header(context)
         print(f"\n Search Post Request - \n {context.request}")
         context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
+
     else:
         get_search_get_url_header(context)
         print(f"\n Search {httpMethod} Request - \n {context.params}")
