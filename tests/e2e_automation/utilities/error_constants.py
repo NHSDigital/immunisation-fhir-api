@@ -33,6 +33,10 @@ ERROR_MAP = {
         "code": "INVALID",
         "diagnostics": "-immunization.target must be one or more of the following: 3IN1, 4IN1, 6IN1, BCG, COVID, FLU, HEPB, HIB, HIBMENC, HPV, MENACWY, MENB, MMR, MMRV, PERTUSSIS, PNEUMOCOCCAL, ROTAVIRUS, RSV, SHINGLES",
     },
+    "invalid_target_disease_codes": {
+        "code": "INVALID",
+        "diagnostics": "Search parameter target-disease must be one or more valid SNOMED codes from the supported target disease list.",
+    },
     "invalid_DateFrom": {
         "code": "INVALID",
         "diagnostics": "Search parameter -date.from must be in format: YYYY-MM-DD",
