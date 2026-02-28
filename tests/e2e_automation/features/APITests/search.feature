@@ -145,7 +145,7 @@ Feature: Search the immunization of a patient
 
     @smoke
     @Delete_cleanUp @supplier_name_MAVIS
-    Scenario: Verify that Search API returns 200 with results and OperationOutcome where one of the Disease Type is not authorized for the supplier
+    Scenario: Verify that Search API returns 200 with results and OperationOutcome with authorized and unauthorized Disease Type for the supplier
         Given Valid vaccination record is created with Patient 'Random' and vaccine_type 'FLU'
         When Send a search request with 'GET' method with valid NHS Number and multiple Disease Type
         Then The request will be successful with the status code '200'
