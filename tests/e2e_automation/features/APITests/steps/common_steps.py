@@ -4,8 +4,8 @@ import time
 from urllib.parse import parse_qs
 from venv import logger
 
-from pytest_bdd import given, parsers, then, when
 import pytest_check as check
+from pytest_bdd import given, parsers, then, when
 
 from src.dynamoDB.dynamo_db_helper import (
     fetch_immunization_events_detail,
