@@ -224,12 +224,12 @@ def _event_to_operation(event_name: str) -> str:
 def process_remove(record: dict[str, Any], table: Any | None = None) -> tuple[bool, dict[str, Any]]:
     norm = _normalize_record(record)
     logger.info(
-        "Processing REMOVE event norm record",
-        event_id=norm.event_id,
-        operation=norm.operation,
-        imms_id=norm.imms_id,
-        vaccine_type=norm.vaccine_type,
-        supplier_system=norm.supplier_system,
+        "Processing REMOVE event norm record event_id=%s operation=%s imms_id=%s vaccine_type=%s supplier_system=%s",
+        norm.event_id,
+        norm.operation,
+        norm.imms_id,
+        norm.vaccine_type,
+        norm.supplier_system,
     )
     creation_datetime_str, expiry_timestamp = get_creation_and_expiry_times(norm.creation_timestamp)
     operation_outcome: dict[str, Any] = {"operation_type": Operation.DELETE_PHYSICAL, "record": norm.imms_id}
@@ -294,12 +294,12 @@ def process_create_update_delete(record: dict[str, Any], table: Any | None = Non
         )
 
     logger.info(
-        "Processing event",
-        event_id=norm.event_id,
-        operation=norm.operation,
-        imms_id=norm.imms_id,
-        vaccine_type=norm.vaccine_type,
-        supplier_system=norm.supplier_system,
+        "Processing event event_id=%s operation=%s imms_id=%s vaccine_type=%s supplier_system=%s",
+        norm.event_id,
+        norm.operation,
+        norm.imms_id,
+        norm.vaccine_type,
+        norm.supplier_system,
     )
     creation_datetime_str, expiry_timestamp = get_creation_and_expiry_times(norm.creation_timestamp)
     operation_outcome: dict[str, Any] = {"record": norm.imms_id, "operation_type": norm.operation}
