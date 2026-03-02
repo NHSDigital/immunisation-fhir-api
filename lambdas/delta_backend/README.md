@@ -44,39 +44,43 @@ Note: Paths are relative to this directory, `delta_backend`.
 
 This lambda consumes DynamoDB Stream records from `imms-<env>-imms-events` (`NEW_IMAGE`).
 
-## Delta table indexing contract
-
-- Legacy GSI: `SearchIndex`
-    - PK: `Operation`
-    - SK: `DateTimeStamp`
-- New GSI: `OperationSequenceIndex`
-    - PK: `Operation`
-    - SK: `DateTimeStamp` (range key)
-    - Non-key sort attribute: `SequenceNumber`
-
-`DateTimeStamp` is retained for DPS backward compatibility and is the range key for both GSIs.
-`SequenceNumber` is projected into `OperationSequenceIndex` for deterministic ordering of same-second events at query time.
-
 ### Expected shape
 
 ```json
 {
-    "eventID": "stream-id",
-    "eventName": "INSERT | MODIFY | REMOVE",
-    "dynamodb": {
-        "ApproximateCreationDateTime": 1690896000,
-        "SequenceNumber": "4959...",
-        "NewImage": {
-            "PK": { "S": "covid#<imms-id>" },
-            "SK": { "S": "covid#<patient-id>" },
-            "Operation": { "S": "CREATE | UPDATE | DELETE | DELETE_LOGICAL" },
-            "SupplierSystem": { "S": "EMIS | RAVS | ..." },
-            "Resource": { "S": "{\"resourceType\":\"Immunization\", ... }" }
-        },
-        "Keys": {
-            "PK": { "S": "covid#<imms-id>" }
+    "Records": [
+        {
+            "eventID": "bcd6c0cb0ba0ad872b6340ce4f500340",
+            "eventName": "INSERT",
+            "eventVersion": "1.1",
+            "eventSource": "aws:dynamodb",
+            "awsRegion": "eu-west-2",
+            "dynamodb": {
+                "ApproximateCreationDateTime": 1772437744,
+                "Keys": {
+                    "PK": { "S": "Immunization#<uuid>" }
+                },
+                "NewImage": {
+                    "Version": { "N": "1" },
+                    "PK": { "S": "Immunization#<uuid>" },
+                    "PatientPK": { "S": "Patient#<nhs-number>" },
+                    "PatientSK": { "S": "<vaccine-type>#<uuid>" },
+                    "IdentifierPK": {
+                        "S": "<identifier-system>#<identifier-value>"
+                    },
+                    "Operation": { "S": "CREATE | UPDATE | DELETE | REMOVE" },
+                    "SupplierSystem": { "S": "EMIS | RAVS | ..." },
+                    "Resource": {
+                        "S": "{\"resourceType\":\"Immunization\", ... }"
+                    }
+                },
+                "SequenceNumber": "30993300003322088696887818",
+                "SizeBytes": 4324,
+                "StreamViewType": "NEW_IMAGE"
+            },
+            "eventSourceARN": "arn:aws:dynamodb:eu-west-2:<account-id>:table/imms-<env>-imms-events/stream/<timestamp>"
         }
-    }
+    ]
 }
 ```
 
@@ -84,35 +88,50 @@ This lambda consumes DynamoDB Stream records from `imms-<env>-imms-events` (`NEW
 
 The processor accepts the following legacy/fallback inputs:
 
-1. **Operation fallback**
+1. **PK key format**
+    - Current: `Immunization#<uuid>` (e.g. `Immunization#42c55e00-03b5-46fd-bbef-678199f5777c`)
+    - `ImmsID` is extracted as the segment after the first `#`
+
+2. **PatientSK / VaccineType format**
+    - Current: `<vaccine-type>#<uuid>` (e.g. `RSV#42c55e00-03b5-46fd-bbef-678199f5777c`)
+    - `VaccineType` is extracted as the segment before `#`, lowercased and stripped
+
+3. **Operation fallback**
     - Preferred: `NewImage.Operation`
     - Fallback: mapped from `eventName`:
-        - `INSERT -> CREATE`
-        - `MODIFY -> UPDATE`
-        - `REMOVE -> DELETE`
+        - `INSERT → CREATE`
+        - `MODIFY → UPDATE`
+        - `REMOVE → DELETE_PHYSICAL`
+    - If `Operation` is absent and `eventName` is not `REMOVE`, record is routed to DLQ
 
-2. **Payload fallback**
+4. **Payload fallback**
     - Preferred: `NewImage.Resource` (FHIR JSON string, converted via `Converter`)
-    - Fallback: `NewImage.Imms` (already-flat or JSON string), with `ACTION_FLAG` added when missing
+    - Fallback: `NewImage.Imms` (already-flat JSON string), with `ACTION_FLAG` added when missing
+    - `REMOVE` events have no payload — `Imms` is written as `""` to delta table
 
-3. **Sequence fallback**
+5. **Sequence fallback**
     - Preferred: `dynamodb.SequenceNumber`
-    - Fallback: `NewImage.SequenceNumber`
     - Final fallback: `"0"`
 
-4. **Skip rules**
+6. **Skip rules**
     - If `SupplierSystem` is `DPSFULL` or `DPSREDUCED`, record is skipped (logged, no DDB write)
 
-### Output/behavior contract
+### REMOVE event shape
 
-- `process_record(...)` returns:
-    - `tuple[bool, dict]` → `(success, operation_outcome)`
-- `operation_outcome` always includes:
-    - `record`
-    - `operation_type`
-    - `statusCode`
-    - `statusDesc`
-- Failed records are sent to DLQ.
+`REMOVE` stream events have no `NewImage`. `PK` is only available in `Keys`:
+
+```json
+{
+    "eventName": "REMOVE",
+    "dynamodb": {
+        "Keys": {
+            "PK": { "S": "Immunization#<uuid>" }
+        },
+        "SequenceNumber": "...",
+        "StreamViewType": "NEW_IMAGE"
+    }
+}
+```
 
 ## 🛠️ Key Features
 
