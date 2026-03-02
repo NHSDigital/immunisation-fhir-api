@@ -6,7 +6,6 @@ from venv import logger
 
 import pytest_check as check
 from pytest_bdd import given, parsers, then, when
-
 from src.dynamoDB.dynamo_db_helper import (
     fetch_immunization_events_detail,
     parse_imms_int_imms_event_response,
