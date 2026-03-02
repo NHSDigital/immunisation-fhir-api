@@ -81,7 +81,7 @@ class TestConvertToFlatJson(unittest.TestCase):
     def tearDown(self):
         self.logger_exception_patcher.stop()
         self.logger_info_patcher.stop()
-        self.mock_send_log_to_firehose.stop()
+        self.send_log_to_firehose_patcher.stop()
 
         self.mock.stop()
 

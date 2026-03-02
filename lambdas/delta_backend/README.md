@@ -85,27 +85,23 @@ For ordering-safe reads and backward compatibility, the delta table uses:
 
 The processor accepts the following legacy/fallback inputs:
 
-1. **Patient key fallback**
-    - Preferred: `NewImage.SK`
-    - Fallback: `NewImage.PatientSK`
-
-2. **Operation fallback**
+1. **Operation fallback**
     - Preferred: `NewImage.Operation`
     - Fallback: mapped from `eventName`:
         - `INSERT -> CREATE`
         - `MODIFY -> UPDATE`
         - `REMOVE -> DELETE`
 
-3. **Payload fallback**
+2. **Payload fallback**
     - Preferred: `NewImage.Resource` (FHIR JSON string, converted via `Converter`)
     - Fallback: `NewImage.Imms` (already-flat or JSON string), with `ACTION_FLAG` added when missing
 
-4. **Sequence fallback**
+3. **Sequence fallback**
     - Preferred: `dynamodb.SequenceNumber`
     - Fallback: `NewImage.SequenceNumber`
     - Final fallback: `"0"`
 
-5. **Skip rules**
+4. **Skip rules**
     - If `SupplierSystem` is `DPSFULL` or `DPSREDUCED`, record is skipped (logged, no DDB write)
 
 ### Output/behavior contract

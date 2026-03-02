@@ -1,6 +1,7 @@
 import decimal
 import json
 import os
+import time
 import unittest
 from unittest.mock import MagicMock, call, patch
 
@@ -61,7 +62,7 @@ def _make_stream_record(
     else:
         new_image: dict = {
             "PK": {"S": pk_value},
-            "Imms": imms,
+            "Imms": {"S": imms},
             "PatientSK": {"S": patient_sk or "covid#test-patient-sk"},
         }
         if operation is not None:
@@ -74,6 +75,7 @@ def _make_stream_record(
         dynamodb_envelope["SequenceNumber"] = sequence_number
 
     return {
+        "eventID": f"evt-{int(time.time() * 1000)}",
         "eventName": event_name,
         "dynamodb": dynamodb_envelope,
     }
@@ -1124,6 +1126,42 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
             parse_float=decimal.Decimal,
         )
 
+    def test_real_production_event_shape(self):
+        """Verify the handler correctly processes the real production event shape"""
+        self.mock_delta_table.put_item.return_value = SUCCESS_RESPONSE
+
+        real_record = {
+            "eventID": "3a3c4907ccf4f102e9ec88be141da1ad",
+            "eventName": "INSERT",
+            "dynamodb": {
+                "ApproximateCreationDateTime": 1772440658,
+                "Keys": {"PK": {"S": "Immunization#cad9af6e-52b7-4af1-b966-aea62dcfbee1"}},
+                "NewImage": {
+                    "Version": {"N": "1"},
+                    "PatientPK": {"S": "Patient#9000186048"},
+                    "SupplierSystem": {"S": "RAVS"},
+                    "Resource": {"S": '{"resourceType": "Immunization"}'},
+                    "PatientSK": {"S": "RSV#cad9af6e-52b7-4af1-b966-aea62dcfbee1"},
+                    "Operation": {"S": "CREATE"},
+                    "PK": {"S": "Immunization#cad9af6e-52b7-4af1-b966-aea62dcfbee1"},
+                    "IdentifierPK": {"S": "https://supplierABC/identifiers/vacc#test"},
+                },
+                "SequenceNumber": "31155100001024489563148111",
+                "SizeBytes": 4411,
+                "StreamViewType": "NEW_IMAGE",
+            },
+        }
+        event = {"Records": [real_record]}
+        result = handler(event, None)
+
+        self.assertTrue(result)
+        self.mock_delta_table.put_item.assert_called_once()
+        item = self.mock_delta_table.put_item.call_args.kwargs["Item"]
+        self.assertEqual(item["Operation"], "CREATE")
+        self.assertEqual(item["VaccineType"], "rsv")
+        self.assertEqual(item["ImmsID"], "cad9af6e-52b7-4af1-b966-aea62dcfbee1")
+        self.assertEqual(item["SequenceNumber"], "31155100001024489563148111")
+
 
 class TestGetDeltaTable(unittest.TestCase):
     def setUp(self):
@@ -1162,3 +1200,11 @@ class TestGetDeltaTable(unittest.TestCase):
         table = delta.get_delta_table()
         self.assertIsNone(table)
         self.mock_logger_error.assert_called()
+
+
+class TestActionFlagMappingContract(unittest.TestCase):
+    def test_operation_update_equals_action_flag_update(self):
+        self.assertEqual(Operation.UPDATE, ActionFlag.UPDATE)
+
+    def test_operation_delete_logical_equals_action_flag_delete_logical(self):
+        self.assertEqual(Operation.DELETE_LOGICAL, ActionFlag.DELETE_LOGICAL)

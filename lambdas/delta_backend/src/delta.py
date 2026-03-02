@@ -48,6 +48,7 @@ class NormalizedRecord:
     supplier_system: str
     creation_timestamp: float
     imms_raw: str | None  # raw Resource or Imms string, None for REMOVE
+    is_fhir_resource: bool  # True when imms_raw comes from Resource field
 
 
 def _normalize_record(record: dict[str, Any]) -> NormalizedRecord:
@@ -61,19 +62,12 @@ def _normalize_record(record: dict[str, Any]) -> NormalizedRecord:
       operation:        NewImage.Operation
       payload:          NewImage.Resource preferred, NewImage.Imms fallback, None for REMOVE
     """
-    logger.info(
-        "_normalize_record INPUT: eventName=%s dynamodb_keys=%s new_image_keys=%s",
-        record.get("eventName"),
-        list(record.get("dynamodb", {}).get("Keys", {}).keys()),
-        list(record.get("dynamodb", {}).get("NewImage", {}).keys()),
-    )
-
     dynamodb = record.get("dynamodb", {})
     new_image = dynamodb.get("NewImage", {})
     keys = dynamodb.get("Keys", {})
 
     event_id = record.get("eventID", f"evt-{int(time.time() * 1000)}")
-    sequence_number: str = str(_extract_value(dynamodb.get("SequenceNumber")))
+    sequence_number: str = str(dynamodb.get("SequenceNumber", "0"))
     primary_key = _extract_value(new_image.get("PK")) or _extract_value(keys.get("PK"))
     imms_id = get_imms_id(primary_key)
     patient_sort_key = _extract_value(new_image.get("PatientSK"))
@@ -87,6 +81,7 @@ def _normalize_record(record: dict[str, Any]) -> NormalizedRecord:
     resource_raw: str | None = _extract_value(new_image.get("Resource"))
     imms_raw_field: str | None = _extract_value(new_image.get("Imms"))
     imms_raw: str | None = resource_raw if resource_raw is not None else imms_raw_field
+    is_fhir_resource: bool = resource_raw is not None
 
     return NormalizedRecord(
         event_id=event_id,
@@ -99,6 +94,7 @@ def _normalize_record(record: dict[str, Any]) -> NormalizedRecord:
         supplier_system=supplier_system,
         creation_timestamp=creation_timestamp,
         imms_raw=imms_raw,
+        is_fhir_resource=is_fhir_resource,
     )
 
 
@@ -223,14 +219,6 @@ def _event_to_operation(event_name: str) -> str:
 
 def process_remove(record: dict[str, Any], table: Any | None = None) -> tuple[bool, dict[str, Any]]:
     norm = _normalize_record(record)
-    logger.info(
-        "Processing REMOVE event norm record event_id=%s operation=%s imms_id=%s vaccine_type=%s supplier_system=%s",
-        norm.event_id,
-        norm.operation,
-        norm.imms_id,
-        norm.vaccine_type,
-        norm.supplier_system,
-    )
     creation_datetime_str, expiry_timestamp = get_creation_and_expiry_times(norm.creation_timestamp)
     operation_outcome: dict[str, Any] = {"operation_type": Operation.DELETE_PHYSICAL, "record": norm.imms_id}
 
@@ -267,14 +255,6 @@ def process_remove(record: dict[str, Any], table: Any | None = None) -> tuple[bo
 def process_skip(record: dict[str, Any]) -> tuple[bool, dict[str, Any]]:
     norm = _normalize_record(record)
     logger.info("Record from DPS skipped")
-    logger.info(
-        "DPS record details: event_id=%s operation=%s imms_id=%s vaccine_type=%s supplier_system=%s",
-        norm.event_id,
-        norm.operation,
-        norm.imms_id,
-        norm.vaccine_type,
-        norm.supplier_system,
-    )
     # norm.operation may be None for a skipped DPS record — log "UNKNOWN" rather than raising, since skipped records are not written to the delta table.
     return True, {
         "record": norm.imms_id,
@@ -292,44 +272,31 @@ def process_create_update_delete(record: dict[str, Any], table: Any | None = Non
             f"Operation field missing from NewImage for event_id={norm.event_id}. "
             "Record cannot be safely classified — routing to DLQ."
         )
-
-    logger.info(
-        "Processing event event_id=%s operation=%s imms_id=%s vaccine_type=%s supplier_system=%s",
-        norm.event_id,
-        norm.operation,
-        norm.imms_id,
-        norm.vaccine_type,
-        norm.supplier_system,
-    )
     creation_datetime_str, expiry_timestamp = get_creation_and_expiry_times(norm.creation_timestamp)
     operation_outcome: dict[str, Any] = {"record": norm.imms_id, "operation_type": norm.operation}
 
     error_records: list[dict[str, Any]] | None = None
     flat_json: Any
 
-    if norm.operation == Operation.DELETE_PHYSICAL:
-        flat_json = ""
-        error_records = None
-    else:
-        action_flag = ActionFlag.CREATE if norm.operation == Operation.CREATE else norm.operation
+    action_flag = ActionFlag.CREATE if norm.operation == Operation.CREATE else norm.operation
 
-        if norm.imms_raw is not None:
-            resource_raw = _extract_value(record.get("dynamodb", {}).get("NewImage", {}).get("Resource"))
-            if resource_raw is not None:
-                resource_json = json.loads(norm.imms_raw, parse_float=decimal.Decimal)
-                fhir_converter = Converter(resource_json, action_flag=action_flag)
-                flat_json = fhir_converter.run_conversion()
-                error_records = fhir_converter.get_error_records()
-            else:
-                flat_json = json.loads(norm.imms_raw, parse_float=decimal.Decimal)
-                if isinstance(flat_json, dict) and "ACTION_FLAG" not in flat_json:
-                    flat_json["ACTION_FLAG"] = action_flag
-                error_records = None
+    if norm.imms_raw is not None:
+        if norm.is_fhir_resource:
+            resource_json = json.loads(norm.imms_raw, parse_float=decimal.Decimal)
+            fhir_converter = Converter(resource_json, action_flag=action_flag)
+            flat_json = fhir_converter.run_conversion()
+            error_records = fhir_converter.get_error_records()
         else:
-            flat_json = {}
-            if "ACTION_FLAG" not in flat_json:
+            flat_json = json.loads(norm.imms_raw, parse_float=decimal.Decimal)
+            if isinstance(flat_json, dict) and "ACTION_FLAG" not in flat_json:
                 flat_json["ACTION_FLAG"] = action_flag
             error_records = None
+    else:
+        # imms_raw is None for a non-REMOVE event — malformed item
+        raise ValidationError(
+            f"Imms/Resource payload missing from NewImage for event_id={norm.event_id}. "
+            "Record cannot be processed — routing to DLQ."
+        )
 
     target_table = table or get_delta_table()
     if target_table is None:
@@ -372,11 +339,6 @@ def _route_record(
         ValidationError: propagated from process_create_update_delete when Operation is absent.
         Exception: propagated to process_record's except block.
     """
-    logger.info(
-        "_route_record INPUT: eventName=%s supplierSystem=%s",
-        record.get("eventName"),
-        _extract_value(record.get("dynamodb", {}).get("NewImage", {}).get("SupplierSystem")),
-    )
     event_name = str(record.get("eventName", ""))
 
     if event_name == EventName.DELETE_PHYSICAL:
@@ -392,7 +354,7 @@ def _route_record(
 def _stable_outcome(
     outcome: Any,
     success: bool,
-    record: dict[str, Any],
+    event_name: str,
 ) -> dict[str, Any]:
     """
     Guarantee the operation outcome dict always has the four required keys.
@@ -403,7 +365,7 @@ def _stable_outcome(
     outcome.setdefault("record", "unknown")
     outcome.setdefault(
         "operation_type",
-        _event_to_operation(str(record.get("eventName", EventName.UPDATE))),
+        _event_to_operation(str(event_name)),
     )
     outcome.setdefault("statusCode", "200" if success else "500")
     outcome.setdefault(
@@ -444,23 +406,22 @@ def process_record(
     Orchestrate processing of a single DDB stream record.
     """
     logger.info("Processing record with eventID=%s", record.get("eventID"))
+    event_name: str = str(record.get("eventName", EventName.UPDATE))
     try:
         success, outcome = _route_record(record, table)
-        logger.info("Record processing outcome: success=%s outcome=%s", success, outcome)
     except Exception as exc:
         logger.exception("Exception during processing")
         success = False
         outcome = {
             "record": "unknown",
             # _event_to_operation used here for error-path logging
-            "operation_type": _event_to_operation(str(record.get("eventName", EventName.UPDATE))),
+            "operation_type": _event_to_operation(event_name),
             "statusCode": "500",
             "statusDesc": "Exception",
             "diagnostics": str(exc),
         }
 
-    outcome = _stable_outcome(outcome, success, record)
-    logger.info("Final operation outcome after stable outcome: %s", outcome)
+    outcome = _stable_outcome(outcome, success, event_name)
     _send_to_dlq_if_failed(success, record, sqs_client, dlq_url)
     return success, outcome
 
@@ -470,16 +431,7 @@ def handler(event, _context) -> bool:
     logger.info("RAW_EVENT: %s", json.dumps(event, default=str))  # full stream batch
     logger.info("RECORD_COUNT: %d", len(event.get("Records", [])))
 
-    # for record in event["Records"]:
-    for i, record in enumerate(event["Records"]):
-        logger.info(
-            "RECORD[%d] eventName=%s eventID=%s sequenceNumber=%s",
-            i,
-            record.get("eventName"),
-            record.get("eventID"),
-            record.get("dynamodb", {}).get("SequenceNumber"),
-        )
-
+    for record in event["Records"]:
         record_ingestion_datetime = datetime.now().isoformat()
         record_processing_start = time.time()
         success, operation_outcome = process_record(record)
