@@ -7,7 +7,7 @@ from common.models.constants import RedisHashKeys, Urls
 from common.models.utils.generic_utils import nhs_number_mod11_check
 from common.redis_client import get_redis_client
 from controller.constants import IdentifierSearchElement, IdentifierSearchParameterName, ImmunizationSearchParameterName
-from models.errors import InvalidStoredDataError, ParameterExceptionError
+from models.errors import ParameterExceptionError
 
 DUPLICATED_PARAMETERS_ERROR_MESSAGE = 'Parameters may not be duplicated. Use commas for "or".'
 INVALID_IDENTIFIER_ERROR_MESSAGE = (
@@ -144,7 +144,6 @@ def process_target_disease(params: dict[str, list[str]]) -> tuple[list[str], set
 
     redis = get_redis_client()
     codes_json = redis.hget(RedisHashKeys.TARGET_DISEASE_LIST_KEY, TARGET_DISEASE_CODES_FIELD)
-    cache_list_missing = codes_json is None
     valid_codes_set = set(json.loads(codes_json)) if codes_json else set()
 
     disease_to_vaccs_raw = redis.hgetall(RedisHashKeys.TARGET_DISEASE_TO_VACCS_KEY) or {}
@@ -186,9 +185,6 @@ def process_target_disease(params: dict[str, list[str]]) -> tuple[list[str], set
                 "Target disease code '%s' is in target_disease_list but has no mapping in target_disease_to_vaccs",
                 code,
             )
-
-    if format_invalid_count != len(values) and cache_list_missing:
-        raise InvalidStoredDataError(data_type="target disease list")
 
     if format_invalid_count == len(values):
         raise ParameterExceptionError(TARGET_DISEASE_ALL_INVALID_ERROR)

@@ -176,10 +176,16 @@ class TestSearchImmunizationsByTargetDisease(unittest.TestCase):
         self.assertEqual(call_args[1], {})
         self.service.search_immunizations.assert_not_called()
 
-    def test_search_by_target_disease_returns_500_when_target_disease_list_cache_missing(self):
-        """it should return 500 when target-disease list is missing from cache and user supplied format-valid code"""
+    def test_search_by_target_disease_returns_200_empty_bundle_when_target_disease_list_cache_missing(self):
+        """it should return 200 with empty searchset when target-disease list is missing from cache"""
         self.mock_redis.hget.return_value = None
         self.mock_redis.hgetall.return_value = {}
+        self.service.make_empty_search_bundle_with_target_disease_not_in_mapping.return_value = Bundle.construct(
+            entry=[],
+            link=[BundleLink.construct(relation="self", url="url")],
+            type="searchset",
+            total=0,
+        )
         lambda_event = {
             "headers": {"SupplierSystem": "test"},
             "multiValueQueryStringParameters": {
@@ -190,10 +196,15 @@ class TestSearchImmunizationsByTargetDisease(unittest.TestCase):
 
         response = self.controller.search_immunizations(lambda_event)
 
-        self.assertEqual(response["statusCode"], 500)
-        self.assertIn("target disease list", json.loads(response["body"])["issue"][0]["diagnostics"])
+        self.assertEqual(response["statusCode"], 200)
+        self.service.make_empty_search_bundle_with_target_disease_not_in_mapping.assert_called_once()
+        call_args = self.service.make_empty_search_bundle_with_target_disease_not_in_mapping.call_args
+        self.assertEqual(call_args[0][0], self.nhs_number_valid_value)
+        self.assertEqual(
+            call_args[0][4],
+            {f"{self.snomed_system}|{self.measles_code}"},
+        )
         self.service.search_immunizations.assert_not_called()
-        self.service.make_empty_search_bundle_with_target_disease_not_in_mapping.assert_not_called()
 
     def test_search_by_target_disease_with_date_range(self):
         """it should pass date params through to service when searching by target-disease"""

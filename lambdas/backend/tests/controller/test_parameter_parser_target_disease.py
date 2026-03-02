@@ -6,7 +6,7 @@ from controller.parameter_parser import (
     validate_and_retrieve_search_params_by_disease,
     validate_search_param_mutual_exclusivity,
 )
-from models.errors import InvalidStoredDataError, ParameterExceptionError
+from models.errors import ParameterExceptionError
 
 
 class TestTargetDiseaseSearch(unittest.TestCase):
@@ -98,14 +98,20 @@ class TestTargetDiseaseSearch(unittest.TestCase):
             )
         self.assertIn("must have one or more values", str(e.exception))
 
-    def test_validate_and_retrieve_search_params_by_disease_raises_when_target_disease_list_cache_missing(self):
+    def test_validate_and_retrieve_search_params_by_disease_returns_all_not_in_mapping_when_target_disease_list_cache_missing(
+        self,
+    ):
         self.mock_redis.hget.return_value = None
         self.mock_redis.hgetall.return_value = {}
-        with self.assertRaises(InvalidStoredDataError) as e:
-            validate_and_retrieve_search_params_by_disease(
-                {
-                    ImmunizationSearchParameterName.PATIENT_IDENTIFIER: [self.patient_id],
-                    ImmunizationSearchParameterName.TARGET_DISEASE: [f"{self.snomed_system}|14189004"],
-                }
-            )
-        self.assertIn("target disease list", str(e.exception))
+        result = validate_and_retrieve_search_params_by_disease(
+            {
+                ImmunizationSearchParameterName.PATIENT_IDENTIFIER: [self.patient_id],
+                ImmunizationSearchParameterName.TARGET_DISEASE: [f"{self.snomed_system}|14189004"],
+            }
+        )
+        self.assertTrue(result.all_target_diseases_not_in_mapping)
+        self.assertEqual(result.params.immunization_targets, set())
+        self.assertIsNotNone(result.params.target_disease_codes_for_url)
+        self.assertIn(f"{self.snomed_system}|14189004", result.params.target_disease_codes_for_url)
+        self.assertEqual(len(result.invalid_target_diseases), 1)
+        self.assertIn("14189004", result.invalid_target_diseases[0])
