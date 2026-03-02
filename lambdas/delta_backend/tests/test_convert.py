@@ -9,7 +9,7 @@ from boto3 import resource as boto3_resource
 from moto import mock_aws
 
 from mappings import ActionFlag, EventName, Operation
-from utils_for_converter_tests import ErrorValuesForTests, ValuesForTests
+from utils_for_converter_tests import ErrorValuesForTests, ValuesForTests, make_mock_logger
 
 MOCK_ENV_VARS = {
     "AWS_SQS_QUEUE_URL": "https://sqs.eu-west-2.amazonaws.com/123456789012/test-queue",
@@ -33,6 +33,7 @@ class TestConvertToFlatJson(unittest.TestCase):
 
         """Set up mock DynamoDB table."""
         self.dynamodb_resource = boto3_resource("dynamodb", "eu-west-2")
+
         self.table = self.dynamodb_resource.create_table(
             TableName="immunisation-batch-internal-dev-audit-test-table",
             KeySchema=[
@@ -69,19 +70,17 @@ class TestConvertToFlatJson(unittest.TestCase):
                 },
             ],
         )
-        self.logger_info_patcher = patch("logging.Logger.info")
-        self.mock_logger_info = self.logger_info_patcher.start()
-
-        self.logger_exception_patcher = patch("logging.Logger.exception")
-        self.mock_logger_exception = self.logger_exception_patcher.start()
+        self.logger_patcher = patch("delta.logger", make_mock_logger())
+        self.logger_patcher.start()
 
         self.send_log_to_firehose_patcher = patch("delta.send_log_to_firehose")
         self.mock_send_log_to_firehose = self.send_log_to_firehose_patcher.start()
 
+        self.sqs_client_patcher = patch("common.clients.global_sqs_client")
+        self.mock_sqs_client = self.sqs_client_patcher.start()
+
     def tearDown(self):
-        self.logger_exception_patcher.stop()
-        self.logger_info_patcher.stop()
-        self.send_log_to_firehose_patcher.stop()
+        patch.stopall()
 
         self.mock.stop()
 

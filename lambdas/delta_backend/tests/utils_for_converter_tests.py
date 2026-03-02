@@ -1,8 +1,30 @@
 import json
 import uuid
+from contextlib import contextmanager
 from decimal import Decimal
+from unittest.mock import MagicMock
 
 from mappings import EventName, Operation
+
+
+def make_mock_logger() -> MagicMock:
+    """
+    Returns a MagicMock that correctly simulates a Powertools Logger.
+    append_keys() is wired as a real context manager so tests using
+    `with logger.append_keys(...)` do not raise TypeError.
+
+    Usage in setUp:
+        self.logger_patcher = patch("delta.logger", make_mock_logger())
+        self.logger_patcher.start()
+    """
+    mock = MagicMock()
+
+    @contextmanager
+    def _append_keys(**kwargs):
+        yield
+
+    mock.append_keys = _append_keys
+    return mock
 
 
 class RecordConfig:

@@ -3,12 +3,19 @@ import json
 import os
 import time
 import unittest
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 from botocore.exceptions import ClientError
 
-import delta
-from delta import (
+TEST_DEAD_LETTER_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123456789012/test-queue"
+
+os.environ["AWS_SQS_QUEUE_URL"] = TEST_DEAD_LETTER_QUEUE_URL
+os.environ["DELTA_TABLE_NAME"] = "my_delta_table"
+os.environ["DELTA_TTL_DAYS"] = "14"
+os.environ["SOURCE"] = "my_source"
+
+import delta  # noqa: E402 — must come after env vars are set
+from delta import (  # noqa: E402
     _event_to_operation,
     _extract_value,
     _normalize_record,
@@ -17,16 +24,9 @@ from delta import (
     get_vaccine_type,
     handler,
     process_record,
-    send_record_to_dlq,
 )
-from mappings import ActionFlag, EventName, Operation
-from utils_for_converter_tests import RecordConfig, ValuesForTests
-
-TEST_DEAD_LETTER_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123456789012/test-queue"
-os.environ["AWS_SQS_QUEUE_URL"] = TEST_DEAD_LETTER_QUEUE_URL
-os.environ["DELTA_TABLE_NAME"] = "my_delta_table"
-os.environ["DELTA_TTL_DAYS"] = "14"
-os.environ["SOURCE"] = "my_source"
+from mappings import ActionFlag, EventName, Operation  # noqa: E402
+from utils_for_converter_tests import RecordConfig, ValuesForTests, make_mock_logger  # noqa: E402
 
 SUCCESS_RESPONSE = {"ResponseMetadata": {"HTTPStatusCode": 200}}
 DUPLICATE_RESPONSE = ClientError({"Error": {"Code": "ConditionalCheckFailedException"}}, "PutItem")
@@ -308,65 +308,30 @@ class TestNormalizeRecord(unittest.TestCase):
 class DeltaHandlerTestCase(unittest.TestCase):
     # TODO refactor for dependency injection, eg process_record, send_firehose etc
     def setUp(self):
-        self.logger_info_patcher = patch("logging.Logger.info")
-        self.mock_logger_info = self.logger_info_patcher.start()
 
-        self.logger_exception_patcher = patch("logging.Logger.exception")
-        self.mock_logger_exception = self.logger_exception_patcher.start()
+        self.logger_patcher = patch("delta.logger", make_mock_logger())
+        self.mock_logger = self.logger_patcher.start()
 
-        self.logger_warning_patcher = patch("logging.Logger.warning")
-        self.mock_logger_warning = self.logger_warning_patcher.start()
+        self.mock_delta_table = MagicMock()
+        self.mock_sqs_client = MagicMock()
 
-        self.logger_error_patcher = patch("logging.Logger.error")
-        self.mock_logger_error = self.logger_error_patcher.start()
+        self.get_delta_table_patcher = patch("delta.get_delta_table", return_value=self.mock_delta_table)
+        self.get_delta_table_patcher.start()
 
         self.send_log_to_firehose_patcher = patch("delta.send_log_to_firehose")
         self.mock_send_log_to_firehose = self.send_log_to_firehose_patcher.start()
 
-        self.sqs_client_patcher = patch("common.clients.global_sqs_client")
-        self.mock_sqs_client = self.sqs_client_patcher.start()
+        self.sqs_client_patcher = patch("delta.get_sqs_client", return_value=self.mock_sqs_client)
+        self.sqs_client_patcher.start()
 
-        self.delta_table_patcher = patch("delta.delta_table")
-        self.mock_delta_table = self.delta_table_patcher.start()
+    def tearDown(self):
+        patch.stopall()
 
     def _call_process_record(self, record):
         return process_record(
             record,
             self.mock_delta_table,
-            self.mock_sqs_client,
-            TEST_DEAD_LETTER_QUEUE_URL,
         )
-
-    def tearDown(self):
-        patch.stopall()
-
-    def test_send_record_to_dlq_success(self):
-        # Arrange
-        self.mock_sqs_client.send_message.return_value = {"MessageId": "123"}
-        record = {"key": "value"}
-
-        # Act
-        send_record_to_dlq(record)
-
-        # Assert
-        self.mock_sqs_client.send_message.assert_called_once_with(
-            QueueUrl=TEST_DEAD_LETTER_QUEUE_URL, MessageBody=json.dumps(record)
-        )
-        self.mock_logger_info.assert_called_with("Record saved successfully to the DLQ")
-
-    def test_send_record_to_dlq_client_error(self):
-        # Arrange
-        record = {"key": "value"}
-
-        # Simulate ClientError
-        error_response = {"Error": {"Code": "500", "Message": "Internal Server Error"}}
-        self.mock_sqs_client.send_message.side_effect = ClientError(error_response, "SendMessage")
-
-        # Act
-        send_record_to_dlq(record)
-
-        # Assert
-        self.mock_logger_exception.assert_called_once_with("Error sending record to DLQ")
 
     def test_handler_success_insert(self):
         # Arrange
@@ -442,11 +407,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
 
         # Assert
         self.assertTrue(result)
-        self.mock_logger_exception.assert_has_calls(
-            [
-                call("Error sending record to DLQ"),
-            ]
-        )
+        self.mock_logger.exception.assert_any_call("Error sending record to DLQ")
 
     def test_handler_raises_exception_if_called_with_unexpected_event(self):
         """Tests that when the Lambda is invoked with an unexpected event format i.e. no "Records" key, then an
@@ -575,7 +536,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
 
         self.assertTrue(response)
         # Check logging and Firehose were called
-        self.mock_logger_info.assert_called()
+        self.mock_logger.info.assert_called()
         self.assertEqual(self.mock_send_log_to_firehose.call_count, 1)
         self.mock_send_log_to_firehose.assert_called_once()
 
@@ -752,7 +713,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         self.assertTrue(result)
         self.assertEqual(self.mock_delta_table.put_item.call_count, 3)
         self.assertEqual(self.mock_send_log_to_firehose.call_count, 3)
-        self.assertEqual(self.mock_logger_error.call_count, 1)
+        self.assertEqual(self.mock_logger.error.call_count, 1)
         self.assertEqual(self.mock_sqs_client.send_message.call_count, 1)
 
     def test_single_exception_in_multi(self):
@@ -993,35 +954,23 @@ class TestGetCreationAndExpiryTimesWithSequence(unittest.TestCase):
 
 class DeltaRecordProcessorTestCase(unittest.TestCase):
     def setUp(self):
-        self.logger_info_patcher = patch("logging.Logger.info")
-        self.mock_logger_info = self.logger_info_patcher.start()
+        self.logger_patcher = patch("delta.logger", make_mock_logger())
+        self.mock_logger = self.logger_patcher.start()
 
-        self.logger_warning_patcher = patch("logging.Logger.warning")
-        self.mock_logger_warning = self.logger_warning_patcher.start()
-
-        self.logger_error_patcher = patch("logging.Logger.error")
-        self.mock_logger_error = self.logger_error_patcher.start()
-
-        self.logger_exception_patcher = patch("logging.Logger.exception")
-        self.mock_logger_exception = self.logger_exception_patcher.start()
-
-        self.delta_table_patcher = patch("delta.delta_table")
-        self.mock_delta_table = self.delta_table_patcher.start()
+        self.mock_delta_table = MagicMock()
         self.mock_sqs_client = MagicMock()
+
+        self.get_delta_table_patcher = patch("delta.get_delta_table", return_value=self.mock_delta_table)
+        self.get_delta_table_patcher.start()
+
+    def tearDown(self):
+        patch.stopall()
 
     def _call_process_record(self, record):
         return process_record(
             record,
             self.mock_delta_table,
-            self.mock_sqs_client,
-            TEST_DEAD_LETTER_QUEUE_URL,
         )
-
-    def tearDown(self):
-        self.logger_exception_patcher.stop()
-        self.logger_warning_patcher.stop()
-        self.logger_info_patcher.stop()
-        self.delta_table_patcher.stop()
 
     def test_multi_record_success(self):
         self.mock_delta_table.put_item.return_value = SUCCESS_RESPONSE
@@ -1071,7 +1020,6 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
         self.assertEqual(outcomes[1][1]["record"], "fail-id-2")
         self.assertEqual(outcomes[1][1]["statusCode"], "500")
         self.assertTrue(outcomes[2][0])
-        self.assertEqual(self.mock_sqs_client.send_message.call_count, 1)
 
     def test_single_record_table_exception(self):
         self.mock_delta_table.put_item.side_effect = ClientError({"Error": {"Code": "InternalServerError"}}, "PutItem")
@@ -1091,7 +1039,6 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
         # record IS known — normalization succeeded
         self.assertEqual(operation_outcome["record"], "exception-id")
         self.assertEqual(self.mock_delta_table.put_item.call_count, 1)
-        self.assertEqual(self.mock_sqs_client.send_message.call_count, 1)
 
     def test_failed_outcome_always_has_record_and_operation_type(self):
         self.mock_delta_table.put_item.side_effect = Exception("db exploded")
@@ -1105,6 +1052,7 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
         # record IS known — normalization succeeded before put_item exploded
         self.assertEqual(outcome["record"], "schema-check-id")
         self.assertEqual(outcome["operation_type"], Operation.CREATE)
+        self.mock_logger.exception.assert_called()
 
     @patch("delta.json.loads")
     def test_json_loads_called_with_parse_float_decimal(self, mock_json_loads):
@@ -1130,29 +1078,30 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
         """Verify the handler correctly processes the real production event shape"""
         self.mock_delta_table.put_item.return_value = SUCCESS_RESPONSE
 
-        real_record = {
-            "eventID": "3a3c4907ccf4f102e9ec88be141da1ad",
-            "eventName": "INSERT",
-            "dynamodb": {
-                "ApproximateCreationDateTime": 1772440658,
-                "Keys": {"PK": {"S": "Immunization#cad9af6e-52b7-4af1-b966-aea62dcfbee1"}},
-                "NewImage": {
-                    "Version": {"N": "1"},
-                    "PatientPK": {"S": "Patient#9000186048"},
-                    "SupplierSystem": {"S": "RAVS"},
-                    "Resource": {"S": '{"resourceType": "Immunization"}'},
-                    "PatientSK": {"S": "RSV#cad9af6e-52b7-4af1-b966-aea62dcfbee1"},
-                    "Operation": {"S": "CREATE"},
-                    "PK": {"S": "Immunization#cad9af6e-52b7-4af1-b966-aea62dcfbee1"},
-                    "IdentifierPK": {"S": "https://supplierABC/identifiers/vacc#test"},
+        with patch("delta.get_sqs_client", return_value=MagicMock()), patch("delta.send_log_to_firehose"):
+            real_record = {
+                "eventID": "3a3c4907ccf4f102e9ec88be141da1ad",
+                "eventName": "INSERT",
+                "dynamodb": {
+                    "ApproximateCreationDateTime": 1772440658,
+                    "Keys": {"PK": {"S": "Immunization#cad9af6e-52b7-4af1-b966-aea62dcfbee1"}},
+                    "NewImage": {
+                        "Version": {"N": "1"},
+                        "PatientPK": {"S": "Patient#9000186048"},
+                        "SupplierSystem": {"S": "RAVS"},
+                        "Resource": {"S": '{"resourceType": "Immunization"}'},
+                        "PatientSK": {"S": "RSV#cad9af6e-52b7-4af1-b966-aea62dcfbee1"},
+                        "Operation": {"S": "CREATE"},
+                        "PK": {"S": "Immunization#cad9af6e-52b7-4af1-b966-aea62dcfbee1"},
+                        "IdentifierPK": {"S": "https://supplierABC/identifiers/vacc#test"},
+                    },
+                    "SequenceNumber": "31155100001024489563148111",
+                    "SizeBytes": 4411,
+                    "StreamViewType": "NEW_IMAGE",
                 },
-                "SequenceNumber": "31155100001024489563148111",
-                "SizeBytes": 4411,
-                "StreamViewType": "NEW_IMAGE",
-            },
-        }
-        event = {"Records": [real_record]}
-        result = handler(event, None)
+            }
+            event = {"Records": [real_record]}
+            result = handler(event, None)
 
         self.assertTrue(result)
         self.mock_delta_table.put_item.assert_called_once()
@@ -1165,41 +1114,40 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
 
 class TestGetDeltaTable(unittest.TestCase):
     def setUp(self):
-        self.delta_table_patcher = patch("delta.delta_table")
-        self.mock_delta_table = self.delta_table_patcher.start()
-        self.logger_info_patcher = patch("logging.Logger.info")
+        delta.delta_table = None
+
+        self.get_dynamodb_table_patcher = patch("delta.get_dynamodb_table")
+        self.mock_get_dynamodb_table = self.get_dynamodb_table_patcher.start()
+
+        self.logger_info_patcher = patch("delta.logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
-        self.logger_error_patcher = patch("logging.Logger.error")
+
+        self.logger_error_patcher = patch("delta.logger.error")
         self.mock_logger_error = self.logger_error_patcher.start()
 
     def tearDown(self):
-        self.delta_table_patcher.stop()
-        self.logger_info_patcher.stop()
-        self.logger_error_patcher.stop()
+        delta.delta_table = None
+        patch.stopall()
 
     def test_returns_table_on_success(self):
-        table = delta.get_delta_table()
-        self.assertIs(table, self.mock_delta_table)
-        # Should cache the table
-        self.assertIs(delta.delta_table, self.mock_delta_table)
+        mock_table = MagicMock()
+        self.mock_get_dynamodb_table.return_value = mock_table
+        result = delta.get_delta_table()
+        self.assertIs(result, mock_table)
+        self.assertIs(delta.delta_table, mock_table)
 
-    @patch("delta.get_dynamodb_table")
-    def test_returns_cached_table(self, mock_get_dynamodb_table):
-        delta.delta_table = self.mock_delta_table
+    def test_returns_cached_table(self):
+        mock_table = MagicMock()
+        self.mock_get_dynamodb_table.return_value = mock_table
+        delta.get_delta_table()
+        delta.get_delta_table()
+        # Called only once — second call uses cache
+        self.mock_get_dynamodb_table.assert_called_once()
 
-        table = delta.get_delta_table()
-        self.assertIs(table, self.mock_delta_table)
-        # Should not call get_dynamodb_table again
-        mock_get_dynamodb_table.assert_not_called()
-
-    # mock get_dynamodb_table to raise an exception
-    @patch("delta.get_dynamodb_table")
-    def test_returns_none_on_exception(self, mock_get_dynamodb_table):
-        delta.delta_table = None
-        mock_get_dynamodb_table.side_effect = Exception("fail")
-        table = delta.get_delta_table()
-        self.assertIsNone(table)
-        self.mock_logger_error.assert_called()
+    def test_raises_on_exception(self):
+        self.mock_get_dynamodb_table.side_effect = Exception("DynamoDB unavailable")
+        with self.assertRaises(Exception, msg="DynamoDB unavailable"):
+            delta.get_delta_table()
 
 
 class TestActionFlagMappingContract(unittest.TestCase):

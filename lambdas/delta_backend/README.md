@@ -46,17 +46,16 @@ This lambda consumes DynamoDB Stream records from `imms-<env>-imms-events` (`NEW
 
 ## Delta table indexing contract
 
-For ordering-safe reads and backward compatibility, the delta table uses:
-
 - Legacy GSI: `SearchIndex`
     - PK: `Operation`
     - SK: `DateTimeStamp`
 - New GSI: `OperationSequenceIndex`
     - PK: `Operation`
-    - SK: `DateTimeStampWithSequence`
+    - SK: `DateTimeStamp` (range key)
+    - Non-key sort attribute: `SequenceNumber`
 
-`DateTimeStamp` is retained for DPS backward compatibility.
-`DateTimeStampWithSequence` is for deterministic ordering of same-second events.
+`DateTimeStamp` is retained for DPS backward compatibility and is the range key for both GSIs.
+`SequenceNumber` is projected into `OperationSequenceIndex` for deterministic ordering of same-second events at query time.
 
 ### Expected shape
 
@@ -167,3 +166,24 @@ You can now:
 
 - Open `output.csv` in Excel or Google Sheets to view cleanly structured records
 - Inspect `output.json` to validate the flat key-value output programmatically
+
+## Observability
+
+### Logging
+
+The Delta Lambda uses [AWS Lambda Powertools for Python](https://docs.powertools.aws.dev/lambda/python/latest/) `3.24.0` for structured JSON logging.
+
+| Setting           | Value                                                                       |
+| ----------------- | --------------------------------------------------------------------------- |
+| `service`         | `delta`                                                                     |
+| Default log level | `INFO`                                                                      |
+| Log format        | Structured JSON (CloudWatch Insights compatible)                            |
+| Location logging  | Off by default — set `POWERTOOLS_LOGGER_LOG_CALLABLE_LOCATION=true` locally |
+
+#### Changing log level at runtime
+
+Set the Lambda environment variable:
+
+```
+LOG_LEVEL=DEBUG
+```

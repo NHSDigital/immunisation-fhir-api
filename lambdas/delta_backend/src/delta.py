@@ -4,22 +4,23 @@ import os
 import time
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Any, NotRequired, TypedDict
+from typing import Any
 
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
 
 from common.aws_dynamodb import get_dynamodb_table
-from common.clients import STREAM_NAME, get_sqs_client, logger
+from common.clients import STREAM_NAME, get_sqs_client
 from common.log_firehose import send_log_to_firehose
 from converter import Converter
 from mappings import ActionFlag, EventName, Operation
+from observability import logger
+from types_delta import OperationOutcomeDict
 
 failure_queue_url = os.environ["AWS_SQS_QUEUE_URL"]
 delta_table_name = os.environ["DELTA_TABLE_NAME"]
 delta_source = os.environ["SOURCE"]
 delta_ttl_days = os.environ["DELTA_TTL_DAYS"]
-region_name = "eu-west-2"
 
 delta_table = None
 
@@ -28,27 +29,46 @@ class ValidationError(Exception):
     pass
 
 
-class OperationOutcomeDict(TypedDict):
-    record: str
-    operation_type: str
-    statusCode: str
-    statusDesc: str
-    diagnostics: NotRequired[Any]
-
-
 @dataclass(frozen=True)
 class NormalizedRecord:
     event_id: str
     sequence_number: str
     operation: str | None  #  None for REMOVE events
-    primary_key: str
+    primary_key: str | None
     imms_id: str
-    patient_sort_key: str
+    patient_sort_key: str | None
     vaccine_type: str
-    supplier_system: str
+    supplier_system: str | None
     creation_timestamp: float
     imms_raw: str | None  # raw Resource or Imms string, None for REMOVE
     is_fhir_resource: bool  # True when imms_raw comes from Resource field
+
+
+def get_vaccine_type(patient_sort_key: str) -> str:
+    if not patient_sort_key:
+        return "unknown"
+    vaccine_type = patient_sort_key.split("#")[0]
+    return str.strip(str.lower(vaccine_type))
+
+
+def get_imms_id(primary_key: str) -> str:
+    if not primary_key or "#" not in primary_key:
+        return "unknown"
+    return primary_key.split("#")[1]
+
+
+def _extract_value(raw: Any) -> Any:
+    if isinstance(raw, dict) and len(raw) == 1:
+        return next(iter(raw.values()))
+    return raw
+
+
+def _event_to_operation(event_name: str) -> str:
+    if event_name == EventName.CREATE:
+        return Operation.CREATE
+    if event_name == EventName.DELETE_PHYSICAL:
+        return Operation.DELETE_PHYSICAL
+    return Operation.UPDATE
 
 
 def _normalize_record(record: dict[str, Any]) -> NormalizedRecord:
@@ -109,35 +129,8 @@ def get_delta_table():
             delta_table = get_dynamodb_table(delta_table_name)
         except Exception as e:
             logger.error(f"Error initializing Delta Table: {e}")
-            delta_table = None
+            raise
     return delta_table
-
-
-def send_record_to_dlq(record: dict) -> None:
-    try:
-        get_sqs_client().send_message(QueueUrl=failure_queue_url, MessageBody=json.dumps(record))
-        logger.info("Record saved successfully to the DLQ")
-    except Exception:
-        logger.exception("Error sending record to DLQ")
-
-
-def get_vaccine_type(patient_sort_key: str) -> str:
-    if not patient_sort_key:
-        return "unknown"
-    vaccine_type = patient_sort_key.split("#")[0]
-    return str.strip(str.lower(vaccine_type))
-
-
-def get_imms_id(primary_key: str) -> str:
-    if not primary_key or "#" not in primary_key:
-        return "unknown"
-    return primary_key.split("#")[1]
-
-
-def _extract_value(raw: Any) -> Any:
-    if isinstance(raw, dict) and len(raw) == 1:
-        return next(iter(raw.values()))
-    return raw
 
 
 def get_creation_and_expiry_times(creation_timestamp: float) -> tuple[str, int]:
@@ -154,21 +147,17 @@ def get_creation_and_expiry_times(creation_timestamp: float) -> tuple[str, int]:
     expiry_datetime = creation_datetime + timedelta(days=int(delta_ttl_days))
     expiry_timestamp = int(expiry_datetime.timestamp())
     datetime_iso = creation_datetime.isoformat()
-    logger.info(
-        "Calculated creation and expiry times: datetime_iso=%s expiry_timestamp=%s creation_timestamp=%s",
-        datetime_iso,
-        expiry_timestamp,
-        creation_datetime,
-    )
     return datetime_iso, expiry_timestamp
 
 
-def handle_dynamodb_response(response, error_records):
+def handle_dynamodb_response(
+    response: dict[str, Any], error_records: list[dict[str, Any]] | None
+) -> tuple[bool, dict[str, Any]]:
     match response:
         case {"ResponseMetadata": {"HTTPStatusCode": 200}} if error_records:
             logger.warning(
-                "Partial success: successfully synced into delta, "
-                f"but issues found within record: {json.dumps(error_records)}"
+                "Partial success: record synced with conversion errors",
+                extra={"conversion_errors": error_records},
             )
             return True, {
                 "statusCode": "207",
@@ -176,13 +165,15 @@ def handle_dynamodb_response(response, error_records):
                 "diagnostics": error_records,
             }
         case {"ResponseMetadata": {"HTTPStatusCode": 200}}:
-            logger.info("Successfully synched into delta")
             return True, {
                 "statusCode": "200",
                 "statusDesc": "Successfully synched into delta",
             }
         case _:
-            logger.error(f"Failure response from DynamoDB: {response}")
+            logger.error(
+                "Failure response from DynamoDB",
+                extra={"dynamodb_response": response},
+            )
             return False, {
                 "statusCode": "500",
                 "statusDesc": "Failure response from DynamoDB",
@@ -190,8 +181,8 @@ def handle_dynamodb_response(response, error_records):
             }
 
 
-def handle_exception_response(response):
-    match response:
+def handle_exception_response(exc: Exception) -> tuple[bool, dict[str, Any]]:
+    match exc:
         case ClientError(response={"Error": {"Code": "ConditionalCheckFailedException"}}):
             logger.info("Skipped record already present in delta")
             return True, {
@@ -203,21 +194,14 @@ def handle_exception_response(response):
             return False, {
                 "statusCode": "500",
                 "statusDesc": "Exception",
-                "diagnostics": response,
+                "diagnostics": str(exc),
             }
 
 
-def _event_to_operation(event_name: str) -> str:
-    if event_name == EventName.CREATE:
-        return Operation.CREATE
-    if event_name == EventName.DELETE_PHYSICAL:
-        return Operation.DELETE_PHYSICAL
-    if event_name == "REMOVE":
-        return Operation.DELETE_PHYSICAL
-    return Operation.UPDATE
-
-
-def process_remove(record: dict[str, Any], table: Any | None = None) -> tuple[bool, dict[str, Any]]:
+def process_remove(
+    record: dict[str, Any],
+    table: Any | None = None,
+) -> tuple[bool, OperationOutcomeDict]:
     norm = _normalize_record(record)
     creation_datetime_str, expiry_timestamp = get_creation_and_expiry_times(norm.creation_timestamp)
     operation_outcome: dict[str, Any] = {"operation_type": Operation.DELETE_PHYSICAL, "record": norm.imms_id}
@@ -252,7 +236,7 @@ def process_remove(record: dict[str, Any], table: Any | None = None) -> tuple[bo
         return success, operation_outcome
 
 
-def process_skip(record: dict[str, Any]) -> tuple[bool, dict[str, Any]]:
+def process_skip(record: dict[str, Any]) -> tuple[bool, OperationOutcomeDict]:
     norm = _normalize_record(record)
     logger.info("Record from DPS skipped")
     # norm.operation may be None for a skipped DPS record — log "UNKNOWN" rather than raising, since skipped records are not written to the delta table.
@@ -264,7 +248,10 @@ def process_skip(record: dict[str, Any]) -> tuple[bool, dict[str, Any]]:
     }
 
 
-def process_create_update_delete(record: dict[str, Any], table: Any | None = None) -> tuple[bool, dict[str, Any]]:
+def process_create_update_delete(
+    record: dict[str, Any],
+    table: Any | None = None,
+) -> tuple[bool, OperationOutcomeDict]:
     norm = _normalize_record(record)
 
     if norm.operation is None:
@@ -272,36 +259,36 @@ def process_create_update_delete(record: dict[str, Any], table: Any | None = Non
             f"Operation field missing from NewImage for event_id={norm.event_id}. "
             "Record cannot be safely classified — routing to DLQ."
         )
-    creation_datetime_str, expiry_timestamp = get_creation_and_expiry_times(norm.creation_timestamp)
-    operation_outcome: dict[str, Any] = {"record": norm.imms_id, "operation_type": norm.operation}
 
-    error_records: list[dict[str, Any]] | None = None
-    flat_json: Any
+    creation_datetime_str, expiry_timestamp = get_creation_and_expiry_times(norm.creation_timestamp)
+    operation_outcome: dict[str, Any] = {
+        "record": norm.imms_id,
+        "operation_type": norm.operation,
+    }
 
     action_flag = ActionFlag.CREATE if norm.operation == Operation.CREATE else norm.operation
 
-    if norm.imms_raw is not None:
-        if norm.is_fhir_resource:
-            resource_json = json.loads(norm.imms_raw, parse_float=decimal.Decimal)
-            fhir_converter = Converter(resource_json, action_flag=action_flag)
-            flat_json = fhir_converter.run_conversion()
-            error_records = fhir_converter.get_error_records()
-        else:
-            flat_json = json.loads(norm.imms_raw, parse_float=decimal.Decimal)
-            if isinstance(flat_json, dict) and "ACTION_FLAG" not in flat_json:
-                flat_json["ACTION_FLAG"] = action_flag
-            error_records = None
-    else:
-        # imms_raw is None for a non-REMOVE event — malformed item
+    if norm.imms_raw is None:
         raise ValidationError(
             f"Imms/Resource payload missing from NewImage for event_id={norm.event_id}. "
             "Record cannot be processed — routing to DLQ."
         )
 
+    if norm.is_fhir_resource:
+        resource_json = json.loads(norm.imms_raw, parse_float=decimal.Decimal)
+        fhir_converter = Converter(resource_json, action_flag=action_flag)
+        flat_json = fhir_converter.run_conversion()
+        error_records: list[dict[str, Any]] | None = fhir_converter.get_error_records()
+    else:
+        flat_json = json.loads(norm.imms_raw, parse_float=decimal.Decimal)
+        if isinstance(flat_json, dict) and "ACTION_FLAG" not in flat_json:
+            flat_json["ACTION_FLAG"] = action_flag
+        error_records = None
+
     target_table = table or get_delta_table()
     if target_table is None:
         operation_outcome.update({"statusCode": "500", "statusDesc": "Delta table unavailable"})
-        return False, operation_outcome
+        return False, operation_outcome  # type: ignore[return-value]
 
     try:
         response = target_table.put_item(
@@ -319,25 +306,25 @@ def process_create_update_delete(record: dict[str, Any], table: Any | None = Non
             },
             ConditionExpression=Attr("PK").not_exists(),
         )
-        success, extra_log_fields = handle_dynamodb_response(response, error_records)
-        operation_outcome.update(extra_log_fields)
+        success, extra_fields = handle_dynamodb_response(response, error_records)
+        operation_outcome.update(extra_fields)
         return success, operation_outcome
-    except Exception as e:
-        success, extra_log_fields = handle_exception_response(e)
-        operation_outcome.update(extra_log_fields)
+    except Exception as exc:
+        success, extra_fields = handle_exception_response(exc)
+        operation_outcome.update(extra_fields)
         return success, operation_outcome
 
 
 def _route_record(
     record: dict[str, Any],
     table: Any | None,
-) -> tuple[bool, dict[str, Any]]:
+) -> tuple[bool, OperationOutcomeDict]:
     """
-    Decide which processor handles this record and call it.
+    Route a stream record to the correct processor.
 
     Raises:
-        ValidationError: propagated from process_create_update_delete when Operation is absent.
-        Exception: propagated to process_record's except block.
+        ValidationError: from process_create_update_delete when Operation is absent.
+        Exception: any unexpected processor exception — propagated to process_record.
     """
     event_name = str(record.get("eventName", ""))
 
@@ -355,7 +342,7 @@ def _stable_outcome(
     outcome: Any,
     success: bool,
     event_name: str,
-) -> dict[str, Any]:
+) -> OperationOutcomeDict:
     """
     Guarantee the operation outcome dict always has the four required keys.
     """
@@ -399,42 +386,56 @@ def _send_to_dlq_if_failed(
 def process_record(
     record: dict[str, Any],
     table: Any | None = None,
-    sqs_client: Any | None = None,
-    dlq_url: str | None = None,
 ) -> tuple[bool, dict[str, Any]]:
     """
     Orchestrate processing of a single DDB stream record.
+
+    Args:
+        record:     Raw DynamoDB stream record dict.
+        table:      Injected DynamoDB Table resource (tests override).
+
+    Returns:
+        (success, operation_outcome) — outcome always has all four required keys.
     """
-    logger.info("Processing record with eventID=%s", record.get("eventID"))
     event_name: str = str(record.get("eventName", EventName.UPDATE))
-    try:
-        success, outcome = _route_record(record, table)
-    except Exception as exc:
-        logger.exception("Exception during processing")
-        success = False
-        outcome = {
-            "record": "unknown",
-            # _event_to_operation used here for error-path logging
-            "operation_type": _event_to_operation(event_name),
-            "statusCode": "500",
-            "statusDesc": "Exception",
-            "diagnostics": str(exc),
-        }
 
-    outcome = _stable_outcome(outcome, success, event_name)
-    _send_to_dlq_if_failed(success, record, sqs_client, dlq_url)
-    return success, outcome
+    with logger.append_keys(
+        event_id=record.get("eventID", "unknown"),
+        event_name=event_name,
+    ):
+        try:
+            success, outcome = _route_record(record, table)
+        except Exception as e:
+            logger.exception("Unhandled exception during record processing")
+            success = False
+            outcome = {  # type: ignore[assignment]
+                "record": "unknown",
+                "operation_type": _event_to_operation(event_name),
+                "statusCode": "500",
+                "statusDesc": "Exception",
+                "diagnostics": str(e),
+            }
+
+        outcome = _stable_outcome(outcome, success, event_name)
+        return success, outcome
 
 
-def handler(event, _context) -> bool:
-    logger.info("Starting Delta Handler")
-    logger.info("RAW_EVENT: %s", json.dumps(event, default=str))  # full stream batch
-    logger.info("RECORD_COUNT: %d", len(event.get("Records", [])))
+def handler(event: dict[str, Any], _context: Any) -> bool:
+    records: list[dict[str, Any]] = event["Records"]
+    logger.info("Delta handler invoked", extra={"record_count": len(records)})
 
-    for record in event["Records"]:
-        record_ingestion_datetime = datetime.now().isoformat()
+    table = get_delta_table()
+    sqs = get_sqs_client()
+
+    for record in records:
+        record_ingestion_datetime = datetime.now(UTC).isoformat()
         record_processing_start = time.time()
-        success, operation_outcome = process_record(record)
+        success, operation_outcome = process_record(
+            record,
+            table=table,
+        )
+        _send_to_dlq_if_failed(success, record, sqs, failure_queue_url)
+
         record_processing_end = time.time()
         log_data = {
             "function_name": "delta_sync",
@@ -443,8 +444,5 @@ def handler(event, _context) -> bool:
             "time_taken": f"{round(record_processing_end - record_processing_start, 5)}s",
         }
         send_log_to_firehose(STREAM_NAME, log_data)
-
-        if not success:
-            send_record_to_dlq(record)
 
     return True
