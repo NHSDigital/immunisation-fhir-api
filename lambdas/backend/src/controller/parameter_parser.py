@@ -179,7 +179,7 @@ def process_target_disease(params: dict[str, list[str]]) -> tuple[list[str], set
             continue
 
         for disease in diseases:
-            code = disease.get("code")
+            code = disease.get("code") if isinstance(disease, dict) else None
             if not code:
                 continue
             existing = disease_to_vaccs_map.get(code)
