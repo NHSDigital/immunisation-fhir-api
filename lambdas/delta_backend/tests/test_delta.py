@@ -553,7 +553,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         self.assertTrue(response)
 
         # Check logging and Firehose were called
-        mock_logger_info.assert_called_with("Record from DPS skipped")
+        mock_logger_info.assert_any_call("Record from DPS skipped")
         self.mock_send_log_to_firehose.assert_called()
         self.mock_sqs_client.send_message.assert_not_called()
 

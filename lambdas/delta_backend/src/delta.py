@@ -159,10 +159,10 @@ def get_creation_and_expiry_times(creation_timestamp: float) -> tuple[str, int]:
     expiry_timestamp = int(expiry_datetime.timestamp())
     datetime_iso = creation_datetime.isoformat()
     logger.info(
-        "Calculated creation and expiry times",
-        datetime_iso=datetime_iso,
-        expiry_timestamp=expiry_timestamp,
-        creation_timestamp=creation_datetime,
+        "Calculated creation and expiry times: datetime_iso=%s expiry_timestamp=%s creation_timestamp=%s",
+        datetime_iso,
+        expiry_timestamp,
+        creation_datetime,
     )
     return datetime_iso, expiry_timestamp
 
@@ -266,13 +266,14 @@ def process_remove(record: dict[str, Any], table: Any | None = None) -> tuple[bo
 
 def process_skip(record: dict[str, Any]) -> tuple[bool, dict[str, Any]]:
     norm = _normalize_record(record)
+    logger.info("Record from DPS skipped")
     logger.info(
-        "Record from DPS skipped",
-        event_id=norm.event_id,
-        operation=norm.operation,
-        imms_id=norm.imms_id,
-        vaccine_type=norm.vaccine_type,
-        supplier_system=norm.supplier_system,
+        "DPS record details: event_id=%s operation=%s imms_id=%s vaccine_type=%s supplier_system=%s",
+        norm.event_id,
+        norm.operation,
+        norm.imms_id,
+        norm.vaccine_type,
+        norm.supplier_system,
     )
     # norm.operation may be None for a skipped DPS record — log "UNKNOWN" rather than raising, since skipped records are not written to the delta table.
     return True, {
