@@ -4,7 +4,11 @@ from pathlib import Path
 import allure
 import pytest
 from dotenv import load_dotenv
-from utilities.api_fhir_immunization_helper import empty_folder
+
+# Ignore F403 * imports. Pytest BDD requires common steps to be imported in conftest
+from features.APITests.steps.common_steps import *  # noqa: F403
+from features.batchTests.Steps.batch_common_steps import *  # noqa: F403
+from utilities.api_fhir_immunization_helper import empty_folder, get_response_body_for_display
 from utilities.api_gen_token import get_tokens
 from utilities.api_get_header import get_delete_url_header
 from utilities.apigee.apigee_env_helpers import use_temp_apigee_apps
@@ -14,10 +18,6 @@ from utilities.aws_token import refresh_sso_token, set_aws_session_token
 from utilities.context import ScenarioContext
 from utilities.enums import SupplierNameWithODSCode
 from utilities.http_requests_session import http_requests_session
-
-# Ignore F403 * imports. Pytest BDD requires common steps to be imported in conftest
-from features.APITests.steps.common_steps import *  # noqa: F403
-from features.batchTests.Steps.batch_common_steps import *  # noqa: F403
 
 
 @pytest.hookimpl(tryfirst=True)
@@ -136,7 +136,7 @@ def pytest_bdd_after_scenario(request, feature, scenario):
             print(f"\n Delete Request is {context.url}/{context.ImmsID}")
             context.response = http_requests_session.delete(f"{context.url}/{context.ImmsID}", headers=context.headers)
             assert context.response.status_code == 204, (
-                f"Expected status code 204, but got {context.response.status_code}. Response: {context.response.json()}"
+                f"Expected status code 204, but got {context.response.status_code}. Response: {get_response_body_for_display(context.response)}"
             )
         else:
             print("Skipping delete: ImmsID is None")

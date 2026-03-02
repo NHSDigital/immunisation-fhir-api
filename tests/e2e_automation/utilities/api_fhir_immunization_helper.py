@@ -5,6 +5,7 @@ import uuid
 
 import pytest_check as check
 from pydantic import BaseModel
+
 from src.objectModels.api_data_objects import (
     Entry,
     FHIRImmunizationResponse,
@@ -13,7 +14,6 @@ from src.objectModels.api_data_objects import (
     Search,
 )
 from src.objectModels.api_operation_outcome import OperationOutcome
-
 from utilities.date_helper import covert_to_expected_date_format
 from utilities.error_constants import ERROR_MAP
 
@@ -22,6 +22,14 @@ def empty_folder(path):
     if os.path.exists(path):
         shutil.rmtree(path)
     os.makedirs(path)
+
+
+def get_response_body_for_display(response) -> str:
+    """Return response body as string for error messages. Uses .text when .json() fails (e.g. empty or non-JSON)."""
+    try:
+        return str(response.json()) if response.content else "(empty body)"
+    except (ValueError, TypeError):
+        return response.text if response.text else "(empty body)"
 
 
 def find_entry_by_Imms_id(parsed_data, imms_id) -> object | None:
