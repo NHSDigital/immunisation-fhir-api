@@ -106,7 +106,6 @@ def send_search_post_with_mixed_valid_unauthorized_targets(context, httpMethod):
     )
 )
 def send_invalid_param_get_request(context, httpMethod, NHSNumber, DiseaseType):
-
     NHSNumber = normalize_param(NHSNumber)
     DiseaseType = normalize_param(DiseaseType)
     context.params = context.request = convert_to_form_data(
