@@ -61,6 +61,13 @@ def _normalize_record(record: dict[str, Any]) -> NormalizedRecord:
       operation:        NewImage.Operation
       payload:          NewImage.Resource preferred, NewImage.Imms fallback, None for REMOVE
     """
+    logger.info(
+        "_normalize_record INPUT: eventName=%s dynamodb_keys=%s new_image_keys=%s",
+        record.get("eventName"),
+        list(record.get("dynamodb", {}).get("Keys", {}).keys()),
+        list(record.get("dynamodb", {}).get("NewImage", {}).keys()),
+    )
+
     dynamodb = record.get("dynamodb", {})
     new_image = dynamodb.get("NewImage", {})
     keys = dynamodb.get("Keys", {})
@@ -151,6 +158,12 @@ def get_creation_and_expiry_times(creation_timestamp: float) -> tuple[str, int]:
     expiry_datetime = creation_datetime + timedelta(days=int(delta_ttl_days))
     expiry_timestamp = int(expiry_datetime.timestamp())
     datetime_iso = creation_datetime.isoformat()
+    logger.info(
+        "Calculated creation and expiry times",
+        datetime_iso=datetime_iso,
+        expiry_timestamp=expiry_timestamp,
+        creation_timestamp=creation_datetime,
+    )
     return datetime_iso, expiry_timestamp
 
 
@@ -210,6 +223,14 @@ def _event_to_operation(event_name: str) -> str:
 
 def process_remove(record: dict[str, Any], table: Any | None = None) -> tuple[bool, dict[str, Any]]:
     norm = _normalize_record(record)
+    logger.info(
+        "Processing REMOVE event norm record",
+        event_id=norm.event_id,
+        operation=norm.operation,
+        imms_id=norm.imms_id,
+        vaccine_type=norm.vaccine_type,
+        supplier_system=norm.supplier_system,
+    )
     creation_datetime_str, expiry_timestamp = get_creation_and_expiry_times(norm.creation_timestamp)
     operation_outcome: dict[str, Any] = {"operation_type": Operation.DELETE_PHYSICAL, "record": norm.imms_id}
 
@@ -245,7 +266,14 @@ def process_remove(record: dict[str, Any], table: Any | None = None) -> tuple[bo
 
 def process_skip(record: dict[str, Any]) -> tuple[bool, dict[str, Any]]:
     norm = _normalize_record(record)
-    logger.info("Record from DPS skipped")
+    logger.info(
+        "Record from DPS skipped",
+        event_id=norm.event_id,
+        operation=norm.operation,
+        imms_id=norm.imms_id,
+        vaccine_type=norm.vaccine_type,
+        supplier_system=norm.supplier_system,
+    )
     # norm.operation may be None for a skipped DPS record — log "UNKNOWN" rather than raising, since skipped records are not written to the delta table.
     return True, {
         "record": norm.imms_id,
@@ -264,6 +292,14 @@ def process_create_update_delete(record: dict[str, Any], table: Any | None = Non
             "Record cannot be safely classified — routing to DLQ."
         )
 
+    logger.info(
+        "Processing event",
+        event_id=norm.event_id,
+        operation=norm.operation,
+        imms_id=norm.imms_id,
+        vaccine_type=norm.vaccine_type,
+        supplier_system=norm.supplier_system,
+    )
     creation_datetime_str, expiry_timestamp = get_creation_and_expiry_times(norm.creation_timestamp)
     operation_outcome: dict[str, Any] = {"record": norm.imms_id, "operation_type": norm.operation}
 
@@ -333,8 +369,13 @@ def _route_record(
 
     Raises:
         ValidationError: propagated from process_create_update_delete when Operation is absent.
-        Any other exception: propagated to process_record's except block.
+        Exception: propagated to process_record's except block.
     """
+    logger.info(
+        "_route_record INPUT: eventName=%s supplierSystem=%s",
+        record.get("eventName"),
+        _extract_value(record.get("dynamodb", {}).get("NewImage", {}).get("SupplierSystem")),
+    )
     event_name = str(record.get("eventName", ""))
 
     if event_name == EventName.DELETE_PHYSICAL:
@@ -401,8 +442,10 @@ def process_record(
     """
     Orchestrate processing of a single DDB stream record.
     """
+    logger.info("Processing record with eventID=%s", record.get("eventID"))
     try:
         success, outcome = _route_record(record, table)
+        logger.info("Record processing outcome: success=%s outcome=%s", success, outcome)
     except Exception as exc:
         logger.exception("Exception during processing")
         success = False
@@ -416,14 +459,26 @@ def process_record(
         }
 
     outcome = _stable_outcome(outcome, success, record)
+    logger.info("Final operation outcome after stable outcome: %s", outcome)
     _send_to_dlq_if_failed(success, record, sqs_client, dlq_url)
     return success, outcome
 
 
 def handler(event, _context) -> bool:
     logger.info("Starting Delta Handler")
+    logger.info("RAW_EVENT: %s", json.dumps(event, default=str))  # full stream batch
+    logger.info("RECORD_COUNT: %d", len(event.get("Records", [])))
 
-    for record in event["Records"]:
+    # for record in event["Records"]:
+    for i, record in enumerate(event["Records"]):
+        logger.info(
+            "RECORD[%d] eventName=%s eventID=%s sequenceNumber=%s",
+            i,
+            record.get("eventName"),
+            record.get("eventID"),
+            record.get("dynamodb", {}).get("SequenceNumber"),
+        )
+
         record_ingestion_datetime = datetime.now().isoformat()
         record_processing_start = time.time()
         success, operation_outcome = process_record(record)
