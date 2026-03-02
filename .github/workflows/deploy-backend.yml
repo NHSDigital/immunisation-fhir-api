@@ -78,6 +78,9 @@ jobs:
         run: make init
 
       - name: Terraform Plan
+        # Ignore cancellations to prevent Terraform from being killed while it holds a state lock
+        # A stuck process can still be killed with the force-cancel API operation
+        if: ${{ !failure() }}
         working-directory: infrastructure/instance
         run: make plan-ci
 
@@ -120,6 +123,9 @@ jobs:
         run: make init
 
       - name: Terraform Apply
+        # Ignore cancellations to prevent Terraform from being killed while it holds a state lock
+        # A stuck process can still be killed with the force-cancel API operation
+        if: ${{ !failure() }}
         working-directory: infrastructure/instance
         run: |
           make apply-ci
