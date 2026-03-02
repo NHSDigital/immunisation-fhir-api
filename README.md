@@ -142,11 +142,21 @@ Steps:
     pip install poetry
     ```
 
-8. Install pre-commit hooks. Ensure you have installed nodejs at the same version or later as per .tool-versions and
+### Install Pre-Commit Hooks
+
+[Husky](https://typicode.github.io/husky/) is used to perform automatic checks upon making a commit.
+It is configured within `.husky/pre-commit` to run the checks defined in the root level `package.json` under `lint-staged`.
+To set this up:
+
+1. Ensure you have installed nodejs at the same version or later as per .tool-versions and
    then, from the repo root, run:
+
     ```
     npm install
     ```
+
+2. Run `cd quality_checks` then `poetry install --no-root`. This will make sure your version of ruff is the same as used in the GitHub pipeline.
+   You can check your version is correct by running `poetry run ruff --version` from within the `quality_checks` directory and comparing to the version in the poetry.lock file.
 
 ### Setting up a virtual environment with poetry
 
@@ -205,19 +215,6 @@ Steps:
 #### Running Unit Tests from the Command Line
 
 It is not necessary to activate the virtual environment (using `source .venv/bin/activate`) before running a unit test suite from the command line; `direnv` will pick up the correct configurations for us. Run `pip list` to verify that the expected packages are installed. You should for example see that `recordprocessor` is specifically running `moto` v4, regardless of which if any `.venv` is active.
-
-### Setting up the root level environment
-
-The root-level virtual environment is primarily used for linting, as we create separate virtual environments for each folder that contains Lambda functions.
-Steps:
-
-1. Follow instructions above to [install dependencies](#install-dependencies) & [set up a virtual environment](#setting-up-a-virtual-environment-with-poetry).
-   **Note: While this project uses Python 3.11 (e.g. for Lambdas), the NHSDigital/api-management-utils repository — which orchestrates setup and linting — defaults to Python 3.8.
-   The linting command is executed from within that repo but calls the Makefile in this project, so be aware of potential Python version mismatches when running or debugging locally or in the pipeline.**
-2. Run `cd quality_checks` then `poetry install --no-root`. This will make sure your version of ruff is the same as used in the GitHub pipeline. You can check your version is correct by running `poetry run ruff --version` from within the quality_checks/ directory and comparing to the version in the poetry.lock file.
-3. Run `make lint`. This will:
-    - Check the linting of the API specification yaml.
-    - Run Flake8 on all Python files in the repository, excluding files inside .venv and .terraform directories.
 
 ## IDE setup
 
