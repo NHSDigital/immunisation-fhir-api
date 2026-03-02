@@ -1,1 +1,0 @@
-✅ Step Passed: **Send a search request with POST method with valid NHS Number '9728403348' and valid Disease Type 'COVID' and Date From '2025-05-12' and Date To '2025-05-12' and include 'abc'

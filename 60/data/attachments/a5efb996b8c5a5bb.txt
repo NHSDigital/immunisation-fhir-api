@@ -1,1 +1,0 @@
-✅ Step Passed: **Send a delete for Immunization event created with invalid Imms Id

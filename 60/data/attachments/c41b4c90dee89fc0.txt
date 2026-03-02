@@ -1,1 +1,0 @@
-✅ Step Passed: **Send a search request with POST method with invalid NHS Number '1234567890' and valid Disease Type 'RSV'
