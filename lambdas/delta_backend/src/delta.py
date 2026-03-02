@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from aws_lambda_powertools.utilities.data_classes.dynamo_db_stream_event import DynamoDBStreamEvent
+from aws_lambda_powertools.utilities.typing import LambdaContext
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
 
@@ -420,8 +422,13 @@ def process_record(
         return success, outcome
 
 
-def handler(event: dict[str, Any], _context: Any) -> bool:
-    records: list[dict[str, Any]] = event["Records"]
+def handler(event: dict[str, Any], _context: LambdaContext) -> bool:
+    if "Records" not in event:
+        # preserves existing test/contract
+        raise KeyError("Records")
+    stream_event = DynamoDBStreamEvent(event)
+    records = [r.raw_event for r in stream_event.records]
+
     logger.info("Delta handler invoked", extra={"record_count": len(records)})
 
     table = get_delta_table()
