@@ -308,7 +308,6 @@ class TestNormalizeRecord(unittest.TestCase):
 class DeltaHandlerTestCase(unittest.TestCase):
     # TODO refactor for dependency injection, eg process_record, send_firehose etc
     def setUp(self):
-
         self.logger_patcher = patch("delta.logger", make_mock_logger())
         self.mock_logger = self.logger_patcher.start()
 
