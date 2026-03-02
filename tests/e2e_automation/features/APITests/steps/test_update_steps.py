@@ -42,7 +42,7 @@ def validate_delta_table_for_updated_event(context):
     assert items, f"Items not found in response for ImmsID: {context.ImmsID}"
     delta_items = [i for i in items if i.get("Operation") == Operation.updated.value]
     assert delta_items, f"No item found for ImmsID: {context.ImmsID}"
-    latest_delta_record = max(delta_items, key=lambda x: x.get("DateTimeStampWithSequence", -1))
+    latest_delta_record = max(delta_items, key=lambda x: x.get("SequenceNumber", -1))
     validate_imms_delta_record_with_created_event(
         context,
         create_obj,
