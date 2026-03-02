@@ -401,7 +401,7 @@ def process_record(
     """
     event_name: str = str(record.get("eventName", EventName.UPDATE))
 
-    with logger.append_keys(
+    with logger.append_context_keys(
         event_id=record.get("eventID", "unknown"),
         event_name=event_name,
     ):

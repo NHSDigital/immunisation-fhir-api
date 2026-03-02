@@ -20,10 +20,11 @@ def make_mock_logger() -> MagicMock:
     mock = MagicMock()
 
     @contextmanager
-    def _append_keys(**kwargs):
+    def _append_context_keys(**kwargs):
         yield
 
-    mock.append_keys = _append_keys
+    mock.append_keys.return_value = None
+    mock.append_context_keys = _append_context_keys
     return mock
 
 
