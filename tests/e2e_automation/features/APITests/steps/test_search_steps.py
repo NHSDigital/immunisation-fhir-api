@@ -347,19 +347,23 @@ def validate_date_range(context):
     dateFrom = params.get("-date.from")
     dateTo = params.get("-date.to")
     assert context.parsed_search_object.entry, "No entries found in the search response."
-    for entry in context.parsed_search_object.entry:
-        if entry.resource.resourceType == "Immunization":
-            occurrence_date = entry.resource.occurrenceDateTime
-            id = entry.resource.id
-            if occurrence_date:
-                if dateFrom and dateTo:
-                    occurrence_date = iso_to_compact(occurrence_date)
-                    date_from = iso_to_compact(dateFrom)
-                    date_to = iso_to_compact(dateTo)
+    immunization_entries = [e for e in context.parsed_search_object.entry if e.resource.resourceType == "Immunization"]
+    assert immunization_entries, (
+        "No Immunization entries in search response (response may contain only OperationOutcome). "
+        "Check that target-disease is supported and data exists for the patient."
+    )
+    for entry in immunization_entries:
+        occurrence_date = entry.resource.occurrenceDateTime
+        id = entry.resource.id
+        if occurrence_date:
+            if dateFrom and dateTo:
+                occurrence_date = iso_to_compact(occurrence_date)
+                date_from = iso_to_compact(dateFrom)
+                date_to = iso_to_compact(dateTo)
 
-                    assert date_from <= occurrence_date <= date_to, (
-                        f"Occurrence date {occurrence_date} is not within the range Date From {context.DateFrom} and Date To {context.DateTo}. Imms ID: {id}"
-                    )
+                assert date_from <= occurrence_date <= date_to, (
+                    f"Occurrence date {occurrence_date} is not within the range Date From {context.DateFrom} and Date To {context.DateTo}. Imms ID: {id}"
+                )
 
 
 @then("The Search Response JSONs should contain the detail of the immunization events created above")
@@ -423,9 +427,12 @@ def validate_json_patient(context):
 def validate_correct_immunization_event(context):
     data = context.response.json()
     context.parsed_search_object = parse_FHIR_immunization_response(data)
-    context.created_event = context.parsed_search_object.entry[0] if context.parsed_search_object.entry else None
+    context.created_event = find_entry_by_Imms_id(context.parsed_search_object, context.ImmsID)
     if context.created_event is None:
-        raise AssertionError(f"No object found with Immunisation ID {context.ImmsID} in the search response.")
+        raise AssertionError(
+            f"No Immunization entry with ID {context.ImmsID} in the search response "
+            "(response may contain only OperationOutcome or no matching immunization)."
+        )
     validate_json_imms(context)
     assert context.parsed_search_object.resourceType == "Bundle", (
         f"expected resourceType to be 'Bundle' but got {context.parsed_search_object.resourceType}"
@@ -450,11 +457,17 @@ def validate_correct_immunization_event_with_elements(context):
     assert response.get("resourceType") == "Bundle", "resourceType should be 'Bundle'"
     assert response.get("type") == "searchset", "type should be 'searchset'"
     assert isinstance(response.get("entry"), list) and len(response["entry"]) > 0, " entry list is missing or empty"
+    entries = response["entry"]
+    imms_entry = next(
+        (e for e in entries if e.get("resource", {}).get("resourceType") == "Immunization"),
+        None,
+    )
+    assert imms_entry is not None, "No Immunization entry in search response"
     link = response.get("link", [{}])[0]
     link_url = link.get("url")
     assert link_url is not None, " link[0].url is missing"
     assert link_url.startswith(context.baseUrl), f"link[0].url should start with '{context.baseUrl}', got '{link_url}'"
-    resource = response["entry"][0].get("resource", {})
+    resource = imms_entry.get("resource", {})
     assert resource.get("resourceType") == "Immunization", "resourceType should be 'Immunization'"
     assert "id" in resource, "resource.id is missing"
     assert "meta" in resource and "versionId" in resource["meta"], " meta.versionId is missing"

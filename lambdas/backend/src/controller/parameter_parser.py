@@ -144,14 +144,64 @@ def process_target_disease(params: dict[str, list[str]]) -> tuple[list[str], set
 
     redis = get_redis_client()
     codes_json = redis.hget(RedisHashKeys.TARGET_DISEASE_LIST_KEY, TARGET_DISEASE_CODES_FIELD)
-    valid_codes_set = set(json.loads(codes_json)) if codes_json else set()
 
+    # Build disease-to-vaccine-type mapping by combining the dedicated target-disease cache
+    # with the existing vaccine-type-to-diseases cache. This ensures target-disease search
+    # works even when only one of the Redis structures is populated, or when new disease
+    # mappings have been deployed but the target-disease cache has not yet been refreshed.
+    disease_to_vaccs_map: dict[str, list[str]] = {}
+
+    # 1) Start with any explicit target-disease → vaccine-type mappings.
     disease_to_vaccs_raw = redis.hgetall(RedisHashKeys.TARGET_DISEASE_TO_VACCS_KEY) or {}
-    disease_to_vaccs_map = {}
     for k, v in disease_to_vaccs_raw.items():
         key = k.decode() if isinstance(k, bytes) else k
         val = v.decode() if isinstance(v, bytes) else v
-        disease_to_vaccs_map[key] = val
+        try:
+            decoded = json.loads(val) if isinstance(val, str) else val
+        except (TypeError, json.JSONDecodeError):
+            logger.warning("Could not decode target_disease_to_vaccs mapping for disease code '%s'", key)
+            continue
+        if isinstance(decoded, list):
+            disease_to_vaccs_map[key] = [str(vacc_type) for vacc_type in decoded]
+
+    # 2) Merge in mappings derived from the vaccine-type → diseases cache.
+    vacc_to_diseases_raw = redis.hgetall(RedisHashKeys.VACCINE_TYPE_TO_DISEASES_HASH_KEY) or {}
+    for vacc_key, diseases_val in vacc_to_diseases_raw.items():
+        vacc_type = vacc_key.decode() if isinstance(vacc_key, bytes) else vacc_key
+        diseases_json = diseases_val.decode() if isinstance(diseases_val, bytes) else diseases_val
+        try:
+            diseases = json.loads(diseases_json)
+        except (TypeError, json.JSONDecodeError):
+            logger.warning("Could not decode diseases mapping for vaccine type '%s'", vacc_type)
+            continue
+
+        if not isinstance(diseases, list):
+            continue
+
+        for disease in diseases:
+            code = disease.get("code")
+            if not code:
+                continue
+            existing = disease_to_vaccs_map.get(code)
+            if existing is None:
+                disease_to_vaccs_map[code] = [vacc_type]
+            elif vacc_type not in existing:
+                existing.append(vacc_type)
+
+    # 3) Determine which SNOMED codes are considered "supported" for target-disease search.
+    valid_codes_set: set[str] = set()
+
+    if codes_json:
+        try:
+            decoded_codes = json.loads(codes_json)
+            if isinstance(decoded_codes, list):
+                valid_codes_set.update(str(code) for code in decoded_codes)
+        except (TypeError, json.JSONDecodeError):
+            logger.warning("Could not decode target_disease_list codes from Redis")
+
+    # Always include any codes we have a mapping for, even if the target_disease_list
+    # entry is missing or out of date for the current environment.
+    valid_codes_set.update(disease_to_vaccs_map.keys())
 
     valid_raw: list[str] = []
     vaccine_types: set[str] = set()
@@ -177,12 +227,12 @@ def process_target_disease(params: dict[str, list[str]]) -> tuple[list[str], set
             unmapped_format_valid.append(raw)
             continue
         valid_raw.append(raw)
-        vaccs_json = disease_to_vaccs_map.get(code)
-        if vaccs_json:
-            vaccine_types.update(json.loads(vaccs_json))
+        vaccs_list = disease_to_vaccs_map.get(code, [])
+        if vaccs_list:
+            vaccine_types.update(vaccs_list)
         else:
             logger.warning(
-                "Target disease code '%s' is in target_disease_list but has no mapping in target_disease_to_vaccs",
+                "Target disease code '%s' is considered supported but has no vaccine-type mapping",
                 code,
             )
 
