@@ -15,6 +15,7 @@ from utilities.api_get_header import (
     get_search_get_url_header,
     get_search_post_url_header,
 )
+from utilities.api_get_header import get_search_get_url_header, get_search_post_url_header
 from utilities.date_helper import iso_to_compact
 from utilities.http_requests_session import http_requests_session
 
