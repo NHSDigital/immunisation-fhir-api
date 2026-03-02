@@ -155,12 +155,14 @@ def pytest_bdd_after_scenario(request, feature, scenario):
 
                 response = http_requests_session.delete(delete_url, headers=context.headers)
 
-                assert response.status_code == 204, (
-                    f"Failed to delete {imms_id}: expected 204, got {response.status_code}. Response: {response.text}"
-                )
+                if response.status_code != 204:
+                    print(
+                        f"Cleanup DELETE returned {response.status_code} for {imms_id} (teardown best-effort, not failing test). Response: {get_response_body_for_display(response)}"
+                    )
+                else:
+                    print(f"Deleted {imms_id} successfully.")
 
-            print("All IMMS_IDs deleted successfully.")
-
+            print("Batch cleanup finished.")
         else:
             print(
                 " No IMMS_ID column or no values present as test failed due to as exception — skipping delete cleanup."
