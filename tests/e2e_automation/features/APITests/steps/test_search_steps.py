@@ -198,9 +198,6 @@ def send_search_post_with_all_invalid_target_disease_codes(context):
     context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
 
 
-@when("Send a search request with GET method with valid NHS Number and mixed valid and invalid Disease Type")
-def send_search_get_with_mixed_targets(context):
-    get_search_get_url_header(context)
 @when(
     parsers.parse(
         "Send a search request with '{httpMethod}' method with valid NHS Number and mixed valid and invalid Disease Type"
