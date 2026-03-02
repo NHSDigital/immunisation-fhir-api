@@ -1,0 +1,1 @@
+✅ Step Passed: **The occurrenceDateTime of the immunization events should be within the Date From and Date To range
