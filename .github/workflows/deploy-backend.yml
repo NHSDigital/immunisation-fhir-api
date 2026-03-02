@@ -78,6 +78,9 @@ jobs:
         run: make init
 
       - name: Terraform Plan
+        # Ignore cancellations to prevent Terraform from being killed while it holds a state lock
+        # A stuck process can still be killed with the force-cancel API operation
+        if: ${{ !failure() }}
         working-directory: infrastructure/instance
         run: make plan-ci
 
@@ -110,7 +113,7 @@ jobs:
           terraform_version: "1.12.2"
 
       - name: Retrieve Terraform Plan
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3
         with:
           name: ${{ env.ENVIRONMENT }}-${{ env.SUB_ENVIRONMENT }}-tfplan
           path: infrastructure/instance
@@ -120,6 +123,9 @@ jobs:
         run: make init
 
       - name: Terraform Apply
+        # Ignore cancellations to prevent Terraform from being killed while it holds a state lock
+        # A stuck process can still be killed with the force-cancel API operation
+        if: ${{ !failure() }}
         working-directory: infrastructure/instance
         run: |
           make apply-ci
