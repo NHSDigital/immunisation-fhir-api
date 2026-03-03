@@ -258,11 +258,12 @@ class TestLambdaHandlerIntegration(unittest.TestCase):
     @patch("common.api_clients.authentication.AppRestrictedAuth.get_access_token")
     @patch("process_records.logger")
     def test_successful_notification_creation_with_gp(self, mock_logger, mock_get_token):
+        """
+        Test a Successful MNS Publish notification with calls to PDS for GP details, no batch failure
+        """
+
         # Mock OAuth token response issued from Apigee
-        mock_oauth_response = Mock()
-        mock_oauth_response.status_code = 200
-        mock_oauth_response.json.return_value = {"access_token": "fake-token"}
-        mock_get_token.return_value = mock_oauth_response
+        mock_get_token.return_value = {"access_token": "fake-token"}
 
         # Intercepts actual request call to PDS and returns mocked responses
         responses.add(
@@ -297,6 +298,84 @@ class TestLambdaHandlerIntegration(unittest.TestCase):
 
         mock_logger.info.assert_any_call("Successfully processed all 1 messages")
 
+    @responses.activate
+    @patch("common.api_clients.authentication.AppRestrictedAuth.get_access_token")
+    @patch("process_records.get_mns_service")
+    @patch("process_records.logger")
+    def test_pds_failure(self, mock_logger, mock_get_mns, mock_get_token):
+        """
+        Test that a PDS client error results in a batch item failure and MNS is not called.
+        """
 
-if __name__ == "__main__":
-    unittest.main()
+        # Mock OAuth token response issued from Apigee
+        mock_get_token.return_value = "fake-token"
+
+        # Intercepts actual request call to PDS and returns mocked responses
+        responses.add(
+            responses.GET,
+            "https://int.api.service.nhs.uk/personal-demographics/FHIR/R4/Patient/9481152782",
+            json={
+                "resourceType": "OperationOutcome",
+                "issue": [{"severity": "error", "code": "processing", "diagnostics": "Patient not found"}],
+            },
+            status=400,
+        )
+
+        mock_mns_service = Mock()
+        mock_mns_service.publish_notification.return_value = None
+        mock_get_mns.return_value = mock_mns_service
+
+        sqs_event = {"Records": [self.sample_sqs_record]}
+        result = lambda_handler(sqs_event, Mock())
+
+        self.assertEqual(len(result["batchItemFailures"]), 1)
+        mock_mns_service.publish_notification.assert_not_called()
+        mock_logger.warning.assert_called_with("Batch completed with 1 failures")
+
+    @responses.activate
+    @patch("common.api_clients.authentication.AppRestrictedAuth.get_access_token")
+    @patch("process_records.logger")
+    def test_non_successful_notification_creation_without_gp(self, mock_logger, mock_get_token):
+        """
+        Test a Successful MNS Publish notification with calls to PDS for GP details, no batch failure
+        """
+
+        # Mock OAuth token response issued from Apigee
+        mock_get_token.return_value = {"access_token": "fake-token"}
+
+        # Intercepts actual request call to PDS and returns mocked responses
+        responses.add(
+            responses.GET,
+            "https://int.api.service.nhs.uk/personal-demographics/FHIR/R4/Patient/9481152782",
+            json={
+                "generalPractitioner": [
+                    {"identifier": {"value": "Y12345", "period": {"start": "2024-01-01", "end": "2025-12-31"}}}
+                ]
+            },
+            status=200,
+        )
+
+        mns_response = responses.add(
+            responses.POST,
+            "https://int.api.service.nhs.uk/multicast-notification-service/events",
+            json={"id": "236a1d4a-5d69-4fa9-9c7f-e72bf505aa5b"},
+            status=200,
+        )
+
+        sqs_event = {"Records": [self.sample_sqs_record]}
+        result = lambda_handler(sqs_event, Mock())
+
+        self.assertEqual(result, {"batchItemFailures": []})
+
+        self.assertEqual(mns_response.call_count, 1)
+        self.assertEqual(mns_response.calls[0].response.status_code, 200)
+        mns_payload = json.loads(mns_response.calls[0].request.body)
+        self.assertEqual(mns_payload["subject"], "9481152782")
+        self.assertEqual(mns_payload["filtering"]["generalpractitioner"], None)
+        self.assertEqual(mns_payload["filtering"]["sourceorganisation"], "B0C4P")
+        self.assertEqual(mns_payload["filtering"]["sourceapplication"], "TPP")
+        self.assertEqual(mns_payload["filtering"]["immunisationtype"], "hib")
+        self.assertEqual(mns_payload["filtering"]["action"], "CREATE")
+        self.assertEqual(mns_payload["filtering"]["subjectage"], "21")
+
+        mock_logger.info.assert_any_call("Successfully processed all 1 messages")
