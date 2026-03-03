@@ -152,7 +152,6 @@ def process_rows(
                     "created_at_formatted_string": created_at_formatted_string,
                     **details_from_processing,
                 }
-                print(f"Outgoing message body for row {row_id}: {outgoing_message_body}")
                 send_to_kinesis(supplier, outgoing_message_body, vaccine)
                 total_rows_processed_count += 1
     except UnicodeDecodeError as error:  # pylint: disable=broad-exception-caught
