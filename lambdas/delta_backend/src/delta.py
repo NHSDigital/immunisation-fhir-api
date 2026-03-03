@@ -73,6 +73,7 @@ def _event_to_operation(event_name: str) -> str:
     return Operation.UPDATE  # "MODIFY", defult to UPDATE
 
 
+# TODO: Accept DynamoDBRecord (aws_lambda_powertools.utilities.data_classes.dynamo_db_stream_event)
 def _normalize_record(record: dict[str, Any]) -> NormalizedRecord:
     """
     Contract-first normalization of a raw DynamoDB stream record.
@@ -426,14 +427,15 @@ def handler(event: dict[str, Any], _context: LambdaContext) -> bool:
         # preserves existing test/contract
         raise KeyError("Records")
     stream_event = DynamoDBStreamEvent(event)
-    records = [r.raw_event for r in stream_event.records]
 
-    logger.info("Delta handler invoked", extra={"record_count": len(records)})
+    logger.info("Delta handler invoked", extra={"record_count": len(event["Records"])})
 
     table = get_delta_table()
     sqs = get_sqs_client()
 
-    for record in records:
+    for typed_record in stream_event.records:
+        # TODO: refactor process_record to accept DynamoDBRecord directly
+        record = typed_record.raw_event
         record_ingestion_datetime = datetime.now(UTC).isoformat()
         record_processing_start = time.time()
         success, operation_outcome = process_record(
