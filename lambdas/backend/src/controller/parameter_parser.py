@@ -130,10 +130,8 @@ def validate_search_param_mutual_exclusivity(params: dict[str, list[str]]) -> No
         raise ParameterExceptionError(TARGET_DISEASE_MUTUAL_EXCLUSIVITY_ERROR)
 
 
-def process_target_disease(params: dict[str, list[str]]) -> tuple[list[str], set[str], list[str], bool]:
-    """Parse target-disease parameter. Returns (valid_raw_for_url, vaccine_types, invalid_diagnostics, all_not_in_mapping).
-    Raises ParameterExceptionError when no values or all format invalid.
-    """
+def _extract_target_disease_values(params: dict[str, list[str]]) -> list[str]:
+    """Extract and strip target-disease values from params. Raises if empty."""
     values = [
         v.strip() for v in params.get(ImmunizationSearchParameterName.TARGET_DISEASE, []) if v is not None and v.strip()
     ]
@@ -141,21 +139,22 @@ def process_target_disease(params: dict[str, list[str]]) -> tuple[list[str], set
         raise ParameterExceptionError(
             f"Search parameter {ImmunizationSearchParameterName.TARGET_DISEASE} must have one or more values."
         )
+    return values
 
-    redis = get_redis_client()
-    codes_json = redis.hget(RedisHashKeys.TARGET_DISEASE_LIST_KEY, TARGET_DISEASE_CODES_FIELD)
 
-    # Build disease-to-vaccine-type mapping by combining the dedicated target-disease cache
-    # with the existing vaccine-type-to-diseases cache. This ensures target-disease search
-    # works even when only one of the Redis structures is populated, or when new disease
-    # mappings have been deployed but the target-disease cache has not yet been refreshed.
+def _decode_redis_str(val) -> str:
+    """Decode Redis key/value to str (handles bytes)."""
+    return val.decode() if isinstance(val, bytes) else val
+
+
+def _build_disease_to_vaccs_map(redis) -> dict[str, list[str]]:
+    """Build disease code -> vaccine types map from Redis (target-disease and vaccine-type caches)."""
     disease_to_vaccs_map: dict[str, list[str]] = {}
 
-    # 1) Start with any explicit target-disease → vaccine-type mappings.
     disease_to_vaccs_raw = redis.hgetall(RedisHashKeys.TARGET_DISEASE_TO_VACCS_KEY) or {}
     for k, v in disease_to_vaccs_raw.items():
-        key = k.decode() if isinstance(k, bytes) else k
-        val = v.decode() if isinstance(v, bytes) else v
+        key = _decode_redis_str(k)
+        val = _decode_redis_str(v)
         try:
             decoded = json.loads(val) if isinstance(val, str) else val
         except (TypeError, json.JSONDecodeError):
@@ -164,11 +163,10 @@ def process_target_disease(params: dict[str, list[str]]) -> tuple[list[str], set
         if isinstance(decoded, list):
             disease_to_vaccs_map[key] = [str(vacc_type) for vacc_type in decoded]
 
-    # 2) Merge in mappings derived from the vaccine-type → diseases cache.
     vacc_to_diseases_raw = redis.hgetall(RedisHashKeys.VACCINE_TYPE_TO_DISEASES_HASH_KEY) or {}
     for vacc_key, diseases_val in vacc_to_diseases_raw.items():
-        vacc_type = vacc_key.decode() if isinstance(vacc_key, bytes) else vacc_key
-        diseases_json = diseases_val.decode() if isinstance(diseases_val, bytes) else diseases_val
+        vacc_type = _decode_redis_str(vacc_key)
+        diseases_json = _decode_redis_str(diseases_val)
         try:
             diseases = json.loads(diseases_json)
         except (TypeError, json.JSONDecodeError):
@@ -188,20 +186,69 @@ def process_target_disease(params: dict[str, list[str]]) -> tuple[list[str], set
             elif vacc_type not in existing:
                 existing.append(vacc_type)
 
-    # 3) Determine which SNOMED codes are considered "supported" for target-disease search.
+    return disease_to_vaccs_map
+
+
+def _build_valid_codes_set(redis, disease_to_vaccs_map: dict[str, list[str]]) -> set[str]:
+    """Build set of supported SNOMED codes from Redis list and mapping keys."""
     valid_codes_set: set[str] = set()
-
+    codes_json = redis.hget(RedisHashKeys.TARGET_DISEASE_LIST_KEY, TARGET_DISEASE_CODES_FIELD)
     if codes_json:
+        decoded = codes_json.decode() if isinstance(codes_json, bytes) else codes_json
+        decoded_codes = None
         try:
-            decoded_codes = json.loads(codes_json)
-            if isinstance(decoded_codes, list):
-                valid_codes_set.update(str(code) for code in decoded_codes)
-        except (TypeError, json.JSONDecodeError):
+            decoded_codes = json.loads(decoded)
+        except json.JSONDecodeError:
             logger.warning("Could not decode target_disease_list codes from Redis")
-
-    # Always include any codes we have a mapping for, even if the target_disease_list
-    # entry is missing or out of date for the current environment.
+        if decoded_codes is not None and isinstance(decoded_codes, list):
+            valid_codes_set.update(str(c) for c in decoded_codes)
     valid_codes_set.update(disease_to_vaccs_map.keys())
+    return valid_codes_set
+
+
+def _classify_target_disease_value(raw: str, valid_codes_set: set[str]) -> tuple[str, str | None]:
+    """Classify one target-disease value. Returns (status, code_or_none). status is 'valid', 'format_invalid', or 'unmapped'."""
+    if "|" not in raw:
+        return "format_invalid", None
+    parts = raw.split("|", 1)
+    if len(parts) != 2:
+        return "format_invalid", None
+    system, code = parts[0].strip(), parts[1].strip()
+    if system != Urls.SNOMED or not code:
+        return "format_invalid", None
+    if code not in valid_codes_set:
+        return "unmapped", code
+    return "valid", code
+
+
+def _resolve_target_disease_result(
+    valid_raw: list[str],
+    unmapped_format_valid: list[str],
+    format_invalid_count: int,
+    total_count: int,
+) -> tuple[list[str], bool]:
+    """Apply post-processing and raises if needed. Returns (final_valid_raw, all_not_in_mapping)."""
+    if format_invalid_count == total_count:
+        raise ParameterExceptionError(TARGET_DISEASE_ALL_INVALID_ERROR)
+
+    all_not_in_mapping = len(valid_raw) == 0 and len(unmapped_format_valid) > 0 and format_invalid_count == 0
+    if all_not_in_mapping:
+        valid_raw = list(unmapped_format_valid)
+
+    if not all_not_in_mapping and len(valid_raw) == 0:
+        raise ParameterExceptionError(TARGET_DISEASE_ALL_INVALID_ERROR)
+
+    return valid_raw, all_not_in_mapping
+
+
+def process_target_disease(params: dict[str, list[str]]) -> tuple[list[str], set[str], list[str], bool]:
+    """Parse target-disease parameter. Returns (valid_raw_for_url, vaccine_types, invalid_diagnostics, all_not_in_mapping).
+    Raises ParameterExceptionError when no values or all format invalid.
+    """
+    values = _extract_target_disease_values(params)
+    redis = get_redis_client()
+    disease_to_vaccs_map = _build_disease_to_vaccs_map(redis)
+    valid_codes_set = _build_valid_codes_set(redis, disease_to_vaccs_map)
 
     valid_raw: list[str] = []
     vaccine_types: set[str] = set()
@@ -210,17 +257,12 @@ def process_target_disease(params: dict[str, list[str]]) -> tuple[list[str], set
     format_invalid_count = 0
 
     for raw in values:
-        if "|" not in raw:
+        status, code = _classify_target_disease_value(raw, valid_codes_set)
+        if status == "format_invalid":
             invalid_diagnostics.append(f"Invalid format for '{raw}': {TARGET_DISEASE_FORMAT_ERROR}")
             format_invalid_count += 1
             continue
-        parts = raw.split("|", 1)
-        system, code = parts[0].strip(), parts[1].strip() if len(parts) > 1 else ""
-        if system != Urls.SNOMED or not code:
-            invalid_diagnostics.append(f"Invalid format for '{raw}': {TARGET_DISEASE_FORMAT_ERROR}")
-            format_invalid_count += 1
-            continue
-        if code not in valid_codes_set:
+        if status == "unmapped":
             invalid_diagnostics.append(
                 f"Target disease code '{code}' is not a supported target disease in this service."
             )
@@ -236,17 +278,9 @@ def process_target_disease(params: dict[str, list[str]]) -> tuple[list[str], set
                 code,
             )
 
-    if format_invalid_count == len(values):
-        raise ParameterExceptionError(TARGET_DISEASE_ALL_INVALID_ERROR)
-
-    all_not_in_mapping = len(valid_raw) == 0 and len(unmapped_format_valid) > 0 and format_invalid_count == 0
-    if all_not_in_mapping:
-        # For all-not-in-mapping case, still echo the user's valid-format target-disease values in the self link.
-        valid_raw = list(unmapped_format_valid)
-
-    if not all_not_in_mapping and len(valid_raw) == 0:
-        raise ParameterExceptionError(TARGET_DISEASE_ALL_INVALID_ERROR)
-
+    valid_raw, all_not_in_mapping = _resolve_target_disease_result(
+        valid_raw, unmapped_format_valid, format_invalid_count, len(values)
+    )
     return valid_raw, vaccine_types, invalid_diagnostics, all_not_in_mapping
 
 
