@@ -146,6 +146,34 @@ def _extract_target_disease_values(params: dict[str, list[str]]) -> list[str]:
     return values
 
 
+def _safe_load_diseases(vacc_type: str, diseases_json) -> list[dict]:
+    try:
+        diseases = json.loads(diseases_json)
+    except (TypeError, json.JSONDecodeError):
+        logger.warning("Could not decode diseases mapping for vaccine type '%s'", vacc_type)
+        return []
+
+    if not isinstance(diseases, list):
+        return []
+
+    return diseases
+
+
+def _add_vaccine_to_disease_map(
+    disease_to_vaccs_map: dict[str, list[str]],
+    code: str | None,
+    vacc_type: str,
+) -> None:
+    if not code:
+        return
+
+    existing = disease_to_vaccs_map.get(code)
+    if existing is None:
+        disease_to_vaccs_map[code] = [vacc_type]
+    elif vacc_type not in existing:
+        existing.append(vacc_type)
+
+
 def _build_disease_to_vaccs_map(redis) -> dict[str, list[str]]:
     """Build disease code -> vaccine types map from Redis.
 
@@ -169,24 +197,13 @@ def _build_disease_to_vaccs_map(redis) -> dict[str, list[str]]:
     # target-disease search continues to work while the new cache is being rolled out.
     vacc_to_diseases_raw = redis.hgetall(RedisHashKeys.VACCINE_TYPE_TO_DISEASES_HASH_KEY) or {}
     for vacc_type, diseases_json in vacc_to_diseases_raw.items():
-        try:
-            diseases = json.loads(diseases_json)
-        except (TypeError, json.JSONDecodeError):
-            logger.warning("Could not decode diseases mapping for vaccine type '%s'", vacc_type)
-            continue
-
-        if not isinstance(diseases, list):
+        diseases = _safe_load_diseases(vacc_type, diseases_json)
+        if not diseases:
             continue
 
         for disease in diseases:
             code = disease.get("code") if isinstance(disease, dict) else None
-            if not code:
-                continue
-            existing = disease_to_vaccs_map.get(code)
-            if existing is None:
-                disease_to_vaccs_map[code] = [vacc_type]
-            elif vacc_type not in existing:
-                existing.append(vacc_type)
+            _add_vaccine_to_disease_map(disease_to_vaccs_map, code, vacc_type)
 
     return disease_to_vaccs_map
 
