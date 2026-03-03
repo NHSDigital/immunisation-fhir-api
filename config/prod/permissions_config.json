@@ -25,12 +25,12 @@
   },
   {
     "supplier": "RAVS",
-    "permissions": ["MMR.CRUDS", "RSV.RS"],
+    "permissions": ["MMR.CRUDS", "RSV.CRUDS", "PNEUMOCOCCAL.CRUDS"],
     "ods_codes": ["X26", "X8E5B"]
   },
   {
     "supplier": "MAVIS",
-    "permissions": ["FLU.CRUDS", "HPV.CUD", "PNEUMOCOCCAL.CRUDS", "RSV.CUD"],
+    "permissions": ["FLU.CRUDS", "HPV.CUD"],
     "ods_codes": ["V0V8L"]
   },
   {
