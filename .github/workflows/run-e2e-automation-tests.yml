@@ -239,7 +239,7 @@ jobs:
         run: poetry run pytest "$TEST_PATH" -m "$TEST_FILTER" --junitxml=output/test-results.xml --alluredir=output/allure-results
 
       - name: Upload e2e automation test artifact
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         if: always()
         with:
           name: ${{ env.ENVIRONMENT }}-${{ env.SUB_ENVIRONMENT }}-${{ env.APIGEE_ENVIRONMENT }}-e2e-test-output
