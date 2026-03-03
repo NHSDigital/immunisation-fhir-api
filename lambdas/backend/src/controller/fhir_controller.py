@@ -149,7 +149,7 @@ class FhirController:
             return self._get_immunization_by_identifier(parsed_search_params, supplier_system)
 
         if self._is_target_disease_search(parsed_search_params):
-            return self._search_immunizations_by_disease(parsed_search_params, supplier_system)
+            return self._search_immunizations_by_target_disease(parsed_search_params, supplier_system)
 
         return self._search_immunizations(parsed_search_params, supplier_system)
 
@@ -183,10 +183,10 @@ class FhirController:
 
         return create_response(200, prepared_search_bundle)
 
-    def _search_immunizations_by_disease(self, search_params: dict[str, list[str]], supplier_system: str) -> dict:
+    def _search_immunizations_by_target_disease(self, search_params: dict[str, list[str]], supplier_system: str) -> dict:
         result = validate_and_retrieve_search_params_by_disease(search_params)
 
-        if result.all_target_diseases_not_in_mapping:
+        if result.no_mapped_target_diseases_provided:
             search_bundle = self.fhir_service.make_empty_search_bundle_with_target_disease_not_in_mapping(
                 result.params.patient_identifier,
                 result.params.date_from,

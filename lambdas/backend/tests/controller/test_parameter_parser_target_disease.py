@@ -64,7 +64,7 @@ class TestTargetDiseaseSearch(unittest.TestCase):
         self.assertCountEqual(result.params.immunization_targets, {"MMR", "MMRV"})
         self.assertIsNotNone(result.params.target_disease_codes_for_url)
         self.assertIn(f"{self.snomed_system}|14189004", result.params.target_disease_codes_for_url)
-        self.assertFalse(result.all_target_diseases_not_in_mapping)
+        self.assertFalse(result.no_mapped_target_diseases_provided)
 
     def test_validate_and_retrieve_search_params_by_disease_requires_patient_identifier(self):
         self.mock_redis.hget.return_value = '["14189004"]'
@@ -109,7 +109,7 @@ class TestTargetDiseaseSearch(unittest.TestCase):
                 ImmunizationSearchParameterName.TARGET_DISEASE: [f"{self.snomed_system}|14189004"],
             }
         )
-        self.assertTrue(result.all_target_diseases_not_in_mapping)
+        self.assertTrue(result.no_mapped_target_diseases_provided)
         self.assertEqual(result.params.immunization_targets, set())
         self.assertIsNotNone(result.params.target_disease_codes_for_url)
         self.assertIn(f"{self.snomed_system}|14189004", result.params.target_disease_codes_for_url)

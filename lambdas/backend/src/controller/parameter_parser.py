@@ -36,6 +36,10 @@ PATIENT_IDENTIFIER_SYSTEM = "https://fhir.nhs.uk/Id/nhs-number"
 
 TARGET_DISEASE_CODES_FIELD = "codes"
 
+TARGET_DISEASE_STATUS_VALID = "valid"
+TARGET_DISEASE_STATUS_FORMAT_INVALID = "format_invalid"
+TARGET_DISEASE_STATUS_UNMAPPED = "unmapped"
+
 logger = logging.getLogger(__name__)
 
 
@@ -57,7 +61,7 @@ class SearchParamsResult:
     params: SearchParams
     invalid_immunization_targets: list[str] = field(default_factory=list)
     invalid_target_diseases: list[str] = field(default_factory=list)
-    all_target_diseases_not_in_mapping: bool = field(default=False)
+    no_mapped_target_diseases_provided: bool = field(default=False)
 
 
 def process_patient_identifier(identifier_params: dict[str, list[str]]) -> str:
@@ -142,31 +146,29 @@ def _extract_target_disease_values(params: dict[str, list[str]]) -> list[str]:
     return values
 
 
-def _decode_redis_str(val) -> str:
-    """Decode Redis key/value to str (handles bytes)."""
-    return val.decode() if isinstance(val, bytes) else val
-
-
 def _build_disease_to_vaccs_map(redis) -> dict[str, list[str]]:
-    """Build disease code -> vaccine types map from Redis (target-disease and vaccine-type caches)."""
+    """Build disease code -> vaccine types map from Redis.
+
+    Uses the explicit target-disease-to-vaccines cache where available, and
+    augments it from the existing vaccine-type-to-diseases mapping so target-
+    disease search remains compatible with current cache contents.
+    """
     disease_to_vaccs_map: dict[str, list[str]] = {}
 
     disease_to_vaccs_raw = redis.hgetall(RedisHashKeys.TARGET_DISEASE_TO_VACCS_KEY) or {}
-    for k, v in disease_to_vaccs_raw.items():
-        key = _decode_redis_str(k)
-        val = _decode_redis_str(v)
+    for disease_code, raw_json in disease_to_vaccs_raw.items():
         try:
-            decoded = json.loads(val) if isinstance(val, str) else val
-        except (TypeError, json.JSONDecodeError):
-            logger.warning("Could not decode target_disease_to_vaccs mapping for disease code '%s'", key)
+            decoded = json.loads(raw_json)
+        except json.JSONDecodeError:
+            logger.warning("Could not decode target_disease_to_vaccs mapping for disease code '%s'", disease_code)
             continue
         if isinstance(decoded, list):
-            disease_to_vaccs_map[key] = [str(vacc_type) for vacc_type in decoded]
+            disease_to_vaccs_map[disease_code] = [str(vacc_type) for vacc_type in decoded]
 
+    # Also derive mappings from the existing vaccine-type -> diseases cache so that
+    # target-disease search continues to work while the new cache is being rolled out.
     vacc_to_diseases_raw = redis.hgetall(RedisHashKeys.VACCINE_TYPE_TO_DISEASES_HASH_KEY) or {}
-    for vacc_key, diseases_val in vacc_to_diseases_raw.items():
-        vacc_type = _decode_redis_str(vacc_key)
-        diseases_json = _decode_redis_str(diseases_val)
+    for vacc_type, diseases_json in vacc_to_diseases_raw.items():
         try:
             diseases = json.loads(diseases_json)
         except (TypeError, json.JSONDecodeError):
@@ -207,18 +209,24 @@ def _build_valid_codes_set(redis, disease_to_vaccs_map: dict[str, list[str]]) ->
 
 
 def _classify_target_disease_value(raw: str, valid_codes_set: set[str]) -> tuple[str, str | None]:
-    """Classify one target-disease value. Returns (status, code_or_none). status is 'valid', 'format_invalid', or 'unmapped'."""
+    """Classify one target-disease value.
+
+    Returns (status, code_or_none) where status is one of:
+    - TARGET_DISEASE_STATUS_VALID
+    - TARGET_DISEASE_STATUS_FORMAT_INVALID
+    - TARGET_DISEASE_STATUS_UNMAPPED
+    """
     if "|" not in raw:
-        return "format_invalid", None
+        return TARGET_DISEASE_STATUS_FORMAT_INVALID, None
     parts = raw.split("|", 1)
     if len(parts) != 2:
-        return "format_invalid", None
+        return TARGET_DISEASE_STATUS_FORMAT_INVALID, None
     system, code = parts[0].strip(), parts[1].strip()
     if system != Urls.SNOMED or not code:
-        return "format_invalid", None
+        return TARGET_DISEASE_STATUS_FORMAT_INVALID, None
     if code not in valid_codes_set:
-        return "unmapped", code
-    return "valid", code
+        return TARGET_DISEASE_STATUS_UNMAPPED, code
+    return TARGET_DISEASE_STATUS_VALID, code
 
 
 def _resolve_target_disease_result(
@@ -227,22 +235,29 @@ def _resolve_target_disease_result(
     format_invalid_count: int,
     total_count: int,
 ) -> tuple[list[str], bool]:
-    """Apply post-processing and raises if needed. Returns (final_valid_raw, all_not_in_mapping)."""
+    """Apply post-processing and raises if needed.
+
+    Returns (final_valid_raw, no_mapped_target_diseases_provided).
+    """
     if format_invalid_count == total_count:
         raise ParameterExceptionError(TARGET_DISEASE_ALL_INVALID_ERROR)
 
-    all_not_in_mapping = len(valid_raw) == 0 and len(unmapped_format_valid) > 0 and format_invalid_count == 0
-    if all_not_in_mapping:
+    no_mapped_target_diseases_provided = (
+        len(valid_raw) == 0 and len(unmapped_format_valid) > 0 and format_invalid_count == 0
+    )
+    if no_mapped_target_diseases_provided:
         valid_raw = list(unmapped_format_valid)
 
-    if not all_not_in_mapping and len(valid_raw) == 0:
+    if not no_mapped_target_diseases_provided and len(valid_raw) == 0:
         raise ParameterExceptionError(TARGET_DISEASE_ALL_INVALID_ERROR)
 
-    return valid_raw, all_not_in_mapping
+    return valid_raw, no_mapped_target_diseases_provided
 
 
 def process_target_disease(params: dict[str, list[str]]) -> tuple[list[str], set[str], list[str], bool]:
-    """Parse target-disease parameter. Returns (valid_raw_for_url, vaccine_types, invalid_diagnostics, all_not_in_mapping).
+    """Parse target-disease parameter.
+
+    Returns (valid_raw_for_url, vaccine_types, invalid_diagnostics, no_mapped_target_diseases_provided).
     Raises ParameterExceptionError when no values or all format invalid.
     """
     values = _extract_target_disease_values(params)
@@ -258,11 +273,11 @@ def process_target_disease(params: dict[str, list[str]]) -> tuple[list[str], set
 
     for raw in values:
         status, code = _classify_target_disease_value(raw, valid_codes_set)
-        if status == "format_invalid":
+        if status == TARGET_DISEASE_STATUS_FORMAT_INVALID:
             invalid_diagnostics.append(f"Invalid format for '{raw}': {TARGET_DISEASE_FORMAT_ERROR}")
             format_invalid_count += 1
             continue
-        if status == "unmapped":
+        if status == TARGET_DISEASE_STATUS_UNMAPPED:
             invalid_diagnostics.append(
                 f"Target disease code '{code}' is not a supported target disease in this service."
             )
@@ -278,24 +293,28 @@ def process_target_disease(params: dict[str, list[str]]) -> tuple[list[str], set
                 code,
             )
 
-    valid_raw, all_not_in_mapping = _resolve_target_disease_result(
+    valid_raw, no_mapped_target_diseases_provided = _resolve_target_disease_result(
         valid_raw, unmapped_format_valid, format_invalid_count, len(values)
     )
-    return valid_raw, vaccine_types, invalid_diagnostics, all_not_in_mapping
+    return valid_raw, vaccine_types, invalid_diagnostics, no_mapped_target_diseases_provided
 
 
 def process_mandatory_params_by_disease(
     params: dict[str, list[str]],
 ) -> tuple[str, list[str], set[str], list[str], bool]:
-    """For target-disease search. Returns (patient_identifier, valid_raw_for_url, vaccine_types, invalid_diagnostics, all_not_in_mapping)."""
+    """For target-disease search.
+
+    Returns (patient_identifier, valid_raw_for_url, vaccine_types, invalid_diagnostics,
+    no_mapped_target_diseases_provided).
+    """
     patient_identifier = process_patient_identifier(params)
-    valid_raw, vaccine_types, invalid_diagnostics, all_not_in_mapping = process_target_disease(params)
-    return patient_identifier, valid_raw, vaccine_types, invalid_diagnostics, all_not_in_mapping
+    valid_raw, vaccine_types, invalid_diagnostics, no_mapped_target_diseases_provided = process_target_disease(params)
+    return patient_identifier, valid_raw, vaccine_types, invalid_diagnostics, no_mapped_target_diseases_provided
 
 
 def validate_and_retrieve_search_params_by_disease(params: dict[str, list[str]]) -> SearchParamsResult:
     """Validate and retrieve search parameters for target-disease search."""
-    patient_identifier, valid_raw, vaccine_types, invalid_diagnostics, all_not_in_mapping = (
+    patient_identifier, valid_raw, vaccine_types, invalid_diagnostics, no_mapped_target_diseases_provided = (
         process_mandatory_params_by_disease(params)
     )
     date_from, date_to, include = process_optional_params(params)
@@ -317,7 +336,7 @@ def validate_and_retrieve_search_params_by_disease(params: dict[str, list[str]])
     return SearchParamsResult(
         params=search_params,
         invalid_target_diseases=invalid_diagnostics,
-        all_target_diseases_not_in_mapping=all_not_in_mapping,
+        no_mapped_target_diseases_provided=no_mapped_target_diseases_provided,
     )
 
 
@@ -398,20 +417,7 @@ def parse_search_params(search_params_in_req: dict[str, list[str]]) -> dict[str,
     provided by comma separators. Raises a ParameterExceptionError for duplicated keys. Existing business logic stipulated
     that the API only accepts comma separated values rather than multi-value."""
 
-    def _param_disallows_multi_values(param_name: str) -> bool:
-        """Returns True when a parameter should be treated as duplicated if
-        multiple values are provided via the multi-value querystring
-        representation.
-
-        Target-disease is allowed to be provided multiple times so that mixed
-        valid and invalid values can be processed together, while other
-        parameters (such as patient.identifier and identifier) continue to
-        use the historical "no duplicated keys" rule.
-        """
-
-        return param_name != ImmunizationSearchParameterName.TARGET_DISEASE
-
-    if any(len(values) > 1 and _param_disallows_multi_values(key) for key, values in search_params_in_req.items()):
+    if any(len(values) > 1 for values in search_params_in_req.values()):
         raise ParameterExceptionError(DUPLICATED_PARAMETERS_ERROR_MESSAGE)
 
     parsed_params = {}

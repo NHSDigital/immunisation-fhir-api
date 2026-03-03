@@ -272,7 +272,7 @@ class TestSearchImmunizationsByTargetDisease(unittest.TestCase):
             "headers": {"SupplierSystem": "test"},
             "multiValueQueryStringParameters": {
                 self.patient_identifier_key: [self.patient_identifier_valid_value],
-                self.target_disease_key: [f"{self.snomed_system}|{self.measles_code}", "invalid-no-pipe"],
+                self.target_disease_key: [f"{self.snomed_system}|{self.measles_code},invalid-no-pipe"],
             },
         }
 
