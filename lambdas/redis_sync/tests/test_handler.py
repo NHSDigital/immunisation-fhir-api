@@ -44,7 +44,7 @@ class TestHandler(unittest.TestCase):
     def test_handler_success(self):
         with patch(
             "common.log_decorator.logging_decorator",
-            lambda prefix=None, stream_name=None: (lambda f: f),
+            lambda prefix=None, stream_name=None: lambda f: f,
         ):
             importlib.reload(redis_sync)
             mock_event = {"Records": [self.s3_vaccine]}
@@ -63,7 +63,7 @@ class TestHandler(unittest.TestCase):
     def test_handler_failure(self):
         with patch(
             "common.log_decorator.logging_decorator",
-            lambda prefix=None, stream_name=None: (lambda f: f),
+            lambda prefix=None, stream_name=None: lambda f: f,
         ):
             importlib.reload(redis_sync)
 
@@ -79,7 +79,7 @@ class TestHandler(unittest.TestCase):
     def test_handler_no_records(self):
         with patch(
             "common.log_decorator.logging_decorator",
-            lambda prefix=None, stream_name=None: (lambda f: f),
+            lambda prefix=None, stream_name=None: lambda f: f,
         ):
             importlib.reload(redis_sync)
             mock_event = {"Records": []}
@@ -90,7 +90,7 @@ class TestHandler(unittest.TestCase):
     def test_handler_exception(self):
         with patch(
             "common.log_decorator.logging_decorator",
-            lambda prefix=None, stream_name=None: (lambda f: f),
+            lambda prefix=None, stream_name=None: lambda f: f,
         ):
             importlib.reload(redis_sync)
             mock_event = {"Records": [self.s3_vaccine]}
@@ -103,7 +103,7 @@ class TestHandler(unittest.TestCase):
     def test_handler_with_empty_event(self):
         with patch(
             "common.log_decorator.logging_decorator",
-            lambda prefix=None, stream_name=None: (lambda f: f),
+            lambda prefix=None, stream_name=None: lambda f: f,
         ):
             importlib.reload(redis_sync)
             self.mock_get_s3_records.return_value = []
@@ -113,7 +113,7 @@ class TestHandler(unittest.TestCase):
     def test_handler_multi_record(self):
         with patch(
             "common.log_decorator.logging_decorator",
-            lambda prefix=None, stream_name=None: (lambda f: f),
+            lambda prefix=None, stream_name=None: lambda f: f,
         ):
             importlib.reload(redis_sync)
             mock_event = {"Records": [self.s3_vaccine, self.s3_supplier]}
@@ -145,7 +145,7 @@ class TestHandler(unittest.TestCase):
     def test_handler_read_event(self):
         with patch(
             "common.log_decorator.logging_decorator",
-            lambda prefix=None, stream_name=None: (lambda f: f),
+            lambda prefix=None, stream_name=None: lambda f: f,
         ):
             importlib.reload(redis_sync)
             mock_event = {"read": "myhash"}

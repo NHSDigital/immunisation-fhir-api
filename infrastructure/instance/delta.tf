@@ -136,6 +136,7 @@ resource "aws_lambda_function" "delta_sync_lambda" {
       AWS_SQS_QUEUE_URL    = aws_sqs_queue.dlq.id
       SOURCE               = "IEDS"
       SPLUNK_FIREHOSE_NAME = module.splunk.firehose_stream_name
+      LOG_LEVEL            = "INFO"
     }
   }
 
@@ -172,7 +173,7 @@ resource "aws_cloudwatch_log_metric_filter" "delta_error_logs" {
   count = var.error_alarm_notifications_enabled ? 1 : 0
 
   name           = "${local.short_prefix}-DeltaErrorLogsFilter"
-  pattern        = "%\\[ERROR\\]%"
+  pattern        = "{ $.level = \"ERROR\" }"
   log_group_name = aws_cloudwatch_log_group.delta_lambda.name
 
   metric_transformation {

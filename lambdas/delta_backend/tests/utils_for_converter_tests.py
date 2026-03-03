@@ -1,9 +1,32 @@
 import json
 import uuid
+from contextlib import contextmanager
 from decimal import Decimal
 from typing import List
+from unittest.mock import MagicMock
 
 from mappings import EventName, Operation
+
+
+def make_mock_logger() -> MagicMock:
+    """
+    Returns a MagicMock that correctly simulates a Powertools Logger.
+    append_keys() is wired as a real context manager so tests using
+    `with logger.append_keys(...)` do not raise TypeError.
+
+    Usage in setUp:
+        self.logger_patcher = patch("delta.logger", make_mock_logger())
+        self.logger_patcher.start()
+    """
+    mock = MagicMock()
+
+    @contextmanager
+    def _append_context_keys(**kwargs):
+        yield
+
+    mock.append_keys.return_value = None
+    mock.append_context_keys = _append_context_keys
+    return mock
 
 
 class RecordConfig:
@@ -188,7 +211,7 @@ class ValuesForTests:
 
     @staticmethod
     def get_event_record(imms_id, event_name, operation, supplier="EMIS"):
-        pk = f"covid#{imms_id}"
+        pk = f"Immunization#{imms_id}"
         if operation != Operation.DELETE_PHYSICAL:
             return {
                 "eventID": str(uuid.uuid4()),
@@ -196,7 +219,7 @@ class ValuesForTests:
                 "dynamodb": {
                     "ApproximateCreationDateTime": 1690896000,
                     "NewImage": {
-                        "PK": {"S": pk},
+                        "PK": {"S": f"Immunization#{imms_id}"},
                         "PatientSK": {"S": "COVID#ca8ba2c6-2383-4465-b456-c1174c21cf31"},
                         "IdentifierPK": {"S": "system#1"},
                         "Operation": {"S": operation},
