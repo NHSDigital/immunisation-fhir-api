@@ -143,7 +143,7 @@ def get_creation_and_expiry_times(creation_timestamp: float) -> tuple[str, int]:
     Returns:
         Tuple of:
         - datetime_iso: ISO8601 datetime string (range key for SearchIndex GSI).
-        - expiry_timestamp: Unix timestamp for TTL (DELTA_TTL_DAYS days from creation).
+        - expiry_timestamp: Unix timestamp for DELTA_TTL_DAYS from creation.
     """
     creation_datetime = datetime.fromtimestamp(creation_timestamp, UTC)
     expiry_datetime = creation_datetime + timedelta(days=int(delta_ttl_days))
