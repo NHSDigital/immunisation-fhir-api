@@ -292,9 +292,9 @@ class TestLambdaHandlerIntegration(unittest.TestCase):
         self.assertEqual(mns_payload["filtering"]["generalpractitioner"], "Y12345")
         self.assertEqual(mns_payload["filtering"]["sourceorganisation"], "B0C4P")
         self.assertEqual(mns_payload["filtering"]["sourceapplication"], "TPP")
-        self.assertEqual(mns_payload["filtering"]["immunisationtype"], "hib")
+        self.assertEqual(mns_payload["filtering"]["immunisationtype"], "HIB")
         self.assertEqual(mns_payload["filtering"]["action"], "CREATE")
-        self.assertEqual(mns_payload["filtering"]["subjectage"], "21")
+        self.assertEqual(mns_payload["filtering"]["subjectage"], 21)
 
         mock_logger.info.assert_any_call("Successfully processed all 1 messages")
 
@@ -335,7 +335,7 @@ class TestLambdaHandlerIntegration(unittest.TestCase):
     @responses.activate
     @patch("common.api_clients.authentication.AppRestrictedAuth.get_access_token")
     @patch("process_records.logger")
-    def test_non_successful_notification_creation_without_gp(self, mock_logger, mock_get_token):
+    def test_successful_notification_creation_with_expired_gp(self, mock_logger, mock_get_token):
         """
         Test a Successful MNS Publish notification with calls to PDS for GP details, no batch failure
         """
@@ -374,8 +374,8 @@ class TestLambdaHandlerIntegration(unittest.TestCase):
         self.assertEqual(mns_payload["filtering"]["generalpractitioner"], None)
         self.assertEqual(mns_payload["filtering"]["sourceorganisation"], "B0C4P")
         self.assertEqual(mns_payload["filtering"]["sourceapplication"], "TPP")
-        self.assertEqual(mns_payload["filtering"]["immunisationtype"], "hib")
+        self.assertEqual(mns_payload["filtering"]["immunisationtype"], "HIB")
         self.assertEqual(mns_payload["filtering"]["action"], "CREATE")
-        self.assertEqual(mns_payload["filtering"]["subjectage"], "21")
+        self.assertEqual(mns_payload["filtering"]["subjectage"], 21)
 
         mock_logger.info.assert_any_call("Successfully processed all 1 messages")

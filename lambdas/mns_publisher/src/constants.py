@@ -12,7 +12,7 @@ class FilteringData(TypedDict):
     generalpractitioner: str | None
     sourceorganisation: str
     sourceapplication: str
-    subjectage: str
+    subjectage: int
     immunisationtype: str
     action: str
 
@@ -31,16 +31,3 @@ class MnsNotificationPayload(TypedDict):
 
 
 DYNAMO_DB_TYPE_DESCRIPTORS = ("S", "N", "BOOL", "M", "L")
-
-
-class ImmsData(TypedDict):
-    """Extracted immunisation data from DynamoDB stream."""
-
-    imms_id: str
-    supplier_system: str
-    vaccine_type: str
-    operation: str
-    nhs_number: str
-    person_dob: str
-    date_and_time: str
-    site_code: str

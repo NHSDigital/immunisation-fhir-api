@@ -73,7 +73,7 @@ class TestCreateMnsNotification(unittest.TestCase):
     @patch("create_notification.get_practitioner_details_from_pds")
     @patch("create_notification.get_service_url")
     @patch("create_notification.uuid.uuid4")
-    def test_create_mns_notification_complete_payload(self, mock_uuid, mock_get_service_url, mock_get_gp):
+    def test_success_create_mns_notification_complete_payload(self, mock_uuid, mock_get_service_url, mock_get_gp):
         mock_uuid.return_value = MagicMock(hex="236a1d4a-5d69-4fa9-9c7f-e72bf505aa5b")
         mock_get_service_url.return_value = self.expected_immunisation_url
         mock_get_gp.return_value = self.expected_gp_ods_code
@@ -92,9 +92,9 @@ class TestCreateMnsNotification(unittest.TestCase):
         self.assertEqual(filtering["generalpractitioner"], self.expected_gp_ods_code)
         self.assertEqual(filtering["sourceorganisation"], "B0C4P")
         self.assertEqual(filtering["sourceapplication"], "TPP")
-        self.assertEqual(filtering["immunisationtype"], "hib")
+        self.assertEqual(filtering["immunisationtype"], "HIB")
         self.assertEqual(filtering["action"], "CREATE")
-        self.assertEqual(filtering["subjectage"], "21")
+        self.assertEqual(filtering["subjectage"], 21)
 
         self.assertIn("id", result)
         self.assertIsInstance(result["id"], str)

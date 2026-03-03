@@ -51,8 +51,8 @@ def create_mns_notification(sqs_event: SQSMessage) -> MnsNotificationPayload:
             "generalpractitioner": gp_ods_code,
             "sourceorganisation": site_code,
             "sourceapplication": supplier_system,
-            "subjectage": str(patient_age),
-            "immunisationtype": vaccine_type,
+            "subjectage": patient_age,
+            "immunisationtype": vaccine_type.upper(),
             "action": operation,
         },
     }
