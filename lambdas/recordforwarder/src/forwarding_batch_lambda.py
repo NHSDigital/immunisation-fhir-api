@@ -70,6 +70,7 @@ def forward_request_to_dynamo(
 def forward_lambda_handler(event, _):
     """Forward each row to the Imms API"""
     logger.info("Processing started")
+    print(f"Received event: {json.dumps(event)}")
     table = create_table()
     filename_to_events_mapper = BatchFilenameToEventsMapper()
     identifier_to_pk_map = {}
@@ -82,6 +83,7 @@ def forward_lambda_handler(event, _):
         incoming_message_body = json.loads(decoded_payload, use_decimal=True)
         file_key = incoming_message_body.get("file_key")
         local_id = incoming_message_body.get("local_id")
+        print(f"Decoded payload for file {file_key} with local id {local_id}: {incoming_message_body}")
 
         if is_eof_message(incoming_message_body):
             logger.info("Received EOF message for file key: %s", file_key)
