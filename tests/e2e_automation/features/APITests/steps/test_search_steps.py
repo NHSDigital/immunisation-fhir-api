@@ -24,6 +24,8 @@ scenarios("APITests/search.feature")
 TARGET_DISEASE_SYSTEM = "http://snomed.info/sct"
 TARGET_DISEASE_MEASLES_CODE = "14189004"
 TARGET_DISEASE_MUMPS_CODE = "36989005"
+TARGET_DISEASE_SHINGLES_CODE = "4740000"
+TARGET_DISEASE_6IN1_CODE = "398102009"
 INVALID_TARGET_DISEASE_CODE = "99999"
 PATIENT_IDENTIFIER_SYSTEM = "https://fhir.nhs.uk/Id/nhs-number"
 
@@ -139,7 +141,7 @@ def send_search_get_with_target_disease_and_dates(context):
     context.DateTo = "2023-06-04"
     context.params = {
         "patient.identifier": f"{PATIENT_IDENTIFIER_SYSTEM}|{nhs_number}",
-        "target-disease": f"{TARGET_DISEASE_SYSTEM}|{TARGET_DISEASE_MEASLES_CODE}",
+        "target-disease": f"{TARGET_DISEASE_SYSTEM}|{TARGET_DISEASE_SHINGLES_CODE}",
         "-date.from": context.DateFrom,
         "-date.to": context.DateTo,
     }
@@ -157,7 +159,7 @@ def send_search_post_with_target_disease_and_dates(context):
     context.DateTo = "2023-06-04"
     context.request = {
         "patient.identifier": f"{PATIENT_IDENTIFIER_SYSTEM}|{nhs_number}",
-        "target-disease": f"{TARGET_DISEASE_SYSTEM}|{TARGET_DISEASE_MEASLES_CODE}",
+        "target-disease": f"{TARGET_DISEASE_SYSTEM}|{TARGET_DISEASE_SHINGLES_CODE}",
         "-date.from": context.DateFrom,
         "-date.to": context.DateTo,
     }
@@ -207,7 +209,7 @@ def send_search_get_with_mixed_valid_and_invalid_target_disease_codes(context):
     nhs_number = context.patient.identifier[0].value
     context.params = {
         "patient.identifier": f"{PATIENT_IDENTIFIER_SYSTEM}|{nhs_number}",
-        "target-disease": f"{TARGET_DISEASE_SYSTEM}|{TARGET_DISEASE_MEASLES_CODE},{TARGET_DISEASE_SYSTEM}|{INVALID_TARGET_DISEASE_CODE}",
+        "target-disease": f"{TARGET_DISEASE_SYSTEM}|{TARGET_DISEASE_6IN1_CODE},{TARGET_DISEASE_SYSTEM}|{INVALID_TARGET_DISEASE_CODE}",
     }
     print(f"\n Search Get parameters (mixed valid/invalid target-disease) - \n {context.params}")
     context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
@@ -221,7 +223,7 @@ def send_search_post_with_mixed_valid_and_invalid_target_disease_codes(context):
     nhs_number = context.patient.identifier[0].value
     context.request = {
         "patient.identifier": f"{PATIENT_IDENTIFIER_SYSTEM}|{nhs_number}",
-        "target-disease": f"{TARGET_DISEASE_SYSTEM}|{TARGET_DISEASE_MEASLES_CODE},{TARGET_DISEASE_SYSTEM}|{INVALID_TARGET_DISEASE_CODE}",
+        "target-disease": f"{TARGET_DISEASE_SYSTEM}|{TARGET_DISEASE_6IN1_CODE},{TARGET_DISEASE_SYSTEM}|{INVALID_TARGET_DISEASE_CODE}",
     }
     print(f"\n Search Post request (mixed valid/invalid target-disease) - \n {context.request}")
     context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
