@@ -24,6 +24,7 @@ scenarios("APITests/search.feature")
 TARGET_DISEASE_SYSTEM = "http://snomed.info/sct"
 TARGET_DISEASE_MEASLES_CODE = "14189004"
 TARGET_DISEASE_MUMPS_CODE = "36989005"
+INVALID_TARGET_DISEASE_CODE = "99999"
 PATIENT_IDENTIFIER_SYSTEM = "https://fhir.nhs.uk/Id/nhs-number"
 
 
@@ -195,6 +196,34 @@ def send_search_post_with_all_invalid_target_disease_codes(context):
         "target-disease": "invalid-no-pipe,wrong_system|123",
     }
     print(f"\n Search Post request (all invalid target-disease) - \n {context.request}")
+    context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
+
+
+@when(
+    "Send a search request with GET method using mixed valid and invalid target-disease codes for Immunization event created"
+)
+def send_search_get_with_mixed_valid_and_invalid_target_disease_codes(context):
+    get_search_get_url_header(context)
+    nhs_number = context.patient.identifier[0].value
+    context.params = {
+        "patient.identifier": f"{PATIENT_IDENTIFIER_SYSTEM}|{nhs_number}",
+        "target-disease": f"{TARGET_DISEASE_SYSTEM}|{TARGET_DISEASE_MEASLES_CODE},{TARGET_DISEASE_SYSTEM}|{INVALID_TARGET_DISEASE_CODE}",
+    }
+    print(f"\n Search Get parameters (mixed valid/invalid target-disease) - \n {context.params}")
+    context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
+
+
+@when(
+    "Send a search request with POST method using mixed valid and invalid target-disease codes for Immunization event created"
+)
+def send_search_post_with_mixed_valid_and_invalid_target_disease_codes(context):
+    get_search_post_url_header(context)
+    nhs_number = context.patient.identifier[0].value
+    context.request = {
+        "patient.identifier": f"{PATIENT_IDENTIFIER_SYSTEM}|{nhs_number}",
+        "target-disease": f"{TARGET_DISEASE_SYSTEM}|{TARGET_DISEASE_MEASLES_CODE},{TARGET_DISEASE_SYSTEM}|{INVALID_TARGET_DISEASE_CODE}",
+    }
+    print(f"\n Search Post request (mixed valid/invalid target-disease) - \n {context.request}")
     context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
 
 
@@ -508,6 +537,22 @@ def validate_invalid_target_disease_codes_error(context):
     error_response = parse_error_response(context.response.json())
     validate_error_response(error_response, "invalid_target_disease_codes")
     print(f"\n Error Response (invalid target-disease codes) - \n {context.response.json()}")
+
+
+@then("The Search Response should contain search results and OperationOutcome for invalid target-disease codes")
+def validate_search_response_with_invalid_target_disease_operation_outcome(context):
+    issue = read_issue_from_response(context)
+    diagnostics = issue.get("diagnostics", "")
+    assert issue.get("code") == "invalid", f"issue code should be 'invalid', got '{issue.get('code')}'"
+    assert "Target disease code" in diagnostics, (
+        f"issue diagnostics should mention 'Target disease code', got '{diagnostics}'"
+    )
+    assert "not a supported target disease in this service" in diagnostics, (
+        f"issue diagnostics should mention unsupported target disease, got '{diagnostics}'"
+    )
+    assert INVALID_TARGET_DISEASE_CODE in diagnostics, (
+        f"issue diagnostics should contain invalid target disease code '{INVALID_TARGET_DISEASE_CODE}', got '{diagnostics}'"
+    )
 
 
 @then("The Search Response should contain search results and OperationOutcome for invalid immunization targets")

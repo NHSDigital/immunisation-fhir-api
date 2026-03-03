@@ -334,3 +334,14 @@ Feature: Search the immunization of a patient
         When Send a search request with POST method with valid NHS Number and all invalid target-disease codes
         Then The request will be unsuccessful with the status code '400'
         And The Response JSONs should contain correct error message for invalid target-disease codes
+
+    @smoke
+    @Delete_cleanUp @supplier_name_Postman_Auth
+    Scenario: Verify that Search API returns 200 with results and OperationOutcome when some target-disease values are invalid
+        Given Valid vaccination record is created with Patient 'Random' and vaccine_type 'MMR'
+        When Send a search request with GET method using mixed valid and invalid target-disease codes for Immunization event created
+        Then The request will be successful with the status code '200'
+        And The Search Response should contain search results and OperationOutcome for invalid target-disease codes
+        When Send a search request with POST method using mixed valid and invalid target-disease codes for Immunization event created
+        Then The request will be successful with the status code '200'
+        And The Search Response should contain search results and OperationOutcome for invalid target-disease codes
