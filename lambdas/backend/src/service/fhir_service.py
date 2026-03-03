@@ -143,7 +143,7 @@ class FhirService:
         except (ValueError, MandatoryError) as error:
             raise CustomValidationError(message=str(error)) from error
 
-        new_immunization = Immunization.parse_obj(immunization)
+        immunization_to_update = Immunization.parse_obj(immunization)
 
         existing_immunization_resource, existing_immunization_meta = (
             self.immunization_repo.get_immunization_resource_and_metadata_by_id(imms_id, include_deleted=True)
@@ -157,17 +157,17 @@ class FhirService:
         if not self.authoriser.authorise(
             supplier_system,
             ApiOperationCode.UPDATE,
-            {get_vaccine_type(new_immunization.dict()), get_vaccine_type(existing_immunization.dict())},
+            {get_vaccine_type(immunization_to_update), get_vaccine_type(existing_immunization)},
         ):
             raise UnauthorizedVaxError()
 
-        validate_identifiers_match(new_immunization.identifier[0], existing_immunization_meta.identifier)
+        validate_identifiers_match(immunization_to_update.identifier[0], existing_immunization_meta.identifier)
 
         if not existing_immunization_meta.is_deleted:
             validate_resource_versions_match(resource_version, existing_immunization_meta.resource_version, imms_id)
 
         return self.immunization_repo.update_immunization(
-            imms_id, new_immunization, existing_immunization_meta, supplier_system
+            imms_id, immunization_to_update, existing_immunization_meta, supplier_system
         )
 
     def delete_immunization(self, imms_id: str, supplier_system: str) -> None:
