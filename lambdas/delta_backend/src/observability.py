@@ -8,7 +8,7 @@ invocation, complementing the existing DLQ routing.
 Log level is set via env var at the Lambda function level when needed.
 
 correlation_id_path is omitted as DynamoDB Streams
-events does not have an orrelation ID. eventID is used
+events does not have a correlation ID. eventID is used
 and is added in process_record().
 """
 

@@ -210,7 +210,7 @@ class ValuesForTests:
 
     @staticmethod
     def get_event_record(imms_id, event_name, operation, supplier="EMIS"):
-        pk = f"covid#{imms_id}"
+        pk = f"Immunization#{imms_id}"
         if operation != Operation.DELETE_PHYSICAL:
             return {
                 "eventID": str(uuid.uuid4()),
@@ -218,7 +218,7 @@ class ValuesForTests:
                 "dynamodb": {
                     "ApproximateCreationDateTime": 1690896000,
                     "NewImage": {
-                        "PK": {"S": pk},
+                        "PK": {"S": f"Immunization#{imms_id}"},
                         "PatientSK": {"S": "COVID#ca8ba2c6-2383-4465-b456-c1174c21cf31"},
                         "IdentifierPK": {"S": "system#1"},
                         "Operation": {"S": operation},

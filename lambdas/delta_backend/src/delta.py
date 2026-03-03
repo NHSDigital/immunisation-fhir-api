@@ -66,11 +66,11 @@ def _extract_value(raw: Any) -> Any:
 
 
 def _event_to_operation(event_name: str) -> str:
-    if event_name == EventName.CREATE:
+    if event_name == EventName.CREATE:  # "INSERT"
         return Operation.CREATE
-    if event_name == EventName.DELETE_PHYSICAL:
+    if event_name == EventName.DELETE_PHYSICAL:  # "REMOVE"
         return Operation.DELETE_PHYSICAL
-    return Operation.UPDATE
+    return Operation.UPDATE  # "MODIFY", defult to UPDATE
 
 
 def _normalize_record(record: dict[str, Any]) -> NormalizedRecord:
@@ -86,11 +86,10 @@ def _normalize_record(record: dict[str, Any]) -> NormalizedRecord:
     """
     dynamodb = record.get("dynamodb", {})
     new_image = dynamodb.get("NewImage", {})
-    keys = dynamodb.get("Keys", {})
 
     event_id = record.get("eventID", f"evt-{int(time.time() * 1000)}")
     sequence_number: str = str(dynamodb.get("SequenceNumber", "0"))
-    primary_key = _extract_value(new_image.get("PK")) or _extract_value(keys.get("PK"))
+    primary_key = _extract_value(new_image.get("PK"))
     imms_id = get_imms_id(primary_key)
     patient_sort_key = _extract_value(new_image.get("PatientSK"))
     vaccine_type = get_vaccine_type(patient_sort_key)
@@ -399,11 +398,11 @@ def process_record(
     Returns:
         (success, operation_outcome) — outcome always has all four required keys.
     """
-    event_name: str = str(record.get("eventName", EventName.UPDATE))
+    event_name: str = str(record.get("eventName") or "")
 
     with logger.append_context_keys(
         event_id=record.get("eventID", "unknown"),
-        event_name=event_name,
+        event_name=event_name or "UNKNOWN",
     ):
         try:
             success, outcome = _route_record(record, table)

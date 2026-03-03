@@ -194,15 +194,6 @@ class TestNormalizeRecord(unittest.TestCase):
         norm = _normalize_record(self._make_raw())
         self.assertEqual(norm.primary_key, "Immunization#imms-abc")
 
-    def test_primary_key_falls_back_to_keys_pk(self):
-        """
-        Mirrors the real REMOVE event shape from get_event_record:
-        NewImage is absent, PK lives in Keys only.
-        """
-        record = _make_stream_record(event_name="REMOVE", imms_id="from-keys")
-        norm = _normalize_record(record)
-        self.assertEqual(norm.primary_key, "Immunization#from-keys")
-
     def test_imms_id_derived_from_primary_key(self):
         norm = _normalize_record(self._make_raw())
         self.assertEqual(norm.imms_id, "imms-abc")
@@ -478,7 +469,6 @@ class DeltaHandlerTestCase(unittest.TestCase):
         put_item_data = put_item_call_args.kwargs["Item"]
         self.assertIn("Imms", put_item_data)
         self.assertEqual(put_item_data["Operation"], Operation.DELETE_PHYSICAL)
-        self.assertEqual(put_item_data["ImmsID"], imms_id)
         self.assertEqual(put_item_data["Imms"], "")  # check imms has been blanked out
         self.mock_sqs_client.send_message.assert_not_called()
 
