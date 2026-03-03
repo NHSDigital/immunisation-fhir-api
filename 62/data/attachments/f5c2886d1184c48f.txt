@@ -1,1 +1,0 @@
-✅ Step Passed: **Audit table will have 'Failed', 'EMIS_COVID' and 'File headers are invalid.' for the processed batch file
