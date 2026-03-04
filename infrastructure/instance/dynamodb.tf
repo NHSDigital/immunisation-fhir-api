@@ -100,6 +100,11 @@ resource "aws_dynamodb_table" "delta-dynamodb-table" {
     type = "S"
   }
 
+  attribute {
+    name = "SequenceNumber"
+    type = "S"
+  }
+
   ttl {
     attribute_name = "ExpiresAt"
     enabled        = true
@@ -116,6 +121,26 @@ resource "aws_dynamodb_table" "delta-dynamodb-table" {
 
     key_schema {
       attribute_name = "DateTimeStamp"
+      key_type       = "RANGE"
+    }
+  }
+
+  global_secondary_index {
+    name            = "OperationSequenceIndex"
+    projection_type = "ALL"
+
+    key_schema {
+      attribute_name = "Operation"
+      key_type       = "HASH"
+    }
+
+    key_schema {
+      attribute_name = "DateTimeStamp"
+      key_type       = "RANGE"
+    }
+
+    key_schema {
+      attribute_name = "SequenceNumber"
       key_type       = "RANGE"
     }
   }

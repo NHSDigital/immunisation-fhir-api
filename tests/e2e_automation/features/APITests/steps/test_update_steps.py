@@ -6,7 +6,10 @@ from src.dynamoDB.dynamo_db_helper import (
     validate_imms_delta_record_with_created_event,
 )
 from src.objectModels.api_immunization_builder import convert_to_update
-from utilities.api_fhir_immunization_helper import parse_error_response, validate_error_response
+from utilities.api_fhir_immunization_helper import (
+    parse_error_response,
+    validate_error_response,
+)
 from utilities.api_get_header import get_update_url_header
 from utilities.date_helper import generate_date
 from utilities.enums import ActionFlag, Operation
@@ -31,14 +34,21 @@ def send_update_for_immunization_event_by_supplier(context, Supplier):
 def validate_delta_table_for_updated_event(context):
     create_obj = context.create_object
     items = fetch_immunization_int_delta_detail_by_immsID(
-        context.aws_profile_name, context.ImmsID, context.S3_env, context.expected_version
+        context.aws_profile_name,
+        context.ImmsID,
+        context.S3_env,
+        context.expected_version,
     )
     assert items, f"Items not found in response for ImmsID: {context.ImmsID}"
     delta_items = [i for i in items if i.get("Operation") == Operation.updated.value]
     assert delta_items, f"No item found for ImmsID: {context.ImmsID}"
-    latest_delta_record = max(delta_items, key=lambda x: x.get("DateTimeStamp", 0))
+    latest_delta_record = max(delta_items, key=lambda x: x.get("SequenceNumber", -1))
     validate_imms_delta_record_with_created_event(
-        context, create_obj, latest_delta_record, Operation.updated.value, ActionFlag.updated.value
+        context,
+        create_obj,
+        latest_delta_record,
+        Operation.updated.value,
+        ActionFlag.updated.value,
     )
 
 
