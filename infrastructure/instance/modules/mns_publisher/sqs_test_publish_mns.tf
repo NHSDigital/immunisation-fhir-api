@@ -4,7 +4,7 @@
 resource "aws_sqs_queue" "mns_test_notification" {
   name                       = "${var.mns_test_notification_name_prefix}-queue"
   fifo_queue                 = false
-  kms_master_key_id          = aws_kms_key.mns_outbound_events.arn
+  message_retention_seconds  = 14400
   visibility_timeout_seconds = 300
 }
 
