@@ -11,6 +11,7 @@ from create_notification import create_mns_notification
 from mns_test_queue import send_notification_to_test_queue
 
 mns_env = os.getenv("MNS_ENV", "int")
+MNS_TEST_QUEUE_URL = os.getenv("MNS_TEST_QUEUE_URL")
 
 
 def process_records(records: list[SQSMessage]) -> dict[str, list]:
@@ -63,12 +64,14 @@ def process_record(record: SQSMessage, mns_service: MnsService) -> None:
         },
     )
 
-    try:
+    # TODO: Remove when MNS platform authorizes imms-vaccinations-1 event type
+    # Temporary SQS queue for testing MNS notifications until MNS HTTP endpoint is available
+    if MNS_TEST_QUEUE_URL:
+        send_notification_to_test_queue(mns_notification_payload)
+        logger.info("Notification Successfully sent to SQS", extra={"notification_id": notification_id})
+    else:
         mns_service.publish_notification(mns_notification_payload)
         logger.info("Successfully created MNS notification", extra={"mns_notification_id": notification_id})
-    except Exception:
-        send_notification_to_test_queue(mns_notification_payload)
-        raise
 
 
 def extract_trace_ids(record: SQSMessage) -> Tuple[str, str | None]:

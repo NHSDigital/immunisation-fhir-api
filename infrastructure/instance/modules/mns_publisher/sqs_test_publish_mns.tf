@@ -1,6 +1,8 @@
-# Main queue for MNS notification testing
+# TODO: Remove when MNS platform authorizes imms-vaccinations-1 event type
+# Temporary SQS queue for testing MNS notifications until MNS HTTP endpoint is available
+
 resource "aws_sqs_queue" "mns_test_notification" {
-  name                       = "${var.mns_test_notifcation_name_prefix}-queue"
+  name                       = "${var.mns_test_notification_name_prefix}-queue"
   fifo_queue                 = false
   kms_master_key_id          = aws_kms_key.mns_outbound_events.arn
   visibility_timeout_seconds = 300

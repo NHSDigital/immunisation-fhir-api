@@ -9,6 +9,8 @@ MNS_TEST_QUEUE_URL = os.getenv("MNS_TEST_QUEUE_URL")
 sqs_client = boto3.client("sqs", region_name="eu-west-2")
 
 
+# TODO: Remove when MNS platform authorizes imms-vaccinations-1 event type
+# Temporary function to send MNS to SQS Queue for testing MNS notifications until MNS HTTP endpoint is available
 def send_notification_to_test_queue(mns_payload: dict) -> None:
     """
     Send MNS notification payload to test SQS queue as fallback.
