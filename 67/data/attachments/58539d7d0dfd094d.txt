@@ -1,0 +1,1 @@
+✅ Step Passed: **The Search Response should contain search results and OperationOutcome for invalid target-disease codes

@@ -1,1 +1,0 @@
-✅ Step Passed: **The delta and imms event table will be populated with the correct data for api created event

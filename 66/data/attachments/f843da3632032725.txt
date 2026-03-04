@@ -1,2 +1,0 @@
-❌ Step failed! **The delta table will be populated with the correct data for all created records in batch file** 
- Error: An error occurred (ValidationException) when calling the Query operation: Cannot read from backfilling global secondary index: ImmunisationIdIndex

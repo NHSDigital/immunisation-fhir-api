@@ -1,1 +1,0 @@
-✅ Step Passed: **Json bus ack will only contain file metadata and correct failure record entries
