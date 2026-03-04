@@ -33,20 +33,11 @@ class ImmunizationValidator:
         if error := PostValidators(immunization, vaccine_type).validate():
             raise ValueError(error)
 
-    # TODO: Update this function as reduce_validation_code is no longer found in the payload after data minimisation
-    @staticmethod
-    def is_reduce_validation():
-        """Identify if reduced validation applies (default to false if no reduce validation information is given)"""
-        return False
-
     def validate(self, immunization_json_data: dict) -> Immunization:
         """
         Generate the Immunization model. Note that run_pre_validators, run_fhir_validators, get_vaccine_type and
         run_post_validators will each raise errors if validation is failed.
         """
-        # Identify whether to apply reduced validation
-        reduce_validation = self.is_reduce_validation()
-
         # Pre-FHIR validations
         self.run_pre_validators(immunization_json_data)
 
@@ -57,7 +48,7 @@ class ImmunizationValidator:
         vaccine_type = get_vaccine_type(immunization_json_data)
 
         # Post-FHIR validations
-        if self.add_post_validators and not reduce_validation:
+        if self.add_post_validators:
             self.run_post_validators(immunization_json_data, vaccine_type)
 
     def run_postal_code_validator(self, values: dict) -> None:
