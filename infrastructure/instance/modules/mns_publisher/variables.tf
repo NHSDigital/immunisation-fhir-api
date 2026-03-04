@@ -103,3 +103,8 @@ variable "secrets_manager_policy_path" {
   type        = string
   description = "Path to the IAM policy JSON template for Secrets Manager access (e.g., ./policies/secret_manager.json)."
 }
+
+variable "mns_test_notifcation_name_prefix" {
+  type        = string
+  description = "The prefix for the name of resources for testing mns notification"
+}

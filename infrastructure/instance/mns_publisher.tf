@@ -11,6 +11,7 @@ module "mns_publisher" {
   imms_base_path                     = strcontains(var.sub_environment, "pr-") ? "immunisation-fhir-api/FHIR/R4-${var.sub_environment}" : "immunisation-fhir-api/FHIR/R4"
   lambda_kms_encryption_key_arn      = data.aws_kms_key.existing_lambda_encryption_key.arn
   mns_publisher_resource_name_prefix = "${local.resource_scope}-mns-outbound-events"
+  mns_test_notifcation_name_prefix   = "${local.resource_scope}-mns-test-notification"
   secrets_manager_policy_path        = "${local.policy_path}/secret_manager.json"
   account_id                         = data.aws_caller_identity.current.account_id
   pds_environment                    = var.pds_environment

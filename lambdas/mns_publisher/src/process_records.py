@@ -8,6 +8,7 @@ from common.api_clients.mns_service import MnsService
 from common.api_clients.mns_setup import get_mns_service
 from common.clients import logger
 from create_notification import create_mns_notification
+from mns_test_queue import send_notification_to_test_queue
 
 mns_env = os.getenv("MNS_ENV", "int")
 
@@ -62,10 +63,12 @@ def process_record(record: SQSMessage, mns_service: MnsService) -> None:
         },
     )
 
-    mns_service.publish_notification(mns_notification_payload)
-    logger.info("Successfully created MNS notification", extra={"mns_notification_id": notification_id})
-
-    return None
+    try:
+        mns_service.publish_notification(mns_notification_payload)
+        logger.info("Successfully created MNS notification", extra={"mns_notification_id": notification_id})
+    except Exception:
+        send_notification_to_test_queue(mns_notification_payload)
+        raise
 
 
 def extract_trace_ids(record: SQSMessage) -> Tuple[str, str | None]:
