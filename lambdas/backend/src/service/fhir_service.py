@@ -143,6 +143,8 @@ class FhirService:
         except (ValueError, MandatoryError) as error:
             raise CustomValidationError(message=str(error)) from error
 
+        immunization_to_update = Immunization.parse_obj(immunization)
+
         existing_immunization_resource, existing_immunization_meta = (
             self.immunization_repo.get_immunization_resource_and_metadata_by_id(imms_id, include_deleted=True)
         )
@@ -150,27 +152,22 @@ class FhirService:
         if not existing_immunization_resource:
             raise ResourceNotFoundError(resource_type="Immunization", resource_id=imms_id)
 
-        # If the user is updating the resource vaccination_type, they must have permissions for both the existing and
-        # new type. In most cases it will be the same, but it is possible for users to update the vacc type
+        existing_immunization = Immunization.parse_obj(existing_immunization_resource)
+
         if not self.authoriser.authorise(
             supplier_system,
             ApiOperationCode.UPDATE,
-            {get_vaccine_type(immunization), get_vaccine_type(existing_immunization_resource)},
+            {get_vaccine_type(immunization_to_update), get_vaccine_type(existing_immunization)},
         ):
             raise UnauthorizedVaxError()
 
-        identifier = Identifier.construct(
-            system=immunization["identifier"][0]["system"],
-            value=immunization["identifier"][0]["value"],
-        )
-
-        validate_identifiers_match(identifier, existing_immunization_meta.identifier)
+        validate_identifiers_match(immunization_to_update.identifier[0], existing_immunization_meta.identifier)
 
         if not existing_immunization_meta.is_deleted:
             validate_resource_versions_match(resource_version, existing_immunization_meta.resource_version, imms_id)
 
         return self.immunization_repo.update_immunization(
-            imms_id, immunization, existing_immunization_meta, supplier_system
+            imms_id, immunization_to_update, existing_immunization_meta, supplier_system
         )
 
     def delete_immunization(self, imms_id: str, supplier_system: str) -> None:

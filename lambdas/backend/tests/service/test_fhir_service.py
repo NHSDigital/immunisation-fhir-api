@@ -529,9 +529,13 @@ class TestUpdateImmunization(TestFhirServiceBase):
         self.imms_repo.get_immunization_resource_and_metadata_by_id.assert_called_once_with(
             imms_id, include_deleted=True
         )
-        self.imms_repo.update_immunization.assert_called_once_with(
-            imms_id, updated_immunisation, existing_resource_meta, "Test"
-        )
+        self.imms_repo.update_immunization.assert_called_once()
+        call_args = self.imms_repo.update_immunization.call_args[0]
+        self.assertEqual(call_args[0], imms_id)
+        self.assertIsInstance(call_args[1], Immunization)
+        self.assertEqual(call_args[1].id, imms_id)
+        self.assertEqual(call_args[2], existing_resource_meta)
+        self.assertEqual(call_args[3], "Test")
         self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.UPDATE, {"COVID"})
 
     def test_update_immunization_raises_validation_exception_when_nhs_number_invalid(self):

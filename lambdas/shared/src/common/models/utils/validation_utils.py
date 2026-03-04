@@ -1,5 +1,7 @@
 """Utils for backend folder"""
 
+from typing import Any
+
 from fhir.resources.R4B.identifier import Identifier
 
 from common.models.constants import RedisHashKeys, Urls
@@ -61,11 +63,14 @@ def convert_disease_codes_to_vaccine_type(
     return vaccine_type
 
 
-def get_vaccine_type(immunization: dict):
+def get_vaccine_type(immunization: dict | Any) -> str:
     """
-    Take a FHIR immunization resource and returns the vaccine type based on the combination of target diseases.
-    If combination of disease types does not map to a valid vaccine type, a value error is raised
+    Take a FHIR immunization resource (dict or Immunization model) and returns the vaccine type
+    based on the combination of target diseases. If combination of disease types does not map
+    to a valid vaccine type, a value error is raised.
     """
+    if not isinstance(immunization, dict):
+        immunization = immunization.dict()
     # Obtain list of target diseases
     try:
         target_diseases = get_target_disease_codes(immunization)

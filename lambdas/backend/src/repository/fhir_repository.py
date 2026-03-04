@@ -67,27 +67,30 @@ class RecordAttributes:
     pk: str
     patient_pk: str
     patient_sk: str
-    resource: dict
     patient: dict
     vaccine_type: str
     timestamp: int
     identifier: str
+    immunization: Immunization
 
-    def __init__(self, imms: dict, patient: any):
-        """Create attributes that may be used in dynamodb table"""
-        imms_id = imms["id"]
-        self.pk = _make_immunization_pk(imms_id)
-        if patient or imms:
-            nhs_number = get_nhs_number(imms)
-        self.patient_pk = _make_patient_pk(nhs_number)
-        self.patient = patient
-        self.resource = imms
-        self.timestamp = int(time.time())
-        self.vaccine_type = get_vaccine_type(imms)
-        self.system_id = imms["identifier"][0]["system"]
-        self.system_value = imms["identifier"][0]["value"]
-        self.patient_sk = f"{self.vaccine_type}#{imms_id}"
-        self.identifier = f"{self.system_id}#{self.system_value}"
+    @classmethod
+    def from_immunization(cls, immunization: Immunization, patient: dict | None = None) -> "RecordAttributes":
+        """Build DynamoDB attributes from a FHIR Immunization resource."""
+        imms_dict = immunization.dict()
+        patient_resolved = patient if patient is not None else get_contained_patient(imms_dict)
+        nhs_number = get_nhs_number(imms_dict)
+        vaccine_type = get_vaccine_type(imms_dict)
+        first_identifier = immunization.identifier[0]
+        return cls(
+            pk=_make_immunization_pk(immunization.id),
+            patient_pk=_make_patient_pk(nhs_number),
+            patient_sk=f"{vaccine_type}#{immunization.id}",
+            patient=patient_resolved,
+            vaccine_type=vaccine_type,
+            timestamp=int(time.time()),
+            identifier=f"{first_identifier.system}#{first_identifier.value}",
+            immunization=immunization,
+        )
 
 
 class ImmunizationRepository:
@@ -163,10 +166,7 @@ class ImmunizationRepository:
 
     def create_immunization(self, immunization: Immunization, supplier_system: str) -> Id:
         """Creates a new immunization record returning the unique id if successful."""
-        immunization_as_dict = immunization.dict()
-
-        patient = get_contained_patient(immunization_as_dict)
-        attr = RecordAttributes(immunization_as_dict, patient)
+        attr = RecordAttributes.from_immunization(immunization)
 
         response = self.table.put_item(
             Item={
@@ -189,13 +189,11 @@ class ImmunizationRepository:
     def update_immunization(
         self,
         imms_id: str,
-        immunization: dict,
+        immunization: Immunization,
         existing_record_meta: ImmunizationRecordMetadata,
         supplier_system: str,
     ) -> int:
-        # VED-898 - consider refactoring to pass FHIR Immunization object rather than dict between Service -> Repository
-        patient = get_contained_patient(immunization)
-        attr = RecordAttributes(immunization, patient)
+        attr = RecordAttributes.from_immunization(immunization)
         reinstate_operation_required = existing_record_meta.is_deleted
 
         update_exp = self._build_update_expression(is_reinstate=reinstate_operation_required)
@@ -246,7 +244,7 @@ class ImmunizationRepository:
             ":timestamp": attr.timestamp,
             ":patient_pk": attr.patient_pk,
             ":patient_sk": attr.patient_sk,
-            ":imms_resource_val": json.dumps(attr.resource, use_decimal=True),
+            ":imms_resource_val": attr.immunization.json(use_decimal=True),
             ":operation": "UPDATE",
             ":version": updated_version,
             ":supplier_system": supplier_system,
