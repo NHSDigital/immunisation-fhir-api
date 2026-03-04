@@ -19,7 +19,7 @@ class TestMnsSqsQueue(unittest.TestCase):
             "specversion": "1.0",
             "id": "236a1d4a-5d69-4fa9-9c7f-e72bf505aa5b",
             "source": "https://int.api.service.nhs.uk/immunisation-fhir-api",
-            "type": "imms-vaccinations-2",
+            "type": "imms-vaccinations-1",
             "time": "20260212T174437+00:00",
             "subject": "9481152782",
             "dataref": "https://int.api.service.nhs.uk/immunisation-fhir-api/Immunization/d058014c-b0fd-4471-8db9-3316175eb825",
