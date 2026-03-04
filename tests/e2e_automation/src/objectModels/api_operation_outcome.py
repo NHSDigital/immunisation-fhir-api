@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel
 
 
@@ -22,7 +24,7 @@ class Meta(BaseModel):
 
 
 class OperationOutcome(BaseModel):
-    resourceType: str
+    resourceType: Literal["OperationOutcome"]
     id: str | None = None
     meta: Meta | None = None
     issue: list[Issue]

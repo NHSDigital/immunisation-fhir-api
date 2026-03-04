@@ -1365,6 +1365,7 @@ paths:
         - $ref: "#/components/parameters/RequestID"
         - $ref: "#/components/parameters/PatientIdentifier"
         - $ref: "#/components/parameters/ImmunizationTarget"
+        - $ref: "#/components/parameters/TargetDisease"
         - $ref: "#/components/parameters/DateFrom"
         - $ref: "#/components/parameters/DateTo"
         - $ref: "#/components/parameters/Include"
@@ -4232,7 +4233,6 @@ components:
             type: object
             required:
               - patient.identifier
-              - "-immunization.target"
             properties:
               patient.identifier:
                 type: string
@@ -4248,7 +4248,7 @@ components:
                 type: string
                 description: >
                   Specific procedures, disorders, diseases, infections or
-                  organisms.
+                  organisms (vaccination type). Cannot be used with target-disease.
                 example: FLU
                 enum:
                   - 3IN1
@@ -4262,6 +4262,14 @@ components:
                   - PERTUSSIS
                   - RSV
                   - SHINGLES
+              target-disease:
+                type: string
+                description: >
+                  FHIR-compliant search by target disease. Format system|code with
+                  system http://snomed.info/sct and code a SNOMED code from the
+                  supported target disease list. Comma-separated for multiple (OR).
+                  Cannot be used with -immunization.target.
+                example: "http://snomed.info/sct|14189004"
               "-date.from":
                 type: string
                 format: date
@@ -4350,8 +4358,10 @@ components:
       in: query
       name: "-immunization.target"
       description: |
-        Specific procedures, disorders, diseases, infections or organisms.
-      required: true
+        Specific procedures, disorders, diseases, infections or organisms (vaccination type).
+        Cannot be used together with target-disease or identifier. For patient search, one of
+        -immunization.target or target-disease is required.
+      required: false
       schema:
         type: string
         example: FLU
@@ -4367,6 +4377,19 @@ components:
           - PERTUSSIS
           - RSV
           - SHINGLES
+    TargetDisease:
+      in: query
+      name: target-disease
+      description: |
+        FHIR-compliant search by target disease. Value must be in the format system|code where
+        system MUST be http://snomed.info/sct and code MUST be a SNOMED code from the supported
+        target disease list. Multiple comma-separated values allowed (OR). Cannot be used with
+        -immunization.target or identifier. Returns vaccinations that protect against the given
+        disease(s), including combination vaccines (e.g. MMR, MMRV for measles).
+      required: false
+      schema:
+        type: string
+        example: "http://snomed.info/sct|14189004"
     DateFrom:
       in: query
       name: "-date.from"
