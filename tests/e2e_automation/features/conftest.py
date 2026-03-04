@@ -4,7 +4,7 @@ from pathlib import Path
 import allure
 import pytest
 from dotenv import load_dotenv
-from utilities.api_fhir_immunization_helper import empty_folder
+from utilities.api_fhir_immunization_helper import empty_folder, get_response_body_for_display
 from utilities.api_gen_token import get_tokens
 from utilities.api_get_header import get_delete_url_header
 from utilities.apigee.apigee_env_helpers import use_temp_apigee_apps
@@ -136,7 +136,7 @@ def pytest_bdd_after_scenario(request, feature, scenario):
             print(f"\n Delete Request is {context.url}/{context.ImmsID}")
             context.response = http_requests_session.delete(f"{context.url}/{context.ImmsID}", headers=context.headers)
             assert context.response.status_code == 204, (
-                f"Expected status code 204, but got {context.response.status_code}. Response: {context.response.json()}"
+                f"Expected status code 204, but got {context.response.status_code}. Response: {get_response_body_for_display(context.response)}"
             )
         else:
             print("Skipping delete: ImmsID is None")
@@ -155,12 +155,14 @@ def pytest_bdd_after_scenario(request, feature, scenario):
 
                 response = http_requests_session.delete(delete_url, headers=context.headers)
 
-                assert response.status_code == 204, (
-                    f"Failed to delete {imms_id}: expected 204, got {response.status_code}. Response: {response.text}"
-                )
+                if response.status_code != 204:
+                    print(
+                        f"Cleanup DELETE returned {response.status_code} for {imms_id} (teardown best-effort, not failing test). Response: {get_response_body_for_display(response)}"
+                    )
+                else:
+                    print(f"Deleted {imms_id} successfully.")
 
-            print("All IMMS_IDs deleted successfully.")
-
+            print("Batch cleanup finished.")
         else:
             print(
                 " No IMMS_ID column or no values present as test failed due to as exception — skipping delete cleanup."

@@ -2,6 +2,8 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field
 
+from src.objectModels.api_operation_outcome import OperationOutcome
+
 
 class ExtensionItem(BaseModel):
     url: str
@@ -225,9 +227,9 @@ class PatientResource(BaseModel):
 
 
 class Entry(BaseModel):
-    fullUrl: str
-    resource: Annotated[ImmunizationResponse | PatientResource, Field(discriminator="resourceType")]
-    search: dict[str, str]
+    fullUrl: str | None = None
+    resource: Annotated[ImmunizationResponse | PatientResource | OperationOutcome, Field(discriminator="resourceType")]
+    search: dict[str, str] | None = None
 
 
 class FHIRImmunizationResponse(BaseModel):

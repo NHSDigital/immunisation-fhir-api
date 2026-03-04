@@ -24,6 +24,14 @@ def empty_folder(path):
     os.makedirs(path)
 
 
+def get_response_body_for_display(response) -> str:
+    """Return response body as string for error messages. Uses .text when .json() fails (e.g. empty or non-JSON)."""
+    try:
+        return str(response.json()) if response.content else "(empty body)"
+    except (ValueError, TypeError):
+        return response.text if response.text else "(empty body)"
+
+
 def find_entry_by_Imms_id(parsed_data, imms_id) -> object | None:
     return next(
         (

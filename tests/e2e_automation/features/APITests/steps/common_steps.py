@@ -18,6 +18,7 @@ from src.objectModels.api_immunization_builder import (
 )
 from src.objectModels.patient_loader import load_patient_by_id
 from utilities.api_fhir_immunization_helper import (
+    get_response_body_for_display,
     is_valid_disease_type,
     is_valid_nhs_number,
     parse_error_response,
@@ -128,8 +129,9 @@ def Trigger_the_post_create_request(context):
 def The_request_will_have_status_code(context, statusCode):
     print(context.response.status_code)
     print(int(statusCode))
+    body = get_response_body_for_display(context.response)
     assert context.response.status_code == int(statusCode), (
-        f"\n Expected status code: {statusCode}, but got: {context.response.status_code}. Response: {context.response.json()} \n"
+        f"\n Expected status code: {statusCode}, but got: {context.response.status_code}. Response: {body} \n"
     )
 
 
@@ -137,11 +139,12 @@ def The_request_will_have_status_code(context, statusCode):
 def validateCreateLocation(context):
     location = context.response.headers["location"]
     eTag = context.response.headers["E-Tag"]
+    body = get_response_body_for_display(context.response)
     assert "location" in context.response.headers, (
-        f"Location header is missing in the response with Status code: {context.response.statusCode}. Response: {context.response.json()}"
+        f"Location header is missing in the response with Status code: {context.response.status_code}. Response: {body}"
     )
     assert "E-Tag" in context.response.headers, (
-        f"E-Tag header is missing in the response with Status code: {context.response.statusCode}. Response: {context.response.json()}"
+        f"E-Tag header is missing in the response with Status code: {context.response.status_code}. Response: {body}"
     )
     context.ImmsID = location.split("/")[-1]
     context.eTag = eTag.strip('"')

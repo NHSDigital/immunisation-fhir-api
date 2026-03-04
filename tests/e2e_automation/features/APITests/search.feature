@@ -267,3 +267,87 @@ Feature: Search the immunization of a patient
         When I send a search request with Post method using an invalid identifier header for Immunization event created
         Then The request will be successful with the status code '200'
         And Empty immunization event is returned in the response
+
+    @smoke
+    @Delete_cleanUp @supplier_name_TPP
+    Scenario: Verify that Search API returns immunization events when searching by target-disease (GET)
+        Given Valid vaccination record is created with Patient 'Random' and vaccine_type 'MMRV'
+        When Send a search request with GET method using target-disease for Immunization event created
+        Then The request will be successful with the status code '200'
+        And The Search Response JSONs should contain the detail of the immunization events created above
+
+    @Delete_cleanUp @supplier_name_EMIS
+    Scenario: Verify that Search API returns immunization events when searching by target-disease (POST)
+        Given Valid vaccination record is created with Patient 'Random' and vaccine_type '3IN1'
+        When Send a search request with POST method using target-disease for Immunization event created
+        Then The request will be successful with the status code '200'
+        And The Search Response JSONs should contain the detail of the immunization events created above
+
+    @Delete_cleanUp @supplier_name_Postman_Auth
+    Scenario Outline: Verify that Search API will throw error if target-disease is used together with -immunization.target
+        Given Valid vaccination record is created with Patient 'Random' and vaccine_type 'MMRV'
+        When Send a search request with '<Method>' method using target-disease and -immunization.target for Immunization event created
+        Then The request will be unsuccessful with the status code '400'
+        And The Response JSONs should contain correct error message for invalid target-disease usage
+        Examples:
+            | Method |
+            | GET    |
+            | POST   |
+
+    @Delete_cleanUp @supplier_name_Postman_Auth
+    Scenario: Verify that Search API will throw error if target-disease is used together with identifier
+        Given Valid vaccination record is created with Patient 'Random' and vaccine_type 'MMRV'
+        When Send a search request with GET method using target-disease and identifier for Immunization event created
+        Then The request will be unsuccessful with the status code '400'
+        And The Response JSONs should contain correct error message for invalid target-disease usage
+
+    @Delete_cleanUp @supplier_name_Postman_Auth
+    Scenario: Verify that Search API returns immunization events when searching by comma-separated target-disease (GET)
+        Given Valid vaccination record is created with Patient 'Random' and vaccine_type 'HEPB'
+        When Send a search request with GET method using comma-separated target-disease for Immunization event created
+        Then The request will be successful with the status code '200'
+        And The Search Response JSONs should contain the detail of the immunization events created above
+
+    @Delete_cleanUp @supplier_name_Postman_Auth
+    Scenario: Verify that Search API returns immunization events when searching by comma-separated target-disease (POST)
+        Given Valid vaccination record is created with Patient 'Random' and vaccine_type 'COVID'
+        When Send a search request with POST method using comma-separated target-disease for Immunization event created
+        Then The request will be successful with the status code '200'
+        And The Search Response JSONs should contain the detail of the immunization events created above
+
+    @smoke
+    @Delete_cleanUp @supplier_name_TPP
+    Scenario: Verify that immunization events retrieved by target-disease search are within Date From and Date To range
+        Given Valid vaccination record is created for '9728403348' and Disease Type 'SHINGLES' with recorded date as '2023-01-15'
+        When Send a search request with GET method using target-disease and Date From and Date To for Immunization event created
+        Then The request will be successful with the status code '200'
+        And The occurrenceDateTime of the immunization events should be within the Date From and Date To range
+        When Send a search request with POST method using target-disease and Date From and Date To for Immunization event created
+        Then The request will be successful with the status code '200'
+        And The occurrenceDateTime of the immunization events should be within the Date From and Date To range
+
+    @supplier_name_SONAR
+    Scenario: Verify that Search API returns 403 when target-disease resolves only to vaccine types supplier is not authorised for
+        When Send a search request with GET method using target-disease for Immunization event created with valid NHS Number
+        Then The request will be unsuccessful with the status code '403'
+        And The Response JSONs should contain correct error message for 'unauthorized_access' access
+
+    @supplier_name_Postman_Auth
+    Scenario: Verify that Search API returns 400 when all target-disease values are invalid SNOMED codes
+        When Send a search request with GET method with valid NHS Number and all invalid target-disease codes
+        Then The request will be unsuccessful with the status code '400'
+        And The Response JSONs should contain correct error message for invalid target-disease codes
+        When Send a search request with POST method with valid NHS Number and all invalid target-disease codes
+        Then The request will be unsuccessful with the status code '400'
+        And The Response JSONs should contain correct error message for invalid target-disease codes
+
+    @smoke
+    @Delete_cleanUp @supplier_name_Postman_Auth
+    Scenario: Verify that Search API returns 200 with results and OperationOutcome when some target-disease values are invalid
+        Given Valid vaccination record is created with Patient 'Random' and vaccine_type '6IN1'
+        When Send a search request with GET method using mixed valid and invalid target-disease codes for Immunization event created
+        Then The request will be successful with the status code '200'
+        And The Search Response should contain search results and OperationOutcome for invalid target-disease codes
+        When Send a search request with POST method using mixed valid and invalid target-disease codes for Immunization event created
+        Then The request will be successful with the status code '200'
+        And The Search Response should contain search results and OperationOutcome for invalid target-disease codes

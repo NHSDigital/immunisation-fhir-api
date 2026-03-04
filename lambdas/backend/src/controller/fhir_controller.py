@@ -18,12 +18,18 @@ from controller.aws_apig_event_utils import (
     get_supplier_system_header,
 )
 from controller.aws_apig_response_utils import create_response
-from controller.constants import E_TAG_HEADER_NAME, IdentifierSearchParameterName
+from controller.constants import (
+    E_TAG_HEADER_NAME,
+    IdentifierSearchParameterName,
+    ImmunizationSearchParameterName,
+)
 from controller.fhir_api_exception_handler import fhir_api_exception_handler
 from controller.parameter_parser import (
     parse_search_params,
     validate_and_retrieve_identifier_search_params,
     validate_and_retrieve_search_params,
+    validate_and_retrieve_search_params_by_disease,
+    validate_search_param_mutual_exclusivity,
 )
 from models.errors import (
     InconsistentIdError,
@@ -133,13 +139,17 @@ class FhirController:
     def search_immunizations(self, aws_event: APIGatewayProxyEventV1, is_post_endpoint_req: bool = False) -> dict:
         """Performs the client search request based on the parameters provided. The available searches are:
         1. Search by identifier: (more like a GET) retrieves immunisation by local identifier.
-        2. Search by patient and immunisation target"""
+        2. Search by patient and immunisation target (-immunization.target or target-disease)."""
         search_params = self._get_search_params_from_request(aws_event, is_post_endpoint_req)
         parsed_search_params = parse_search_params(search_params)
+        validate_search_param_mutual_exclusivity(parsed_search_params)
         supplier_system = get_supplier_system_header(aws_event)
 
         if self._is_identifier_search(parsed_search_params):
             return self._get_immunization_by_identifier(parsed_search_params, supplier_system)
+
+        if self._is_target_disease_search(parsed_search_params):
+            return self._search_immunizations_by_target_disease(parsed_search_params, supplier_system)
 
         return self._search_immunizations(parsed_search_params, supplier_system)
 
@@ -172,6 +182,37 @@ class FhirController:
         prepared_search_bundle = self._prepare_search_bundle(search_bundle)
 
         return create_response(200, prepared_search_bundle)
+
+    def _search_immunizations_by_target_disease(self, search_params: dict[str, list[str]], supplier_system: str) -> dict:
+        result = validate_and_retrieve_search_params_by_disease(search_params)
+
+        if result.no_mapped_target_diseases_provided:
+            search_bundle = self.fhir_service.make_empty_search_bundle_with_target_disease_not_in_mapping(
+                result.params.patient_identifier,
+                result.params.date_from,
+                result.params.date_to,
+                result.params.include,
+                result.params.target_disease_codes_for_url,
+            )
+        else:
+            search_bundle = self.fhir_service.search_immunizations(
+                result.params.patient_identifier,
+                result.params.immunization_targets,
+                supplier_system,
+                result.params.date_from,
+                result.params.date_to,
+                result.params.include,
+                invalid_immunization_targets=None,
+                target_disease_codes_for_url=result.params.target_disease_codes_for_url,
+                invalid_target_diseases=result.invalid_target_diseases,
+            )
+
+        prepared_search_bundle = self._prepare_search_bundle(search_bundle)
+        return create_response(200, prepared_search_bundle)
+
+    @staticmethod
+    def _is_target_disease_search(search_params: dict[str, list[str]]) -> bool:
+        return ImmunizationSearchParameterName.TARGET_DISEASE in search_params
 
     def _is_valid_immunization_id(self, immunization_id: str) -> bool:
         """Validates if the given unique Immunization ID is valid."""

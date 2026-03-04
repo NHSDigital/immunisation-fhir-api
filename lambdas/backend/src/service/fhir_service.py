@@ -199,17 +199,19 @@ class FhirService:
         date_to: datetime.date | None,
         include: str | None,
         invalid_immunization_targets: list[str] | None = None,
+        target_disease_codes_for_url: set[str] | None = None,
+        invalid_target_diseases: list[str] | None = None,
     ) -> FhirBundle:
         """
         Finds all instances of Immunization(s) for a specified patient for the given specified vaccine type(s).
         Bundles the resources with the relevant patient resource and returns the bundle along with a boolean to state
         whether the supplier requested vaccine types they were not authorised for.
+        When target_disease_codes_for_url is set, the bundle self link uses target-disease param instead of vaccine types.
         """
         permitted_vacc_types = self.authoriser.filter_permitted_vacc_types(
             supplier_system, ApiOperationCode.SEARCH, vaccine_types
         )
 
-        # Only raise error if supplier's request had no permitted vaccinations
         if not permitted_vacc_types:
             raise UnauthorizedVaxError()
 
@@ -278,24 +280,74 @@ class FhirService:
                 )
             )
 
+        if invalid_target_diseases:
+            for diagnostics in invalid_target_diseases:
+                entries.append(
+                    BundleEntry(
+                        resource=OperationOutcome.construct(
+                            **create_operation_outcome(
+                                resource_id=str(uuid.uuid4()),
+                                severity=Severity.warning,
+                                code=Code.invalid,
+                                diagnostics=diagnostics,
+                            )
+                        )
+                    )
+                )
+
+        bundle_link_url = create_url_for_bundle_link(
+            permitted_vacc_types,
+            nhs_number,
+            date_from,
+            date_to,
+            include,
+            IMMUNIZATION_ENV,
+            IMMUNIZATION_BASE_PATH,
+            target_disease_codes_for_url=target_disease_codes_for_url,
+        )
+
         return FhirBundle(
             type="searchset",
             entry=entries,
-            link=[
-                BundleLink(
-                    relation="self",
-                    url=create_url_for_bundle_link(
-                        permitted_vacc_types,
-                        nhs_number,
-                        date_from,
-                        date_to,
-                        include,
-                        IMMUNIZATION_ENV,
-                        IMMUNIZATION_BASE_PATH,
-                    ),
-                )
-            ],
+            link=[BundleLink(relation="self", url=bundle_link_url)],
             total=len(processed_resources),
+        )
+
+    def make_empty_search_bundle_with_target_disease_not_in_mapping(
+        self,
+        nhs_number: str,
+        date_from: datetime.date | None,
+        date_to: datetime.date | None,
+        include: str | None,
+        target_disease_codes_for_url: set[str] | None = None,
+    ) -> FhirBundle:
+        entries = [
+            BundleEntry(
+                resource=OperationOutcome.construct(
+                    **create_operation_outcome(
+                        resource_id=str(uuid.uuid4()),
+                        severity=Severity.warning,
+                        code=Code.invalid,
+                        diagnostics="This service does not contain any vaccination types with the target disease requested.",
+                    )
+                )
+            )
+        ]
+        url = create_url_for_bundle_link(
+            set(),
+            nhs_number,
+            date_from,
+            date_to,
+            include,
+            IMMUNIZATION_ENV,
+            IMMUNIZATION_BASE_PATH,
+            target_disease_codes_for_url=target_disease_codes_for_url or set(),
+        )
+        return FhirBundle(
+            type="searchset",
+            entry=entries,
+            link=[BundleLink(relation="self", url=url)],
+            total=0,
         )
 
     def _filter_search_results_by_date_and_status(
