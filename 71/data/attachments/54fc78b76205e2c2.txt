@@ -1,1 +1,0 @@
-✅ Step Passed: **Send a search request with POST method with valid NHS Number and all invalid target-disease codes
