@@ -1,1 +1,0 @@
-✅ Step Passed: **Send a search request with GET method using mixed valid and invalid target-disease codes for Immunization event created

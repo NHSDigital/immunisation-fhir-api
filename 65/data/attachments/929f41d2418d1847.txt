@@ -1,1 +1,0 @@
-✅ Step Passed: **The status response will contain a passing healthcheck
