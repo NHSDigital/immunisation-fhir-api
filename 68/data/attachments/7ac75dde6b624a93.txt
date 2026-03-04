@@ -1,1 +1,0 @@
-✅ Step Passed: **The imms event table will be populated with the correct data for 'deleted' event for records in batch file
