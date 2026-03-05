@@ -25,7 +25,7 @@ class FieldLocations:
     target_disease = "protocolApplied[0].targetDisease"
     target_disease_codes = f"protocolApplied[0].targetDisease[0].coding[?(@.system=='{Urls.SNOMED}')].code"
     patient_identifier_value = (
-        "contained[?(@.resourceType=='Patient')].identifier[0].value"  # TODO: Fix to use nhs number url lookup
+        f"contained[?(@.resourceType=='Patient')].identifier[?(@.system=='{Urls.NHS_NUMBER}')].value"
     )
     patient_name_given: str = field(init=False)
     patient_name_family: str = field(init=False)

@@ -58,7 +58,7 @@ class TestCreateImmunizationBatchController(unittest.TestCase):
         imms_pk = _make_immunization_pk(imms_id)
         imms = create_covid_immunization(imms_id)
         create_result = CustomValidationError(
-            message="Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value does not exists"
+            message="Validation errors: contained[?(@.resourceType=='Patient')].identifier[?(@.system=='https://fhir.nhs.uk/Id/nhs-number')].value does not exists"
         )
 
         message_body = {
@@ -178,7 +178,7 @@ class TestUpdateImmunizationBatchController(unittest.TestCase):
         imms_pk = _make_immunization_pk(imms_id)
         imms = create_covid_immunization(imms_id)
         update_result = CustomValidationError(
-            message="Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value does not exists"
+            message="Validation errors: contained[?(@.resourceType=='Patient')].identifier[?(@.system=='https://fhir.nhs.uk/Id/nhs-number')].value does not exists"
         )
         message_body = {
             "supplier": "test_supplier",
@@ -297,7 +297,7 @@ class TestDeleteImmunizationBatchController(unittest.TestCase):
         imms_pk = _make_immunization_pk(imms_id)
         imms = create_covid_immunization(imms_id)
         update_result = CustomValidationError(
-            message="Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value does not exists"
+            message="Validation errors: contained[?(@.resourceType=='Patient')].identifier[?(@.system=='https://fhir.nhs.uk/Id/nhs-number')].value does not exists"
         )
         message_body = {
             "supplier": "test_supplier",
