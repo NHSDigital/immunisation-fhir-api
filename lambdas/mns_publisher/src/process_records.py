@@ -6,9 +6,9 @@ from aws_lambda_typing.events.sqs import SQSMessage
 
 from common.api_clients.mns_service import MnsService
 from common.api_clients.mns_setup import get_mns_service
+from common.api_clients.mock_mns_service import MockMnsService
 from common.clients import logger
 from create_notification import create_mns_notification
-from mns_test_queue import send_notification_to_test_queue
 
 mns_env = os.getenv("MNS_ENV", "int")
 MNS_TEST_QUEUE_URL = os.getenv("MNS_TEST_QUEUE_URL")
@@ -39,7 +39,7 @@ def process_records(records: list[SQSMessage]) -> dict[str, list]:
     return {"batchItemFailures": batch_item_failures}
 
 
-def process_record(record: SQSMessage, mns_service: MnsService) -> None:
+def process_record(record: SQSMessage, mns_service: MnsService | MockMnsService) -> None:
     """
     Process a single SQS record.
     Args:
@@ -64,14 +64,8 @@ def process_record(record: SQSMessage, mns_service: MnsService) -> None:
         },
     )
 
-    # TODO: Remove when MNS platform authorizes imms-vaccinations-1 event type
-    # Temporary SQS queue for testing MNS notifications until MNS HTTP endpoint is available
-    if MNS_TEST_QUEUE_URL:
-        send_notification_to_test_queue(mns_notification_payload)
-        logger.info("Notification Successfully sent to SQS", extra={"notification_id": notification_id})
-    else:
-        mns_service.publish_notification(mns_notification_payload)
-        logger.info("Successfully created MNS notification", extra={"mns_notification_id": notification_id})
+    mns_service.publish_notification(mns_notification_payload)
+    logger.info("Successfully created MNS notification", extra={"mns_notification_id": notification_id})
 
 
 def extract_trace_ids(record: SQSMessage) -> Tuple[str, str | None]:

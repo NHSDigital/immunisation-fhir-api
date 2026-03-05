@@ -4,7 +4,7 @@
 resource "aws_sqs_queue" "mns_test_notification" {
   name                       = "${var.mns_test_notification_name_prefix}-queue"
   fifo_queue                 = false
-  message_retention_seconds  = 14400
+  message_retention_seconds  = 86400
   visibility_timeout_seconds = 300
 }
 
