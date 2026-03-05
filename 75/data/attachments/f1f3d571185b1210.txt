@@ -1,3 +1,0 @@
-❌ Step failed! **Deleted Immunization event will not be present in Get method Search API response** 
- Error: 
- Expected status code: 200, but got: 404. Response: {'fault': {'faultstring': 'Unable to identify proxy for host: internal-qa.api.service.nhs.uk:443 and url: /immunisation-fhir-api/FHIR/R4/Immunization', 'detail': {'errorcode': 'messaging.adaptors.http.flow.ApplicationNotFound'}}} 

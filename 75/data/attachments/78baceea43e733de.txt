@@ -1,3 +1,0 @@
-❌ Step failed! **The request will be unsuccessful with the status code '400'** 
- Error: 
- Expected status code: 400, but got: 404. Response: {'fault': {'faultstring': 'Unable to identify proxy for host: internal-qa.api.service.nhs.uk:443 and url: /immunisation-fhir-api/FHIR/R4/Immunization/d8f0a3ef-0361-4c81-bd24-b1792082d6b2', 'detail': {'errorcode': 'messaging.adaptors.http.flow.ApplicationNotFound'}}} 

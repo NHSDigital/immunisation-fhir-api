@@ -1,8 +1,0 @@
-
- Search Post Request - 
- {'identifier': 'https://www.ieds.england.nhs.uk/|1109cd30-12ef-4160-a539-801e5d02d5d6', '_elements': 'meta,id'}
-
- Search POST Response - 
- {'resourceType': 'Bundle', 'type': 'searchset', 'link': [{'relation': 'self', 'url': 'https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization?identifier=None'}], 'entry': [], 'total': 0}
-200
-200
