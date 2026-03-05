@@ -1,1 +1,0 @@
-✅ Step Passed: **file will be moved to destination bucket and inf ack file will be created
