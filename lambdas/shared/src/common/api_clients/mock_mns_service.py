@@ -1,8 +1,11 @@
 import json
+import os
 
 import boto3
 
 from common.clients import logger
+
+REGION_NAME = os.getenv("AWS_REGION", "eu-west-2")
 
 
 class MockMnsService:
@@ -12,7 +15,7 @@ class MockMnsService:
         logger.info(f"MockMnsService initialized with queue: {queue_url}")
 
     def _get_sqs_client(self):
-        return boto3.client("sqs", region_name="eu-west-2")
+        return boto3.client("sqs", region_name=REGION_NAME)
 
     def publish_notification(self, mns_payload: dict) -> None:
         """

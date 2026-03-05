@@ -2,6 +2,7 @@ environment                       = "dev"
 immunisation_account_id           = "345594581768"
 dspp_core_account_id              = "603871901111"
 pds_environment                   = "int"
+enable_mns_test_queue             = true
 mns_environment                   = "int"
 error_alarm_notifications_enabled = false
 mns_publisher_feature_enabled     = true

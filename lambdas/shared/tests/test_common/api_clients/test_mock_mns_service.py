@@ -84,7 +84,6 @@ class TestMockMnsService(unittest.TestCase):
 
         self.assertEqual(len(messages["Messages"]), 2)
 
-        # Verify IDs
         message_ids = [json.loads(msg["Body"])["id"] for msg in messages["Messages"]]
         self.assertIn("notification-1", message_ids)
         self.assertIn("notification-2", message_ids)
