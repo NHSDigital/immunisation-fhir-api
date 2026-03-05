@@ -1,11 +1,8 @@
 import json
-import os
 
 import boto3
 
 from common.clients import logger
-
-MNS_TEST_QUEUE_URL = os.getenv("MNS_TEST_QUEUE_URL")
 
 
 class MockMnsService:
@@ -23,8 +20,8 @@ class MockMnsService:
         Args: payload: MNS notification payload
         """
         try:
-            response = self._get_sqs_client.send_message(
-                QueueUrl=MNS_TEST_QUEUE_URL,
+            response = self.sqs_client.send_message(
+                QueueUrl=self.queue_url,
                 MessageBody=json.dumps(mns_payload),
                 MessageAttributes={"source": {"StringValue": "mns-publisher-lambda", "DataType": "String"}},
             )

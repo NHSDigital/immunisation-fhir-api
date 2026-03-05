@@ -1,4 +1,5 @@
 import logging
+import os
 
 import boto3
 from botocore.config import Config
@@ -9,11 +10,13 @@ from common.api_clients.mock_mns_service import MockMnsService
 from common.cache import Cache
 
 logging.basicConfig(level=logging.INFO)
+MNS_TEST_QUEUE_URL = os.getenv("MNS_TEST_QUEUE_URL")
 
 
 def get_mns_service(mns_env: str = "int"):
     if mns_env == "dev":
-        return MockMnsService()
+        logging.info("Dev environment: Using MockMnsService")
+        return MockMnsService(MNS_TEST_QUEUE_URL)
     else:
         boto_config = Config(region_name="eu-west-2")
         cache = Cache(directory="/tmp")  # NOSONAR(S5443)
@@ -24,6 +27,5 @@ def get_mns_service(mns_env: str = "int"):
             environment=mns_env,
             cache=cache,
         )
-
         logging.info("Authentication Initiated...")
         return MnsService(authenticator)
