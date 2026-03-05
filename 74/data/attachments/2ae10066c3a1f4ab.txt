@@ -1,0 +1,1 @@
+✅ Step Passed: **vaccination record exists in the API where batch file includes update records  for missing mandatory fields and a duplicate entry

@@ -1,8 +1,0 @@
-
- Search GET Request - 
- patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number|9449304424&-immunization.target=FLu&-date.from=2026-03-05&_include=Immunization:patient
-
- Search GET Response - 
- {'fault': {'faultstring': 'Unable to identify proxy for host: internal-qa.api.service.nhs.uk:443 and url: /immunisation-fhir-api/FHIR/R4/Immunization', 'detail': {'errorcode': 'messaging.adaptors.http.flow.ApplicationNotFound'}}}
-404
-400
