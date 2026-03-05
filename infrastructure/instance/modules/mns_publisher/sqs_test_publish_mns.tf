@@ -33,3 +33,14 @@ resource "aws_sqs_queue_policy" "mns_test_notification_sqs" {
   queue_url = aws_sqs_queue.mns_test_notification.id
   policy    = data.aws_iam_policy_document.mns_test_notification_sqs_policy.json
 }
+
+output "mns_test_queue_url" {
+  value       = aws_sqs_queue.mns_test_notification.url
+  description = "URL of the MNS test notifications queue"
+}
+
+output "mns_test_queue_arn" {
+  value       = aws_sqs_queue.mns_test_notification.arn
+  description = "ARN of the MNS test notifications queue"
+}
+
