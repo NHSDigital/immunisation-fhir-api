@@ -1,0 +1,6 @@
+❌ Step failed! **The Response JSONs should contain correct error message for Imms_id 'not_found'** 
+ Error: 2 validation errors for OperationOutcome
+resourceType
+  field required (type=value_error.missing)
+issue
+  field required (type=value_error.missing)
