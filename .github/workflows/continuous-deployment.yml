@@ -5,6 +5,10 @@ on:
     branches:
       - master
 
+concurrency:
+  group: continuous-deployment-master
+  cancel-in-progress: false
+
 jobs:
   run-quality-checks:
     uses: ./.github/workflows/quality-checks.yml
