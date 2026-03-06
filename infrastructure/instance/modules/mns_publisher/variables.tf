@@ -103,3 +103,14 @@ variable "secrets_manager_policy_path" {
   type        = string
   description = "Path to the IAM policy JSON template for Secrets Manager access (e.g., ./policies/secret_manager.json)."
 }
+
+variable "mns_test_notification_name_prefix" {
+  type        = string
+  description = "The prefix for the name of resources for testing mns notification"
+}
+
+variable "enable_mns_test_queue" {
+  description = "Enable test SQS queue for MNS notifications (dev only)"
+  type        = bool
+  default     = false
+}
