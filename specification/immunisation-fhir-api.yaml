@@ -4269,8 +4269,8 @@ components:
               target-disease:
                 type: string
                 description: >
-                  Search by target disease using FHIR-compliant SNOMED codes. Format
-                  system|code with system http://snomed.info/sct and code from the
+                  Search by target disease using FHIR-compliant SNOMED codes. Expressed as
+                  `system|code` with system `http://snomed.info/sct` and code from the
                   [supported target disease list](https://digital.nhs.uk/developer/guides-and-documentation/building-healthcare-software/vaccinations/coding-for-vaccination-disease-types#how-this-applies-to-vaccinations-submitted-to-the-api).
                   Comma-separated for multiple (OR). Cannot be used with
                   -immunization.target or identifier. For patient search, one of
@@ -4393,7 +4393,7 @@ components:
         retrieve vaccinations that protect against specific disease(s), including combination
         vaccines (e.g. MMR or MMRV when searching for measles).
 
-        Format: system|code where system MUST be http://snomed.info/sct and code MUST be
+        Expressed as `system|code` where system MUST be `http://snomed.info/sct` and code MUST be
         a SNOMED code from the [supported target disease list](https://digital.nhs.uk/developer/guides-and-documentation/building-healthcare-software/vaccinations/coding-for-vaccination-disease-types#how-this-applies-to-vaccinations-submitted-to-the-api).
         Multiple comma-separated values are allowed (OR). Cannot be used with
         -immunization.target or identifier. For patient search, one of -immunization.target
