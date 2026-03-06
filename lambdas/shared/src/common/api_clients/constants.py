@@ -1,3 +1,5 @@
+from typing import TypedDict
+
 """Constants used by API clients"""
 
 
@@ -8,3 +10,28 @@ class Constants:
     DEFAULT_API_CLIENTS_TIMEOUT = 5
     API_CLIENTS_MAX_RETRIES = 2
     API_CLIENTS_BACKOFF_SECONDS = 0.5
+
+
+# Fields from the incoming SQS message that forms part of the base schema and filtering attributes for MNS notifications
+class FilteringData(TypedDict):
+    """MNS notification filtering attributes."""
+
+    generalpractitioner: str | None
+    sourceorganisation: str
+    sourceapplication: str
+    subjectage: int
+    immunisationtype: str
+    action: str
+
+
+class MnsNotificationPayload(TypedDict):
+    """CloudEvents-compliant MNS notification payload."""
+
+    specversion: str
+    id: str
+    source: str
+    type: str
+    time: str
+    subject: str
+    dataref: str
+    filtering: FilteringData

@@ -7,6 +7,7 @@ module "mns_publisher" {
   enable_lambda_alarm                = var.error_alarm_notifications_enabled # consider just INT and PROD
   immunisation_account_id            = var.immunisation_account_id
   is_temp                            = local.is_temp
+  enable_mns_test_queue              = var.mns_environment == "dev"
   resource_scope                     = local.resource_scope
   imms_base_path                     = strcontains(var.sub_environment, "pr-") ? "immunisation-fhir-api/FHIR/R4-${var.sub_environment}" : "immunisation-fhir-api/FHIR/R4"
   lambda_kms_encryption_key_arn      = data.aws_kms_key.existing_lambda_encryption_key.arn

@@ -192,7 +192,7 @@ resource "aws_lambda_function" "mns_publisher_lambda" {
   environment {
     variables = {
       SPLUNK_FIREHOSE_NAME   = var.splunk_firehose_stream_name
-      MNS_TEST_QUEUE_URL     = aws_sqs_queue.mns_test_notification[0].url
+      MNS_TEST_QUEUE_URL     = var.enable_mns_test_queue ? aws_sqs_queue.mns_test_notification[0].url : ""
       IMMUNIZATION_ENV       = var.resource_scope,
       IMMUNIZATION_BASE_PATH = var.imms_base_path
       PDS_ENV                = var.pds_environment

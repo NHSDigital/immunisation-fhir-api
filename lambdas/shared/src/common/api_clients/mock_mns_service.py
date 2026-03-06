@@ -3,6 +3,7 @@ import os
 
 import boto3
 
+from common.api_clients.constants import MnsNotificationPayload
 from common.clients import logger
 
 REGION_NAME = os.getenv("AWS_REGION", "eu-west-2")
@@ -11,13 +12,10 @@ REGION_NAME = os.getenv("AWS_REGION", "eu-west-2")
 class MockMnsService:
     def __init__(self, queue_url):
         self.queue_url = queue_url
-        self.sqs_client = self._get_sqs_client()
+        self.sqs_client = boto3.client("sqs", region_name=REGION_NAME)
         logger.info(f"MockMnsService initialized with queue: {queue_url}")
 
-    def _get_sqs_client(self):
-        return boto3.client("sqs", region_name=REGION_NAME)
-
-    def publish_notification(self, mns_payload: dict) -> None:
+    def publish_notification(self, mns_payload: MnsNotificationPayload) -> None:
         """
         Send MNS notification payload to test SQS queue as fallback.
         Args: payload: MNS notification payload

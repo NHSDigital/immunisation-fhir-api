@@ -6,10 +6,11 @@ from typing import Any
 
 from aws_lambda_typing.events.sqs import SQSMessage
 
+from common.api_clients.constants import MnsNotificationPayload
 from common.api_clients.get_pds_details import pds_get_patient_details
 from common.clients import logger
 from common.get_service_url import get_service_url
-from constants import DYNAMO_DB_TYPE_DESCRIPTORS, IMMUNISATION_TYPE, SPEC_VERSION, MnsNotificationPayload
+from constants import DYNAMO_DB_TYPE_DESCRIPTORS, IMMUNISATION_TYPE, SPEC_VERSION
 
 IMMUNIZATION_ENV = os.getenv("IMMUNIZATION_ENV")
 IMMUNIZATION_BASE_PATH = os.getenv("IMMUNIZATION_BASE_PATH")
