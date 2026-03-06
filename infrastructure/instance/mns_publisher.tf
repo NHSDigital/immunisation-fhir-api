@@ -14,7 +14,6 @@ module "mns_publisher" {
   mns_test_notification_name_prefix  = "${local.resource_scope}-mns-test-notification"
   secrets_manager_policy_path        = "${local.policy_path}/secret_manager.json"
   account_id                         = data.aws_caller_identity.current.account_id
-  enable_mns_test_queue              = var.enable_mns_test_queue
   pds_environment                    = var.pds_environment
   mns_environment                    = var.mns_environment
 

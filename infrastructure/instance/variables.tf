@@ -96,13 +96,6 @@ variable "mns_publisher_feature_enabled" {
   description = "Switch to the MNS Publisher feature which allows us to publish Immunisation events."
   type        = bool
 }
-
-variable "enable_mns_test_queue" {
-  description = "Enable test SQS queue for MNS notifications (dev only)"
-  type        = bool
-  default     = false
-}
-
 variable "has_sub_environment_scope" {
   description = "True if the sub-environment is a standalone environment, e.g. internal-dev. False if it is part of a blue-green split, e.g. int-green."
   type        = bool

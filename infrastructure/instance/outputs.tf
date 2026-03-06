@@ -19,8 +19,6 @@ output "id_sync_queue_arn" {
   value       = aws_sqs_queue.id_sync_queue.arn
 }
 
-# TODO: Remove when MNS platform authorizes imms-vaccinations-1 event type
-# Temporary SQS queue for testing MNS notifications until MNS HTTP endpoint is available
 output "mns_test_queue_url" {
   value       = var.mns_publisher_feature_enabled ? module.mns_publisher[0].mns_test_queue_url : null
   description = "URL of the MNS test notifications queue (from mns_publisher module)"
