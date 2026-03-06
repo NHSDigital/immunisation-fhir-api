@@ -191,7 +191,12 @@ resource "aws_lambda_function" "mns_publisher_lambda" {
 
   environment {
     variables = {
-      SPLUNK_FIREHOSE_NAME = var.splunk_firehose_stream_name
+      SPLUNK_FIREHOSE_NAME   = var.splunk_firehose_stream_name
+      MNS_TEST_QUEUE_URL     = var.enable_mns_test_queue ? aws_sqs_queue.mns_test_notification[0].url : ""
+      IMMUNIZATION_ENV       = var.resource_scope,
+      IMMUNIZATION_BASE_PATH = var.imms_base_path
+      PDS_ENV                = var.pds_environment
+      MNS_ENV                = var.mns_environment
     }
   }
 
@@ -203,6 +208,30 @@ resource "aws_lambda_function" "mns_publisher_lambda" {
   ]
 }
 
+
+data "aws_iam_policy_document" "mns_publisher_secrets_policy_document" {
+  source_policy_documents = [
+    templatefile("${var.secrets_manager_policy_path}", {
+      "account_id" : var.account_id,
+      "pds_environment" : var.pds_environment
+    }),
+  ]
+}
+
+resource "aws_iam_policy" "mns_publisher_lambda_secrets_policy" {
+  name        = "${local.mns_publisher_lambda_name}-secrets-policy"
+  description = "Allow Lambda to access Secrets Manager"
+  policy      = data.aws_iam_policy_document.mns_publisher_secrets_policy_document.json
+}
+
+
+# Attach the secrets/dynamodb access policy to the Lambda role
+resource "aws_iam_role_policy_attachment" "mns_publisher_lambda_secrets_policy_attachment" {
+  role       = aws_iam_role.mns_publisher_lambda_exec_role.name
+  policy_arn = aws_iam_policy.mns_publisher_lambda_secrets_policy.arn
+}
+
+
 resource "aws_cloudwatch_log_group" "mns_publisher_lambda_log_group" {
   name              = "/aws/lambda/${local.mns_publisher_lambda_name}"
   retention_in_days = 30
@@ -213,6 +242,9 @@ resource "aws_lambda_event_source_mapping" "mns_outbound_event_sqs_to_lambda" {
   function_name    = aws_lambda_function.mns_publisher_lambda.arn
   batch_size       = 10
   enabled          = true
+
+  # Enables partial batch responses using `batchItemFailures`
+  function_response_types = ["ReportBatchItemFailures"]
 }
 
 resource "aws_cloudwatch_log_metric_filter" "mns_publisher_error_logs" {

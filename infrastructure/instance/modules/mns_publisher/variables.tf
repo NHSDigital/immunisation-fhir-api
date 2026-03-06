@@ -72,3 +72,45 @@ variable "system_alarm_sns_topic_arn" {
   description = "The ARN of the SNS Topic used for raising alerts to Slack for CW alarms."
 }
 
+variable "resource_scope" {
+  type        = string
+  description = <<EOT
+  The effective deployment scope used for resource naming and isolation. 
+  This resolves to either the base environment (e.g., dev, pre-prod, prod) or a 
+  sub-environment (e.g., int-blue/int-green) when sub-environment scoping is enabled.
+  EOT
+}
+
+variable "imms_base_path" {
+  type        = string
+  description = "Base path for the Immunisation FHIR API. Used to construct environment-specific routes (e.g. PR preview paths or default R4 path)."
+}
+
+variable "mns_environment" {
+  type = string
+}
+
+variable "pds_environment" {
+  type = string
+}
+
+variable "account_id" {
+  type        = string
+  description = "AWS account ID used for IAM policy templating (e.g., Secrets Manager ARNs)."
+}
+
+variable "secrets_manager_policy_path" {
+  type        = string
+  description = "Path to the IAM policy JSON template for Secrets Manager access (e.g., ./policies/secret_manager.json)."
+}
+
+variable "mns_test_notification_name_prefix" {
+  type        = string
+  description = "The prefix for the name of resources for testing mns notification"
+}
+
+variable "enable_mns_test_queue" {
+  description = "Enable test SQS queue for MNS notifications (dev only)"
+  type        = bool
+  default     = false
+}
