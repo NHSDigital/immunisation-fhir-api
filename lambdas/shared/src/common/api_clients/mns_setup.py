@@ -5,6 +5,7 @@ import boto3
 from botocore.config import Config
 
 from common.api_clients.authentication import AppRestrictedAuth, Service
+from common.api_clients.constants import DEV_ENVIRONMENT
 from common.api_clients.mns_service import MnsService
 from common.api_clients.mock_mns_service import MockMnsService
 from common.cache import Cache
@@ -14,7 +15,7 @@ MNS_TEST_QUEUE_URL = os.getenv("MNS_TEST_QUEUE_URL")
 
 
 def get_mns_service(mns_env: str = "int"):
-    if mns_env == "dev":
+    if mns_env == DEV_ENVIRONMENT:
         logging.info("Dev environment: Using MockMnsService")
         return MockMnsService(MNS_TEST_QUEUE_URL)
     else:

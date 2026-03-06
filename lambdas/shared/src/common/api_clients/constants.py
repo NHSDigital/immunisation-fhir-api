@@ -2,6 +2,8 @@ from typing import TypedDict
 
 """Constants used by API clients"""
 
+DEV_ENVIRONMENT = "dev"
+
 
 class Constants:
     """Constants used for the API clients"""
