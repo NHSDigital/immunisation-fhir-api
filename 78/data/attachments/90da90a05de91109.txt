@@ -1,0 +1,1 @@
+✅ Step Passed: **I send a search request with Post method using identifier and _elements parameters for Immunization event created
