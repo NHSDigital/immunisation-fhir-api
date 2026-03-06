@@ -5,6 +5,10 @@ on:
     branches:
       - master
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }} #hardcoded group name causes the pipeline to get stuck
+  cancel-in-progress: false
+
 jobs:
   run-quality-checks:
     uses: ./.github/workflows/quality-checks.yml
