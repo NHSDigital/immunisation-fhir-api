@@ -6,6 +6,7 @@ import uuid
 import requests
 
 from common.api_clients.authentication import AppRestrictedAuth
+from common.api_clients.constants import MnsNotificationPayload
 from common.api_clients.errors import raise_error_response
 from common.api_clients.retry import request_with_retry_backoff
 
@@ -136,7 +137,7 @@ class MnsService:
         except Exception as e:
             return f"Error deleting subscription: {str(e)}"
 
-    def publish_notification(self, notification_payload) -> dict | None:
+    def publish_notification(self, notification_payload: MnsNotificationPayload) -> dict | None:
         response = requests.request(
             "POST",
             f"{MNS_BASE_URL}/events",
