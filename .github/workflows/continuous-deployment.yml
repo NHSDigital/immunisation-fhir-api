@@ -6,7 +6,7 @@ on:
       - master
 
 concurrency:
-  group: continuous-deployment-master
+  group: ${{ github.workflow }}-${{ github.ref }} #hardcoded group name causes the pipeline to get stuck
   cancel-in-progress: false
 
 jobs:
