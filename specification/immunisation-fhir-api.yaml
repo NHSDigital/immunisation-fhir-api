@@ -1314,9 +1314,10 @@ paths:
         ## Overview
 
         Use this interaction to search for a patient's vaccination records using
-        their NHS number and DiseaseType. You can request the patient's
-        vaccination history for one or more specified 'disease types'. You may
-        limit the vaccination records by specifying date criteria, for example
+        their NHS number and either vaccination type (-immunization.target) or
+        target disease (target-disease). You can request the patient's vaccination
+        history for one or more disease types, or by SNOMED target disease code(s).
+        You may limit the vaccination records by specifying date criteria, for example
         if you only need to know about vaccinations administered in the last 12
         months. 
 
@@ -1358,7 +1359,7 @@ paths:
         body                 |
 
         |  Bad Request                            | Didn't pass required fields
-        `patient.identifier`  or  `-immunization.target`          | HTTP Status
+        `patient.identifier`  or  `-immunization.target`  or  `target-disease`          | HTTP Status
         400 Bad Request               |
       parameters:
         - $ref: "#/components/parameters/CorrelationID"
@@ -1391,7 +1392,8 @@ paths:
         A POST search allows
         you to supply some or all parameters in the body of the request should
         you need to do so. It offers the same search functionality as the GET
-        search interaction. 
+        search interaction, including search by vaccination type
+        (-immunization.target) or by target disease (target-disease). 
 
 
         ## Sandbox testing
@@ -1420,7 +1422,7 @@ paths:
         body                 |
 
         |  Bad Request                            | Didn't pass required fields
-        `patient.identifier`  or  `-immunization.target`          | HTTP Status
+        `patient.identifier`  or  `-immunization.target`  or  `target-disease`          | HTTP Status
         400 Bad Request               |
       parameters:
         - $ref: "#/components/parameters/CorrelationID"
@@ -4248,7 +4250,9 @@ components:
                 type: string
                 description: >
                   Specific procedures, disorders, diseases, infections or
-                  organisms (vaccination type). Cannot be used with target-disease.
+                  organisms (vaccination type). Cannot be used with target-disease or
+                  identifier. For patient search, one of -immunization.target or
+                  target-disease is required.
                 example: FLU
                 enum:
                   - 3IN1
@@ -4265,10 +4269,14 @@ components:
               target-disease:
                 type: string
                 description: >
-                  FHIR-compliant search by target disease. Format system|code with
-                  system http://snomed.info/sct and code a SNOMED code from the
-                  supported target disease list. Comma-separated for multiple (OR).
-                  Cannot be used with -immunization.target.
+                  Search by target disease using FHIR-compliant SNOMED codes. Expressed as
+                  `system|code` with system `http://snomed.info/sct` and code from the
+                  [supported target disease list](https://digital.nhs.uk/developer/guides-and-documentation/building-healthcare-software/vaccinations/coding-for-vaccination-disease-types#how-this-applies-to-vaccinations-submitted-to-the-api).
+                  Comma-separated for multiple (OR). Cannot be used with
+                  -immunization.target or identifier. For patient search, one of
+                  -immunization.target or target-disease is required. Returns
+                  vaccinations that protect against the given disease(s), including
+                  combination vaccines (e.g. MMR, MMRV for measles).
                 example: "http://snomed.info/sct|14189004"
               "-date.from":
                 type: string
@@ -4381,11 +4389,16 @@ components:
       in: query
       name: target-disease
       description: |
-        FHIR-compliant search by target disease. Value must be in the format system|code where
-        system MUST be http://snomed.info/sct and code MUST be a SNOMED code from the supported
-        target disease list. Multiple comma-separated values allowed (OR). Cannot be used with
-        -immunization.target or identifier. Returns vaccinations that protect against the given
-        disease(s), including combination vaccines (e.g. MMR, MMRV for measles).
+        Search by target disease using FHIR-compliant SNOMED codes. Use this parameter to
+        retrieve vaccinations that protect against specific disease(s), including combination
+        vaccines (e.g. MMR or MMRV when searching for measles).
+
+        Expressed as `system|code` where system MUST be `http://snomed.info/sct` and code MUST be
+        a SNOMED code from the [supported target disease list](https://digital.nhs.uk/developer/guides-and-documentation/building-healthcare-software/vaccinations/coding-for-vaccination-disease-types#how-this-applies-to-vaccinations-submitted-to-the-api).
+        Multiple comma-separated values are allowed (OR). Cannot be used with
+        -immunization.target or identifier. For patient search, one of -immunization.target
+        or target-disease is required. Invalid or unsupported codes may result in
+        OperationOutcome entries in the response or 400 when all values are invalid.
       required: false
       schema:
         type: string
