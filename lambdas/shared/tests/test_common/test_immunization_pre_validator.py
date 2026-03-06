@@ -453,6 +453,16 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
             expected_error_message="contained[?(@.resourceType=='Patient')].identifier[0] must not include an extension",
         )
 
+    def test_pre_validate_patient_identifier_system(self):
+        """Test pre_validate_patient_identifier_system accepts valid values and rejects invalid values"""
+        ValidatorModelTests.test_string_value(
+            self,
+            field_location="contained[?(@.resourceType=='Patient')].identifier[0].system",
+            predefined_values=["https://fhir.nhs.uk/Id/nhs-number"],
+            valid_strings_to_test=["https://fhir.nhs.uk/Id/nhs-number"],
+            invalid_strings_to_test=["https://google.com/nhs", "Not-a-URI"],
+        )
+
     def test_pre_validate_patient_identifier_value(self):
         """Test pre_validate_patient_identifier_value accepts valid values and rejects invalid values"""
         ValidatorModelTests.test_string_value(

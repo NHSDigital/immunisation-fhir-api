@@ -45,6 +45,7 @@ class PreValidators:
             self.pre_validate_practitioner_reference,
             self.pre_validate_patient_identifier_extension,
             self.pre_validate_patient_identifier,
+            self.pre_validate_patient_identifier_system,
             self.pre_validate_patient_identifier_value,
             self.pre_validate_patient_name,
             self.pre_validate_patient_name_given,
@@ -268,6 +269,21 @@ class PreValidators:
         try:
             field_value = [x for x in values["contained"] if x.get("resourceType") == "Patient"][0]["identifier"]
             PreValidation.for_list(field_value, field_location, defined_length=1)
+        except (KeyError, IndexError):
+            pass
+
+    def pre_validate_patient_identifier_system(self, values: dict) -> None:
+        """
+        Pre-validate that, if contained[?(@.resourceType=='Patient')].identifier[0].system (
+        legacy CSV field name: NHS_NUMBER) exists, then it is 'https://fhir.nhs.uk/Id/nhs-number'
+        """
+        field_location = "contained[?(@.resourceType=='Patient')].identifier[0].system"
+        predefined_values = [Urls.NHS_NUMBER]
+        try:
+            field_value = [x for x in values["contained"] if x.get("resourceType") == "Patient"][0]["identifier"][0][
+                "system"
+            ]
+            PreValidation.for_string(field_value, field_location, predefined_values=predefined_values)
         except (KeyError, IndexError):
             pass
 
