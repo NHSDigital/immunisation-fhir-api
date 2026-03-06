@@ -1,13 +1,13 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from mns_setup import get_mns_service
+from common.api_clients.mns_setup import get_mns_service
 
 
 class TestGetMnsService(unittest.TestCase):
-    @patch("mns_setup.boto3.client")
-    @patch("mns_setup.AppRestrictedAuth")
-    @patch("mns_setup.MnsService")
+    @patch("common.api_clients.mns_setup.boto3.client")
+    @patch("common.api_clients.mns_setup.AppRestrictedAuth")
+    @patch("common.api_clients.mns_setup.MnsService")
     def test_get_mns_service(self, mock_mns_service, mock_app_auth, mock_boto_client):
         # Arrange
         mock_auth_instance = MagicMock()
