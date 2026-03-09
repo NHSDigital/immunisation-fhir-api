@@ -73,6 +73,7 @@ def wait_and_read_ack_file(
         expected_extensions = {".csv"}
         print("[MODE] Expecting ONLY CSV ACK file")
 
+    expected_count = len(expected_extensions)
     found_files = {}
 
     while elapsed < timeout:
@@ -80,53 +81,50 @@ def wait_and_read_ack_file(
             response = s3.list_objects_v2(Bucket=destination_bucket, Prefix=forwarded_prefix)
             contents = response.get("Contents", [])
 
-            if not contents:
-                print(f"[WAIT] No files found yet... ({elapsed}s)")
-            else:
-                contents = sorted(contents, key=lambda x: x["LastModified"], reverse=True)
+            contents = [obj for obj in contents if os.path.splitext(obj["Key"])[1].lower() in expected_extensions]
 
-                if duplicate_inf_files and len(contents) == 1:
-                    print(f"[WAIT] Waiting for more INF files... ({elapsed}s)")
-                    time.sleep(interval)
-                    elapsed += interval
-                    continue
+            if len(contents) < expected_count:
+                print(f"[WAIT] Not all ACK files arrived yet... ({elapsed}s)")
+                time.sleep(interval)
+                elapsed += interval
+                continue
 
-                elif duplicate_bus_files:
-                    if len(contents) > len(expected_extensions):
-                        print(f"[ERROR] Unexpected extra BUS files detected: {contents}")
-                        return "Unexpected duplicate BUS file found"
+            contents = sorted(contents, key=lambda x: x["LastModified"], reverse=True)
 
-                    print("[INFO] BUS mode: expected files already exist — skipping processing")
-                    return None
+            if duplicate_inf_files and len(contents) == 1:
+                print(f"[WAIT] Waiting for more INF files... ({elapsed}s)")
+                time.sleep(interval)
+                elapsed += interval
+                continue
 
-                if len(contents) < len(expected_extensions):
-                    print(f"[WAIT] Not all BUS ACK files arrived yet... ({elapsed}s)")
-                    time.sleep(interval)
-                    elapsed += interval
-                    continue
+            if duplicate_bus_files:
+                if len(contents) > expected_count:
+                    print(f"[ERROR] Unexpected extra BUS files detected: {contents}")
+                    return "Unexpected duplicate BUS file found"
 
-                for obj in contents:
-                    key = obj["Key"]
-                    ext = os.path.splitext(key)[1].lower()
+                print("[INFO] BUS mode: expected files already exist — skipping processing")
+                return None
 
-                    if ext in expected_extensions and ext not in found_files:
-                        print(f"[FOUND] {ext} file located: {key}")
-                        s3_obj = s3.get_object(Bucket=destination_bucket, Key=key)
-                        file_data = s3_obj["Body"].read().decode("utf-8")
-                        found_files[ext] = {"key": key, "content": file_data}
+            for obj in contents:
+                key = obj["Key"]
+                ext = os.path.splitext(key)[1].lower()
 
-                        print(f"[SUCCESS] Loaded {ext} file ({len(file_data)} bytes)")
+                if ext in expected_extensions and ext not in found_files:
+                    print(f"[FOUND] {ext} file located: {key}")
+                    s3_obj = s3.get_object(Bucket=destination_bucket, Key=key)
+                    file_data = s3_obj["Body"].read().decode("utf-8")
+                    found_files[ext] = {"key": key, "content": file_data}
 
-                if expected_extensions.issubset(found_files.keys()):
-                    print("[COMPLETE] All expected ACK files received")
+            if expected_extensions.issubset(found_files.keys()):
+                print("[COMPLETE] All expected ACK files received")
 
-                    if expected_extensions == {".csv"}:
-                        return {"csv": found_files[".csv"]}
+                if expected_extensions == {".csv"}:
+                    return {"csv": found_files[".csv"]}
 
-                    return {
-                        "csv": found_files[".csv"],
-                        "json": found_files[".json"],
-                    }
+                return {
+                    "csv": found_files[".csv"],
+                    "json": found_files[".json"],
+                }
 
         except ClientError as e:
             print(f"[ERROR] S3 access failed: {e}")
