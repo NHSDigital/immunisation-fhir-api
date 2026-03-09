@@ -1,6 +1,5 @@
 import json
 import os
-from typing import Tuple
 
 from aws_lambda_typing.events.sqs import SQSMessage
 
@@ -68,7 +67,7 @@ def process_record(record: SQSMessage, mns_service: MnsService | MockMnsService)
     logger.info("Successfully created MNS notification", extra={"mns_notification_id": notification_id})
 
 
-def extract_trace_ids(record: SQSMessage) -> Tuple[str, str | None]:
+def extract_trace_ids(record: SQSMessage) -> tuple[str, str | None]:
     """
     Extract identifiers for tracing from SQS record.
     Returns: Tuple of (message_id, immunisation_id)
