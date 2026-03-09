@@ -138,7 +138,7 @@ class MnsService:
             return f"Error deleting subscription: {str(e)}"
 
     def publish_notification(self, notification_payload: MnsNotificationPayload) -> dict | None:
-        response = requests.request(
+        response = request_with_retry_backoff(
             "POST",
             f"{MNS_BASE_URL}/events",
             headers=self._build_headers(content_type="application/cloudevents+json"),
