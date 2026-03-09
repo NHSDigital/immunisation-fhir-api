@@ -32,6 +32,7 @@ def validate_bus_ack_file_for_successful_records(context, file_rows) -> bool:
 
 def validate_inf_ack_file(context, success: bool = True) -> bool:
     content = context.fileContent
+    content = content.replace("\r\n", "\n")
     lines = content.strip().split("\n")
     header = lines[0].split("|")
     row = lines[1].split("|")

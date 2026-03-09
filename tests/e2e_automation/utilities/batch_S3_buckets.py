@@ -83,15 +83,27 @@ def wait_and_read_ack_file(
             if not contents:
                 print(f"[WAIT] No files found yet... ({elapsed}s)")
             else:
+                contents = sorted(contents, key=lambda x: x["LastModified"], reverse=True)
+
                 if duplicate_inf_files and len(contents) == 1:
                     print(f"[WAIT] Waiting for more INF files... ({elapsed}s)")
+                    time.sleep(interval)
+                    elapsed += interval
+                    continue
 
                 elif duplicate_bus_files:
                     if len(contents) > len(expected_extensions):
                         print(f"[ERROR] Unexpected extra BUS files detected: {contents}")
                         return "Unexpected duplicate BUS file found"
-                    elif len(contents) < len(expected_extensions):
-                        print(f"[WAIT] Not all BUS ACK files arrived yet... ({elapsed}s)")
+
+                    print("[INFO] BUS mode: expected files already exist — skipping processing")
+                    return None
+
+                if len(contents) < len(expected_extensions):
+                    print(f"[WAIT] Not all BUS ACK files arrived yet... ({elapsed}s)")
+                    time.sleep(interval)
+                    elapsed += interval
+                    continue
 
                 for obj in contents:
                     key = obj["Key"]
@@ -111,10 +123,10 @@ def wait_and_read_ack_file(
                     if expected_extensions == {".csv"}:
                         return {"csv": found_files[".csv"]}
 
-                    return {"csv": found_files[".csv"], "json": found_files[".json"]}
-
-            time.sleep(interval)
-            elapsed += interval
+                    return {
+                        "csv": found_files[".csv"],
+                        "json": found_files[".json"],
+                    }
 
         except ClientError as e:
             print(f"[ERROR] S3 access failed: {e}")
