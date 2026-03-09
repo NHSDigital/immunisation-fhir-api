@@ -1,8 +1,0 @@
-❌ Step failed! **Valid vaccination record is created with Patient 'Random' and vaccine_type 'RSV'** 
- Error: 
-          {
-            "error": "invalid_request",
-            "error_description": "client_id is invalid",
-            "message_id": "rrt-1640229785584914685-b-geu2-1229921-65984998-1"
-          }
-        
