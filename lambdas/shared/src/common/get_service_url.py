@@ -1,9 +1,7 @@
-from typing import Optional
-
 from common.constants import DEFAULT_BASE_PATH, PR_ENV_PREFIX
 
 
-def get_service_url(service_env: Optional[str], service_base_path: Optional[str]) -> str:
+def get_service_url(service_env: str | None, service_base_path: str | None) -> str:
     """Sets the service URL based on service parameters derived from env vars. PR environments use internal-dev while
     we also default to this environment. The only other exceptions are preprod which maps to the Apigee int environment
     and prod which does not have a subdomain."""
@@ -22,5 +20,5 @@ def get_service_url(service_env: Optional[str], service_base_path: Optional[str]
     return f"https://{subdomain}api.service.nhs.uk/{service_base_path}"
 
 
-def is_pr_env(service_env: Optional[str]) -> bool:
+def is_pr_env(service_env: str | None) -> bool:
     return service_env is not None and service_env.startswith(PR_ENV_PREFIX)
