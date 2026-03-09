@@ -1,0 +1,22 @@
+
+ Search GET Request - 
+ patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number|9728403348&-immunization.target=COVID&-date.from=2025-05-12&-date.to=2025-05-12&_include=abc
+
+ Search GET Response - 
+ {'resourceType': 'OperationOutcome', 'id': 'bc904267-302c-4f14-885c-7aa48f5a17a0', 'meta': {'profile': ['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']}, 'issue': [{'severity': 'error', 'code': 'invalid', 'details': {'coding': [{'system': 'https://fhir.nhs.uk/Codesystem/http-error-codes', 'code': 'INVALID'}]}, 'diagnostics': "Search parameter _include may only be 'Immunization:patient' if provided."}]}
+400
+400
+
+ Error Response - 
+ resourceType='OperationOutcome' id='bc904267-302c-4f14-885c-7aa48f5a17a0' meta=Meta(profile=['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']) issue=[Issue(severity='error', code='invalid', details=Details(coding=[Coding(system='https://fhir.nhs.uk/Codesystem/http-error-codes', code='INVALID')]), diagnostics="Search parameter _include may only be 'Immunization:patient' if provided.")]
+
+ Search Post Request - 
+ patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number|9728403348&-immunization.target=COVID&-date.from=2025-05-12&-date.to=2025-05-12&_include=abc
+
+ Search POST Response - 
+ {'resourceType': 'OperationOutcome', 'id': 'e9c80fc5-9f7d-4edc-a29b-fdae6589764c', 'meta': {'profile': ['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']}, 'issue': [{'severity': 'error', 'code': 'invalid', 'details': {'coding': [{'system': 'https://fhir.nhs.uk/Codesystem/http-error-codes', 'code': 'INVALID'}]}, 'diagnostics': "Search parameter _include may only be 'Immunization:patient' if provided."}]}
+400
+400
+
+ Error Response - 
+ resourceType='OperationOutcome' id='e9c80fc5-9f7d-4edc-a29b-fdae6589764c' meta=Meta(profile=['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']) issue=[Issue(severity='error', code='invalid', details=Details(coding=[Coding(system='https://fhir.nhs.uk/Codesystem/http-error-codes', code='INVALID')]), diagnostics="Search parameter _include may only be 'Immunization:patient' if provided.")]
