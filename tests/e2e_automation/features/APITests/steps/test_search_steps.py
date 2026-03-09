@@ -78,7 +78,6 @@ def TriggerSearchPostRequest(context):
             datetime.today().strftime("%Y-%m-%d"),
         )
     )
-    print(f"\n Search Post Request - \n {context.request}")
     trigger_search_request_by_httpMethod(context, httpMethod="POST")
 
 
@@ -88,7 +87,7 @@ def TriggerSearchPostRequest(context):
 def send_search_with_target_disease(context, httpMethod):
     patient_ident = context.create_object.contained[1].identifier[0]
     target = context.create_object.protocolApplied[0].targetDisease[0].coding[0]
-    context.request = {
+    context.params = context.request = {
         "patient.identifier": f"{patient_ident.system}|{patient_ident.value}",
         "target-disease": f"{target.system}|{target.code}",
     }
@@ -104,7 +103,7 @@ def send_search_post_with_comma_separated_target_disease(context, httpMethod):
     patient_ident = context.create_object.contained[1].identifier[0]
     targets = context.create_object.protocolApplied[0].targetDisease
     target_parts = [f"{t.coding[0].system}|{t.coding[0].code}" for t in targets[:2]]
-    context.request = {
+    context.params = context.request = {
         "patient.identifier": f"{patient_ident.system}|{patient_ident.value}",
         "target-disease": ",".join(target_parts),
     }
@@ -155,9 +154,13 @@ def send_search_get_with_target_disease_unauthorised_supplier(context):
     trigger_search_request_by_httpMethod(context, httpMethod="GET")
 
 
-@when("Send a search request with '{httpMethod}' method with valid NHS Number and all invalid target-disease codes")
+@when(
+    parsers.parse(
+        "Send a search request with '{httpMethod}' method with valid NHS Number and all invalid target-disease codes"
+    )
+)
 def send_search_request_with_all_invalid_target_disease_codes(context, httpMethod):
-    context.request = {
+    context.params = context.request = {
         "patient.identifier": f"{PATIENT_IDENTIFIER_SYSTEM}|9000000009",
         "target-disease": "invalid-no-pipe,wrong_system|123",
     }
@@ -172,7 +175,7 @@ def send_search_request_with_all_invalid_target_disease_codes(context, httpMetho
 def send_search_post_with_mixed_valid_and_invalid_target_disease_codes(context, httpMethod):
     patient_ident = context.create_object.contained[1].identifier[0]
     target = context.create_object.protocolApplied[0].targetDisease[0].coding[0]
-    context.request = {
+    context.params = context.request = {
         "patient.identifier": f"{patient_ident.system}|{patient_ident.value}",
         "target-disease": f"{target.system}|{target.code},{TARGET_DISEASE_SYSTEM}|{INVALID_TARGET_DISEASE_CODE}",
     }
