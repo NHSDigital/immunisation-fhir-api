@@ -1,3 +1,0 @@
-❌ Step failed! **The request will be successful with the status code '200'** 
- Error: 
- Expected status code: 200, but got: 400. Response: {'resourceType': 'OperationOutcome', 'id': '84d90f74-2e9e-4757-afbd-596857103708', 'meta': {'profile': ['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']}, 'issue': [{'severity': 'error', 'code': 'invalid', 'details': {'coding': [{'system': 'https://fhir.nhs.uk/Codesystem/http-error-codes', 'code': 'INVALID'}]}, 'diagnostics': 'No parameter provided. Search using either identifier or patient.identifier'}]} 
