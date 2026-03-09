@@ -1,0 +1,1 @@
+✅ Step Passed: **Send a read request for Immunization event created
