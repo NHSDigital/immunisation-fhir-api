@@ -1,0 +1,26 @@
+✅ Pipe-delimited file saved to: /home/runner/work/immunisation-fhir-api/immunisation-fhir-api/tests/e2e_automation/batch_files_directory/MENACWY_Vaccinations_v5_YGA_20260309T21010900.csv
+Batch file created: MENACWY_Vaccinations_v5_YGA_20260309T21010900.csv
+Upload successful: MENACWY_Vaccinations_v5_YGA_20260309T21010900.csv → immunisation-batch-internal-qa-data-sources
+Batch file uploaded to S3: MENACWY_Vaccinations_v5_YGA_20260309T21010900.csv
+Waiting for file in archive: s3://immunisation-batch-internal-qa-data-sources/archive/MENACWY_Vaccinations_v5_YGA_20260309T21010900.csv
+Still waiting... (0s)
+Still waiting... (5s)
+Still waiting... (10s)
+Still waiting... (15s)
+Still waiting... (20s)
+Still waiting... (25s)
+File found in archive: archive/MENACWY_Vaccinations_v5_YGA_20260309T21010900.csv
+Waiting for ACK files starting with 'ack/MENACWY_Vaccinations_v5_YGA_20260309T21010900' in bucket: immunisation-batch-internal-qa-data-destinations
+[MODE] Expecting ONLY CSV ACK file
+[FOUND] .csv file located: ack/MENACWY_Vaccinations_v5_YGA_20260309T21010900_InfAck_20260309T21011100.csv
+[COMPLETE] All expected ACK files received
+Waiting for ACK files starting with 'forwardedFile/MENACWY_Vaccinations_v5_YGA_20260309T21010900' in bucket: immunisation-batch-internal-qa-data-destinations
+[MODE] Expecting BOTH CSV and JSON ACK files
+[WAIT] Not all ACK files arrived yet... (0s)
+[WAIT] Not all ACK files arrived yet... (5s)
+[TIMEOUT] ACK files not found with prefix 'forwardedFile/MENACWY_Vaccinations_v5_YGA_20260309T21010900' after 10 seconds
+Attempt 1: Found 1 items
+
+Found Audit detail for filename=MENACWY_Vaccinations_v5_YGA_20260309T21010900.csv
+
+✅ Updated audit status for message_id=c2892fea-1607-4d8e-92af-4e30947e3410: {'status': 'Not processed - Automation testing'}

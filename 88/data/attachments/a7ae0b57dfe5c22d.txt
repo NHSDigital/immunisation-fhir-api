@@ -1,0 +1,21 @@
+✅ Pipe-delimited file saved to: /home/runner/work/immunisation-fhir-api/immunisation-fhir-api/tests/e2e_automation/batch_files_directory/HPV_Vaccination_v5_YGM41_20260309T20582900.csv
+Batch file created: HPV_Vaccination_v5_YGM41_20260309T20582900.csv
+Upload successful: HPV_Vaccination_v5_YGM41_20260309T20582900.csv → immunisation-batch-internal-qa-data-sources
+Batch file uploaded to S3: HPV_Vaccination_v5_YGM41_20260309T20582900.csv
+Waiting for file in archive: s3://immunisation-batch-internal-qa-data-sources/archive/HPV_Vaccination_v5_YGM41_20260309T20582900.csv
+Still waiting... (0s)
+File found in archive: archive/HPV_Vaccination_v5_YGM41_20260309T20582900.csv
+Waiting for ACK files starting with 'ack/HPV_Vaccination_v5_YGM41_20260309T20582900' in bucket: immunisation-batch-internal-qa-data-destinations
+[MODE] Expecting ONLY CSV ACK file
+[FOUND] .csv file located: ack/HPV_Vaccination_v5_YGM41_20260309T20582900_InfAck_20260309T20583100.csv
+[COMPLETE] All expected ACK files received
+Waiting for ACK files starting with 'forwardedFile/HPV_Vaccination_v5_YGM41_20260309T20582900' in bucket: immunisation-batch-internal-qa-data-destinations
+[MODE] Expecting BOTH CSV and JSON ACK files
+[WAIT] Not all ACK files arrived yet... (0s)
+[WAIT] Not all ACK files arrived yet... (5s)
+[TIMEOUT] ACK files not found with prefix 'forwardedFile/HPV_Vaccination_v5_YGM41_20260309T20582900' after 10 seconds
+Attempt 1: Found 1 items
+
+Found Audit detail for filename=HPV_Vaccination_v5_YGM41_20260309T20582900.csv
+
+✅ Updated audit status for message_id=ea11f2dc-7258-4780-a683-48f749b3beda: {'status': 'Not processed - Automation testing'}

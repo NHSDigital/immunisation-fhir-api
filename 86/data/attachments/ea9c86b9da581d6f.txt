@@ -1,7 +1,0 @@
-
- Read Request is https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/ ?_summary
-400
-400
-
- Error Response - 
- resourceType='OperationOutcome' id='5afb39e0-7bb0-4037-8468-4388a17ad555' meta=Meta(profile=['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']) issue=[Issue(severity='error', code='invalid', details=Details(coding=[Coding(system='https://fhir.nhs.uk/Codesystem/http-error-codes', code='INVALID')]), diagnostics='Validation errors: the provided event ID is either missing or not in the expected format.')]

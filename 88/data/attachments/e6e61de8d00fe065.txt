@@ -1,0 +1,1 @@
+✅ Step Passed: **Audit table will have 'Failed', 'TPP_MENACWY' and 'File headers are invalid.' for the processed batch file

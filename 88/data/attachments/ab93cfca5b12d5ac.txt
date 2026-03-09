@@ -1,0 +1,1 @@
+✅ Step Passed: **Audit table will have 'Failed', 'unknown_unknown' and 'Initial file validation failed: invalid file key' for the processed batch file

@@ -1,0 +1,1 @@
+✅ Step Passed: **Audit table will have 'Not processed - Empty file', 'MAVIS_FLU' and 'None' for the processed batch file
