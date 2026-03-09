@@ -1,0 +1,8 @@
+❌ Step failed! **Valid token is generated for the 'EMIS'** 
+ Error: 
+          {
+            "error": "invalid_request",
+            "error_description": "client_id is invalid",
+            "message_id": "rrt-7569831891780907416-a-geu2-79209-2339867-1"
+          }
+        
