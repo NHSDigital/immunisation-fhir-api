@@ -64,7 +64,7 @@ jobs:
     name: Build and push recordprocessor image
     runs-on: ubuntu-latest
     outputs:
-      image_tag: ${{ steps.build-and-push.outputs.image_tag }}
+      image_tag: ${{ steps.resolve-image-tag.outputs.image_tag }}
 
     env:
       AWS_REGION: eu-west-2
@@ -109,6 +109,15 @@ jobs:
           docker push "${IMAGE_URI}"
 
           echo "image_tag=${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve image tag
+        id: resolve-image-tag
+        run: |
+          if [ "${{ inputs.enable_recordprocessor }}" = "true" ] && [ -n "${{ steps.build-and-push.outputs.image_tag }}" ]; then
+            echo "image_tag=${{ steps.build-and-push.outputs.image_tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "image_tag=latest" >> "$GITHUB_OUTPUT"
+          fi
 
   terraform-plan:
     permissions:
