@@ -60,6 +60,9 @@ jobs:
     outputs:
       image_tag: ${{ steps.build-and-push.outputs.image_tag }}
 
+    environment:
+      name: ${{ inputs.environment }}
+
     env:
       AWS_REGION: eu-west-2
       SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
