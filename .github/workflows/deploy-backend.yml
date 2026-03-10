@@ -99,9 +99,8 @@ jobs:
           REPOSITORY_NAME="imms-${SUB_ENVIRONMENT}-processing-repo"
 
           if ! aws ecr describe-repositories --repository-names "${REPOSITORY_NAME}" --region "${AWS_REGION}" >/dev/null 2>&1; then
-            echo "ECR repository ${REPOSITORY_NAME} does not exist; skipping recordprocessor image build and push."
-            echo "image_tag=" >> "$GITHUB_OUTPUT"
-            exit 0
+            echo "ECR repository ${REPOSITORY_NAME} does not exist; failing build-and-push-recordprocessor job."
+            exit 1
           fi
 
           IMAGE_URI="${ECR_REGISTRY}/${REPOSITORY_NAME}:${IMAGE_TAG}"
