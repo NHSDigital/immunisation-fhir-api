@@ -79,6 +79,18 @@ jobs:
         working-directory: infrastructure/instance
         run: make init
 
+      - name: Import ECR repository if it exists outside Terraform state
+        if: ${{ !failure() }}
+        working-directory: infrastructure/instance
+        env:
+          AWS_REGION: eu-west-2
+        run: |
+          REPO_NAME="imms-${SUB_ENVIRONMENT}-processing-repo"
+          if aws ecr describe-repositories --repository-names "${REPO_NAME}" --region "${AWS_REGION}" >/dev/null 2>&1; then
+            echo "ECR repository ${REPO_NAME} exists in AWS, importing into Terraform state if needed..."
+            terraform import aws_ecr_repository.processing_repository "${REPO_NAME}" || true
+          fi
+
       - name: Terraform Plan
         # Ignore cancellations to prevent Terraform from being killed while it holds a state lock
         # A stuck process can still be killed with the force-cancel API operation
