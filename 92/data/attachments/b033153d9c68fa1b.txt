@@ -1,1 +1,0 @@
-✅ Step Passed: **The Search Response should contain search results and OperationOutcome for invalid immunization targets
