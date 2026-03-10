@@ -67,6 +67,7 @@ on:
           - functional
           - sandbox
           - proxy_smoke
+          - Batch_File_Validation_Feature
 
 env:
   APIGEE_AUTH_ENV: ${{ inputs.apigee_environment == 'int' && inputs.apigee_environment || 'internal-dev' }}

@@ -13,7 +13,10 @@ from utilities.api_fhir_immunization_helper import (
     validate_error_response,
     validate_to_compare_request_and_response,
 )
-from utilities.api_get_header import get_search_get_url_header, get_search_post_url_header
+from utilities.api_get_header import (
+    get_search_get_url_header,
+    get_search_post_url_header,
+)
 from utilities.date_helper import iso_to_compact
 from utilities.http_requests_session import http_requests_session
 
@@ -66,78 +69,51 @@ def trigger_search_request(context, httpMethod):
     trigger_search_request_by_httpMethod(context, httpMethod=httpMethod)
 
 
-@when("Send a search request with GET method using target-disease for Immunization event created")
-def send_search_get_with_target_disease(context):
-    get_search_get_url_header(context)
-    patient_ident = context.create_object.contained[1].identifier[0]
-    target = context.create_object.protocolApplied[0].targetDisease[0].coding[0]
-    context.params = {
-        "patient.identifier": f"{patient_ident.system}|{patient_ident.value}",
-        "target-disease": f"{target.system}|{target.code}",
-    }
-    print(f"\n Search Get parameters (target-disease) - \n {context.params}")
-    context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
-
-
 @when("Send a search request with POST method for Immunization event created")
 def TriggerSearchPostRequest(context):
-    get_search_post_url_header(context)
     context.request = convert_to_form_data(
         set_request_data(
-            context.patient.identifier[0].value, context.vaccine_type, datetime.today().strftime("%Y-%m-%d")
+            context.patient.identifier[0].value,
+            context.vaccine_type,
+            datetime.today().strftime("%Y-%m-%d"),
         )
     )
-    print(f"\n Search Post Request - \n {context.request}")
-    context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
-    print(f"\n Search Post Response - \n {context.response.json()}")
+    trigger_search_request_by_httpMethod(context, httpMethod="POST")
 
 
-@when("Send a search request with POST method using target-disease for Immunization event created")
-def send_search_post_with_target_disease(context):
-    get_search_post_url_header(context)
+@when(
+    parsers.parse("Send a search request with '{httpMethod}' method using target-disease for Immunization event created")
+)
+def send_search_with_target_disease(context, httpMethod):
     patient_ident = context.create_object.contained[1].identifier[0]
     target = context.create_object.protocolApplied[0].targetDisease[0].coding[0]
-    context.request = {
+    context.params = context.request = {
         "patient.identifier": f"{patient_ident.system}|{patient_ident.value}",
         "target-disease": f"{target.system}|{target.code}",
     }
-    print(f"\n Search Post request (target-disease) - \n {context.request}")
-    context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
+    trigger_search_request_by_httpMethod(context, httpMethod=httpMethod)
 
 
-@when("Send a search request with GET method using comma-separated target-disease for Immunization event created")
-def send_search_get_with_comma_separated_target_disease(context):
-    get_search_get_url_header(context)
+@when(
+    parsers.parse(
+        "Send a search request with '{httpMethod}' method using comma-separated target-disease for Immunization event created"
+    )
+)
+def send_search_post_with_comma_separated_target_disease(context, httpMethod):
     patient_ident = context.create_object.contained[1].identifier[0]
     targets = context.create_object.protocolApplied[0].targetDisease
     target_parts = [f"{t.coding[0].system}|{t.coding[0].code}" for t in targets[:2]]
-    context.params = {
+    context.params = context.request = {
         "patient.identifier": f"{patient_ident.system}|{patient_ident.value}",
         "target-disease": ",".join(target_parts),
     }
-    print(f"\n Search Get parameters (comma-separated target-disease) - \n {context.params}")
-    context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
-
-
-@when("Send a search request with POST method using comma-separated target-disease for Immunization event created")
-def send_search_post_with_comma_separated_target_disease(context):
-    get_search_post_url_header(context)
-    patient_ident = context.create_object.contained[1].identifier[0]
-    targets = context.create_object.protocolApplied[0].targetDisease
-    target_parts = [f"{t.coding[0].system}|{t.coding[0].code}" for t in targets[:2]]
-    context.request = {
-        "patient.identifier": f"{patient_ident.system}|{patient_ident.value}",
-        "target-disease": ",".join(target_parts),
-    }
-    print(f"\n Search Post request (comma-separated target-disease) - \n {context.request}")
-    context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
+    trigger_search_request_by_httpMethod(context, httpMethod=httpMethod)
 
 
 @when(
     "Send a search request with GET method using target-disease and Date From and Date To for Immunization event created"
 )
 def send_search_get_with_target_disease_and_dates(context):
-    get_search_get_url_header(context)
     patient_ident = context.create_object.contained[1].identifier[0]
     target = context.create_object.protocolApplied[0].targetDisease[0].coding[0]
     context.DateFrom = "2023-01-01"
@@ -148,15 +124,13 @@ def send_search_get_with_target_disease_and_dates(context):
         "-date.from": context.DateFrom,
         "-date.to": context.DateTo,
     }
-    print(f"\n Search Get parameters (target-disease with dates) - \n {context.params}")
-    context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
+    trigger_search_request_by_httpMethod(context, httpMethod="GET")
 
 
 @when(
     "Send a search request with POST method using target-disease and Date From and Date To for Immunization event created"
 )
 def send_search_post_with_target_disease_and_dates(context):
-    get_search_post_url_header(context)
     patient_ident = context.create_object.contained[1].identifier[0]
     target = context.create_object.protocolApplied[0].targetDisease[0].coding[0]
     context.DateFrom = "2023-01-01"
@@ -167,72 +141,45 @@ def send_search_post_with_target_disease_and_dates(context):
         "-date.from": context.DateFrom,
         "-date.to": context.DateTo,
     }
-    print(f"\n Search Post request (target-disease with dates) - \n {context.request}")
-    context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
+    trigger_search_request_by_httpMethod(context, httpMethod="POST")
 
 
 @when("Send a search request with GET method using target-disease for Immunization event created with valid NHS Number")
 def send_search_get_with_target_disease_unauthorised_supplier(context):
-    get_search_get_url_header(context)
     nhs_number = "9000000009"
     context.params = {
         "patient.identifier": f"{PATIENT_IDENTIFIER_SYSTEM}|{nhs_number}",
         "target-disease": f"{TARGET_DISEASE_SYSTEM}|14189004",
     }
-    print(f"\n Search Get parameters (target-disease, 403 check) - \n {context.params}")
-    context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
-
-
-@when("Send a search request with GET method with valid NHS Number and all invalid target-disease codes")
-def send_search_get_with_all_invalid_target_disease_codes(context):
-    get_search_get_url_header(context)
-    context.params = {
-        "patient.identifier": f"{PATIENT_IDENTIFIER_SYSTEM}|9000000009",
-        "target-disease": "invalid-no-pipe,wrong_system|123",
-    }
-    print(f"\n Search Get parameters (all invalid target-disease) - \n {context.params}")
-    context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
-
-
-@when("Send a search request with POST method with valid NHS Number and all invalid target-disease codes")
-def send_search_post_with_all_invalid_target_disease_codes(context):
-    get_search_post_url_header(context)
-    context.request = {
-        "patient.identifier": f"{PATIENT_IDENTIFIER_SYSTEM}|9000000009",
-        "target-disease": "invalid-no-pipe,wrong_system|123",
-    }
-    print(f"\n Search Post request (all invalid target-disease) - \n {context.request}")
-    context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
+    trigger_search_request_by_httpMethod(context, httpMethod="GET")
 
 
 @when(
-    "Send a search request with GET method using mixed valid and invalid target-disease codes for Immunization event created"
+    parsers.parse(
+        "Send a search request with '{httpMethod}' method with valid NHS Number and all invalid target-disease codes"
+    )
 )
-def send_search_get_with_mixed_valid_and_invalid_target_disease_codes(context):
-    get_search_get_url_header(context)
-    patient_ident = context.create_object.contained[1].identifier[0]
-    target = context.create_object.protocolApplied[0].targetDisease[0].coding[0]
-    context.params = {
-        "patient.identifier": f"{patient_ident.system}|{patient_ident.value}",
-        "target-disease": f"{target.system}|{target.code},{TARGET_DISEASE_SYSTEM}|{INVALID_TARGET_DISEASE_CODE}",
+def send_search_request_with_all_invalid_target_disease_codes(context, httpMethod):
+    context.params = context.request = {
+        "patient.identifier": f"{PATIENT_IDENTIFIER_SYSTEM}|9000000009",
+        "target-disease": "invalid-no-pipe,wrong_system|123",
     }
-    print(f"\n Search Get parameters (mixed valid/invalid target-disease) - \n {context.params}")
-    context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
+    trigger_search_request_by_httpMethod(context, httpMethod=httpMethod)
 
 
 @when(
-    "Send a search request with POST method using mixed valid and invalid target-disease codes for Immunization event created"
+    parsers.parse(
+        "Send a search request with '{httpMethod}' method using mixed valid and invalid target-disease codes for Immunization event created"
+    )
 )
-def send_search_post_with_mixed_valid_and_invalid_target_disease_codes(context):
-    get_search_post_url_header(context)
+def send_search_post_with_mixed_valid_and_invalid_target_disease_codes(context, httpMethod):
     patient_ident = context.create_object.contained[1].identifier[0]
     target = context.create_object.protocolApplied[0].targetDisease[0].coding[0]
-    context.request = {
+    context.params = context.request = {
         "patient.identifier": f"{patient_ident.system}|{patient_ident.value}",
         "target-disease": f"{target.system}|{target.code},{TARGET_DISEASE_SYSTEM}|{INVALID_TARGET_DISEASE_CODE}",
     }
-    print(f"\n Search Post request (mixed valid/invalid target-disease) - \n {context.request}")
-    context.response = http_requests_session.post(context.url, headers=context.headers, data=context.request)
+    trigger_search_request_by_httpMethod(context, httpMethod=httpMethod)
 
 
 @when(
@@ -284,7 +231,6 @@ def send_search_with_target_disease_and_immunization_target(context, httpMethod)
 
 @when("Send a search request with GET method using target-disease and identifier for Immunization event created")
 def send_search_get_with_target_disease_and_identifier(context):
-    get_search_get_url_header(context)
     patient_ident = context.create_object.contained[1].identifier[0]
     target = context.create_object.protocolApplied[0].targetDisease[0].coding[0]
     context.params = {
@@ -292,8 +238,7 @@ def send_search_get_with_target_disease_and_identifier(context):
         "target-disease": f"{target.system}|{target.code}",
         "identifier": "https://example.org|abc-123",
     }
-    print(f"\n Search Get parameters (target-disease with identifier) - \n {context.params}")
-    context.response = http_requests_session.get(context.url, params=context.params, headers=context.headers)
+    trigger_search_request_by_httpMethod(context, httpMethod="GET")
 
 
 @when(
