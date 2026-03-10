@@ -1,8 +1,0 @@
-❌ Step failed! **Valid vaccination record is created with Patient 'SFlag' and vaccine_type 'BCG'** 
- Error: 
-          {
-            "error": "invalid_request",
-            "error_description": "client_id is invalid",
-            "message_id": "rrt-626787386852258197-c-geu2-475458-2952552-1"
-          }
-        
