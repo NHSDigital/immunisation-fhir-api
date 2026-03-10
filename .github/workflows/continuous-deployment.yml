@@ -20,7 +20,6 @@ jobs:
     uses: ./.github/workflows/deploy-backend.yml
     with:
       apigee_environment: internal-dev
-      enable_recordprocessor: true
       create_mns_subscription: true
       environment: dev
       sub_environment: internal-dev
