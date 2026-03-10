@@ -1,1 +1,0 @@
-✅ Step Passed: **Audit table will have 'Failed', 'SONAR_FLU' and 'File headers are invalid.' for the processed batch file

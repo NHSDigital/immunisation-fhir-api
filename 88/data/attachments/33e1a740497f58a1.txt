@@ -1,1 +1,0 @@
-✅ Step Passed: **batch file is created with invalid column name for patient surname for below data
