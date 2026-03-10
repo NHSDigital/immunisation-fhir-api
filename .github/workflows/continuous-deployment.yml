@@ -15,8 +15,16 @@ jobs:
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-  deploy-internal-dev-backend:
+  deploy-internal-dev-recordprocessor:
     needs: [run-quality-checks]
+    uses: ./.github/workflows/deploy-recordprocessor.yml
+    with:
+      environment: dev
+      sub_environment: internal-dev
+    secrets: inherit
+
+  deploy-internal-dev-backend:
+    needs: [run-quality-checks, deploy-internal-dev-recordprocessor]
     uses: ./.github/workflows/deploy-backend.yml
     with:
       apigee_environment: internal-dev

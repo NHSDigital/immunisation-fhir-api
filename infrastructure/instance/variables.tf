@@ -99,6 +99,12 @@ variable "dynamodb_point_in_time_recovery_enabled" {
   default     = false
 }
 
+variable "recordprocessor_image_tag" {
+  description = "Tag of the recordprocessor (batch processor) container image in ECR"
+  type        = string
+  default     = "latest"
+}
+
 locals {
   prefix              = "${var.project_name}-${var.service}-${var.sub_environment}"
   short_prefix        = "${var.project_short_name}-${var.sub_environment}"
