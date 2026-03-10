@@ -52,6 +52,9 @@ run-name: Deploy Backend - ${{ inputs.environment }} ${{ inputs.sub_environment 
 
 jobs:
   build-and-push-recordprocessor:
+    permissions:
+      id-token: write
+      contents: read
     name: Build and push recordprocessor image
     runs-on: ubuntu-latest
     outputs:
