@@ -7,7 +7,7 @@ RUN mkdir -p /home/appuser && \
     chown -R 1001:1001 /home/appuser && pip install "poetry~=2.1.4"
 
 # Copy recordprocessor Poetry files
-COPY ./lambdas/recordprocessor/poetry.lock ./lambdas/recordprocessor/pyproject.toml ./
+COPY ./recordprocessor/poetry.lock ./recordprocessor/pyproject.toml ./
 
 # Install dependencies
 WORKDIR /var/task
@@ -17,10 +17,10 @@ RUN poetry config virtualenvs.create false && poetry install --no-interaction --
 FROM base AS build
 
 # Copy shared source code
-COPY ./lambdas/shared/src/common ./common
+COPY ./shared/src/common ./common
 
 # Copy recordprocessor source code
-COPY ./lambdas/recordprocessor/src .
+COPY ./recordprocessor/src .
 
 # Set correct permissions
 RUN chmod 644 $(find . -type f) && chmod 755 $(find . -type d)
