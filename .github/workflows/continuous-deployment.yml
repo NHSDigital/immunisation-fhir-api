@@ -21,7 +21,8 @@ jobs:
     with:
       environment: dev
       sub_environment: internal-dev
-    secrets: inherit
+    secrets:
+      AWS_INFRA_ROLE_ARN: ${{ secrets.AWS_INFRA_ROLE_ARN }}
 
   deploy-internal-dev-backend:
     needs: [run-quality-checks, deploy-internal-dev-recordprocessor]
