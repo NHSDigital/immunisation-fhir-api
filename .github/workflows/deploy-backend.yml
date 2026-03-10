@@ -51,71 +51,13 @@ env: # Sonarcloud - do not allow direct usage of untrusted data
 run-name: Deploy Backend - ${{ inputs.environment }} ${{ inputs.sub_environment }}
 
 jobs:
-  build-and-push-recordprocessor:
-    permissions:
-      id-token: write
-      contents: read
-    name: Build and push recordprocessor image
-    runs-on: ubuntu-latest
-    outputs:
-      image_tag: ${{ steps.build-and-push.outputs.image_tag }}
-
-    environment:
-      name: ${{ inputs.environment }}
-
-    env:
-      AWS_REGION: eu-west-2
-      SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
-
-      - name: Connect to AWS
-        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7
-        with:
-          aws-region: eu-west-2
-          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
-          role-session-name: github-actions
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076
-
-      - name: Build and push Docker image
-        id: build-and-push
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          SUB_ENVIRONMENT: ${{ env.SUB_ENVIRONMENT }}
-        working-directory: lambdas
-        run: |
-          IMAGE_TAG="${GITHUB_SHA}"
-          REPOSITORY_NAME="imms-${SUB_ENVIRONMENT}-processing-repo"
-
-          if ! aws ecr describe-repositories --repository-names "${REPOSITORY_NAME}" --region "${AWS_REGION}" >/dev/null 2>&1; then
-            echo "ECR repository ${REPOSITORY_NAME} does not exist; creating now..."
-            aws ecr create-repository --repository-name "${REPOSITORY_NAME}" --region "${AWS_REGION}"
-          fi
-
-          IMAGE_URI="${ECR_REGISTRY}/${REPOSITORY_NAME}:${IMAGE_TAG}"
-
-          if aws ecr describe-images --repository-name "${REPOSITORY_NAME}" --image-ids imageTag="${IMAGE_TAG}" --region "${AWS_REGION}" >/dev/null 2>&1; then
-            echo "Image ${IMAGE_TAG} already exists in ECR, skipping build and push"
-          else
-            docker build -f recordprocessor/Dockerfile -t "${IMAGE_URI}" .
-            docker push "${IMAGE_URI}"
-          fi
-
-          echo "image_tag=${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
-
   terraform-plan:
     permissions:
       id-token: write
       contents: read
-    needs: build-and-push-recordprocessor
     runs-on: ubuntu-latest
     env:
-      TF_VAR_recordprocessor_image_tag: ${{ needs.build-and-push-recordprocessor.outputs.image_tag }}
+      TF_VAR_recordprocessor_image_tag: ${{ github.sha }}
     environment:
       name: ${{ inputs.environment }}
     steps:
@@ -150,16 +92,60 @@ jobs:
           name: ${{ env.ENVIRONMENT }}-${{ env.SUB_ENVIRONMENT }}-tfplan
           path: infrastructure/instance/tfplan
 
+  build-and-push-recordprocessor:
+    permissions:
+      id-token: write
+      contents: read
+    name: Build and push recordprocessor image
+    needs: terraform-apply
+    runs-on: ubuntu-latest
+
+    environment:
+      name: ${{ inputs.environment }}
+
+    env:
+      AWS_REGION: eu-west-2
+      SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
+
+      - name: Connect to AWS
+        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7
+        with:
+          aws-region: eu-west-2
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
+          role-session-name: github-actions
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076
+
+      - name: Build and push Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        working-directory: lambdas
+        run: |
+          IMAGE_TAG="${GITHUB_SHA}"
+          REPOSITORY_NAME="imms-${SUB_ENVIRONMENT}-processing-repo"
+          IMAGE_URI="${ECR_REGISTRY}/${REPOSITORY_NAME}:${IMAGE_TAG}"
+
+          if aws ecr describe-images --repository-name "${REPOSITORY_NAME}" --image-ids imageTag="${IMAGE_TAG}" --region "${AWS_REGION}" >/dev/null 2>&1; then
+            echo "Image ${IMAGE_TAG} already exists in ECR, skipping build and push"
+          else
+            docker build -f recordprocessor/Dockerfile -t "${IMAGE_URI}" .
+            docker push "${IMAGE_URI}"
+          fi
+
   terraform-apply:
     permissions:
       id-token: write
       contents: read
-    needs:
-      - terraform-plan
-      - build-and-push-recordprocessor
+    needs: terraform-plan
     runs-on: ubuntu-latest
     env:
-      TF_VAR_recordprocessor_image_tag: ${{ needs.build-and-push-recordprocessor.outputs.image_tag }}
+      TF_VAR_recordprocessor_image_tag: ${{ github.sha }}
     environment:
       name: ${{ inputs.environment }}
     steps:
