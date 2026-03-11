@@ -2,6 +2,7 @@ import base64
 import json
 import time
 import uuid
+from typing import Any
 
 import jwt
 import requests
@@ -21,11 +22,11 @@ ACCESS_TOKEN_MIN_ACCEPTABLE_LIFETIME_SECONDS = 30
 
 
 class AppRestrictedAuth:
-    def __init__(self, secret_manager_client, environment, secret_name=None):
+    def __init__(self, secret_manager_client: Any, environment: str, secret_name: str | None = None):
         self.secret_manager_client = secret_manager_client
 
-        self.cached_access_token = None
-        self.cached_access_token_expiry_time = None
+        self.cached_access_token: str | None = None
+        self.cached_access_token_expiry_time: int | None = None
 
         self.secret_name = f"imms/pds/{environment}/jwt-secrets" if secret_name is None else secret_name
 
@@ -35,13 +36,13 @@ class AppRestrictedAuth:
             else "https://api.service.nhs.uk/oauth2/token"
         )
 
-    def get_service_secrets(self):
+    def get_service_secrets(self) -> dict[str, Any]:
         response = self.secret_manager_client.get_secret_value(SecretId=self.secret_name)
         secret_object = json.loads(response["SecretString"])
         secret_object["private_key"] = base64.b64decode(secret_object["private_key_b64"]).decode()
         return secret_object
 
-    def create_jwt(self, now: int):
+    def create_jwt(self, now: int) -> str:
         secret_object = self.get_service_secrets()
         return jwt.encode(
             {
@@ -57,7 +58,7 @@ class AppRestrictedAuth:
             headers={"kid": secret_object["kid"]},
         )
 
-    def get_access_token(self):
+    def get_access_token(self) -> str:
         now = int(time.time())
 
         if (
@@ -67,17 +68,23 @@ class AppRestrictedAuth:
             return self.cached_access_token
 
         logger.info("Requesting new access token")
-        jwt = self.create_jwt(now)
+        _jwt = self.create_jwt(now)
 
-        token_response = requests.post(
-            self.token_url,
-            data={
-                "grant_type": GRANT_TYPE_CLIENT_CREDENTIALS,
-                "client_assertion_type": CLIENT_ASSERTION_TYPE_JWT_BEARER,
-                "client_assertion": jwt,
-            },
-            headers={"Content-Type": CONTENT_TYPE_X_WWW_FORM_URLENCODED},
-        )
+        try:
+            token_response = requests.post(
+                self.token_url,
+                data={
+                    "grant_type": GRANT_TYPE_CLIENT_CREDENTIALS,
+                    "client_assertion_type": CLIENT_ASSERTION_TYPE_JWT_BEARER,
+                    "client_assertion": _jwt,
+                },
+                headers={"Content-Type": CONTENT_TYPE_X_WWW_FORM_URLENCODED},
+                timeout=10,
+            )
+        except requests.RequestException as error:
+            logger.exception("Failed to fetch access token from %s", self.token_url)
+            raise UnhandledResponseError(response=str(error), message="Failed to get access token") from error
+
         if token_response.status_code != 200:
             raise UnhandledResponseError(response=token_response.text, message="Failed to get access token")
 

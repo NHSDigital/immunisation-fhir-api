@@ -1,6 +1,5 @@
 import json
 import os
-from typing import Tuple
 
 from aws_lambda_typing.events.sqs import SQSMessage
 
@@ -11,7 +10,15 @@ from common.clients import logger
 from create_notification import create_mns_notification
 
 mns_env = os.getenv("MNS_ENV", "int")
-MNS_TEST_QUEUE_URL = os.getenv("MNS_TEST_QUEUE_URL")
+_mns_service: MnsService | MockMnsService | None = None
+
+
+def _get_runtime_mns_service() -> MnsService | MockMnsService:
+    global _mns_service
+    if _mns_service is None:
+        _mns_service = get_mns_service(mns_env=mns_env)
+
+    return _mns_service
 
 
 def process_records(records: list[SQSMessage]) -> dict[str, list]:
@@ -21,7 +28,7 @@ def process_records(records: list[SQSMessage]) -> dict[str, list]:
     Returns: List of failed item identifiers for partial batch failure
     """
     batch_item_failures = []
-    mns_service = get_mns_service(mns_env=mns_env)
+    mns_service = _get_runtime_mns_service()
 
     for record in records:
         try:
@@ -68,7 +75,7 @@ def process_record(record: SQSMessage, mns_service: MnsService | MockMnsService)
     logger.info("Successfully created MNS notification", extra={"mns_notification_id": notification_id})
 
 
-def extract_trace_ids(record: SQSMessage) -> Tuple[str, str | None]:
+def extract_trace_ids(record: SQSMessage) -> tuple[str, str | None]:
     """
     Extract identifiers for tracing from SQS record.
     Returns: Tuple of (message_id, immunisation_id)

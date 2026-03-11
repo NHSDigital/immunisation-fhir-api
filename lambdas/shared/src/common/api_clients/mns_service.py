@@ -25,7 +25,6 @@ MNS_BASE_URL = (
 class MnsService:
     def __init__(self, authenticator: AppRestrictedAuth):
         self.authenticator = authenticator
-        self.access_token = self.authenticator.get_access_token()
         logging.info(f"Using SQS ARN for subscription: {SQS_ARN}")
 
     def _build_subscription_payload(self, event_type: str, reason: str | None = None, status: str = "requested") -> dict:
@@ -54,9 +53,10 @@ class MnsService:
 
     def _build_headers(self, content_type: str = "application/fhir+json") -> dict:
         """Build request headers with authentication and correlation ID."""
+        access_token = self.authenticator.get_access_token()
         return {
             "Content-Type": content_type,
-            "Authorization": f"Bearer {self.access_token}",
+            "Authorization": f"Bearer {access_token}",
             "X-Correlation-ID": str(uuid.uuid4()),
         }
 

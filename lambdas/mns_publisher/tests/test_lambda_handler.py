@@ -125,7 +125,7 @@ class TestProcessRecords(unittest.TestCase):
         cls.sample_sqs_record = load_sample_sqs_event()
 
     @patch("process_records.logger")
-    @patch("process_records.get_mns_service")
+    @patch("process_records._get_runtime_mns_service")
     @patch("process_records.process_record")
     def test_process_records_all_success(self, mock_process_record, mock_get_mns, mock_logger):
         """Test processing multiple records with all successes."""
@@ -145,7 +145,7 @@ class TestProcessRecords(unittest.TestCase):
         mock_logger.info.assert_called_with("Successfully processed all 2 messages")
 
     @patch("process_records.logger")
-    @patch("process_records.get_mns_service")
+    @patch("process_records._get_runtime_mns_service")
     @patch("process_records.process_record")
     def test_process_records_partial_failure(self, mock_process_record, mock_get_mns, mock_logger):
         """Test processing with some failures."""
@@ -167,7 +167,7 @@ class TestProcessRecords(unittest.TestCase):
         mock_logger.warning.assert_called_with("Batch completed with 1 failures")
 
     @patch("process_records.logger")
-    @patch("process_records.get_mns_service")
+    @patch("process_records._get_runtime_mns_service")
     @patch("process_records.process_record")
     def test_process_records_empty_list(self, mock_process_record, mock_get_mns, mock_logger):
         """Test processing empty record list."""
@@ -181,7 +181,7 @@ class TestProcessRecords(unittest.TestCase):
         mock_logger.info.assert_called_with("Successfully processed all 0 messages")
 
     @patch("process_records.logger")
-    @patch("process_records.get_mns_service")
+    @patch("process_records._get_runtime_mns_service")
     @patch("process_records.process_record")
     def test_process_records_mns_service_created_once(self, mock_process_record, mock_get_mns, mock_logger):
         """Test that MNS service is created only once for batch."""
@@ -300,7 +300,7 @@ class TestLambdaHandlerIntegration(unittest.TestCase):
 
     @responses.activate
     @patch("common.api_clients.authentication.AppRestrictedAuth.get_access_token")
-    @patch("process_records.get_mns_service")
+    @patch("process_records._get_runtime_mns_service")
     @patch("process_records.logger")
     def test_pds_failure(self, mock_logger, mock_get_mns, mock_get_token):
         """

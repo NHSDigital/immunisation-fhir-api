@@ -50,7 +50,7 @@ class TestMnsService(unittest.TestCase):
         # Assert
         self.assertEqual(result, {"subscriptionId": "abc123"})
         self.assertEqual(mock_request.call_count, 2)
-        self.authenticator.get_access_token.assert_called_once()
+        self.assertGreaterEqual(self.authenticator.get_access_token.call_count, 1)
 
     @patch("common.api_clients.mns_service.requests.request")
     def test_not_found_subscription(self, mock_request):
