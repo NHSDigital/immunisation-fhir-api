@@ -11,7 +11,7 @@ resource "aws_ecs_cluster" "ecs_cluster" {
 }
 
 data "aws_ecr_repository" "recordprocessor_repository" {
-  name = "${local.short_prefix}-recordprocessor-repo"
+  name = "${var.project_short_name}-recordprocessor-repo"
 }
 
 # Define the IAM Role for ECS Task Execution
