@@ -9,7 +9,11 @@ from src.objectModels.batch.batch_file_builder import BatchVaccinationRecord
 from utilities.batch_file_helper import validate_inf_ack_file
 from utilities.batch_S3_buckets import wait_and_read_ack_file
 
-from .batch_common_steps import build_dataFrame_using_datatable, create_batch_file, ignore_if_local_run
+from .batch_common_steps import (
+    build_dataFrame_using_datatable,
+    create_batch_file,
+    ignore_if_local_run,
+)
 
 scenarios("batchTests/batch_file_validation.feature")
 
@@ -77,7 +81,7 @@ def batch_file_with_additional_column_is_created(datatable, context):
 def file_will_be_moved_to_destination_bucket(context):
     result = wait_and_read_ack_file(context, "ack", duplicate_inf_files=True)
     assert result is not None, f"File not found in destination bucket after timeout:  {context.forwarded_prefix}"
-    context.fileContent = result["csv"]
+    context.fileContent = result["csv"]["content"]
     assert context.fileContent, f"File not found in destination bucket after timeout:  {context.forwarded_prefix}"
 
 
