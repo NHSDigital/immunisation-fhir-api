@@ -6,6 +6,10 @@ on:
       apigee_environment:
         required: true
         type: string
+      build_recordprocessor_image:
+        required: false
+        type: boolean
+        default: false
       create_mns_subscription:
         required: false
         type: boolean
@@ -39,6 +43,11 @@ on:
           - dev
           - preprod
           - prod
+      build_recordprocessor_image:
+        description: Build and push a new recordprocessor image for this deployment
+        required: false
+        type: boolean
+        default: false
       sub_environment:
         type: string
         description: Set the sub environment name e.g. pr-xxx, or green/blue in higher environments
@@ -70,6 +79,7 @@ jobs:
         uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
 
       - name: Connect to AWS
+        if: ${{ inputs.build_recordprocessor_image }}
         uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7
         with:
           aws-region: eu-west-2
@@ -77,10 +87,12 @@ jobs:
           role-session-name: github-actions
 
       - name: Login to Amazon ECR
+        if: ${{ inputs.build_recordprocessor_image }}
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076
 
       - name: Build and push Docker image
+        if: ${{ inputs.build_recordprocessor_image }}
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         working-directory: lambdas
@@ -92,6 +104,10 @@ jobs:
           docker build -f recordprocessor/Dockerfile -t "${IMAGE_URI}" .
           docker push "${IMAGE_URI}"
 
+      - name: Skip image build
+        if: ${{ !inputs.build_recordprocessor_image }}
+        run: echo "No recordprocessor changes detected and no manual override provided. Skipping image build."
+
   terraform-plan:
     permissions:
       id-token: write
@@ -99,7 +115,7 @@ jobs:
     needs: build-and-push-recordprocessor
     runs-on: ubuntu-latest
     env:
-      TF_VAR_recordprocessor_image_tag: ${{ github.sha }}
+      TF_VAR_recordprocessor_image_tag: ${{ inputs.build_recordprocessor_image && github.sha || 'latest' }}
     environment:
       name: ${{ inputs.environment }}
     steps:
@@ -141,7 +157,7 @@ jobs:
     needs: terraform-plan
     runs-on: ubuntu-latest
     env:
-      TF_VAR_recordprocessor_image_tag: ${{ github.sha }}
+      TF_VAR_recordprocessor_image_tag: ${{ inputs.build_recordprocessor_image && github.sha || 'latest' }}
     environment:
       name: ${{ inputs.environment }}
     steps:
