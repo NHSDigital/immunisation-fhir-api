@@ -1,4 +1,3 @@
-# Define the ECS Cluster
 resource "aws_ecs_cluster" "ecs_cluster" {
   name = "${local.short_prefix}-ecs-cluster"
 
@@ -11,33 +10,8 @@ resource "aws_ecs_cluster" "ecs_cluster" {
   }
 }
 
-resource "aws_ecr_repository" "processing_repository" {
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-  image_tag_mutability = "IMMUTABLE"
-  name                 = "${local.short_prefix}-processing-repo"
-  force_delete         = local.is_temp
-}
-
-resource "aws_ecr_lifecycle_policy" "processing_repository_policy" {
-  repository = aws_ecr_repository.processing_repository.name
-  policy = jsonencode({
-    "rules" : [
-      {
-        "rulePriority" : 1,
-        "description" : "Keep only the last 2 images",
-        "selection" : {
-          "tagStatus" : "any",
-          "countType" : "imageCountMoreThan",
-          "countNumber" : 2
-        },
-        "action" : {
-          "type" : "expire"
-        }
-      }
-    ]
-  })
+data "aws_ecr_repository" "recordprocessor_repository" {
+  name = "${local.short_prefix}-recordprocessor-repo"
 }
 
 # Define the IAM Role for ECS Task Execution
@@ -131,7 +105,7 @@ resource "aws_iam_policy" "ecs_task_exec_policy" {
         Action = [
           "ecr:GetAuthorizationToken"
         ],
-        Resource = "arn:aws:ecr:${var.aws_region}:${var.immunisation_account_id}:repository/${local.short_prefix}-processing-repo"
+        Resource = "arn:aws:ecr:${var.aws_region}:${var.immunisation_account_id}:repository/${data.aws_ecr_repository_recordprocessor_repository.name}"
       },
       {
         "Effect" : "Allow",
@@ -171,7 +145,7 @@ resource "aws_ecs_task_definition" "ecs_task" {
 
   container_definitions = jsonencode([{
     name      = "${local.short_prefix}-process-records-container"
-    image     = "${aws_ecr_repository.processing_repository.repository_url}:${var.recordprocessor_image_tag}"
+    image     = "${data.aws_ecr_repository.recordprocessor_repository.repository_url}:${var.recordprocessor_image_tag}"
     essential = true
     environment = [
       {
