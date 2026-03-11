@@ -26,7 +26,7 @@ class AppRestrictedAuth:
 
         self.expiry = 30
         self.secret_name = (
-            f"imms/pds/{environment}/jwt-secrets"
+            f"imms/outbound/{environment}/jwt-secrets"
             if service == Service.PDS
             else f"imms/immunization/{environment}/jwt-secrets"
         )
