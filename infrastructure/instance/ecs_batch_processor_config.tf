@@ -105,7 +105,7 @@ resource "aws_iam_policy" "ecs_task_exec_policy" {
         Action = [
           "ecr:GetAuthorizationToken"
         ],
-        Resource = "arn:aws:ecr:${var.aws_region}:${var.immunisation_account_id}:repository/${data.aws_ecr_repository_recordprocessor_repository.name}"
+        Resource = "arn:aws:ecr:${var.aws_region}:${var.immunisation_account_id}:repository/${data.aws_ecr_repository.recordprocessor_repository.name}"
       },
       {
         "Effect" : "Allow",
