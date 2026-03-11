@@ -1,0 +1,1 @@
+✅ Step Passed: **Deleted Immunization event will not be present in Get method Search API response
