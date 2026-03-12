@@ -7,18 +7,16 @@ from typing import Any
 import jwt
 import requests
 
+from common.api_clients.constants import (
+    ACCESS_TOKEN_EXPIRY_SECONDS,
+    ACCESS_TOKEN_MIN_ACCEPTABLE_LIFETIME_SECONDS,
+    CLIENT_ASSERTION_TYPE_JWT_BEARER,
+    CONTENT_TYPE_X_WWW_FORM_URLENCODED,
+    GRANT_TYPE_CLIENT_CREDENTIALS,
+    JWT_EXPIRY_SECONDS,
+)
 from common.clients import logger
 from common.models.errors import UnhandledResponseError
-
-GRANT_TYPE_CLIENT_CREDENTIALS = "client_credentials"
-CLIENT_ASSERTION_TYPE_JWT_BEARER = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
-CONTENT_TYPE_X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded"
-
-JWT_EXPIRY_SECONDS = 5 * 60
-ACCESS_TOKEN_EXPIRY_SECONDS = 10 * 60
-# Throw away the cached token earlier than the exact expiry time so we have enough
-# time left to use it (and to account for network latency, clock skew etc.)
-ACCESS_TOKEN_MIN_ACCEPTABLE_LIFETIME_SECONDS = 30
 
 
 class AppRestrictedAuth:
@@ -28,7 +26,7 @@ class AppRestrictedAuth:
         self.cached_access_token: str | None = None
         self.cached_access_token_expiry_time: int | None = None
 
-        self.secret_name = f"imms/pds/{environment}/jwt-secrets" if secret_name is None else secret_name
+        self.secret_name = f"imms/outbound/{environment}/jwt-secrets" if secret_name is None else secret_name
 
         self.token_url = (
             f"https://{environment}.api.service.nhs.uk/oauth2/token"
