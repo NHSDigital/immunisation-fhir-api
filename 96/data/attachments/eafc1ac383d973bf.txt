@@ -1,0 +1,1 @@
+✅ Step Passed: **Valid json payload is created where vaccination terms has multiple instance of coding with different coding system
