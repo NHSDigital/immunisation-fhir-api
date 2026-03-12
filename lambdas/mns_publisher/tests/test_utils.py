@@ -23,7 +23,7 @@ def load_sample_sqs_event() -> dict:
     Expects: lambdas/mns_publisher/tests/sqs_event.json
     """
     sample_event_path = Path(__file__).parent / "sample_data" / "sqs_event.json"
-    with open(sample_event_path, "r") as f:
+    with open(sample_event_path) as f:
         raw_event = json.load(f)
 
     if isinstance(raw_event.get("body"), dict):
