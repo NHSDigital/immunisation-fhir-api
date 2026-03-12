@@ -100,9 +100,12 @@ jobs:
           IMAGE_TAG="${SUB_ENVIRONMENT}-${GITHUB_SHA}"
           REPOSITORY_NAME="imms-recordprocessor-repo"
           IMAGE_URI="${ECR_REGISTRY}/${REPOSITORY_NAME}:${IMAGE_TAG}"
+          LATEST_IMAGE_URI="${ECR_REGISTRY}/${REPOSITORY_NAME}:latest"
 
           docker build -f recordprocessor/Dockerfile -t "${IMAGE_URI}" .
           docker push "${IMAGE_URI}"
+          docker tag "${IMAGE_URI}" "${LATEST_IMAGE_URI}"
+          docker push "${LATEST_IMAGE_URI}"
 
       - name: Skip image build
         if: ${{ !inputs.build_recordprocessor_image }}
