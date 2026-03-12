@@ -61,11 +61,12 @@ run-name: Deploy Backend - ${{ inputs.environment }} ${{ inputs.sub_environment 
 
 jobs:
   build-and-push-recordprocessor:
+    if: ${{ inputs.build_recordprocessor_image }}
     permissions:
       id-token: write
       contents: read
     outputs:
-      recordprocessor_image_tag: ${{ steps.build-image.outputs.recordprocessor_image_tag || steps.resolve-image-tag.outputs.recordprocessor_image_tag }}
+      recordprocessor_image_tag: ${{ steps.build-image.outputs.recordprocessor_image_tag }}
     name: Build and push recordprocessor image
     runs-on: ubuntu-latest
 
@@ -88,13 +89,11 @@ jobs:
           role-session-name: github-actions
 
       - name: Login to Amazon ECR
-        if: ${{ inputs.build_recordprocessor_image }}
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076
 
       - name: Build and push Docker image
         id: build-image
-        if: ${{ inputs.build_recordprocessor_image }}
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         working-directory: lambdas
@@ -107,9 +106,29 @@ jobs:
           docker push "${IMAGE_URI}"
           echo "recordprocessor_image_tag=${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
 
+  resolve-recordprocessor-image-tag:
+    if: ${{ !inputs.build_recordprocessor_image }}
+    permissions:
+      id-token: write
+      contents: read
+    outputs:
+      recordprocessor_image_tag: ${{ steps.resolve-image-tag.outputs.recordprocessor_image_tag }}
+    name: Resolve existing recordprocessor image tag
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+    env:
+      AWS_REGION: eu-west-2
+    steps:
+      - name: Connect to AWS
+        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7
+        with:
+          aws-region: eu-west-2
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
+          role-session-name: github-actions
+
       - name: Resolve latest matching recordprocessor image tag
         id: resolve-image-tag
-        if: ${{ !inputs.build_recordprocessor_image }}
         env:
           REPOSITORY_NAME: imms-recordprocessor-repo
           TAG_PREFIX: ${{ inputs.sub_environment }}-
@@ -139,10 +158,15 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    needs: build-and-push-recordprocessor
+    needs:
+      - build-and-push-recordprocessor
+      - resolve-recordprocessor-image-tag
+    if: ${{ !cancelled() && (needs.build-and-push-recordprocessor.result == 'success' || needs.resolve-recordprocessor-image-tag.result == 'success') }}
+    outputs:
+      recordprocessor_image_tag: ${{ needs.build-and-push-recordprocessor.outputs.recordprocessor_image_tag || needs.resolve-recordprocessor-image-tag.outputs.recordprocessor_image_tag }}
     runs-on: ubuntu-latest
     env:
-      TF_VAR_recordprocessor_image_tag: ${{ needs.build-and-push-recordprocessor.outputs.recordprocessor_image_tag }}
+      TF_VAR_recordprocessor_image_tag: ${{ needs.build-and-push-recordprocessor.outputs.recordprocessor_image_tag || needs.resolve-recordprocessor-image-tag.outputs.recordprocessor_image_tag }}
     environment:
       name: ${{ inputs.environment }}
     steps:
@@ -184,7 +208,7 @@ jobs:
     needs: terraform-plan
     runs-on: ubuntu-latest
     env:
-      TF_VAR_recordprocessor_image_tag: ${{ needs.build-and-push-recordprocessor.outputs.recordprocessor_image_tag }}
+      TF_VAR_recordprocessor_image_tag: ${{ needs.terraform-plan.outputs.recordprocessor_image_tag }}
     environment:
       name: ${{ inputs.environment }}
     steps:
