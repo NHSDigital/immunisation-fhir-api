@@ -301,17 +301,19 @@ class ImmunizationRepository:
 
     def search_immunizations(self, patient_identifier: str, vaccine_types: set) -> list[dict]:
         """Searches for immunisations by patient identifier (NHS Number) and the vaccination type"""
-        vacc_type_condition = self._build_vacc_type_key_condition(vaccine_types)
-        key_condition = Key("PatientPK").eq(_make_patient_pk(patient_identifier)) & vacc_type_condition
-        is_not_deleted = Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated")
+        # vacc_type_condition = self._build_vacc_type_key_condition(vaccine_types)
+        is_not_deleted_condition = Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated")
+        patient_key_condition = Key("PatientPK").eq(_make_patient_pk(patient_identifier))
 
-        ieds_resources = self.get_all_items(key_condition, is_not_deleted)
+        ieds_resources = []
 
-        if not ieds_resources:
+        for vacc_type in vaccine_types:
+            # Should make these DB keys constants
+            key_condition = patient_key_condition & Key("PatientSK").begins_with(vacc_type)
+            ieds_resources.extend(self.get_all_items(key_condition, is_not_deleted_condition))
+
+        if len(ieds_resources) == 0:
             return []
-
-        # Filter the response to contain only the requested vaccine types
-        # filtered_ieds_resources = [x for x in ieds_resources if self._vaccine_type(x["PatientSK"]) in vaccine_types]
 
         # Return a list of the FHIR immunization resource JSON items
         final_resources = [
@@ -351,15 +353,15 @@ class ImmunizationRepository:
 
         return all_items
 
-    @staticmethod
-    def _build_vacc_type_key_condition(vacc_types: set) -> ConditionBase:
-        vacc_type_condition = None
-
-        for vacc_type in vacc_types:
-            key_cond = Key("PatientSK").begins_with(vacc_type)
-            vacc_type_condition = key_cond if vacc_type_condition is None else vacc_type_condition | key_cond
-
-        return vacc_type_condition
+    # @staticmethod
+    # def _build_vacc_type_key_condition(vacc_types: set) -> ConditionBase:
+    #     vacc_type_condition = None
+    #
+    #     for vacc_type in vacc_types:
+    #         key_cond = Key("PatientSK").begins_with(vacc_type)
+    #         vacc_type_condition = key_cond if vacc_type_condition is None else vacc_type_condition | key_cond
+    #
+    #     return vacc_type_condition
 
     @staticmethod
     def _vaccine_type(patient_sk: str) -> str:
