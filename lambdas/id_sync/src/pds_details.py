@@ -4,7 +4,7 @@ Operations related to PDS (Patient Demographic Service)
 
 import tempfile
 
-from common.api_clients.authentication import AppRestrictedAuth, Service
+from common.api_clients.authentication import AppRestrictedAuth
 from common.api_clients.pds_service import PdsService
 from common.cache import Cache
 from common.clients import get_secrets_manager_client, logger
@@ -20,7 +20,6 @@ def pds_get_patient_details(nhs_number: str) -> dict:
     try:
         cache = Cache(directory=safe_tmp_dir)
         authenticator = AppRestrictedAuth(
-            service=Service.PDS,
             secret_manager_client=get_secrets_manager_client(),
             environment=pds_env,
             cache=cache,

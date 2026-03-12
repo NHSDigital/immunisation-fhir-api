@@ -4,7 +4,7 @@ import os
 import boto3
 from botocore.config import Config
 
-from common.api_clients.authentication import AppRestrictedAuth, Service
+from common.api_clients.authentication import AppRestrictedAuth
 from common.api_clients.constants import DEV_ENVIRONMENT
 from common.api_clients.mns_service import MnsService
 from common.api_clients.mock_mns_service import MockMnsService
@@ -23,7 +23,6 @@ def get_mns_service(mns_env: str = "int"):
         cache = Cache(directory="/tmp")
         logging.info("Creating authenticator...")
         authenticator = AppRestrictedAuth(
-            service=Service.PDS,
             secret_manager_client=boto3.client("secretsmanager", config=boto_config),
             environment=mns_env,
             cache=cache,

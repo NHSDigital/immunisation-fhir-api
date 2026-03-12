@@ -7,7 +7,7 @@ from unittest.mock import ANY, MagicMock, patch
 import responses
 from responses import matchers
 
-from common.api_clients.authentication import AppRestrictedAuth, Service
+from common.api_clients.authentication import AppRestrictedAuth
 from common.models.errors import UnhandledResponseError
 
 
@@ -33,7 +33,7 @@ class TestAuthenticator(unittest.TestCase):
         self.cache.get.return_value = None
 
         env = "an-env"
-        self.authenticator = AppRestrictedAuth(Service.PDS, self.secret_manager_client, env, self.cache)
+        self.authenticator = AppRestrictedAuth(self.secret_manager_client, env, self.cache)
         self.url = f"https://{env}.api.service.nhs.uk/oauth2/token"
 
     @responses.activate
@@ -89,12 +89,12 @@ class TestAuthenticator(unittest.TestCase):
         """it should target int environment for none-prod environment, otherwise int"""
         # For env=none-prod
         env = "some-env"
-        auth = AppRestrictedAuth(Service.PDS, None, env, None)
+        auth = AppRestrictedAuth(None, env, None)
         self.assertTrue(auth.token_url.startswith(f"https://{env}."))
 
         # For env=prod
         env = "prod"
-        auth = AppRestrictedAuth(Service.PDS, None, env, None)
+        auth = AppRestrictedAuth(None, env, None)
         self.assertTrue(env not in auth.token_url)
 
     def test_returned_cached_token(self):
@@ -126,7 +126,7 @@ class TestAuthenticator(unittest.TestCase):
             self.authenticator.get_access_token()
 
         # Then
-        self.cache.put.assert_called_once_with(f"{Service.PDS.value}_access_token", cached_token)
+        self.cache.put.assert_called_once_with("api_client_access_token", cached_token)
 
     @responses.activate
     def test_expired_token_in_cache(self):

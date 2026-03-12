@@ -2,34 +2,25 @@ import base64
 import json
 import time
 import uuid
-from enum import Enum
 
 import jwt
 import requests
 
+from common.api_clients.constants import API_CACHE_KEY
 from common.clients import logger
 from common.models.errors import UnhandledResponseError
 
 from ..cache import Cache
 
 
-class Service(Enum):
-    PDS = "pds"
-    IMMUNIZATION = "imms"
-
-
 class AppRestrictedAuth:
-    def __init__(self, service: Service, secret_manager_client, environment, cache: Cache):
+    def __init__(self, secret_manager_client, environment, cache: Cache):
         self.secret_manager_client = secret_manager_client
         self.cache = cache
-        self.cache_key = f"{service.value}_access_token"
+        self.cache_key = API_CACHE_KEY
 
         self.expiry = 30
-        self.secret_name = (
-            f"imms/outbound/{environment}/jwt-secrets"
-            if service == Service.PDS
-            else f"imms/immunization/{environment}/jwt-secrets"
-        )
+        self.secret_name = f"imms/outbound/{environment}/jwt-secrets"
 
         self.token_url = (
             f"https://{environment}.api.service.nhs.uk/oauth2/token"
