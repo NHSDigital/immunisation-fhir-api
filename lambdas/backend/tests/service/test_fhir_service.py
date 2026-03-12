@@ -752,7 +752,7 @@ class TestSearchImmunizations(TestFhirServiceBase):
         mock_resource = create_covid_immunization_dict("1234-some-id")
         vaccine_type = "COVID"
         self.authoriser.filter_permitted_vacc_types.return_value = {vaccine_type}
-        self.imms_repo.find_immunizations.return_value = [mock_resource]
+        self.imms_repo.search_immunizations.return_value = [mock_resource]
 
         # When
         result = self.fhir_service.search_immunizations(
@@ -760,7 +760,7 @@ class TestSearchImmunizations(TestFhirServiceBase):
         )
 
         # Then
-        self.imms_repo.find_immunizations.assert_called_once_with(VALID_NHS_NUMBER, {vaccine_type})
+        self.imms_repo.search_immunizations.assert_called_once_with(VALID_NHS_NUMBER, {vaccine_type})
         mock_uuid.assert_called_once()
         self.authoriser.filter_permitted_vacc_types.assert_called_once_with(
             self.MOCK_SUPPLIER_SYSTEM_NAME, ApiOperationCode.SEARCH, {"COVID"}
@@ -797,7 +797,7 @@ class TestSearchImmunizations(TestFhirServiceBase):
 
         vaccine_type = "COVID"
         self.authoriser.filter_permitted_vacc_types.return_value = {vaccine_type}
-        self.imms_repo.find_immunizations.return_value = [
+        self.imms_repo.search_immunizations.return_value = [
             mock_resource_filtered_date_from,
             mock_resource,
             mock_resource_filtered_date_to,
@@ -815,7 +815,7 @@ class TestSearchImmunizations(TestFhirServiceBase):
         )
 
         # Then
-        self.imms_repo.find_immunizations.assert_called_once_with(VALID_NHS_NUMBER, {vaccine_type})
+        self.imms_repo.search_immunizations.assert_called_once_with(VALID_NHS_NUMBER, {vaccine_type})
         mock_uuid.assert_called_once()
         self.authoriser.filter_permitted_vacc_types.assert_called_once_with(
             self.MOCK_SUPPLIER_SYSTEM_NAME, ApiOperationCode.SEARCH, {"COVID"}
@@ -848,7 +848,7 @@ class TestSearchImmunizations(TestFhirServiceBase):
         mock_resource = create_covid_immunization_dict("1234-some-id")
         vaccine_type = "COVID"
         self.authoriser.filter_permitted_vacc_types.return_value = {vaccine_type}
-        self.imms_repo.find_immunizations.return_value = [mock_resource]
+        self.imms_repo.search_immunizations.return_value = [mock_resource]
 
         # When
         result = self.fhir_service.search_immunizations(
@@ -856,7 +856,7 @@ class TestSearchImmunizations(TestFhirServiceBase):
         )
 
         # Then
-        self.imms_repo.find_immunizations.assert_called_once_with(VALID_NHS_NUMBER, {vaccine_type})
+        self.imms_repo.search_immunizations.assert_called_once_with(VALID_NHS_NUMBER, {vaccine_type})
         mock_uuid.assert_called_once()
         self.authoriser.filter_permitted_vacc_types.assert_called_once_with(
             self.MOCK_SUPPLIER_SYSTEM_NAME, ApiOperationCode.SEARCH, {"COVID"}
@@ -884,7 +884,7 @@ class TestSearchImmunizations(TestFhirServiceBase):
         """it should return an empty search bundle when no results are found"""
         vaccine_type = "FLU"
         self.authoriser.filter_permitted_vacc_types.return_value = {vaccine_type}
-        self.imms_repo.find_immunizations.return_value = []
+        self.imms_repo.search_immunizations.return_value = []
 
         # When
         result = self.fhir_service.search_immunizations(
@@ -892,7 +892,7 @@ class TestSearchImmunizations(TestFhirServiceBase):
         )
 
         # Then
-        self.imms_repo.find_immunizations.assert_called_once_with(VALID_NHS_NUMBER, {vaccine_type})
+        self.imms_repo.search_immunizations.assert_called_once_with(VALID_NHS_NUMBER, {vaccine_type})
         self.authoriser.filter_permitted_vacc_types.assert_called_once_with(
             self.MOCK_SUPPLIER_SYSTEM_NAME, ApiOperationCode.SEARCH, {vaccine_type}
         )
@@ -920,7 +920,7 @@ class TestSearchImmunizations(TestFhirServiceBase):
         mock_resource = create_covid_immunization_dict("1234-some-id")
         vaccine_type = "COVID"
         self.authoriser.filter_permitted_vacc_types.return_value = {vaccine_type}
-        self.imms_repo.find_immunizations.return_value = [mock_resource]
+        self.imms_repo.search_immunizations.return_value = [mock_resource]
 
         # When
         result = self.fhir_service.search_immunizations(
@@ -929,7 +929,7 @@ class TestSearchImmunizations(TestFhirServiceBase):
 
         # Then
         # Does not pass FLU in as client is only permitted to retrieve COVID vaccinations
-        self.imms_repo.find_immunizations.assert_called_once_with(VALID_NHS_NUMBER, {vaccine_type})
+        self.imms_repo.search_immunizations.assert_called_once_with(VALID_NHS_NUMBER, {vaccine_type})
         mock_uuid.assert_called_once()
         self.authoriser.filter_permitted_vacc_types.assert_called_once_with(
             self.MOCK_SUPPLIER_SYSTEM_NAME, ApiOperationCode.SEARCH, {"COVID", "FLU"}
@@ -969,14 +969,14 @@ class TestSearchImmunizations(TestFhirServiceBase):
         self.authoriser.filter_permitted_vacc_types.assert_called_once_with(
             self.MOCK_SUPPLIER_SYSTEM_NAME, ApiOperationCode.SEARCH, {vaccine_type}
         )
-        self.imms_repo.find_immunizations.assert_not_called()
+        self.imms_repo.search_immunizations.assert_not_called()
 
     def test_search_immunizations_includes_operation_outcome_when_invalid_immunization_targets_provided(self):
         """it should include an OperationOutcome in the bundle when invalid -immunization.target values were provided"""
         mock_resource = create_covid_immunization_dict("1234-some-id")
         vaccine_type = "COVID"
         self.authoriser.filter_permitted_vacc_types.return_value = {vaccine_type}
-        self.imms_repo.find_immunizations.return_value = [mock_resource]
+        self.imms_repo.search_immunizations.return_value = [mock_resource]
 
         result = self.fhir_service.search_immunizations(
             VALID_NHS_NUMBER,

@@ -47,7 +47,7 @@ class TestSearchImmunizationsTargetDisease(unittest.TestCase):
     def test_search_immunizations_with_target_disease_codes_for_url_echoes_target_disease_in_bundle_link(self):
         """it should include target-disease param in bundle self link when target_disease_codes_for_url is set"""
         self.authoriser.filter_permitted_vacc_types.return_value = {"MMR"}
-        self.imms_repo.find_immunizations.return_value = []
+        self.imms_repo.search_immunizations.return_value = []
 
         result = self.fhir_service.search_immunizations(
             "9000000009",
@@ -70,7 +70,7 @@ class TestSearchImmunizationsTargetDisease(unittest.TestCase):
     def test_search_immunizations_with_invalid_target_diseases_adds_operation_outcomes(self):
         """it should add one OperationOutcome entry per invalid target disease diagnostic"""
         self.authoriser.filter_permitted_vacc_types.return_value = {"MMR"}
-        self.imms_repo.find_immunizations.return_value = []
+        self.imms_repo.search_immunizations.return_value = []
 
         result = self.fhir_service.search_immunizations(
             "9000000009",

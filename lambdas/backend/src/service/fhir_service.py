@@ -213,7 +213,7 @@ class FhirService:
             raise UnauthorizedVaxError()
 
         # Have to retrieve first and then inspect resource to filter by date
-        all_resources = self.immunization_repo.find_immunizations(nhs_number, permitted_vacc_types)
+        all_resources = self.immunization_repo.search_immunizations(nhs_number, permitted_vacc_types)
         filtered_resources = self._filter_search_results_by_date_and_status(
             immunizations=all_resources, date_from=date_from, date_to=date_to, status=Constants.COMPLETED_STATUS
         )

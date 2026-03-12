@@ -596,12 +596,13 @@ class TestFindImmunizations(unittest.TestCase):
         self.table.query = MagicMock(return_value=dynamo_response)
 
         # When
-        result = self.repository.find_immunizations(nhs_number, vaccine_types={"COVID"})
+        result = self.repository.search_immunizations(nhs_number, vaccine_types={"COVID"})
 
         # Then
         self.table.query.assert_called_once_with(
             IndexName="PatientGSI",
-            KeyConditionExpression=Key("PatientPK").eq(_make_patient_pk(nhs_number)),
+            KeyConditionExpression=Key("PatientPK").eq(_make_patient_pk(nhs_number))
+            & Key("PatientSK").begins_with("COVID"),
             FilterExpression=Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated"),
         )
         self.assertEqual(result, [])
@@ -627,7 +628,7 @@ class TestFindImmunizations(unittest.TestCase):
         self.table.query = MagicMock(return_value=dynamo_response)
 
         # When
-        results = self.repository.find_immunizations("an-id", {"COVID"})
+        results = self.repository.search_immunizations("an-id", {"COVID"})
 
         # Then
         self.assertListEqual(results, [imms1, imms2])
@@ -650,7 +651,7 @@ class TestFindImmunizations(unittest.TestCase):
             },
             {
                 "Resource": json.dumps(imms3),
-                "PatientSK": "MMR#some_other_text",
+                "PatientSK": "FLU#some_other_text",
                 "Version": "4",
             },
         ]
@@ -659,10 +660,10 @@ class TestFindImmunizations(unittest.TestCase):
         self.table.query = MagicMock(return_value=dynamo_response)
 
         # When
-        results = self.repository.find_immunizations("an-id", {"COVID", "FLU"})
+        results = self.repository.search_immunizations("an-id", {"COVID", "FLU"})
 
         # Then
-        self.assertListEqual(results, [imms1, imms2])
+        self.assertListEqual(results, [imms1, imms2, imms3])
 
     def test_bad_response_from_dynamo(self):
         """it should throw UnhandledResponse when the response from dynamodb can't be handled"""
@@ -672,7 +673,7 @@ class TestFindImmunizations(unittest.TestCase):
 
         with self.assertRaises(UnhandledResponseError) as e:
             # When
-            self.repository.find_immunizations("an-id", {"COVID"})
+            self.repository.search_immunizations("an-id", {"COVID"})
 
         # Then
         self.assertDictEqual(e.exception.response, response)

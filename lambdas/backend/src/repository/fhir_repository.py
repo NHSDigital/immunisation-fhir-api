@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import boto3
 import botocore.exceptions
 import simplejson as json
-from boto3.dynamodb.conditions import Attr, Key
+from boto3.dynamodb.conditions import Attr, ConditionBase, Key
 from botocore.config import Config
 from fhir.resources.R4B.fhirtypes import Id
 from fhir.resources.R4B.identifier import Identifier
@@ -299,17 +299,19 @@ class ImmunizationRepository:
             else:
                 raise error
 
-    def find_immunizations(self, patient_identifier: str, vaccine_types: set) -> list[dict]:
-        condition = Key("PatientPK").eq(_make_patient_pk(patient_identifier))
+    def search_immunizations(self, patient_identifier: str, vaccine_types: set) -> list[dict]:
+        """Searches for immunisations by patient identifier (NHS Number) and the vaccination type"""
+        vacc_type_condition = self._build_vacc_type_key_condition(vaccine_types)
+        key_condition = Key("PatientPK").eq(_make_patient_pk(patient_identifier)) & vacc_type_condition
         is_not_deleted = Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated")
 
-        ieds_resources = self.get_all_items(condition, is_not_deleted)
+        ieds_resources = self.get_all_items(key_condition, is_not_deleted)
 
         if not ieds_resources:
             return []
 
         # Filter the response to contain only the requested vaccine types
-        filtered_ieds_resources = [x for x in ieds_resources if self._vaccine_type(x["PatientSK"]) in vaccine_types]
+        # filtered_ieds_resources = [x for x in ieds_resources if self._vaccine_type(x["PatientSK"]) in vaccine_types]
 
         # Return a list of the FHIR immunization resource JSON items
         final_resources = [
@@ -317,12 +319,12 @@ class ImmunizationRepository:
                 **json.loads(item["Resource"]),
                 "meta": {"versionId": int(item.get("Version", 1))},
             }
-            for item in filtered_ieds_resources
+            for item in ieds_resources
         ]
 
         return final_resources
 
-    def get_all_items(self, condition, is_not_deleted):
+    def get_all_items(self, key_condition: ConditionBase, filter_condition: ConditionBase):
         """Query DynamoDB and paginate through all results."""
         all_items = []
         last_evaluated_key = None
@@ -330,8 +332,8 @@ class ImmunizationRepository:
         while True:
             query_args = {
                 "IndexName": "PatientGSI",
-                "KeyConditionExpression": condition,
-                "FilterExpression": is_not_deleted,
+                "KeyConditionExpression": key_condition,
+                "FilterExpression": filter_condition,
             }
             if last_evaluated_key:
                 query_args["ExclusiveStartKey"] = last_evaluated_key
@@ -348,6 +350,16 @@ class ImmunizationRepository:
                 break
 
         return all_items
+
+    @staticmethod
+    def _build_vacc_type_key_condition(vacc_types: set) -> ConditionBase:
+        vacc_type_condition = None
+
+        for vacc_type in vacc_types:
+            key_cond = Key("PatientSK").begins_with(vacc_type)
+            vacc_type_condition = key_cond if vacc_type_condition is None else vacc_type_condition | key_cond
+
+        return vacc_type_condition
 
     @staticmethod
     def _vaccine_type(patient_sk: str) -> str:
