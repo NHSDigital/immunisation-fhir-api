@@ -42,7 +42,7 @@ jobs:
     uses: ./.github/workflows/deploy-backend.yml
     with:
       apigee_environment: internal-dev
-      build_recordprocessor_image: ${{ github.event.action == 'opened' || github.event.action == 'reopened' || needs.detect-recordprocessor-changes.outputs.has_changes == 'true' }}
+      build_recordprocessor_image: ${{ github.event.action == 'opened' || github.event.action == 'synchronize' || github.event.action == 'reopened' }}
       create_mns_subscription: true
       environment: dev
       sub_environment: pr-${{github.event.pull_request.number}}
