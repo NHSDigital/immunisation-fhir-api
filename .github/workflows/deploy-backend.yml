@@ -206,6 +206,7 @@ jobs:
       id-token: write
       contents: read
     needs: terraform-plan
+    if: ${{ !cancelled() && needs.terraform-plan.result == 'success' }}
     runs-on: ubuntu-latest
     env:
       TF_VAR_recordprocessor_image_tag: ${{ needs.terraform-plan.outputs.recordprocessor_image_tag }}
