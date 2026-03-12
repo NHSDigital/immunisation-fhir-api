@@ -28,7 +28,7 @@ jobs:
       - name: Detect recordprocessor changes compared to master
         id: detect
         run: |
-          if git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" | grep -Eq '^(lambdas/recordprocessor/|lambdas/shared/src/common/)'; then
+          if git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" | grep -Eq '^(lambdas/recordprocessor/)'; then
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
           else
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
