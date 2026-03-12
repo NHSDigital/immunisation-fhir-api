@@ -601,9 +601,9 @@ class TestFindImmunizations(unittest.TestCase):
         # Then
         self.table.query.assert_called_once_with(
             IndexName="PatientGSI",
-            KeyConditionExpression=Key("PatientPK").eq(_make_patient_pk(nhs_number))
-            & Key("PatientSK").begins_with("COVID"),
-            FilterExpression=Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated"),
+            KeyConditionExpression=Key("PatientPK").eq(_make_patient_pk(nhs_number)),
+            FilterExpression=Attr("PatientSK").begins_with("COVID")
+            & (Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated")),
         )
         self.assertEqual(result, [])
 
@@ -638,14 +638,12 @@ class TestFindImmunizations(unittest.TestCase):
         imms1 = {"id": 1, "meta": {"versionId": 1}}
         imms2 = {"id": 2, "meta": {"versionId": 2}}
         imms3 = {"id": 3, "meta": {"versionId": 4}}
-        covid_items = [
+        items = [
             {
                 "Resource": json.dumps(imms1),
                 "PatientSK": "COVID#some_other_text",
                 "Version": "1",
-            }
-        ]
-        flu_items = [
+            },
             {
                 "Resource": json.dumps(imms2),
                 "PatientSK": "FLU#some_other_text",
@@ -658,9 +656,8 @@ class TestFindImmunizations(unittest.TestCase):
             },
         ]
 
-        covid_dynamo_response = {"ResponseMetadata": {"HTTPStatusCode": 200}, "Items": covid_items}
-        flu_dynamo_response = {"ResponseMetadata": {"HTTPStatusCode": 200}, "Items": flu_items}
-        self.table.query = MagicMock(side_effect=[covid_dynamo_response, flu_dynamo_response])
+        dynamo_response = {"ResponseMetadata": {"HTTPStatusCode": 200}, "Items": items}
+        self.table.query = MagicMock(side_effect=[dynamo_response])
 
         # When
         results = self.repository.search_immunizations("an-id", {"COVID", "FLU"})
