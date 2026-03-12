@@ -118,7 +118,7 @@ jobs:
     needs: build-and-push-recordprocessor
     runs-on: ubuntu-latest
     env:
-      TF_VAR_recordprocessor_image_tag: ${{ inputs.build_recordprocessor_image && github.sha || 'latest' }}
+      TF_VAR_recordprocessor_image_tag: ${{ inputs.build_recordprocessor_image && format('{0}-{1}', inputs.sub_environment, github.sha) || 'latest' }}
     environment:
       name: ${{ inputs.environment }}
     steps:
@@ -160,7 +160,7 @@ jobs:
     needs: terraform-plan
     runs-on: ubuntu-latest
     env:
-      TF_VAR_recordprocessor_image_tag: ${{ inputs.build_recordprocessor_image && github.sha || 'latest' }}
+      TF_VAR_recordprocessor_image_tag: ${{ inputs.build_recordprocessor_image && format('{0}-{1}', inputs.sub_environment, github.sha) || 'latest' }}
     environment:
       name: ${{ inputs.environment }}
     steps:
