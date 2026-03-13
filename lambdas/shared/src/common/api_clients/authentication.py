@@ -20,6 +20,7 @@ from common.models.errors import UnhandledResponseError
 
 SERVICE_SECRETS_CACHE_TTL_SECONDS = 10 * 60
 
+
 class AppRestrictedAuth:
     def __init__(self, secret_manager_client: Any, environment: str, secret_name: str | None = None):
         self.secret_manager_client = secret_manager_client
@@ -39,11 +40,7 @@ class AppRestrictedAuth:
     def get_service_secrets(self) -> dict[str, Any]:
         now = int(time.time())
 
-        if (
-            self.cached_service_secrets is not None
-            and self.cached_service_secrets_expiry_time is not None
-            and self.cached_service_secrets_expiry_time > now
-        ):
+        if self.cached_service_secrets and self.cached_service_secrets_expiry_time > now:
             return self.cached_service_secrets
 
         response = self.secret_manager_client.get_secret_value(SecretId=self.secret_name)
