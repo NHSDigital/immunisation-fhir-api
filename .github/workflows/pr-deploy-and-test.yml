@@ -10,10 +10,9 @@ concurrency:
 
 jobs:
   run-quality-checks:
-    runs-on: ubuntu-latest
-    # uses: ./.github/workflows/quality-checks.yml
-    # secrets:
-    #   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    uses: ./.github/workflows/quality-checks.yml
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   detect-recordprocessor-changes:
     runs-on: ubuntu-latest
