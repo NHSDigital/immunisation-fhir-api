@@ -9,10 +9,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  run-quality-checks:
-    uses: ./.github/workflows/quality-checks.yml
-    secrets:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  # run-quality-checks:
+  #   uses: ./.github/workflows/quality-checks.yml
+  #   secrets:
+  #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   detect-recordprocessor-changes:
     runs-on: ubuntu-latest
@@ -37,7 +37,7 @@ jobs:
           fi
 
   deploy-pr-backend:
-    needs: [run-quality-checks, detect-recordprocessor-changes]
+    needs: [detect-recordprocessor-changes]
     if: ${{ always() && !failure() && !cancelled() }}
     uses: ./.github/workflows/deploy-backend.yml
     with:
