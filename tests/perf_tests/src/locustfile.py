@@ -1,13 +1,17 @@
+import json
 import os
 import random
 import uuid
-from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from urllib.parse import urlencode
 
 from locust import HttpUser, constant_throughput, task
 
 from common.api_clients.authentication import AppRestrictedAuth
 from common.clients import get_secrets_manager_client
+from objectModels import patient_loader
+from objectModels.api_immunization_builder import create_immunization_object
+from objectModels.patient_loader import load_patient_by_id
 
 CONTENT_TYPE_FHIR_JSON = "application/fhir+json"
 SNOMED_SYSTEM = "http://snomed.info/sct"
@@ -17,7 +21,6 @@ if not APIGEE_ENVIRONMENT:
     raise ValueError("APIGEE_ENVIRONMENT must be set")
 
 PERF_SUPPLIER_SYSTEM = os.getenv("PERF_SUPPLIER_SYSTEM", "EMIS").upper()
-PERF_ENABLE_DELETE_CLEANUP = os.getenv("PERF_ENABLE_DELETE_CLEANUP", "true").lower() == "true"
 PERF_CREATE_RPS_PER_USER = float(os.getenv("PERF_CREATE_RPS_PER_USER", "1"))
 PERF_CREATE_VACCINE_TYPE = os.getenv("PERF_CREATE_VACCINE_TYPE", "COVID").upper()
 
@@ -49,11 +52,8 @@ NHS_NUMBERS = [
 ]
 
 NHS_SYSTEM = "https://fhir.nhs.uk/Id/nhs-number"
-IDENTIFIER_SYSTEM = "https://supplierABC/identifiers/vacc"
-ODS_SYSTEM = "https://fhir.nhs.uk/Id/ods-organization-code"
-LOCATION_ODS_VALUE = "X99999"
-PERFORMER_ORG_ODS_VALUE = "B0C4P"
-PERFORMER_ORG_DISPLAY = "UNIVERSITY HOSPITAL OF WALES"
+
+patient_loader.csv_path = str(Path(__file__).resolve().parents[2] / "e2e_automation" / "input" / "testData.csv")
 
 
 class BaseImmunizationUser(HttpUser):
@@ -76,100 +76,11 @@ class BaseImmunizationUser(HttpUser):
             "X-Request-ID": str(uuid.uuid4()),
         }
 
-    def _get_create_codes(self) -> dict:
-        return {
-            "target_disease_code": "840539006",
-            "vaccine_code": "1119349007",
-            "vaccine_display": "Vaccine product containing only Severe acute respiratory syndrome coronavirus 2 messenger ribonucleic acid",
-            "procedure_code": "1324681000000101",
-            "procedure_display": "Administration of vaccine to produce active immunity (procedure)",
-        }
-
     def _build_create_payload(self):
-        nhs_number = random.choice(NHS_NUMBERS)
-        now = datetime.now(UTC)
-        occurrence = (now - timedelta(days=1)).replace(microsecond=0).isoformat()
-        recorded = now.date().isoformat()
-        codes = self._get_create_codes()
-
-        return {
-            "resourceType": "Immunization",
-            "contained": [
-                {
-                    "resourceType": "Practitioner",
-                    "id": "Pract1",
-                    "name": [{"family": "Perf", "given": ["Tester"]}],
-                },
-                {
-                    "resourceType": "Patient",
-                    "id": "Pat1",
-                    "identifier": [{"system": NHS_SYSTEM, "value": nhs_number}],
-                    "name": [{"family": "Load", "given": ["Test"]}],
-                    "gender": "male",
-                    "birthDate": "1990-01-01",
-                    "address": [{"postalCode": "EC1A 1BB"}],
-                },
-            ],
-            "extension": [
-                {
-                    "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
-                    "valueCodeableConcept": {
-                        "coding": [
-                            {
-                                "system": SNOMED_SYSTEM,
-                                "code": codes["procedure_code"],
-                                "display": codes["procedure_display"],
-                            }
-                        ]
-                    },
-                }
-            ],
-            "identifier": [{"system": IDENTIFIER_SYSTEM, "value": str(uuid.uuid4())}],
-            "status": "completed",
-            "vaccineCode": {
-                "coding": [
-                    {
-                        "system": SNOMED_SYSTEM,
-                        "code": codes["vaccine_code"],
-                        "display": codes["vaccine_display"],
-                    }
-                ]
-            },
-            "patient": {"reference": "#Pat1", "type": "Patient"},
-            "occurrenceDateTime": occurrence,
-            "recorded": recorded,
-            "primarySource": True,
-            "location": {"identifier": {"system": ODS_SYSTEM, "value": LOCATION_ODS_VALUE}},
-            "performer": [
-                {"actor": {"reference": "#Pract1", "type": "Practitioner"}},
-                {
-                    "actor": {
-                        "reference": f"Organization/{PERFORMER_ORG_ODS_VALUE}",
-                        "type": "Organization",
-                        "identifier": {
-                            "system": ODS_SYSTEM,
-                            "value": PERFORMER_ORG_ODS_VALUE,
-                        },
-                        "display": PERFORMER_ORG_DISPLAY,
-                    }
-                },
-            ],
-            "protocolApplied": [
-                {
-                    "targetDisease": [
-                        {
-                            "coding": [
-                                {
-                                    "system": SNOMED_SYSTEM,
-                                    "code": codes["target_disease_code"],
-                                }
-                            ]
-                        }
-                    ],
-                    "doseNumberPositiveInt": 1,
-                }
-            ],
-        }
+        immunization_target = random.choice(IMMUNIZATION_TARGETS)
+        patient = load_patient_by_id("Random")
+        immunization = create_immunization_object(patient, immunization_target)
+        return json.loads(immunization.json(exclude_none=True))
 
     def _delete_created_immunization(self, immunization_id: str):
         headers = self.get_headers()
@@ -238,7 +149,6 @@ class CreateUser(BaseImmunizationUser):
             location = response.headers.get("Location") or response.headers.get("location")
             response.success()
 
-            if PERF_ENABLE_DELETE_CLEANUP:
-                created_id = location.rstrip("/").split("/")[-1]
-                if created_id:
-                    self._delete_created_immunization(created_id)
+            created_id = location.rstrip("/").split("/")[-1]
+            if created_id:
+                self._delete_created_immunization(created_id)
