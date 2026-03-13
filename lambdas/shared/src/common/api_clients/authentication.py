@@ -18,6 +18,7 @@ from common.api_clients.constants import (
 from common.clients import logger
 from common.models.errors import UnhandledResponseError
 
+SERVICE_SECRETS_CACHE_TTL_SECONDS = 10 * 60
 
 class AppRestrictedAuth:
     def __init__(self, secret_manager_client: Any, environment: str, secret_name: str | None = None):
@@ -25,9 +26,10 @@ class AppRestrictedAuth:
 
         self.cached_access_token: str | None = None
         self.cached_access_token_expiry_time: int | None = None
+        self.cached_service_secrets: dict[str, Any] | None = None
+        self.cached_service_secrets_expiry_time: int | None = None
 
         self.secret_name = f"imms/outbound/{environment}/jwt-secrets" if secret_name is None else secret_name
-
         self.token_url = (
             f"https://{environment}.api.service.nhs.uk/oauth2/token"
             if environment != "prod"
@@ -35,9 +37,21 @@ class AppRestrictedAuth:
         )
 
     def get_service_secrets(self) -> dict[str, Any]:
+        now = int(time.time())
+
+        if (
+            self.cached_service_secrets is not None
+            and self.cached_service_secrets_expiry_time is not None
+            and self.cached_service_secrets_expiry_time > now
+        ):
+            return self.cached_service_secrets
+
         response = self.secret_manager_client.get_secret_value(SecretId=self.secret_name)
         secret_object = json.loads(response["SecretString"])
         secret_object["private_key"] = base64.b64decode(secret_object["private_key_b64"]).decode()
+
+        self.cached_service_secrets = secret_object
+        self.cached_service_secrets_expiry_time = now + SERVICE_SECRETS_CACHE_TTL_SECONDS
         return secret_object
 
     def create_jwt(self, now: int) -> str:
@@ -56,29 +70,33 @@ class AppRestrictedAuth:
             headers={"kid": secret_object["kid"]},
         )
 
+    def _request_access_token(self, jwt_assertion: str) -> requests.Response:
+        return requests.post(
+            self.token_url,
+            data={
+                "grant_type": GRANT_TYPE_CLIENT_CREDENTIALS,
+                "client_assertion_type": CLIENT_ASSERTION_TYPE_JWT_BEARER,
+                "client_assertion": jwt_assertion,
+            },
+            headers={"Content-Type": CONTENT_TYPE_X_WWW_FORM_URLENCODED},
+            timeout=10,
+        )
+
     def get_access_token(self) -> str:
         now = int(time.time())
 
         if (
             self.cached_access_token
+            and self.cached_access_token_expiry_time is not None
             and self.cached_access_token_expiry_time > now + ACCESS_TOKEN_MIN_ACCEPTABLE_LIFETIME_SECONDS
         ):
             return self.cached_access_token
 
         logger.info("Requesting new access token")
-        _jwt = self.create_jwt(now)
+        jwt_assertion = self.create_jwt(now)
 
         try:
-            token_response = requests.post(
-                self.token_url,
-                data={
-                    "grant_type": GRANT_TYPE_CLIENT_CREDENTIALS,
-                    "client_assertion_type": CLIENT_ASSERTION_TYPE_JWT_BEARER,
-                    "client_assertion": _jwt,
-                },
-                headers={"Content-Type": CONTENT_TYPE_X_WWW_FORM_URLENCODED},
-                timeout=10,
-            )
+            token_response = self._request_access_token(jwt_assertion)
         except requests.RequestException as error:
             logger.exception("Failed to fetch access token from %s", self.token_url)
             raise UnhandledResponseError(response=str(error), message="Failed to get access token") from error
