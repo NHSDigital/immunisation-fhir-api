@@ -6,10 +6,10 @@ on:
       apigee_environment:
         required: true
         type: string
-      build_recordprocessor_image:
+      build_recordprocessor_override:
         required: false
         type: boolean
-        default: false
+        default: true
       create_mns_subscription:
         required: false
         type: boolean
@@ -43,11 +43,11 @@ on:
           - dev
           - preprod
           - prod
-      build_recordprocessor_image:
+      build_recordprocessor_override:
         description: Build and push a new recordprocessor image for this deployment
         required: false
         type: boolean
-        default: false
+        default: true
       sub_environment:
         type: string
         description: Set the sub environment name e.g. pr-xxx, or green/blue in higher environments
@@ -56,12 +56,31 @@ env: # Sonarcloud - do not allow direct usage of untrusted data
   APIGEE_ENVIRONMENT: ${{ inputs.apigee_environment }}
   ENVIRONMENT: ${{ inputs.environment }}
   SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
+  build_recordprocessor: true
 
 run-name: Deploy Backend - ${{ inputs.environment }} ${{ inputs.sub_environment }}
 
 jobs:
+  detect-recordprocessor-changes:
+    runs-on: ubuntu-latest
+    if: github.event.action != 'opened' || github.event.action != 'reopened' || !inputs.build_recordprocessor_override
+    steps:
+      - name: Checkout
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
+        with:
+          fetch-depth: 0
+
+      - name: Detect recordprocessor changes in PR
+        id: detect
+        run: |
+          if git diff --quiet "${{ github.event.before }}" "${{ github.sha }}" -- lambdas/recordprocessor/ lambdas/shared/src/common/; then
+            echo "build_record_processor=false" >> "$GITHUB_OUTPUT"
+          else
+             echo "build_record_processor=true" >> "$GITHUB_OUTPUT"
+          fi
+
   build-and-push-recordprocessor:
-    if: ${{ inputs.build_recordprocessor_image }}
+    if: ${{ env.build_record_processor  || inputs.build_recordprocessor_override }}
     permissions:
       id-token: write
       contents: read
@@ -104,7 +123,7 @@ jobs:
           echo "recordprocessor_image_tag=${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
 
   resolve-recordprocessor-image-tag:
-    if: ${{ !inputs.build_recordprocessor_image }}
+    if: ${{ !env.build_record_processor || !inputs.build_recordprocessor_override }}
     permissions:
       id-token: write
       contents: read
@@ -114,8 +133,6 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.environment }}
-    env:
-      AWS_REGION: eu-west-2
     steps:
       - name: Connect to AWS
         uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7
@@ -129,6 +146,7 @@ jobs:
         env:
           REPOSITORY_NAME: imms-recordprocessor-repo
           TAG_PREFIX: ${{ inputs.sub_environment }}-
+          AWS_REGION: eu-west-2
         run: |
           IMAGE_TAG=$(
             aws ecr describe-images \
@@ -144,7 +162,7 @@ jobs:
 
           if [ -z "${IMAGE_TAG}" ]; then
             echo "No existing recordprocessor image found for prefix '${TAG_PREFIX}'."
-            echo "Trigger a run with build_recordprocessor_image=true to build one."
+            echo "Trigger a run with build_recordprocessor=true to build one."
             exit 1
           fi
 

@@ -26,7 +26,7 @@ def process_csv_to_fhir(incoming_message_body: dict) -> int:
     Returns the number of rows processed. While this is not used by the handler, the number of rows
     processed must be correct and therefore is returned for logging and test purposes.
     """
-    encoder = "utf-8"  # default encoding
+    encoder = "utf-8"  # default encoding.
     try:
         incoming_message_body["encoder"] = encoder
         interim_message_body = file_level_validation(incoming_message_body=incoming_message_body)
