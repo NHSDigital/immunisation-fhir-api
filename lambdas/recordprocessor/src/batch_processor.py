@@ -31,7 +31,7 @@ def process_csv_to_fhir(incoming_message_body: dict) -> int:
         incoming_message_body["encoder"] = encoder
         interim_message_body = file_level_validation(incoming_message_body=incoming_message_body)
     except Exception as e:  # pylint: disable=broad-exception-caught
-        logger.error(f"File level validation failed: {e}")  # If the file is invalid, processing should cease.
+        logger.error(f"File level validation failed: {e}")  # If the file is invalid, processing should cease
         return 0
 
     file_id = interim_message_body.get("message_id")
