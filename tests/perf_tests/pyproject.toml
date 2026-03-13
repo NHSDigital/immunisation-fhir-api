@@ -1,22 +1,19 @@
-[project]
+[tool.poetry]
 name = "perf-tests"
 version = "0.1.0"
 description = ""
-authors = [
-    {name = "Matt Jarvis",email = "matt.jarvis2@nhs.net"}
-]
+authors = ["Matt Jarvis matt.jarvis2@nhs.net"]
 readme = "README.md"
-requires-python = ">=3.11"
-dependencies = [
-    "locust (>=2.42.3,<3.0.0)",
-    "pyjwt[crypto] (>=2.11.0,<3.0.0)",
-    "boto3 (>=1.42.59,<2.0.0)",
-]
 packages = [
-    {include = "src"},
-    {include = "common", from = "../../lambdas/shared/src"}
+{ include = "src" }
 ]
 
+[tool.poetry.dependencies]
+python = ">=3.11,<3.12"
+locust = ">=2.42.3,<3.0.0"
+pyjwt = { version = ">=2.11.0,<3.0.0", extras = ["crypto"] }
+boto3 = ">=1.42.59,<2.0.0"
+shared = { path = "../../lambdas/shared", develop = true }
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
