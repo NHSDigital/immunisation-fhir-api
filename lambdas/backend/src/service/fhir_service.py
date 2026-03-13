@@ -21,6 +21,7 @@ from fhir.resources.R4B.operationoutcome import OperationOutcome
 
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
+from common.get_service_url import get_service_url
 from common.models.constants import Constants
 from common.models.errors import (
     Code,
@@ -45,7 +46,7 @@ from common.models.utils.validation_utils import (
 from filter import Filter
 from models.errors import UnauthorizedVaxError
 from repository.fhir_repository import ImmunizationRepository
-from service.search_url_helper import create_url_for_bundle_link, get_service_url
+from service.search_url_helper import create_url_for_bundle_link
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger()

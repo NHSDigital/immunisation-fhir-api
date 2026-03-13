@@ -74,19 +74,28 @@ variable "pds_environment" {
   default = "int"
 }
 
+variable "mns_environment" {
+  type    = string
+  default = "int"
+}
+
 variable "mesh_no_invocation_period_seconds" {
   description = "The maximum duration the MESH Processor Lambda can go without being invoked before the no-invocation alarm is triggered."
   type        = number
   default     = 300
 }
 
-# Remember to switch off in PR envs after testing
 variable "error_alarm_notifications_enabled" {
   default     = true
   description = "Switch to enable error alarm notifications to Slack"
   type        = bool
 }
 
+variable "mns_publisher_feature_enabled" {
+  default     = false
+  description = "Switch to the MNS Publisher feature which allows us to publish Immunisation events."
+  type        = bool
+}
 variable "has_sub_environment_scope" {
   description = "True if the sub-environment is a standalone environment, e.g. internal-dev. False if it is part of a blue-green split, e.g. int-green."
   type        = bool
