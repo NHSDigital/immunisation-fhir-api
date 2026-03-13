@@ -10,7 +10,7 @@ from common.api_clients.constants import MnsNotificationPayload
 from common.api_clients.get_pds_details import pds_get_patient_details
 from common.clients import logger
 from common.get_service_url import get_service_url
-from constants import DYNAMO_DB_TYPE_DESCRIPTORS, IMMUNISATION_TYPE, SPEC_VERSION
+from constants import DYNAMO_DB_TYPE_DESCRIPTORS, IMMUNISATION_EVENT_SOURCE, IMMUNISATION_EVENT_TYPE, SPEC_VERSION
 
 IMMUNIZATION_ENV = os.getenv("IMMUNIZATION_ENV")
 IMMUNIZATION_BASE_PATH = os.getenv("IMMUNIZATION_BASE_PATH")
@@ -43,8 +43,8 @@ def create_mns_notification(sqs_event: SQSMessage) -> MnsNotificationPayload:
     return {
         "specversion": SPEC_VERSION,
         "id": str(uuid.uuid4()),
-        "source": immunisation_url,
-        "type": IMMUNISATION_TYPE,
+        "source": IMMUNISATION_EVENT_SOURCE,
+        "type": IMMUNISATION_EVENT_TYPE,
         "time": date_and_time,
         "subject": nhs_number,
         "dataref": f"{immunisation_url}/Immunization/{imms_id}",

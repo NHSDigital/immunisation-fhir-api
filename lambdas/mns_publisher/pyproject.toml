@@ -19,6 +19,7 @@ boto3 = "~1.42.37"
 mypy-boto3-dynamodb = "^1.42.33"
 moto = "~5.1.20"
 cache = "^1.0.3"
+aws-lambda-powertools = {version = "3.24.0"}
 
 [build-system]
 requires = ["poetry-core >= 1.5.0"]

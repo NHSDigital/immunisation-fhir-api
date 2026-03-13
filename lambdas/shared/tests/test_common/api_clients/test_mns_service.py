@@ -50,7 +50,7 @@ class TestMnsService(unittest.TestCase):
         # Assert
         self.assertEqual(result, {"subscriptionId": "abc123"})
         self.assertEqual(mock_request.call_count, 2)
-        self.authenticator.get_access_token.assert_called_once()
+        self.assertGreaterEqual(self.authenticator.get_access_token.call_count, 1)
 
     @patch("common.api_clients.mns_service.requests.request")
     def test_not_found_subscription(self, mock_request):
@@ -293,13 +293,13 @@ class TestMnsService(unittest.TestCase):
         self.assertIn("Unhandled error: 418", str(context.exception))
         self.assertEqual(context.exception.response, {"resource": 1234})
 
-    @patch("common.api_clients.mns_service.requests.request")
-    def test_publish_notification_success(self, mock_request):
+    @patch("common.api_clients.mns_service.request_with_retry_backoff")
+    def test_publish_notification_success(self, mock_request_with_retry_backoff):
         """Test successful notification publishing."""
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = {"status": "published"}
-        mock_request.return_value = mock_response
+        mock_request_with_retry_backoff.return_value = mock_response
 
         notification_payload = {
             "specversion": "1.0",
@@ -313,27 +313,27 @@ class TestMnsService(unittest.TestCase):
 
         self.assertEqual(result["status"], "published")
 
-        # Verify the request was made correctly
-        mock_request.assert_called_once()
-        call_args = mock_request.call_args
+        # Verify the request was made correctly through retry helper
+        mock_request_with_retry_backoff.assert_called_once()
+        call_args = mock_request_with_retry_backoff.call_args
 
         headers = call_args[1]["headers"]
         self.assertEqual(headers["Content-Type"], "application/cloudevents+json")
-        mock_request.assert_called_once()
 
-    @patch("common.api_clients.mns_service.requests.request")
+    @patch("common.api_clients.mns_service.request_with_retry_backoff")
     @patch("common.api_clients.mns_service.raise_error_response")
-    def test_publish_notification_failure(self, mock_raise_error, mock_request):
+    def test_publish_notification_failure(self, mock_raise_error, mock_request_with_retry_backoff):
         """Test notification publishing failure."""
         mock_response = Mock()
         mock_response.status_code = 400
-        mock_request.return_value = mock_response
+        mock_request_with_retry_backoff.return_value = mock_response
 
         notification_payload = {"id": "test-id"}
 
         service = MnsService(self.authenticator)
         service.publish_notification(notification_payload)
 
+        mock_request_with_retry_backoff.assert_called_once()
         mock_raise_error.assert_called_once_with(mock_response)
 
 

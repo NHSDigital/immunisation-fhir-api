@@ -25,7 +25,6 @@ MNS_BASE_URL = (
 class MnsService:
     def __init__(self, authenticator: AppRestrictedAuth):
         self.authenticator = authenticator
-        self.access_token = self.authenticator.get_access_token()
         logging.info(f"Using SQS ARN for subscription: {SQS_ARN}")
 
     def _build_subscription_payload(self, event_type: str, reason: str | None = None, status: str = "requested") -> dict:
@@ -54,9 +53,10 @@ class MnsService:
 
     def _build_headers(self, content_type: str = "application/fhir+json") -> dict:
         """Build request headers with authentication and correlation ID."""
+        access_token = self.authenticator.get_access_token()
         return {
             "Content-Type": content_type,
-            "Authorization": f"Bearer {self.access_token}",
+            "Authorization": f"Bearer {access_token}",
             "X-Correlation-ID": str(uuid.uuid4()),
         }
 
@@ -138,7 +138,7 @@ class MnsService:
             return f"Error deleting subscription: {str(e)}"
 
     def publish_notification(self, notification_payload: MnsNotificationPayload) -> dict | None:
-        response = requests.request(
+        response = request_with_retry_backoff(
             "POST",
             f"{MNS_BASE_URL}/events",
             headers=self._build_headers(content_type="application/cloudevents+json"),
