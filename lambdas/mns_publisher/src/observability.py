@@ -11,7 +11,7 @@ import os
 
 from aws_lambda_powertools import Logger
 
-_SERVICE_NAME = "mns-notification-processor"
+_SERVICE_NAME = "mns-immunisation-publisher."
 
 logger: Logger = Logger(
     service=_SERVICE_NAME,

@@ -3,7 +3,7 @@ import json
 import unittest
 from unittest.mock import MagicMock, patch
 
-from constants import IMMUNISATION_TYPE, SPEC_VERSION
+from constants import IMMUNISATION_EVENT_SOURCE, IMMUNISATION_EVENT_TYPE, SPEC_VERSION
 from create_notification import (
     _unwrap_dynamodb_value,
     calculate_age_at_vaccination,
@@ -81,8 +81,8 @@ class TestCreateMnsNotification(unittest.TestCase):
         result = create_mns_notification(self.sample_sqs_event)
 
         self.assertEqual(result["specversion"], SPEC_VERSION)
-        self.assertEqual(result["type"], IMMUNISATION_TYPE)
-        self.assertEqual(result["source"], self.expected_immunisation_url)
+        self.assertEqual(result["type"], IMMUNISATION_EVENT_TYPE)
+        self.assertEqual(result["source"], IMMUNISATION_EVENT_SOURCE)
         self.assertEqual(result["subject"], "9481152782")
 
         expected_dataref = f"{self.expected_immunisation_url}/Immunization/d058014c-b0fd-4471-8db9-3316175eb825"
