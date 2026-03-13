@@ -28,12 +28,17 @@ jobs:
       - name: Detect recordprocessor changes in PR
         id: detect
         run: |
-          git fetch origin "${{ github.event.pull_request.base.ref }}"
+          current_sha="${{ github.event.pull_request.head.sha }}"
+          previous_sha="${{ github.event.before }}"
 
-          if git diff --name-only "origin/${{ github.event.pull_request.base.ref }}" "${{ github.sha }}" | grep -q '^lambdas/recordprocessor/'; then
-            echo "has_changes=true" >> "$GITHUB_OUTPUT"
-          else
+          if [ -z "$previous_sha" ] || [ "$previous_sha" = "0000000000000000000000000000000000000000" ]; then
+            previous_sha="$(git rev-parse "${current_sha}^")"
+          fi
+
+          if git diff --quiet "$previous_sha" "$current_sha" -- lambdas/recordprocessor/; then
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
           fi
 
   deploy-pr-backend:
