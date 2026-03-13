@@ -1,10 +1,9 @@
 module "mns_publisher" {
   source = "./modules/mns_publisher"
-  count  = var.mns_publisher_feature_enabled ? 1 : 0
 
   ddb_delta_stream_arn               = aws_dynamodb_table.delta-dynamodb-table.stream_arn
   dynamo_kms_encryption_key_arn      = data.aws_kms_key.existing_dynamo_encryption_key.arn
-  enable_lambda_alarm                = var.error_alarm_notifications_enabled # consider just INT and PROD
+  enable_lambda_alarm                = var.error_alarm_notifications_enabled
   immunisation_account_id            = var.immunisation_account_id
   is_temp                            = local.is_temp
   enable_mns_test_queue              = var.mns_environment == "dev"
