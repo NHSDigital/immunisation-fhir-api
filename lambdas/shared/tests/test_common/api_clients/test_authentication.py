@@ -115,7 +115,6 @@ class TestAuthenticator(unittest.TestCase):
             "private_key": self.private_key,
         }
         self.authenticator.cached_service_secrets = cached_secrets
-        self.authenticator.cached_service_secrets_expiry_time = int(time.time()) + 99999
 
         # When
         act_secrets = self.authenticator.get_service_secrets()

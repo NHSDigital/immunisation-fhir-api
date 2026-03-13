@@ -18,8 +18,6 @@ from common.api_clients.constants import (
 from common.clients import logger
 from common.models.errors import UnhandledResponseError
 
-SERVICE_SECRETS_CACHE_TTL_SECONDS = 10 * 60
-
 
 class AppRestrictedAuth:
     def __init__(self, secret_manager_client: Any, environment: str, secret_name: str | None = None):
@@ -28,7 +26,6 @@ class AppRestrictedAuth:
         self.cached_access_token: str | None = None
         self.cached_access_token_expiry_time: int | None = None
         self.cached_service_secrets: dict[str, Any] | None = None
-        self.cached_service_secrets_expiry_time: int | None = None
 
         self.secret_name = f"imms/outbound/{environment}/jwt-secrets" if secret_name is None else secret_name
         self.token_url = (
@@ -38,9 +35,7 @@ class AppRestrictedAuth:
         )
 
     def get_service_secrets(self) -> dict[str, Any]:
-        now = int(time.time())
-
-        if self.cached_service_secrets and self.cached_service_secrets_expiry_time > now:
+        if self.cached_service_secrets is not None:
             return self.cached_service_secrets
 
         response = self.secret_manager_client.get_secret_value(SecretId=self.secret_name)
@@ -48,7 +43,6 @@ class AppRestrictedAuth:
         secret_object["private_key"] = base64.b64decode(secret_object["private_key_b64"]).decode()
 
         self.cached_service_secrets = secret_object
-        self.cached_service_secrets_expiry_time = now + SERVICE_SECRETS_CACHE_TTL_SECONDS
         return secret_object
 
     def create_jwt(self, now: int) -> str:
