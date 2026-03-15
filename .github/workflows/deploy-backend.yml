@@ -85,8 +85,11 @@ jobs:
 
       - name: Detect recordprocessor changes in commit range
         id: detect
+        env:
+          RECORDPROCESSOR_DIFF_BASE_SHA: ${{ inputs.recordprocessor_diff_base_sha }}
+          RECORDPROCESSOR_DIFF_HEAD_SHA: ${{ inputs.recordprocessor_diff_head_sha }}
         run: |
-          if git diff --quiet "${{ inputs.recordprocessor_diff_base_sha }}" "${{ inputs.recordprocessor_diff_head_sha }}" -- lambdas/recordprocessor/ lambdas/shared/src/common/; then
+          if git diff --quiet "${RECORDPROCESSOR_DIFF_BASE_SHA}" "${RECORDPROCESSOR_DIFF_HEAD_SHA}" -- lambdas/recordprocessor/ lambdas/shared/src/common/; then
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
           else
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
