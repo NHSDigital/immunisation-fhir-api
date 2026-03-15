@@ -10,6 +10,18 @@ on:
         required: false
         type: boolean
         default: false
+      recordprocessor_diff_base_sha:
+        required: false
+        type: string
+        default: ""
+      recordprocessor_diff_head_sha:
+        required: false
+        type: string
+        default: ""
+      run_recordprocessor_diff_check:
+        required: false
+        type: boolean
+        default: false
       create_mns_subscription:
         required: false
         type: boolean
@@ -60,8 +72,29 @@ env: # Sonarcloud - do not allow direct usage of untrusted data
 run-name: Deploy Backend - ${{ inputs.environment }} ${{ inputs.sub_environment }}
 
 jobs:
+  detect-recordprocessor-changes:
+    if: ${{ inputs.run_recordprocessor_diff_check && inputs.recordprocessor_diff_base_sha != '' && inputs.recordprocessor_diff_head_sha != '' }}
+    runs-on: ubuntu-latest
+    outputs:
+      has_changes: ${{ steps.detect.outputs.has_changes }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
+        with:
+          fetch-depth: 0
+
+      - name: Detect recordprocessor changes in commit range
+        id: detect
+        run: |
+          if git diff --quiet "${{ inputs.recordprocessor_diff_base_sha }}" "${{ inputs.recordprocessor_diff_head_sha }}" -- lambdas/recordprocessor/ lambdas/shared/src/common/; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          fi
+
   build-and-push-recordprocessor:
-    if: ${{ inputs.build_recordprocessor_image }}
+    needs: detect-recordprocessor-changes
+    if: ${{ always() && (inputs.build_recordprocessor_image || needs.detect-recordprocessor-changes.outputs.has_changes == 'true') }}
     permissions:
       id-token: write
       contents: read
@@ -104,7 +137,8 @@ jobs:
           echo "recordprocessor_image_tag=${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
 
   resolve-recordprocessor-image-tag:
-    if: ${{ !inputs.build_recordprocessor_image }}
+    needs: detect-recordprocessor-changes
+    if: ${{ always() && !inputs.build_recordprocessor_image && needs.detect-recordprocessor-changes.outputs.has_changes != 'true' }}
     permissions:
       id-token: write
       contents: read
