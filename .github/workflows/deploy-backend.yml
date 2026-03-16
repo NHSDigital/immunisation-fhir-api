@@ -56,10 +56,15 @@ on:
           - preprod
           - prod
       build_recordprocessor_image:
-        description: Build and push a new recordprocessor image for this deployment (Required)
+        description: Build and push a new recordprocessor image for this deployment
         required: true
         type: boolean
         default: true
+      recordprocessor_image_tag:
+        description: Existing recordprocessor image tag to deploy when build_recordprocessor_image is false
+        required: false
+        type: string
+        default: ""
       sub_environment:
         type: string
         description: Set the sub environment name e.g. pr-xxx, or green/blue in higher environments
@@ -155,18 +160,30 @@ jobs:
       AWS_REGION: eu-west-2
     steps:
       - name: Connect to AWS
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.recordprocessor_image_tag == '' }}
         uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7
         with:
           aws-region: eu-west-2
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
           role-session-name: github-actions
 
-      - name: Resolve latest matching recordprocessor image tag
+      - name: Resolve or use recordprocessor image tag
         id: resolve-image-tag
         env:
           REPOSITORY_NAME: imms-recordprocessor-repo
           TAG_PREFIX: ${{ inputs.sub_environment }}-
+          PROVIDED_IMAGE_TAG: ${{ github.event.inputs.recordprocessor_image_tag }}
         run: |
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            if [ -n "${PROVIDED_IMAGE_TAG}" ]; then
+              echo "Using provided recordprocessor image tag: ${PROVIDED_IMAGE_TAG}"
+              echo "recordprocessor_image_tag=${PROVIDED_IMAGE_TAG}" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "When build_recordprocessor_image is false, recordprocessor_image_tag must be provided."
+            exit 1
+          fi
+
           IMAGE_TAG=$(
             aws ecr describe-images \
               --repository-name "${REPOSITORY_NAME}" \
