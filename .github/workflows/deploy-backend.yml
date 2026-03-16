@@ -56,10 +56,10 @@ on:
           - preprod
           - prod
       build_recordprocessor_image:
-        description: Build and push a new recordprocessor image for this deployment
-        required: false
+        description: Build and push a new recordprocessor image for this deployment (Required)
+        required: true
         type: boolean
-        default: false
+        default: true
       sub_environment:
         type: string
         description: Set the sub environment name e.g. pr-xxx, or green/blue in higher environments
