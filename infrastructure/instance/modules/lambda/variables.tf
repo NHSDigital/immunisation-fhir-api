@@ -15,7 +15,19 @@ variable "error_alarm_notifications_enabled" {
   type        = string
 }
 
-variable "image_uri" {
+variable "lambda_source_dir" {
+  type = string
+}
+
+variable "shared_source_dir" {
+  type = string
+}
+
+variable "source_hash" {
+  type = string
+}
+
+variable "artifact_s3_bucket" {
   type = string
 }
 

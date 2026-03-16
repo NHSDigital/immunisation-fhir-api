@@ -1,4 +1,4 @@
-module "lambda_function_container_image" {
+module "lambda_function_zip" {
   source  = "terraform-aws-modules/lambda/aws"
   version = "8.0.1"
 
@@ -6,12 +6,35 @@ module "lambda_function_container_image" {
   lambda_role                       = aws_iam_role.lambda_role.arn
   function_name                     = "${var.short_prefix}_${var.function_name}"
   handler                           = "${var.function_name}_handler.${var.function_name}_handler"
+  runtime                           = "python3.11"
   cloudwatch_logs_retention_in_days = 30
-  create_package                    = false
-  image_uri                         = var.image_uri
-  package_type                      = "Image"
+  package_type                      = "Zip"
   architectures                     = ["x86_64"]
   timeout                           = 6
+  store_on_s3                       = true
+  s3_bucket                         = var.artifact_s3_bucket
+  s3_prefix                         = "lambda-artifacts/${var.short_prefix}_${var.function_name}"
+  build_in_docker                   = true
+  hash_extra                        = var.source_hash
+  trigger_on_package_timestamp      = false
+
+  source_path = [
+    {
+      path = "${var.lambda_source_dir}/src"
+    },
+    {
+      path          = var.shared_source_dir
+      prefix_in_zip = "common"
+    },
+    {
+      path           = var.lambda_source_dir
+      poetry_install = true
+      patterns = [
+        "pyproject.toml",
+        "poetry.lock"
+      ]
+    }
+  ]
 
   vpc_subnet_ids         = var.vpc_subnet_ids
   vpc_security_group_ids = var.vpc_security_group_ids
@@ -21,7 +44,6 @@ module "lambda_function_container_image" {
   memory_size = 1024
 
   environment_variables = var.environment_variables
-  image_config_command  = ["${var.function_name}_handler.${var.function_name}_handler"]
 }
 
 resource "aws_cloudwatch_metric_alarm" "memory_alarm" {
@@ -42,7 +64,7 @@ resource "aws_cloudwatch_log_metric_filter" "max_memory_used_metric" {
   name    = "${var.short_prefix}_${var.function_name} max memory used"
   pattern = "[type=REPORT, ...]"
 
-  log_group_name = module.lambda_function_container_image.lambda_cloudwatch_log_group_name
+  log_group_name = module.lambda_function_zip.lambda_cloudwatch_log_group_name
 
   metric_transformation {
     name      = "max-memory-used"
@@ -56,7 +78,7 @@ resource "aws_cloudwatch_log_metric_filter" "fhir_api_error_logs" {
 
   name           = "${var.short_prefix}_${var.function_name}-ErrorLogsFilter"
   pattern        = "{ $.operation_outcome.status = \"500\" || $.operation_outcome.status = \"403\" }"
-  log_group_name = module.lambda_function_container_image.lambda_cloudwatch_log_group_name
+  log_group_name = module.lambda_function_zip.lambda_cloudwatch_log_group_name
 
   metric_transformation {
     name      = "${var.short_prefix}_${var.function_name}-ApiErrorLogs"
