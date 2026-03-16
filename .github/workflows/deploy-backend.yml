@@ -61,7 +61,7 @@ on:
         type: boolean
         default: true
       recordprocessor_image_tag:
-        description: Existing recordprocessor image tag to deploy when build_recordprocessor_image is false
+        description: Existing recordprocessor image tag to deploy. Required when build_recordprocessor_image is false
         required: false
         type: string
         default: ""
