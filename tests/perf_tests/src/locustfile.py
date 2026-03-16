@@ -5,6 +5,7 @@ import uuid
 from pathlib import Path
 from urllib.parse import urlencode
 
+import pandas as pd
 from locust import HttpUser, constant_throughput, task
 
 from common.api_clients.authentication import AppRestrictedAuth
@@ -14,15 +15,13 @@ from objectModels.api_immunization_builder import create_immunization_object
 from objectModels.patient_loader import load_patient_by_id
 
 CONTENT_TYPE_FHIR_JSON = "application/fhir+json"
-SNOMED_SYSTEM = "http://snomed.info/sct"
 
 APIGEE_ENVIRONMENT = os.getenv("APIGEE_ENVIRONMENT")
 if not APIGEE_ENVIRONMENT:
     raise ValueError("APIGEE_ENVIRONMENT must be set")
 
 PERF_SUPPLIER_SYSTEM = os.getenv("PERF_SUPPLIER_SYSTEM", "EMIS").upper()
-PERF_CREATE_RPS_PER_USER = float(os.getenv("PERF_CREATE_RPS_PER_USER", "1"))
-PERF_CREATE_VACCINE_TYPE = os.getenv("PERF_CREATE_VACCINE_TYPE", "COVID").upper()
+PERF_CREATE_TASK_RPS_PER_USER = float(os.getenv("PERF_CREATE_RPS_PER_USER", "1"))
 
 IMMUNIZATION_TARGETS = [
     "3IN1",
@@ -52,8 +51,21 @@ NHS_NUMBERS = [
 ]
 
 NHS_SYSTEM = "https://fhir.nhs.uk/Id/nhs-number"
+CREATE_SUCCESS_STATUSES = {200, 201, 202}
+DELETE_SUCCESS_STATUSES = {200, 202, 204}
 
 patient_loader.csv_path = str(Path(__file__).resolve().parents[2] / "e2e_automation" / "input" / "testData.csv")
+
+
+def _load_valid_patients():
+    patient_df = pd.read_csv(patient_loader.csv_path, dtype=str)
+    valid_patients = patient_df[patient_df["id"] == "Valid_NHS"]["id"].tolist()
+    if not valid_patients:
+        raise ValueError(f"No valid patients found in {patient_loader.csv_path}")
+    return valid_patients
+
+
+VALID_PATIENT_IDS = _load_valid_patients()
 
 
 class BaseImmunizationUser(HttpUser):
@@ -78,7 +90,7 @@ class BaseImmunizationUser(HttpUser):
 
     def _build_create_payload(self):
         immunization_target = random.choice(IMMUNIZATION_TARGETS)
-        patient = load_patient_by_id("Random")
+        patient = load_patient_by_id(random.choice(VALID_PATIENT_IDS))
         immunization = create_immunization_object(patient, immunization_target)
         return json.loads(immunization.json(exclude_none=True))
 
@@ -90,7 +102,7 @@ class BaseImmunizationUser(HttpUser):
             name="Delete Immunization Cleanup",
             catch_response=True,
         ) as response:
-            if response.status_code in (200, 202, 204):
+            if response.status_code in DELETE_SUCCESS_STATUSES:
                 response.success()
             else:
                 response.failure(f"Cleanup delete failed for {immunization_id}: {response.status_code} {response.text}")
@@ -132,7 +144,7 @@ class SearchUser(BaseImmunizationUser):
 
 
 class CreateUser(BaseImmunizationUser):
-    wait_time = constant_throughput(PERF_CREATE_RPS_PER_USER)
+    wait_time = constant_throughput(PERF_CREATE_TASK_RPS_PER_USER)
 
     @task
     def create_immunization(self):
@@ -146,9 +158,19 @@ class CreateUser(BaseImmunizationUser):
             name="Create Immunization",
             catch_response=True,
         ) as response:
+            if response.status_code not in CREATE_SUCCESS_STATUSES:
+                response.failure(f"Create failed: {response.status_code} {response.text}")
+                return
+
             location = response.headers.get("Location") or response.headers.get("location")
-            response.success()
+            if not location:
+                response.failure("Create succeeded without a Location header; cleanup skipped")
+                return
 
             created_id = location.rstrip("/").split("/")[-1]
-            if created_id:
-                self._delete_created_immunization(created_id)
+            if not created_id:
+                response.failure(f"Create returned an invalid Location header: {location}")
+                return
+
+            response.success()
+            self._delete_created_immunization(created_id)
