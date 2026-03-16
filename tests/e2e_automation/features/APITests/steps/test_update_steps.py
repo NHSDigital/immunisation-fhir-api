@@ -15,6 +15,7 @@ from utilities.date_helper import generate_date
 from utilities.enums import ActionFlag, Operation
 
 from .common_steps import (
+    mns_event_will_be_triggered_with_correct_data,
     send_update_for_immunization_event,
     trigger_the_updated_request,
     valid_json_payload_is_created,
@@ -112,3 +113,8 @@ def validateForbiddenAccess(context, errorName):
     error_response = parse_error_response(context.response.json())
     validate_error_response(error_response, errorName, version=context.version)
     print(f"\n Error Response - \n {error_response}")
+
+
+@then("MNS event will be triggered with correct data for Updated event")
+def validate_mns_event_triggered_for_updated_event(context):
+    mns_event_will_be_triggered_with_correct_data(context=context, action="Update")

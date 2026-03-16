@@ -47,3 +47,4 @@ class ScenarioContext:
         self.fileContentJson = None
         self.forwarded_prefix = None
         self.delta_cache = None
+        self.aws_account_id = None

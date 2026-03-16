@@ -24,10 +24,6 @@ from .common_steps import normalize_param
 
 scenarios("APITests/search.feature")
 
-TARGET_DISEASE_SYSTEM = "http://snomed.info/sct"
-INVALID_TARGET_DISEASE_CODE = "99999"
-PATIENT_IDENTIFIER_SYSTEM = "https://fhir.nhs.uk/Id/nhs-number"
-
 
 @when("I send a search request with Post method using identifier parameter for Immunization event created")
 def send_search_post_request_with_identifier_header(context):
@@ -146,10 +142,9 @@ def send_search_post_with_target_disease_and_dates(context):
 
 @when("Send a search request with GET method using target-disease for Immunization event created with valid NHS Number")
 def send_search_get_with_target_disease_unauthorised_supplier(context):
-    nhs_number = "9000000009"
     context.params = {
-        "patient.identifier": f"{PATIENT_IDENTIFIER_SYSTEM}|{nhs_number}",
-        "target-disease": f"{TARGET_DISEASE_SYSTEM}|14189004",
+        "patient.identifier": "https://fhir.nhs.uk/Id/nhs-number|9000000009",
+        "target-disease": "http://snomed.info/sct|14189004",
     }
     trigger_search_request_by_httpMethod(context, httpMethod="GET")
 
@@ -161,7 +156,7 @@ def send_search_get_with_target_disease_unauthorised_supplier(context):
 )
 def send_search_request_with_all_invalid_target_disease_codes(context, httpMethod):
     context.params = context.request = {
-        "patient.identifier": f"{PATIENT_IDENTIFIER_SYSTEM}|9000000009",
+        "patient.identifier": "https://fhir.nhs.uk/Id/nhs-number|9000000009",
         "target-disease": "invalid-no-pipe,wrong_system|123",
     }
     trigger_search_request_by_httpMethod(context, httpMethod=httpMethod)
@@ -177,7 +172,7 @@ def send_search_post_with_mixed_valid_and_invalid_target_disease_codes(context, 
     target = context.create_object.protocolApplied[0].targetDisease[0].coding[0]
     context.params = context.request = {
         "patient.identifier": f"{patient_ident.system}|{patient_ident.value}",
-        "target-disease": f"{target.system}|{target.code},{TARGET_DISEASE_SYSTEM}|{INVALID_TARGET_DISEASE_CODE}",
+        "target-disease": f"{target.system}|{target.code},{target.system}|999999",
     }
     trigger_search_request_by_httpMethod(context, httpMethod=httpMethod)
 
@@ -506,8 +501,8 @@ def validate_search_response_with_invalid_target_disease_operation_outcome(conte
     assert "not a supported target disease in this service" in diagnostics, (
         f"issue diagnostics should mention unsupported target disease, got '{diagnostics}'"
     )
-    assert INVALID_TARGET_DISEASE_CODE in diagnostics, (
-        f"issue diagnostics should contain invalid target disease code '{INVALID_TARGET_DISEASE_CODE}', got '{diagnostics}'"
+    assert "999999" in diagnostics, (
+        "issue diagnostics should contain invalid target disease code '999999', got '{diagnostics}'"
     )
 
 

@@ -1,5 +1,7 @@
+import datetime
 import json
 import random
+import uuid
 from urllib.parse import parse_qs
 from venv import logger
 
@@ -16,7 +18,10 @@ from src.objectModels.api_immunization_builder import (
     create_immunization_object,
     get_vaccine_details,
 )
-from src.objectModels.patient_loader import load_patient_by_id
+from src.objectModels.patient_loader import (
+    get_gp_code_by_nhs_number,
+    load_patient_by_id,
+)
 from utilities.api_fhir_immunization_helper import (
     get_response_body_for_display,
     is_valid_disease_type,
@@ -34,6 +39,7 @@ from utilities.api_get_header import (
 from utilities.date_helper import is_valid_date
 from utilities.enums import Operation
 from utilities.http_requests_session import http_requests_session
+from utilities.sqs_message_reader import delete_message, read_message
 from utilities.vaccination_constants import ROUTE_MAP, SITE_MAP
 
 
@@ -47,6 +53,14 @@ def valid_token_is_generated(context, Supplier):
 def valid_json_payload_is_created(context):
     context.patient = load_patient_by_id(context.patient_id)
     context.immunization_object = create_immunization_object(context.patient, context.vaccine_type)
+
+
+@given("Valid json payload is created where patient age is less then an year")
+def valid_json_payload_is_created_patient_age_is_less_then_a_year(context):
+    valid_json_payload_is_created(context)
+    today = datetime.utcnow().date()
+    dob = today - datetime.timedelta(days=364)
+    context.immunization_object.contained[1].birthDate = dob.strftime("%Y-%m-%d")
 
 
 @given(parsers.parse("Valid json payload is created with Patient '{Patient}' and vaccine_type '{vaccine_type}'"))
@@ -107,12 +121,14 @@ def validVaccinationRecordIsCreated(context):
     Trigger_the_post_create_request(context)
     The_request_will_have_status_code(context, 201)
     validateCreateLocation(context)
+    mns_event_will_be_triggered_with_correct_data(context=context, action="CREATE")
 
 
 @given(parsers.parse("valid vaccination record is created by '{Supplier}' supplier"))
 def valid_vaccination_record_is_created_by_supplier(context, Supplier):
     valid_token_is_generated(context, Supplier)
     validVaccinationRecordIsCreated(context)
+    mns_event_will_be_triggered_with_correct_data(context=context, action="CREATE")
 
 
 @when("Trigger the post create request")
@@ -339,6 +355,19 @@ def send_delete_for_immunization_event_created(context):
     context.response = http_requests_session.delete(f"{context.url}/{context.ImmsID}", headers=context.headers)
 
 
+@then("MNS event will be triggered with correct data for created event")
+def mns_event_will_be_triggered_with_correct_data_for_created_event(context):
+    mns_event_will_be_triggered_with_correct_data(context=context, action="CREATE")
+
+
+@then("MNS event will not be triggered for the event")
+def mns_event_will_not_be_triggered_for_the_event(context):
+    message_body, receipt_handle = read_message(context, queue_type="notification", wait_for_message=False)
+    print(f"Read message from SQS: {message_body}")
+    assert message_body is None, "Not expected a message but queue returned a message"
+    assert receipt_handle is None, "Receipt handle should not be present as no message expected"
+
+
 def trigger_the_updated_request(context):
     context.expected_version = int(context.expected_version) + 1
     context.create_object = context.update_object
@@ -353,3 +382,105 @@ def trigger_the_updated_request(context):
 
 def normalize_param(value: str) -> str:
     return "" if value.lower() in {"none", "null", ""} else value
+
+
+def calculate_age(birth_date_str: str, occurrence_datetime_str: str) -> int:
+    birth = datetime.datetime.strptime(birth_date_str, "%Y-%m-%d").date()
+    occurrence = datetime.datetime.fromisoformat(occurrence_datetime_str).date()
+    age = occurrence.year - birth.year
+    if (occurrence.month, occurrence.day) < (birth.month, birth.day):
+        age -= 1
+
+    if age < 0:
+        age = 0
+
+    return age
+
+
+def is_valid_uuid(value: str) -> bool:
+    try:
+        uuid.UUID(value)
+        return True
+    except ValueError:
+        return False
+
+
+def normalize(value: str) -> str:
+    return value.strip().upper() if value else ""
+
+
+def validate_sqs_message(context, message_body, action):
+    check.is_true(message_body.specversion == "1.0")
+    check.is_true(message_body.source == "uk.nhs.vaccinations-data-flow-management")
+    check.is_true(message_body.type == "imms-vaccination-record-change-1")
+
+    check.is_true(is_valid_uuid(message_body.id), f"Invalid UUID: {message_body.id}")
+
+    check.is_true(
+        message_body.time is not None and len(message_body.time) > 0,
+        f"Time missing or empty: {message_body.time}",
+    )
+
+    check.is_true(
+        normalize(message_body.subject) == normalize(context.create_object.contained[1].identifier[0].value),
+        f"Subject mismatch: expected {context.create_object.contained[1].identifier[0].value}, got {message_body.subject}",
+    )
+
+    check.is_true(
+        message_body.dataref == f"{context.url}/{context.ImmsID}",
+        f"DataRef mismatch: expected {context.url}/{context.ImmsID}, got {message_body.dataref}",
+    )
+
+    check.is_true(
+        normalize(message_body.filtering.generalpractitioner) == normalize(context.gp_code),
+        f"GP code mismatch: expected {context.gp_code}, got {message_body.filtering.generalpractitioner}",
+    )
+
+    expected_org = context.create_object.performer[1].actor.identifier.value
+    check.is_true(
+        normalize(message_body.filtering.sourceorganisation) == normalize(expected_org),
+        f"Source org mismatch: expected {expected_org}, got {message_body.filtering.sourceorganisation}",
+    )
+
+    check.is_true(
+        message_body.filtering.sourceapplication.upper() == context.supplier_name.upper(),
+        f"Source application mismatch: expected {context.supplier_name}, got {message_body.filtering.sourceapplication}",
+    )
+
+    check.is_true(
+        message_body.filtering.subjectage == context.patient_age,
+        f"Age mismatch: expected {context.patient_age}, got {message_body.filtering.subjectage}",
+    )
+
+    check.is_true(
+        message_body.filtering.immunisationtype == context.vaccine_type.upper(),
+        f"Immunisation type mismatch: expected {context.vaccine_type.upper()}, got {message_body.filtering.immunisationtype}",
+    )
+
+    check.is_true(
+        message_body.filtering.action == action,
+        f"Action mismatch: expected CREATE, got {message_body.filtering.action}",
+    )
+
+
+def mns_event_will_be_triggered_with_correct_data_for_deleted_event(context):
+    message_body, receipt_handle = read_message(context, queue_type="notification")
+    print(f"Read message from SQS: {message_body}")
+    assert message_body is not None, "Expected a message but queue returned empty"
+    assert receipt_handle is not None, "Receipt handle missing"
+    validate_sqs_message(context, message_body, "DELETE")
+    delete_message(context, receipt_handle, queue_type="notification")
+
+
+def mns_event_will_be_triggered_with_correct_data(context, action):
+    message_body, receipt_handle = read_message(context, queue_type="notification")
+    print(f"Read message from SQS: {message_body}")
+    assert message_body is not None, "Expected a message but queue returned empty"
+    assert receipt_handle is not None, "Receipt handle missing"
+    context.gp_code = get_gp_code_by_nhs_number(context.patient.identifier[0].value)
+    context.patient_age = calculate_age(context.patient.birthDate, context.immunization_object.occurrenceDateTime)
+    validate_sqs_message(context, message_body, action)
+    delete_message(context, receipt_handle, queue_type="notification")
+    message_body, receipt_handle = read_message(context, queue_type="dead_letter", wait_for_message=False)
+    print(f"Read message from SQS: {message_body}")
+    assert message_body is None, f"Expected no messages in dead letter queue, but got: {message_body}"
