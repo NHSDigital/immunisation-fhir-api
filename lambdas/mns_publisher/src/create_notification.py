@@ -1,7 +1,7 @@
 import json
 import os
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 
 from aws_lambda_typing.events.sqs import SQSMessage
@@ -59,22 +59,36 @@ def create_mns_notification(sqs_event: SQSMessage) -> MnsNotificationPayload:
     }
 
 
+def _parse_compact_date(value: str, field_name: str) -> date:
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"{field_name} is required")
+
+    date_part = value[:8]
+    if len(date_part) != 8 or not date_part.isdigit():
+        raise ValueError(f"{field_name} must start with YYYYMMDD")
+
+    try:
+        return datetime.strptime(date_part, "%Y%m%d").date()
+    except ValueError as e:
+        raise ValueError(f"{field_name} must contain a valid date in YYYYMMDD format") from e
+
+
 def calculate_age_at_vaccination(birth_date: str, vaccination_date: str) -> int:
     """
     Calculate patient age in years at time of vaccination.
     Expects dates in format: YYYYMMDD or YYYYMMDDThhmmsszz
     """
-    birth_date_str = birth_date[:8] if len(birth_date) >= 8 else birth_date
-    vacc_date_str = vaccination_date[:8] if len(vaccination_date) >= 8 else vaccination_date
+    date_of_birth = _parse_compact_date(birth_date, "PERSON_DOB")
+    date_of_vaccination = _parse_compact_date(vaccination_date, "DATE_AND_TIME")
 
-    date_of_birth = datetime.strptime(birth_date_str, "%Y%m%d")
-    date_of_vaccination = datetime.strptime(vacc_date_str, "%Y%m%d")
+    if date_of_vaccination < date_of_birth:
+        raise ValueError("DATE_AND_TIME cannot be before PERSON_DOB")
 
-    age_in_year = date_of_vaccination.year - date_of_birth.year
+    age = date_of_vaccination.year - date_of_birth.year
     if (date_of_vaccination.month, date_of_vaccination.day) < (date_of_birth.month, date_of_birth.day):
-        age_in_year -= 1
+        age -= 1
 
-    return age_in_year
+    return age
 
 
 def get_practitioner_details_from_pds(nhs_number: str) -> str | None:

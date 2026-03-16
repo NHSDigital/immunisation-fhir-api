@@ -16,47 +16,41 @@ from test_utils import load_sample_sqs_event
 class TestCalculateAgeAtVaccination(unittest.TestCase):
     """Tests for age calculation at vaccination time."""
 
-    def test_age_calculation_yyyymmdd_format(self):
-        birth_date = "20040609"
-        vaccination_date = "20260212"
-        age = calculate_age_at_vaccination(birth_date, vaccination_date)
-        self.assertEqual(age, 21)
+    def test_age_calculation_core_cases(self):
+        cases = [
+            ("20040609", "20260212", 21),  # YYYYMMDD format
+            ("20040609", "20260609", 22),  # On birthday
+            ("20040609", "20260815", 22),  # After birthday
+            ("20260609", "20260915", 0),  # Infant
+            ("20040609T120000", "20260212T17443700", 21),  # With time
+            ("20000101", "20250101", 25),  # Same day different year
+            ("20000229", "20240228", 23),  # Leap year birthday
+            ("20000229", "20240229", 24),  # Leap year birthday on leap day
+            ("20000229", "20250228", 24),  # day before; birthday hasn't happened yet
+        ]
 
-    def test_age_calculation_with_time(self):
-        birth_date = "20040609T120000"
-        vaccination_date = "20260212T174437"
-        age = calculate_age_at_vaccination(birth_date, vaccination_date)
-        self.assertEqual(age, 21)
+        for birth_date, vaccination_date, expected_age in cases:
+            with self.subTest(birth_date=birth_date, vaccination_date=vaccination_date):
+                self.assertEqual(
+                    calculate_age_at_vaccination(birth_date, vaccination_date),
+                    expected_age,
+                )
 
-    def test_age_calculation_after_birthday(self):
-        birth_date = "20040609"
-        vaccination_date = "20260815"
-        age = calculate_age_at_vaccination(birth_date, vaccination_date)
-        self.assertEqual(age, 22)
+    def test_rejects_invalid_birth_date_format(self):
+        with self.assertRaisesRegex(ValueError, "PERSON_DOB"):
+            calculate_age_at_vaccination("2004-06-09", "20260212")
 
-    def test_age_calculation_on_birthday(self):
-        birth_date = "20040609"
-        vaccination_date = "20260609"
-        age = calculate_age_at_vaccination(birth_date, vaccination_date)
-        self.assertEqual(age, 22)
+    def test_rejects_invalid_vaccination_date_format(self):
+        with self.assertRaisesRegex(ValueError, "DATE_AND_TIME"):
+            calculate_age_at_vaccination("20040609", "2026-02-12")
 
-    def test_age_calculation_infant(self):
-        birth_date = "20260609"
-        vaccination_date = "20260915"
-        age = calculate_age_at_vaccination(birth_date, vaccination_date)
-        self.assertEqual(age, 0)
+    def test_rejects_nonexistent_birth_date(self):
+        with self.assertRaisesRegex(ValueError, "PERSON_DOB"):
+            calculate_age_at_vaccination("20040230", "20260212")
 
-    def test_age_calculation_leap_year_birthday(self):
-        birth_date = "20000229"
-        vaccination_date = "20240228"
-        age = calculate_age_at_vaccination(birth_date, vaccination_date)
-        self.assertEqual(age, 23)
-
-    def test_age_calculation_same_day_different_year(self):
-        birth_date = "20000101"
-        vaccination_date = "20250101"
-        age = calculate_age_at_vaccination(birth_date, vaccination_date)
-        self.assertEqual(age, 25)
+    def test_rejects_vaccination_before_birth(self):
+        with self.assertRaisesRegex(ValueError, "cannot be before"):
+            calculate_age_at_vaccination("20260212", "20250212")
 
 
 class TestCreateMnsNotification(unittest.TestCase):
