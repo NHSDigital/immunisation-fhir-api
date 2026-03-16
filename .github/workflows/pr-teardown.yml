@@ -75,3 +75,35 @@ jobs:
         working-directory: infrastructure/instance
         run: |
           make destroy apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
+
+      - name: Cleanup recordprocessor ECR images for PR
+        env:
+          AWS_REGION: eu-west-2
+          REPOSITORY_NAME: imms-recordprocessor-repo
+          IMAGE_TAG_PREFIX: ${{ env.BACKEND_SUB_ENVIRONMENT }}-
+        run: |
+          MATCHING_TAGS=$(
+            aws ecr list-images \
+              --repository-name "${REPOSITORY_NAME}" \
+              --region "${AWS_REGION}" \
+              --filter tagStatus=TAGGED \
+              --query "imageIds[?starts_with(imageTag, \`${IMAGE_TAG_PREFIX}\`)].imageTag" \
+              --output text
+          )
+
+          if [ -z "${MATCHING_TAGS}" ] || [ "${MATCHING_TAGS}" = "None" ]; then
+            echo "No recordprocessor images found for prefix '${IMAGE_TAG_PREFIX}'."
+            exit 0
+          fi
+
+          IMAGE_IDS_ARGS=""
+          for image_tag in ${MATCHING_TAGS}; do
+            echo "Queueing recordprocessor image tag '${image_tag}' for deletion..."
+            IMAGE_IDS_ARGS="${IMAGE_IDS_ARGS} imageTag=${image_tag}"
+          done
+
+          aws ecr batch-delete-image \
+            --repository-name "${REPOSITORY_NAME}" \
+            --region "${AWS_REGION}" \
+            --image-ids ${IMAGE_IDS_ARGS} \
+            --output json
