@@ -96,11 +96,14 @@ jobs:
             exit 0
           fi
 
+          IMAGE_IDS_ARGS=""
           for image_tag in ${MATCHING_TAGS}; do
-            echo "Deleting recordprocessor image tag '${image_tag}'..."
-            aws ecr batch-delete-image \
-              --repository-name "${REPOSITORY_NAME}" \
-              --region "${AWS_REGION}" \
-              --image-ids imageTag="${image_tag}" \
-              --output json
+            echo "Queueing recordprocessor image tag '${image_tag}' for deletion..."
+            IMAGE_IDS_ARGS="${IMAGE_IDS_ARGS} imageTag=${image_tag}"
           done
+
+          aws ecr batch-delete-image \
+            --repository-name "${REPOSITORY_NAME}" \
+            --region "${AWS_REGION}" \
+            --image-ids ${IMAGE_IDS_ARGS} \
+            --output json
