@@ -160,7 +160,6 @@ jobs:
       AWS_REGION: eu-west-2
     steps:
       - name: Connect to AWS
-        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.recordprocessor_image_tag == '' }}
         uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7
         with:
           aws-region: eu-west-2
