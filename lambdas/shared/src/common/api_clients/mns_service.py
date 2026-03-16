@@ -12,7 +12,7 @@ from common.api_clients.retry import request_with_retry_backoff
 
 SQS_ARN = os.getenv("SQS_ARN")
 
-apigee_env = os.getenv("APIGEE_ENVIRONMENT", "int")
+apigee_env = os.getenv("APIGEE_ENVIRONMENT")
 mns_env = os.getenv("MNS_ENV", "int")
 env = apigee_env or mns_env
 MNS_BASE_URL = (
