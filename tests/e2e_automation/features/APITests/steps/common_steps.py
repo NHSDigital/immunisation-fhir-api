@@ -39,7 +39,7 @@ from utilities.api_get_header import (
 from utilities.date_helper import is_valid_date
 from utilities.enums import Operation
 from utilities.http_requests_session import http_requests_session
-from utilities.sqs_message_reader import delete_message, read_message
+from utilities.sqs_message_halder import delete_message, read_message
 from utilities.vaccination_constants import ROUTE_MAP, SITE_MAP
 
 
@@ -418,48 +418,48 @@ def validate_sqs_message(context, message_body, action):
 
     check.is_true(
         message_body.time is not None and len(message_body.time) > 0,
-        f"Time missing or empty: {message_body.time}",
+        f"msn event for {action} Time missing or empty: {message_body.time}",
     )
 
     check.is_true(
         normalize(message_body.subject) == normalize(context.create_object.contained[1].identifier[0].value),
-        f"Subject mismatch: expected {context.create_object.contained[1].identifier[0].value}, got {message_body.subject}",
+        f"msn event for {action}Subject mismatch: expected {context.create_object.contained[1].identifier[0].value}, got {message_body.subject}",
     )
 
     check.is_true(
         message_body.dataref == f"{context.url}/{context.ImmsID}",
-        f"DataRef mismatch: expected {context.url}/{context.ImmsID}, got {message_body.dataref}",
+        f"msn event for {action} DataRef mismatch: expected {context.url}/{context.ImmsID}, got {message_body.dataref}",
     )
 
     check.is_true(
         normalize(message_body.filtering.generalpractitioner) == normalize(context.gp_code),
-        f"GP code mismatch: expected {context.gp_code}, got {message_body.filtering.generalpractitioner}",
+        f"msn event for {action} GP code mismatch: expected {context.gp_code}, got {message_body.filtering.generalpractitioner}",
     )
 
     expected_org = context.create_object.performer[1].actor.identifier.value
     check.is_true(
         normalize(message_body.filtering.sourceorganisation) == normalize(expected_org),
-        f"Source org mismatch: expected {expected_org}, got {message_body.filtering.sourceorganisation}",
+        f"msn event for {action} Source org mismatch: expected {expected_org}, got {message_body.filtering.sourceorganisation}",
     )
 
     check.is_true(
         message_body.filtering.sourceapplication.upper() == context.supplier_name.upper(),
-        f"Source application mismatch: expected {context.supplier_name}, got {message_body.filtering.sourceapplication}",
+        f"msn event for {action} Source application mismatch: expected {context.supplier_name}, got {message_body.filtering.sourceapplication}",
     )
 
     check.is_true(
         message_body.filtering.subjectage == context.patient_age,
-        f"Age mismatch: expected {context.patient_age}, got {message_body.filtering.subjectage}",
+        f"msn event for {action} Age mismatch: expected {context.patient_age}, got {message_body.filtering.subjectage}",
     )
 
     check.is_true(
         message_body.filtering.immunisationtype == context.vaccine_type.upper(),
-        f"Immunisation type mismatch: expected {context.vaccine_type.upper()}, got {message_body.filtering.immunisationtype}",
+        f"msn event for {action} Immunisation type mismatch: expected {context.vaccine_type.upper()}, got {message_body.filtering.immunisationtype}",
     )
 
     check.is_true(
         message_body.filtering.action == action,
-        f"Action mismatch: expected CREATE, got {message_body.filtering.action}",
+        f"msn event for {action} Action mismatch: expected CREATE, got {message_body.filtering.action}",
     )
 
 

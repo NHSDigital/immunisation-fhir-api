@@ -17,12 +17,14 @@ from utilities.aws_token import refresh_sso_token, set_aws_session_token
 from utilities.context import ScenarioContext
 from utilities.enums import SupplierNameWithODSCode
 from utilities.http_requests_session import http_requests_session
-from utilities.sqs_message_reader import purge_all_queues
+from utilities.sqs_message_halder import purge_all_queues
+
+from features.APITests.steps.common_steps import *  # noqa: F403
 
 # Ignore F403 * imports. Pytest BDD requires common steps to be imported in conftest
 from features.APITests.steps.common_steps import (
-    mns_event_will_be_triggered_with_correct_data_for_deleted_event,
-)  # noqa: F403
+    mns_event_will_be_triggered_with_correct_data_for_deleted_event,  # noqa: F401
+)
 from features.batchTests.Steps.batch_common_steps import *  # noqa: F403
 
 
