@@ -5,7 +5,7 @@ APIGEE_ENVIRONMENTS:
     display_name_suffix: Internal Development
     ratelimiting:
       immunisation-fhir-api-internal-dev:
-        # 5 requests per second on average
+        # 500 requests per second on average
         quota:
           enabled: true
           limit: 300
@@ -112,7 +112,7 @@ APIGEE_ENVIRONMENTS:
           limit: 300
           interval: 1
           timeunit: minute
-        # 10 requests per second max
+        # 1000 requests per second max
         spikeArrest:
           enabled: true
           ratelimit: 600pm
