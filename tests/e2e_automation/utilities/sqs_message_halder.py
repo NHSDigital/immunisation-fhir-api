@@ -19,17 +19,23 @@ def build_queue_url(env, aws_account_id, queue_type: str) -> str:
     return f"https://sqs.eu-west-2.amazonaws.com/{aws_account_id}/{queue_name}"
 
 
-def read_message(context, queue_type="notification", wait_for_message=True):
+def read_message(
+    context,
+    queue_type="notification",
+    action="CREATE",
+    wait_for_message=True,
+    max_empty_polls=3,
+):
     sqs = boto3.client("sqs", region_name="eu-west-2")
     queue_url = build_queue_url(context.S3_env, context.aws_account_id, queue_type)
 
     expected_dataref = f"{context.url}/{context.ImmsID}"
 
-    MAX_ATTEMPTS = 10 if wait_for_message else 1
     WAIT_TIME_SECONDS = 10
+    empty_polls = 0
 
-    for attempt in range(1, MAX_ATTEMPTS + 1):
-        print(f"Attempt {attempt}/{MAX_ATTEMPTS} — waiting up to {WAIT_TIME_SECONDS}s...")
+    while True:
+        print(f"Polling {queue_type} queue (wait {WAIT_TIME_SECONDS}s)...")
 
         response = sqs.receive_message(
             QueueUrl=queue_url,
@@ -41,26 +47,28 @@ def read_message(context, queue_type="notification", wait_for_message=True):
         messages = response.get("Messages", [])
 
         if not messages:
-            print("No messages returned in this attempt.")
+            empty_polls += 1
+            print(f"No messages returned (empty poll {empty_polls}/{max_empty_polls})")
+
+            if not wait_for_message or empty_polls >= max_empty_polls:
+                print("Stopping — queue quiet or wait disabled.")
+                return None
+
             continue
+
+        empty_polls = 0
 
         for msg in messages:
             body = MnsEvent(**json.loads(msg["Body"]))
 
-            if body.dataref == expected_dataref:
+            if body.dataref == expected_dataref and body.filtering.action == action:
                 print(f"Matched message in {queue_type} queue: {body}")
-                return body, msg["ReceiptHandle"]
+                sqs.delete_message(QueueUrl=queue_url, ReceiptHandle=msg["ReceiptHandle"])
+                print(f"Deleted message from {queue_type} queue")
+                return body
 
-    print("Message did not arrive after all attempts.")
-    return None, None
-
-
-def delete_message(context, receipt_handle: str, queue_type="notification"):
-    sqs = boto3.client("sqs", region_name="eu-west-2")
-    queue_url = build_queue_url(context.S3_env, context.aws_account_id, queue_type)
-
-    sqs.delete_message(QueueUrl=queue_url, ReceiptHandle=receipt_handle)
-    print(f"Deleted message from {queue_type} queue")
+            sqs.delete_message(QueueUrl=queue_url, ReceiptHandle=msg["ReceiptHandle"])
+            print(f"Deleted non-matching message from {queue_type} queue")
 
 
 def purge_all_queues(env, aws_account_id):

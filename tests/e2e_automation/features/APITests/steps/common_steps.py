@@ -39,7 +39,7 @@ from utilities.api_get_header import (
 from utilities.date_helper import is_valid_date, iso_to_compact
 from utilities.enums import Operation
 from utilities.http_requests_session import http_requests_session
-from utilities.sqs_message_halder import delete_message, read_message
+from utilities.sqs_message_halder import read_message
 from utilities.vaccination_constants import ROUTE_MAP, SITE_MAP
 
 
@@ -98,6 +98,7 @@ def valid_vaccination_record_is_created_with_patient(context, Patient, vaccine_t
     Trigger_the_post_create_request(context)
     The_request_will_have_status_code(context, 201)
     validateCreateLocation(context)
+    mns_event_will_be_triggered_with_correct_data(context=context, action="CREATE")
 
 
 @given(
@@ -113,6 +114,7 @@ def valid_vaccination_record_is_created_with_number_date(context, NHSNumber, vac
     Trigger_the_post_create_request(context)
     The_request_will_have_status_code(context, 201)
     validateCreateLocation(context)
+    mns_event_will_be_triggered_with_correct_data(context=context, action="CREATE")
 
 
 @given("I have created a valid vaccination record")
@@ -466,23 +468,19 @@ def validate_sqs_message(context, message_body, action):
 
 
 def mns_event_will_be_triggered_with_correct_data_for_deleted_event(context):
-    message_body, receipt_handle = read_message(context, queue_type="notification")
-    print(f"Read message from SQS: {message_body}")
+    message_body = read_message(context, queue_type="notification", action="DELETE")
+    print(f"Read deleted message from SQS: {message_body}")
     assert message_body is not None, "Expected a message but queue returned empty"
-    assert receipt_handle is not None, "Receipt handle missing"
     validate_sqs_message(context, message_body, "DELETE")
-    delete_message(context, receipt_handle, queue_type="notification")
 
 
 def mns_event_will_be_triggered_with_correct_data(context, action):
-    message_body, receipt_handle = read_message(context, queue_type="notification")
-    print(f"Read message from SQS: {message_body}")
+    message_body = read_message(context, queue_type="notification", action=action)
+    print(f"Read {action}d message from SQS: {message_body}")
     assert message_body is not None, "Expected a message but queue returned empty"
-    assert receipt_handle is not None, "Receipt handle missing"
     context.gp_code = get_gp_code_by_nhs_number(context.patient.identifier[0].value)
     context.patient_age = calculate_age(context.patient.birthDate, context.immunization_object.occurrenceDateTime)
     validate_sqs_message(context, message_body, action)
-    delete_message(context, receipt_handle, queue_type="notification")
-    message_body, receipt_handle = read_message(context, queue_type="dead_letter", wait_for_message=False)
+    message_body = read_message(context, queue_type="dead_letter", wait_for_message=False)
     print(f"Read message from SQS: {message_body}")
     assert message_body is None, f"Expected no messages in dead letter queue, but got: {message_body}"
