@@ -45,6 +45,7 @@ class PreValidators:
             self.pre_validate_practitioner_reference,
             self.pre_validate_patient_identifier_extension,
             self.pre_validate_patient_identifier,
+            self.pre_validate_patient_identifier_system,
             self.pre_validate_patient_identifier_value,
             self.pre_validate_patient_name,
             self.pre_validate_patient_name_given,
