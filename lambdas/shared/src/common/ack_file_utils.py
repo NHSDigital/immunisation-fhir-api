@@ -28,8 +28,8 @@ def make_ack_data(
         "RESPONSE_CODE": ("20013" if (validation_passed and message_delivered) else "10002"),
         "RESPONSE_DISPLAY": (success_display if (validation_passed and message_delivered) else failure_display),
         "RECEIVED_TIME": created_at_formatted_string,
-        "MAILBOX_FROM": "",  # TODO: Leave blank for DPS, add mailbox if from mesh mailbox
-        "LOCAL_ID": "",  # TODO: Leave blank for DPS, add from ctl file if data picked up from MESH mailbox
+        "MAILBOX_FROM": "",  # VED-197 TODO: Leave blank for DPS, add mailbox if from mesh mailbox
+        "LOCAL_ID": "",  # VED-197 TODO: Leave blank for DPS, add from ctl file if data picked up from MESH mailbox
         "MESSAGE_DELIVERY": message_delivered,
     }
 

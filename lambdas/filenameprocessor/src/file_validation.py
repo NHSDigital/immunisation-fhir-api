@@ -6,7 +6,7 @@ from re import match
 from constants import (
     EXTENDED_ATTRIBUTES_FILE_PREFIX,
     EXTENDED_ATTRIBUTES_VACC_TYPE,
-    VALID_EA_VERSIONS,
+    VALID_EA_MAJOR_VERSIONS,
     VALID_TIMESTAMP_LENGTH,
     VALID_TIMEZONE_OFFSETS,
     VALID_VERSIONS,
@@ -66,7 +66,8 @@ def validate_extended_attributes_file_key(file_key: str) -> tuple[str, str]:
 
     file_key_parts_without_extension, extension = split_file_key(file_key)
     file_type = "_".join(file_key_parts_without_extension[:3])
-    version = "_".join(file_key_parts_without_extension[3:5])
+    major_version = file_key_parts_without_extension[3]
+    minor_version = file_key_parts_without_extension[4]
     organization_code = file_key_parts_without_extension[5]
     timestamp = file_key_parts_without_extension[6]
     supplier = get_supplier_system_from_cache(organization_code)
@@ -76,7 +77,8 @@ def validate_extended_attributes_file_key(file_key: str) -> tuple[str, str]:
     if not (
         vaccine_type in valid_vaccine_types
         and file_type == EXTENDED_ATTRIBUTES_FILE_PREFIX.upper()
-        and version in VALID_EA_VERSIONS
+        and major_version in VALID_EA_MAJOR_VERSIONS
+        and minor_version.isdigit()
         and supplier  # Note that if supplier could be identified, this also implies that ODS code is valid
         and is_valid_datetime(timestamp)
         and (

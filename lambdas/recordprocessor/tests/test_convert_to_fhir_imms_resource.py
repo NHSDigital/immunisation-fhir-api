@@ -1,7 +1,6 @@
 """Tests for convert_to_fhir_imms_resource"""
 
 import unittest
-from typing import List, Tuple
 from unittest.mock import patch
 
 from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
@@ -70,7 +69,7 @@ class TestConvertToFhirImmsResource(unittest.TestCase):
         Test that the _test_get_decorators_for_action_flag function returns the correct list of decorators based on the
         action flag provided.
         """
-        test_cases: List[Tuple[str, str, List[ImmunizationDecorator]]] = [
+        test_cases: list[tuple[str, str, list[ImmunizationDecorator]]] = [
             (
                 "Delete action only returns one decorator",
                 "DELETE",

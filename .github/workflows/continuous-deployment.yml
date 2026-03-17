@@ -5,8 +5,18 @@ on:
     branches:
       - master
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }} #hardcoded group name causes the pipeline to get stuck
+  cancel-in-progress: false
+
 jobs:
+  run-quality-checks:
+    uses: ./.github/workflows/quality-checks.yml
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
   deploy-internal-dev-backend:
+    needs: [run-quality-checks]
     uses: ./.github/workflows/deploy-backend.yml
     with:
       apigee_environment: internal-dev

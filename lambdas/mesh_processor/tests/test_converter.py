@@ -53,7 +53,7 @@ class TestLambdaHandler(TestCase):
         s3.put_object(
             Bucket="source-bucket",
             Key="test-csv-file.csv",
-            Body="some CSV content".encode("utf-8"),
+            Body=b"some CSV content",
             ContentType="text/csv",
             Metadata={
                 "mex-filename": "overridden-filename.csv",
@@ -79,7 +79,7 @@ class TestLambdaHandler(TestCase):
         s3.put_object(
             Bucket="source-bucket",
             Key="test-csv-file.csv",
-            Body="some CSV content".encode("utf-8"),
+            Body=b"some CSV content",
             ContentType="text/csv",
         )
 

@@ -1,7 +1,7 @@
 import random
 import uuid
 from datetime import datetime, timedelta
-from typing import Any, Dict, List
+from typing import Any
 
 from utilities.date_helper import generate_date
 from utilities.vaccination_constants import (
@@ -82,7 +82,7 @@ def build_location_identifier() -> Location:
 
 def get_vaccine_details(
     vaccine_type: str, vacc_text: str = None, lot_number: str = "", expiry_date: str = "", add_extensions: bool = True
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     selected_vaccine = random.choice(VACCINE_CODE_MAP[vaccine_type.upper()])
 
     extensions = None
@@ -126,7 +126,7 @@ def get_vaccine_details(
     }
 
 
-def build_performer() -> List[Performer]:
+def build_performer() -> list[Performer]:
     return [
         Performer(actor=Reference(reference="#Pract1", type="Practitioner")),
         Performer(

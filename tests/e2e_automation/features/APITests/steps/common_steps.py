@@ -1,6 +1,5 @@
 import json
 import random
-import time
 from urllib.parse import parse_qs
 from venv import logger
 
@@ -19,6 +18,7 @@ from src.objectModels.api_immunization_builder import (
 )
 from src.objectModels.patient_loader import load_patient_by_id
 from utilities.api_fhir_immunization_helper import (
+    get_response_body_for_display,
     is_valid_disease_type,
     is_valid_nhs_number,
     parse_error_response,
@@ -129,8 +129,9 @@ def Trigger_the_post_create_request(context):
 def The_request_will_have_status_code(context, statusCode):
     print(context.response.status_code)
     print(int(statusCode))
+    body = get_response_body_for_display(context.response)
     assert context.response.status_code == int(statusCode), (
-        f"\n Expected status code: {statusCode}, but got: {context.response.status_code}. Response: {context.response.json()} \n"
+        f"\n Expected status code: {statusCode}, but got: {context.response.status_code}. Response: {body} \n"
     )
 
 
@@ -138,11 +139,12 @@ def The_request_will_have_status_code(context, statusCode):
 def validateCreateLocation(context):
     location = context.response.headers["location"]
     eTag = context.response.headers["E-Tag"]
+    body = get_response_body_for_display(context.response)
     assert "location" in context.response.headers, (
-        f"Location header is missing in the response with Status code: {context.response.statusCode}. Response: {context.response.json()}"
+        f"Location header is missing in the response with Status code: {context.response.status_code}. Response: {body}"
     )
     assert "E-Tag" in context.response.headers, (
-        f"E-Tag header is missing in the response with Status code: {context.response.statusCode}. Response: {context.response.json()}"
+        f"E-Tag header is missing in the response with Status code: {context.response.status_code}. Response: {body}"
     )
     context.ImmsID = location.split("/")[-1]
     context.eTag = eTag.strip('"')
@@ -296,12 +298,6 @@ def validate_etag_in_header(context):
 
 @when("I subsequently update the vaccination details of the original immunization event")
 def send_update_for_vaccination_detail(context):
-    # We retrieve the delta records for a given event e.g. CREATE - UPDATE - UPDATE and then order them by timestamp
-    # to ensure we are using the latest one for assertions. The timestamp we assign, based on the DynamoDB stream
-    # ApproximateCreationDateTime is rounded to the nearest second: https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_streams_StreamRecord.html
-    # Therefore, using a sleep to ensure ordering is maintained to avoid intermittent errors when the system runs fast.
-    time.sleep(1)
-
     get_update_url_header(context, str(context.expected_version))
     context.update_object = convert_to_update(context.immunization_object, context.ImmsID)
     context.update_object.extension = [build_vaccine_procedure_extension(context.vaccine_type.upper())]

@@ -2,14 +2,16 @@
 
 import datetime
 import urllib.parse
-from typing import Optional
 
-from controller.constants import IMMUNIZATION_TARGET_LEGACY_KEY_NAME, ImmunizationSearchParameterName
+from controller.constants import (
+    IMMUNIZATION_TARGET_LEGACY_KEY_NAME,
+    ImmunizationSearchParameterName,
+)
 from controller.parameter_parser import PATIENT_IDENTIFIER_SYSTEM
 from service.constants import DEFAULT_BASE_PATH, PR_ENV_PREFIX
 
 
-def get_service_url(service_env: Optional[str], service_base_path: Optional[str]) -> str:
+def get_service_url(service_env: str | None, service_base_path: str | None) -> str:
     """Sets the service URL based on service parameters derived from env vars. PR environments use internal-dev while
     we also default to this environment. The only other exceptions are preprod which maps to the Apigee int environment
     and prod which does not have a subdomain."""
@@ -28,26 +30,33 @@ def get_service_url(service_env: Optional[str], service_base_path: Optional[str]
     return f"https://{subdomain}api.service.nhs.uk/{service_base_path}"
 
 
-def is_pr_env(service_env: Optional[str]) -> bool:
+def is_pr_env(service_env: str | None) -> bool:
     return service_env is not None and service_env.startswith(PR_ENV_PREFIX)
 
 
 def create_url_for_bundle_link(
     immunization_targets: set[str],
     patient_nhs_number: str,
-    date_from: Optional[datetime.date],
-    date_to: Optional[datetime.date],
-    include: Optional[str],
-    service_env: Optional[str],
-    service_base_path: Optional[str],
+    date_from: datetime.date | None,
+    date_to: datetime.date | None,
+    include: str | None,
+    service_env: str | None,
+    service_base_path: str | None,
+    target_disease_codes_for_url: set[str] | None = None,
 ) -> str:
-    """Creates url for the searchset Bundle Link."""
-    params = {
-        # Temporarily maintaining this for backwards compatibility with imms history, but we should remove it
-        IMMUNIZATION_TARGET_LEGACY_KEY_NAME: ",".join(immunization_targets),
-        ImmunizationSearchParameterName.IMMUNIZATION_TARGET: ",".join(immunization_targets),
-        ImmunizationSearchParameterName.PATIENT_IDENTIFIER: f"{PATIENT_IDENTIFIER_SYSTEM}|{patient_nhs_number}",
-    }
+    """Creates url for the searchset Bundle Link. When target_disease_codes_for_url is provided, uses target-disease
+    param instead of vaccination type params."""
+    if target_disease_codes_for_url:
+        params = {
+            ImmunizationSearchParameterName.TARGET_DISEASE: ",".join(sorted(target_disease_codes_for_url)),
+            ImmunizationSearchParameterName.PATIENT_IDENTIFIER: f"{PATIENT_IDENTIFIER_SYSTEM}|{patient_nhs_number}",
+        }
+    else:
+        params = {
+            IMMUNIZATION_TARGET_LEGACY_KEY_NAME: ",".join(immunization_targets),
+            ImmunizationSearchParameterName.IMMUNIZATION_TARGET: ",".join(immunization_targets),
+            ImmunizationSearchParameterName.PATIENT_IDENTIFIER: f"{PATIENT_IDENTIFIER_SYSTEM}|{patient_nhs_number}",
+        }
 
     if date_from:
         params[ImmunizationSearchParameterName.DATE_FROM] = date_from.isoformat()

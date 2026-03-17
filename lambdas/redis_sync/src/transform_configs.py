@@ -1,4 +1,5 @@
 from common.clients import logger
+from common.models.constants import RedisHashKeys
 
 
 def transform_vaccine_map(mapping):
@@ -15,7 +16,28 @@ def transform_vaccine_map(mapping):
         if "diseases" in entry and "vacc_type" in entry
     }
 
-    return {"vacc_to_diseases": vacc_to_diseases, "diseases_to_vacc": diseases_to_vacc}
+    all_disease_codes = set()
+    target_disease_to_vaccs = {}
+    for entry in mapping:
+        if "vacc_type" not in entry or "diseases" not in entry:
+            continue
+        vacc_type = entry["vacc_type"]
+        for disease in entry["diseases"]:
+            code = disease["code"]
+            all_disease_codes.add(code)
+            if code not in target_disease_to_vaccs:
+                target_disease_to_vaccs[code] = []
+            target_disease_to_vaccs[code].append(vacc_type)
+
+    target_disease_list = {"codes": sorted(all_disease_codes)}
+    target_disease_to_vaccs_serialized = {code: sorted(vaccs) for code, vaccs in target_disease_to_vaccs.items()}
+
+    return {
+        RedisHashKeys.VACCINE_TYPE_TO_DISEASES_HASH_KEY: vacc_to_diseases,
+        RedisHashKeys.DISEASES_TO_VACCINE_TYPE_HASH_KEY: diseases_to_vacc,
+        RedisHashKeys.TARGET_DISEASE_LIST_KEY: target_disease_list,
+        RedisHashKeys.TARGET_DISEASE_TO_VACCS_KEY: target_disease_to_vaccs_serialized,
+    }
 
 
 def transform_supplier_permissions(mapping):

@@ -2,7 +2,6 @@ import os
 import time
 import uuid
 from dataclasses import dataclass
-from typing import Tuple
 
 import boto3
 import botocore.exceptions
@@ -215,14 +214,14 @@ class ImmunizationBatchRepository:
             return query_response["Items"][0]["PK"]
 
     @staticmethod
-    def _get_id_version(query_response: any) -> Tuple[str, int]:
+    def _get_id_version(query_response: any) -> tuple[str, int]:
         if query_response.get("Count") == 1:
             old_id = query_response["Items"][0]["PK"]
             version = query_response["Items"][0]["Version"]
             return old_id, version
 
     @staticmethod
-    def _get_record_status(query_response: any) -> Tuple[bool, bool, bool]:
+    def _get_record_status(query_response: any) -> tuple[bool, bool, bool]:
         deleted_at_required = False
         update_reinstated = False
         is_reinstate = False
