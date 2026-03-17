@@ -1,6 +1,5 @@
 """Utils for the audit table tests"""
 
-from typing import Optional
 from unittest.mock import patch
 
 from boto3 import client as boto3_client
@@ -56,7 +55,7 @@ def add_entry_to_table(file_details: MockFileDetails, file_status: str) -> None:
     dynamodb_client.put_item(TableName=AUDIT_TABLE_NAME, Item=audit_table_entry)
 
 
-def assert_audit_table_entry(file_details: FileDetails, expected_status: str, row_count: Optional[int] = None) -> None:
+def assert_audit_table_entry(file_details: FileDetails, expected_status: str, row_count: int | None = None) -> None:
     """Assert that the file details are in the audit table"""
     table_entry = dynamodb_client.get_item(
         TableName=AUDIT_TABLE_NAME,

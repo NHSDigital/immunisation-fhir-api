@@ -46,6 +46,17 @@ class TestTransformConfigs(unittest.TestCase):
         result = transform_supplier_permissions(self.supplier_data)
         self.assertEqual(result["ods_code_to_supplier"], expected)
 
+    def test_target_disease_list_and_target_disease_to_vaccs(self):
+        result = transform_vaccine_map(self.sample_map)
+        self.assertIn("codes", result["target_disease_list"])
+        codes = result["target_disease_list"]["codes"]
+        self.assertIsInstance(codes, list)
+        self.assertIn("14189004", codes)
+        self.assertIn("840539006", codes)
+        to_vaccs = result["target_disease_to_vaccs"]
+        self.assertEqual(sorted(to_vaccs["14189004"]), ["MMR", "MMRV"])
+        self.assertEqual(to_vaccs["840539006"], ["COVID"])
+
     def test_empty_input(self):
         result = transform_supplier_permissions([])
         self.assertEqual(

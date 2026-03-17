@@ -2,7 +2,6 @@ import os
 import re
 import shutil
 import uuid
-from typing import Dict, Optional, Type
 
 import pytest_check as check
 from pydantic import BaseModel
@@ -25,7 +24,15 @@ def empty_folder(path):
     os.makedirs(path)
 
 
-def find_entry_by_Imms_id(parsed_data, imms_id) -> Optional[object]:
+def get_response_body_for_display(response) -> str:
+    """Return response body as string for error messages. Uses .text when .json() fails (e.g. empty or non-JSON)."""
+    try:
+        return str(response.json()) if response.content else "(empty body)"
+    except (ValueError, TypeError):
+        return response.text if response.text else "(empty body)"
+
+
+def find_entry_by_Imms_id(parsed_data, imms_id) -> object | None:
     return next(
         (
             entry
@@ -36,14 +43,14 @@ def find_entry_by_Imms_id(parsed_data, imms_id) -> Optional[object]:
     )
 
 
-def find_patient_by_fullurl(parsed_data) -> Optional[Entry]:
+def find_patient_by_fullurl(parsed_data) -> Entry | None:
     for entry in parsed_data.entry:
         if entry.resource.resourceType == "Patient":
             return entry
     return None
 
 
-RESOURCE_MAP: Dict[str, Type[BaseModel]] = {
+RESOURCE_MAP: dict[str, type[BaseModel]] = {
     "Immunization": FHIRImmunizationResponse,
     "Patient": PatientResource,
 }

@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 fhir_sample = os.path.join(os.path.dirname(__file__), "sample_data", "fhir_sample.json")
 
 
-with open(fhir_sample, "r", encoding="utf-8") as f:
+with open(fhir_sample, encoding="utf-8") as f:
     json_data = json.load(f)
 
 # Run the converter

@@ -3,7 +3,7 @@
 import base64
 import datetime
 import urllib.parse
-from typing import Literal, Optional
+from typing import Literal
 
 from stdnum.verhoeff import validate
 
@@ -119,8 +119,8 @@ def nhs_number_mod11_check(nhs_number: str) -> bool:
     return is_mod11
 
 
-def get_occurrence_datetime(immunization: dict) -> Optional[datetime.datetime]:
-    occurrence_datetime_str: Optional[str] = immunization.get("occurrenceDateTime", None)
+def get_occurrence_datetime(immunization: dict) -> datetime.datetime | None:
+    occurrence_datetime_str: str | None = immunization.get("occurrenceDateTime", None)
     if occurrence_datetime_str is None:
         return None
 
@@ -296,7 +296,7 @@ def practitioner_name_family_field_location(imms: dict):
     return obtain_name_field_location(imms, "Practitioner", "family")
 
 
-def get_occurrence_datetime_for_name(immunization: dict) -> Optional[datetime.datetime]:
+def get_occurrence_datetime_for_name(immunization: dict) -> datetime.datetime | None:
     """Returns occurencedatetime for use in get_current_name_instance"""
     return immunization.get("occurrenceDateTime", None)
 

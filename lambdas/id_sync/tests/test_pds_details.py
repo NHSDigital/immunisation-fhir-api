@@ -21,11 +21,6 @@ class TestGetPdsPatientDetails(unittest.TestCase):
         self.mock_pds_env = self.pds_env_patcher.start()
         self.mock_pds_env.return_value = "test-env"
 
-        self.cache_patcher = patch("pds_details.Cache")
-        self.mock_cache_class = self.cache_patcher.start()
-        self.mock_cache_instance = MagicMock()
-        self.mock_cache_class.return_value = self.mock_cache_instance
-
         self.auth_patcher = patch("pds_details.AppRestrictedAuth")
         self.mock_auth_class = self.auth_patcher.start()
         self.mock_auth_instance = MagicMock()
@@ -56,9 +51,6 @@ class TestGetPdsPatientDetails(unittest.TestCase):
 
         # Assert
         self.assertEqual(result["identifier"][0]["value"], "9912003888")
-
-        # Verify Cache was initialized correctly
-        self.mock_cache_class.assert_called_once()
 
         # Verify get_patient_details was called
         self.mock_pds_service_instance.get_patient_details.assert_called_once()
@@ -109,27 +101,6 @@ class TestGetPdsPatientDetails(unittest.TestCase):
         self.mock_logger.exception.assert_called_once_with("Error retrieving patient details from PDS")
 
         self.mock_pds_service_instance.get_patient_details.assert_called_once_with(self.test_patient_id)
-
-    def test_pds_get_patient_details_cache_initialization_error(self):
-        """Test when Cache initialization fails"""
-        # Arrange
-        self.mock_cache_class.side_effect = OSError("Cannot write to /tmp")
-
-        # Act
-        with self.assertRaises(IdSyncException) as context:
-            pds_get_patient_details(self.test_patient_id)
-
-        # Assert
-        exception = context.exception
-        self.assertEqual(
-            exception.message,
-            "Error retrieving patient details from PDS",
-        )
-
-        # Verify exception was logged
-        self.mock_logger.exception.assert_called_once_with("Error retrieving patient details from PDS")
-
-        self.mock_cache_class.assert_called_once()
 
     def test_pds_get_patient_details_auth_initialization_error(self):
         """Test when AppRestrictedAuth initialization fails"""

@@ -2,7 +2,7 @@
 
 import json
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from json import JSONDecodeError
 from unittest.mock import Mock, patch
@@ -43,7 +43,7 @@ s3_client = boto3_client("s3", region_name=REGION_NAME)
 kinesis_client = boto3_client("kinesis", region_name=REGION_NAME)
 firehose_client = boto3_client("firehose", region_name=REGION_NAME)
 dynamo_db_client = boto3_client("dynamodb", region_name=REGION_NAME)
-yesterday = datetime.now(timezone.utc) - timedelta(days=1)
+yesterday = datetime.now(UTC) - timedelta(days=1)
 mock_rsv_emis_file = MockFileDetails.rsv_emis
 
 
