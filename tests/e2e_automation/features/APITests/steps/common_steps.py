@@ -417,7 +417,7 @@ def validate_sqs_message(context, message_body, action):
     check.is_true(is_valid_uuid(message_body.id), f"Invalid UUID: {message_body.id}")
 
     check.is_true(
-        message_body.time is not None and len(message_body.time) > 0,
+        message_body.time == context.immunization_object.occurrenceDateTime,
         f"msn event for {action} Time missing or empty: {message_body.time}",
     )
 

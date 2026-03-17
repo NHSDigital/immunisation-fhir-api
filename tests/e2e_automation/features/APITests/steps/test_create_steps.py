@@ -19,11 +19,18 @@ from src.objectModels.api_immunization_builder import (
     build_vaccine_procedure_extension,
     get_vaccine_details,
 )
-from utilities.api_fhir_immunization_helper import validate_to_compare_request_and_response
+from utilities.api_fhir_immunization_helper import (
+    validate_to_compare_request_and_response,
+)
 from utilities.date_helper import generate_date
 from utilities.enums import ActionFlag, Operation
 from utilities.text_helper import get_text
-from utilities.vaccination_constants import ROUTE_MAP, SITE_MAP, VACCINATION_PROCEDURE_MAP, VACCINE_CODE_MAP
+from utilities.vaccination_constants import (
+    ROUTE_MAP,
+    SITE_MAP,
+    VACCINATION_PROCEDURE_MAP,
+    VACCINE_CODE_MAP,
+)
 
 from .common_steps import Trigger_the_post_create_request, valid_json_payload_is_created
 
@@ -168,9 +175,21 @@ def validate_imms_event_table(context):
             item.get("IdentifierPK"),
         ),
         ("Operation", Operation.created.value, item.get("Operation")),
-        ("PatientPK", f"Patient#{context.patient.identifier[0].value}", item.get("PatientPK")),
-        ("PatientSK", f"{context.vaccine_type.upper()}#{context.ImmsID}", item.get("PatientSK")),
-        ("SupplierSystem", context.supplier_name.lower(), item.get("SupplierSystem").lower()),
+        (
+            "PatientPK",
+            f"Patient#{context.patient.identifier[0].value}",
+            item.get("PatientPK"),
+        ),
+        (
+            "PatientSK",
+            f"{context.vaccine_type.upper()}#{context.ImmsID}",
+            item.get("PatientSK"),
+        ),
+        (
+            "SupplierSystem",
+            context.supplier_name.lower(),
+            item.get("SupplierSystem").lower(),
+        ),
         ("Version", 1, item.get("Version")),
     ]
 
@@ -184,7 +203,10 @@ def validate_imms_event_table(context):
 def validate_imms_delta_table_by_ImmsID(context):
     create_obj = context.create_object
     item = fetch_immunization_int_delta_detail_by_immsID(
-        context.aws_profile_name, context.ImmsID, context.S3_env, context.expected_version
+        context.aws_profile_name,
+        context.ImmsID,
+        context.S3_env,
+        context.expected_version,
     )
     assert item, f"Item not found in response for ImmsID: {context.ImmsID}"
 
