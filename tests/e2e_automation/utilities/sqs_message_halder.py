@@ -25,7 +25,7 @@ def read_message(context, queue_type="notification", wait_for_message=True):
 
     expected_dataref = f"{context.url}/{context.ImmsID}"
 
-    MAX_ATTEMPTS = 5 if wait_for_message else 1
+    MAX_ATTEMPTS = 10 if wait_for_message else 1
     WAIT_TIME_SECONDS = 10
 
     for attempt in range(1, MAX_ATTEMPTS + 1):

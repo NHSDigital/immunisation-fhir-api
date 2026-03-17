@@ -1,7 +1,7 @@
-import datetime
 import json
 import random
 import uuid
+from datetime import UTC, datetime, timedelta
 from urllib.parse import parse_qs
 from venv import logger
 
@@ -36,7 +36,7 @@ from utilities.api_get_header import (
     get_delete_url_header,
     get_update_url_header,
 )
-from utilities.date_helper import is_valid_date
+from utilities.date_helper import is_valid_date, iso_to_compact
 from utilities.enums import Operation
 from utilities.http_requests_session import http_requests_session
 from utilities.sqs_message_halder import delete_message, read_message
@@ -58,8 +58,8 @@ def valid_json_payload_is_created(context):
 @given("Valid json payload is created where patient age is less then an year")
 def valid_json_payload_is_created_patient_age_is_less_then_a_year(context):
     valid_json_payload_is_created(context)
-    today = datetime.utcnow().date()
-    dob = today - datetime.timedelta(days=364)
+    today = datetime.now(UTC)
+    dob = today - timedelta(days=364)
     context.immunization_object.contained[1].birthDate = dob.strftime("%Y-%m-%d")
 
 
@@ -385,8 +385,8 @@ def normalize_param(value: str) -> str:
 
 
 def calculate_age(birth_date_str: str, occurrence_datetime_str: str) -> int:
-    birth = datetime.datetime.strptime(birth_date_str, "%Y-%m-%d").date()
-    occurrence = datetime.datetime.fromisoformat(occurrence_datetime_str).date()
+    birth = datetime.strptime(birth_date_str, "%Y-%m-%d").date()
+    occurrence = datetime.fromisoformat(occurrence_datetime_str).date()
     age = occurrence.year - birth.year
     if (occurrence.month, occurrence.day) < (birth.month, birth.day):
         age -= 1
@@ -417,13 +417,15 @@ def validate_sqs_message(context, message_body, action):
     check.is_true(is_valid_uuid(message_body.id), f"Invalid UUID: {message_body.id}")
 
     check.is_true(
-        message_body.time == context.immunization_object.occurrenceDateTime,
+        message_body.time == iso_to_compact(context.immunization_object.occurrenceDateTime),
         f"msn event for {action} Time missing or empty: {message_body.time}",
     )
-
+    expected_nhs_number = context.patient.identifier[0].value
+    if expected_nhs_number is None:
+        expected_nhs_number = ""
     check.is_true(
-        normalize(message_body.subject) == normalize(context.create_object.contained[1].identifier[0].value),
-        f"msn event for {action}Subject mismatch: expected {context.create_object.contained[1].identifier[0].value}, got {message_body.subject}",
+        message_body.subject == expected_nhs_number,
+        f"msn event for {action}Subject mismatch: expected {expected_nhs_number}, got {message_body.subject}",
     )
 
     check.is_true(

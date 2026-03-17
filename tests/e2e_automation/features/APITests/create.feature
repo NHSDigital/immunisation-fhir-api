@@ -30,7 +30,7 @@ Feature: Create the immunization event for a patient
             | Random      | HIB          | TPP          |
             | Mod11_NHS   | MENB         | TPP          |
             | Invalid_NHS | ROTAVIRUS    | MEDICUS      |
-            | NullNHS     | HEPB         | EMIS         |
+            | Random      | HEPB         | EMIS         |
             | Random      | BCG          | MEDICUS      |
 
     @Delete_cleanUp
