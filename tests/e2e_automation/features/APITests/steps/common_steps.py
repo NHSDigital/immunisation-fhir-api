@@ -332,7 +332,7 @@ def send_update_for_immunization_event(context):
     context.update_object.contained[1].address[0].city = "Updated City"
     context.update_object.contained[1].address[0].state = "Updated State"
     trigger_the_updated_request(context)
-    mns_event_will_be_triggered_with_correct_data_for_created_event(context=context, action="UPDATE")
+    mns_event_will_be_triggered_with_correct_data(context=context, action="UPDATE")
 
 
 @given("created event is being updated twice")
@@ -467,7 +467,7 @@ def validate_sqs_message(context, message_body, action):
 
 
 def mns_event_will_be_triggered_with_correct_data_for_deleted_event(context):
-    if context.patient.identifier[0].value is None and context.gp_code is not None:
+    if context.patient.identifier[0].value is None or context.gp_code is not None:
         print(
             f"Patient {context.patient_id} has no NHS number or gp code is not setup, MNS message will go to Dead letter queue"
         )
@@ -479,7 +479,7 @@ def mns_event_will_be_triggered_with_correct_data_for_deleted_event(context):
 
 
 def mns_event_will_be_triggered_with_correct_data(context, action):
-    if context.patient.identifier[0].value is None and context.gp_code is not None:
+    if context.patient.identifier[0].value is None or context.gp_code is not None:
         print(
             f"Patient {context.patient_id} has no NHS number or gp code is not setup, MNS message will go to Dead letter queue"
         )
