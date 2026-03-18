@@ -47,10 +47,6 @@ class TestCalculateAgeAtVaccination(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "PERSON_DOB"):
             calculate_age_at_vaccination("20040230", "20260212")
 
-    def test_rejects_vaccination_before_birth(self):
-        with self.assertRaisesRegex(ValueError, "cannot be before"):
-            calculate_age_at_vaccination("20260212", "20250212")
-
 
 class TestCreateMnsNotification(unittest.TestCase):
     """Tests for MNS notification creation."""

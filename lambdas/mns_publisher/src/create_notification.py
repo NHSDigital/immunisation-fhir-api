@@ -83,9 +83,6 @@ def calculate_age_at_vaccination(birth_date: str, vaccination_date: str) -> int:
     date_of_birth = _parse_compact_date(birth_date, "PERSON_DOB")
     date_of_vaccination = _parse_compact_date(vaccination_date, "DATE_AND_TIME")
 
-    if date_of_vaccination < date_of_birth:
-        raise ValueError("DATE_AND_TIME cannot be before PERSON_DOB")
-
     age = date_of_vaccination.year - date_of_birth.year
     if (date_of_vaccination.month, date_of_vaccination.day) < (date_of_birth.month, date_of_birth.day):
         age -= 1

@@ -182,7 +182,7 @@ resource "aws_lambda_function" "mns_publisher_lambda" {
   package_type  = "Image"
   image_uri     = module.mns_publisher_docker_image.image_uri
   architectures = ["x86_64"]
-  timeout       = 120
+  timeout       = 300
 
   vpc_config {
     subnet_ids         = var.private_subnet_ids
