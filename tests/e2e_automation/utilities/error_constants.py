@@ -99,7 +99,7 @@ ERROR_MAP = {
     },
     "invalid_nhsnumber_length": {
         "code": "INVARIANT",
-        "diagnostics": "Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value must be 10 characters",
+        "diagnostics": "Validation errors: contained[?(@.resourceType=='Patient')].identifier[?(@.system=='https://fhir.nhs.uk/Id/nhs-number')].value must be 10 characters",
     },
     "no_forename": {
         "code": "INVARIANT",
@@ -139,7 +139,7 @@ ERROR_MAP = {
     },
     "invalid_mod11_nhsnumber": {
         "code": "INVARIANT",
-        "diagnostics": "Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value is not a valid NHS number",
+        "diagnostics": "Validation errors: contained[?(@.resourceType=='Patient')].identifier[?(@.system=='https://fhir.nhs.uk/Id/nhs-number')].value is not a valid NHS number",
     },
     "should_be_string": {
         "code": "INVARIANT",
