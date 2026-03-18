@@ -318,7 +318,7 @@ Feature: Search the immunization of a patient
     @smoke
     @Delete_cleanUp @supplier_name_TPP
     Scenario: Verify that immunization events retrieved by target-disease search are within Date From and Date To range
-        Given Valid vaccination record is created for '9728403348' and Disease Type 'SHINGLES' with recorded date as '2023-01-15'
+        Given Valid vaccination record is created for '9727805493' and Disease Type 'SHINGLES' with recorded date as '2023-01-15'
         When Send a search request with GET method using target-disease and Date From and Date To for Immunization event created
         Then The request will be successful with the status code '200'
         And The occurrenceDateTime of the immunization events should be within the Date From and Date To range

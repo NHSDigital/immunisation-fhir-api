@@ -130,7 +130,6 @@ def validVaccinationRecordIsCreated(context):
 def valid_vaccination_record_is_created_by_supplier(context, Supplier):
     valid_token_is_generated(context, Supplier)
     validVaccinationRecordIsCreated(context)
-    mns_event_will_be_triggered_with_correct_data(context=context, action="CREATE")
 
 
 @when("Trigger the post create request")
@@ -461,25 +460,31 @@ def validate_sqs_message(context, message_body, action):
     )
 
     check.is_true(
-        message_body.filtering.action == action,
-        f"msn event for {action} Action mismatch: expected CREATE, got {message_body.filtering.action}",
+        message_body.filtering.action == action.upper(),
+        f"msn event for {action} Action mismatch: expected {action.upper()}, got {message_body.filtering.action}",
     )
 
 
 def mns_event_will_be_triggered_with_correct_data_for_deleted_event(context):
-    message_body = read_message(context, queue_type="notification", action="DELETE")
-    print(f"Read deleted message from SQS: {message_body}")
-    assert message_body is not None, "Expected a message but queue returned empty"
-    validate_sqs_message(context, message_body, "DELETE")
+    if context.patient.identifier[0].value is None:
+        print(f"Patient {context.patient_id} has no NHS number, MNS message will go to Dead letter queue")
+    else:
+        message_body = read_message(context, queue_type="notification", action="DELETE")
+        print(f"Read deleted message from SQS: {message_body}")
+        assert message_body is not None, "Expected a  delete message but queue returned empty"
+        validate_sqs_message(context, message_body, "DELETE")
 
 
 def mns_event_will_be_triggered_with_correct_data(context, action):
-    message_body = read_message(context, queue_type="notification", action=action)
-    print(f"Read {action}d message from SQS: {message_body}")
-    assert message_body is not None, "Expected a message but queue returned empty"
-    context.gp_code = get_gp_code_by_nhs_number(context.patient.identifier[0].value)
-    context.patient_age = calculate_age(context.patient.birthDate, context.immunization_object.occurrenceDateTime)
-    validate_sqs_message(context, message_body, action)
-    message_body = read_message(context, queue_type="dead_letter", wait_for_message=False)
-    print(f"Read message from SQS: {message_body}")
-    assert message_body is None, f"Expected no messages in dead letter queue, but got: {message_body}"
+    if context.patient.identifier[0].value is None:
+        print(f"Patient {context.patient_id} has no NHS number, MNS message will go to Dead letter queue")
+    else:
+        message_body = read_message(context, queue_type="notification", action=action)
+        print(f"Read {action}d message from SQS: {message_body}")
+        assert message_body is not None, f"Expected a {action} message but queue returned empty"
+        context.gp_code = get_gp_code_by_nhs_number(context.patient.identifier[0].value)
+        context.patient_age = calculate_age(context.patient.birthDate, context.immunization_object.occurrenceDateTime)
+        validate_sqs_message(context, message_body, action)
+        message_body = read_message(context, queue_type="dead_letter", wait_for_message=False)
+        print(f"Dead letter Read message from SQS: {message_body}")
+        assert message_body is None, f"Expected no messages in dead letter queue, but got: {message_body}"

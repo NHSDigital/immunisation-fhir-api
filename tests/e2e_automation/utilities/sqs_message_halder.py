@@ -36,7 +36,7 @@ def read_message(
     empty_polls = 0
 
     while True:
-        print(f"Polling {queue_type} queue (wait {WAIT_TIME_SECONDS}s)...")
+        print(f"Polling {queue_type} queue for {action} messages (wait {WAIT_TIME_SECONDS}s)...")
 
         response = sqs.receive_message(
             QueueUrl=queue_url,
@@ -49,7 +49,7 @@ def read_message(
 
         if not messages:
             empty_polls += 1
-            print(f"No messages returned (empty poll {empty_polls}/{max_empty_polls})")
+            print(f"No messages returned for {action} (empty poll {empty_polls}/{max_empty_polls})")
 
             if not wait_for_message or empty_polls >= max_empty_polls:
                 print("Stopping — queue quiet or wait disabled.")
@@ -62,10 +62,9 @@ def read_message(
         for msg in messages:
             body = MnsEvent(**json.loads(msg["Body"]))
 
-            if body.dataref == expected_dataref and body.filtering.action == action:
-                print(f"Matched message in {queue_type} queue: {body}")
+            if body.dataref == expected_dataref and body.filtering.action == action.upper():
                 sqs.delete_message(QueueUrl=queue_url, ReceiptHandle=msg["ReceiptHandle"])
-                print(f"Deleted message from {queue_type} queue")
+                print(f"Deleted {action.upper()} message from {queue_type} queue")
                 return body
 
             sqs.delete_message(QueueUrl=queue_url, ReceiptHandle=msg["ReceiptHandle"])

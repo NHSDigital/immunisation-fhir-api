@@ -117,4 +117,4 @@ def validateForbiddenAccess(context, errorName):
 
 @then("MNS event will be triggered with correct data for Updated event")
 def validate_mns_event_triggered_for_updated_event(context):
-    mns_event_will_be_triggered_with_correct_data(context=context, action="Update")
+    mns_event_will_be_triggered_with_correct_data(context=context, action="UPDATE")
