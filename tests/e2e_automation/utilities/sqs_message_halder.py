@@ -1,6 +1,7 @@
 import json
 
 import boto3
+from botocore.exceptions import ClientError
 from src.objectModels.mns_event.msn_event import MnsEvent
 
 QUEUE_TEMPLATES = {
@@ -78,5 +79,11 @@ def purge_all_queues(env, aws_account_id):
         queue_url = build_queue_url(env, aws_account_id, queue_type)
 
         print(f"Purging {queue_type} queue: {queue_url}")
-        sqs.purge_queue(QueueUrl=queue_url)
-        print(f"{queue_type.replace('_', ' ').title()} queue purged successfully\n")
+        try:
+            sqs.purge_queue(QueueUrl=queue_url)
+            print(f"{queue_type.replace('_', ' ').title()} queue purged successfully\n")
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "PurgeQueueInProgress":
+                print(f"{queue_type.replace('_', ' ').title()} queue purge already in progress, skipping...\n")
+            else:
+                print(f"Error purging {queue_type} queue: {e}\n")
