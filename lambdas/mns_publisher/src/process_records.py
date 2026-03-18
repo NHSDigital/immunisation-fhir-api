@@ -78,7 +78,6 @@ def process_record(record: SqsRecord, mns_service: MnsService | MockMnsService) 
     Returns: Failure dict with itemIdentifier if processing failed, None if successful
     """
     message_id, immunisation_id = extract_trace_ids(record)
-    notification_id = None
 
     mns_notification_payload = create_mns_notification(_as_sqs_message(record))
     notification_id = mns_notification_payload.get("id")
