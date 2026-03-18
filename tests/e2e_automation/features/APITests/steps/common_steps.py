@@ -364,10 +364,9 @@ def mns_event_will_be_triggered_with_correct_data_for_created_event(context):
 
 @then("MNS event will not be triggered for the event")
 def mns_event_will_not_be_triggered_for_the_event(context):
-    message_body, receipt_handle = read_message(context, queue_type="notification", wait_for_message=False)
+    message_body = read_message(context, queue_type="notification", wait_for_message=False)
     print(f"Read message from SQS: {message_body}")
     assert message_body is None, "Not expected a message but queue returned a message"
-    assert receipt_handle is None, "Receipt handle should not be present as no message expected"
 
 
 def trigger_the_updated_request(context):
