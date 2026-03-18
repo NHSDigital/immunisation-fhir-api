@@ -341,7 +341,4 @@ def create_request_with_empty_nam(context):
 
 @when("Trigger another post create request with same unique_id and unique_id_uri")
 def trigger_post_create_with_same_unique_id(context):
-    valid_json_payload_is_created(context)
-    context.immunization_object.identifier[0].value = context.create_object.identifier[0].value
-    context.immunization_object.identifier[0].system = context.create_object.identifier[0].system
     Trigger_the_post_create_request(context)
