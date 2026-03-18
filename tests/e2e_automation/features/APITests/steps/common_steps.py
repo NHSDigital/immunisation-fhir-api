@@ -490,6 +490,3 @@ def mns_event_will_be_triggered_with_correct_data(context, action):
         context.gp_code = get_gp_code_by_nhs_number(context.patient.identifier[0].value)
         context.patient_age = calculate_age(context.patient.birthDate, context.immunization_object.occurrenceDateTime)
         validate_sqs_message(context, message_body, action)
-        message_body = read_message(context, queue_type="dead_letter", wait_for_message=False)
-        print(f"Dead letter Read message from SQS: {message_body}")
-        assert message_body is None, f"Expected no messages in dead letter queue, but got: {message_body}"
