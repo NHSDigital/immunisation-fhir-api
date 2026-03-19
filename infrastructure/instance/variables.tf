@@ -74,13 +74,17 @@ variable "pds_environment" {
   default = "int"
 }
 
+variable "mns_environment" {
+  type    = string
+  default = "int"
+}
+
 variable "mesh_no_invocation_period_seconds" {
   description = "The maximum duration the MESH Processor Lambda can go without being invoked before the no-invocation alarm is triggered."
   type        = number
   default     = 300
 }
 
-# Remember to switch off in PR envs after testing
 variable "error_alarm_notifications_enabled" {
   default     = true
   description = "Switch to enable error alarm notifications to Slack"

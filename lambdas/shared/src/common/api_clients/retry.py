@@ -12,7 +12,7 @@ def request_with_retry_backoff(
     headers: dict | None = None,
     timeout: int = Constants.DEFAULT_API_CLIENTS_TIMEOUT,
     max_retries: int = Constants.API_CLIENTS_MAX_RETRIES,
-    data: dict | None = None,
+    data: str | None = None,
 ) -> requests.Response:
     """
     Makes an external request with retry and exponential backoff for retryable status codes.

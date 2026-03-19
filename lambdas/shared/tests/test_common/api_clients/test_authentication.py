@@ -106,6 +106,23 @@ class TestAuthenticator(unittest.TestCase):
         self.assertEqual(token, "a-cached-access-token")
         self.secret_manager_client.assert_not_called()
 
+    def test_returned_cached_service_secrets(self):
+        """it should return cached service secrets"""
+        cached_secrets = {
+            "api_key": self.api_key,
+            "kid": self.kid,
+            "private_key_b64": "unused",
+            "private_key": self.private_key,
+        }
+        self.authenticator.cached_service_secrets = cached_secrets
+
+        # When
+        act_secrets = self.authenticator.get_service_secrets()
+
+        # Then
+        self.assertEqual(act_secrets, cached_secrets)
+        self.secret_manager_client.assert_not_called()
+
     @responses.activate
     def test_update_cache(self):
         """it should update cached token"""
