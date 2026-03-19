@@ -2,7 +2,7 @@ resource "aws_sqs_queue" "mns_outbound_events" {
   name                       = "${var.mns_publisher_resource_name_prefix}-queue"
   fifo_queue                 = false
   kms_master_key_id          = aws_kms_key.mns_outbound_events.arn
-  visibility_timeout_seconds = 180
+  visibility_timeout_seconds = 450
   redrive_policy = jsonencode({
     deadLetterTargetArn = aws_sqs_queue.mns_outbound_events_dlq.arn
     maxReceiveCount     = 2
