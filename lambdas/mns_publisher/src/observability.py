@@ -16,6 +16,6 @@ _SERVICE_NAME = "mns-immunisation-publisher."
 logger: Logger = Logger(
     service=_SERVICE_NAME,
     level=os.environ.get("LOG_LEVEL", "INFO"),
-    log_record_order=["level", "message", "function", "line"],
     log_uncaught_exceptions=True,
+    location=False,
 )

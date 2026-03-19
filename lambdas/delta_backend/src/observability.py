@@ -26,7 +26,7 @@ logger: Logger = Logger(
     service=_SERVICE_NAME,
     # Respect LOG_LEVEL env var; default INFO for production safety.
     level=os.environ.get("LOG_LEVEL", "INFO"),
-    log_record_order=["level", "message", "function", "line"],
     # Serialise uncaught exceptions as structured JSON.
     log_uncaught_exceptions=True,
+    location=False,
 )
