@@ -483,15 +483,12 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         self.assertIsNone(self.validator.validate(valid_json_data))
 
     def test_pre_validate_patient_identifier_system(self):
-        """Test pre_validate_patient_identifier_system accepts non-empty system values"""
-        # Test NHS identifier system - should pass
-        valid_json_data = deepcopy(self.json_data)
-        self.assertIsNone(self.validator.validate(valid_json_data))
-
-        # Test non-NHS identifier system - should also pass
-        valid_json_data = deepcopy(self.json_data)
-        valid_json_data["contained"][1]["identifier"][0]["system"] = "https://someother.codeableconcept.com/"
-        self.assertIsNone(self.validator.validate(valid_json_data))
+        """Test pre_validate_patient_identifier_system accepts valid values and rejects invalid values"""
+        ValidatorModelTests.test_string_value(
+            self,
+            field_location="contained[?(@.resourceType=='Patient')].identifier[0].system",
+            valid_strings_to_test=[Urls.NHS_NUMBER, "https://someother.codeableconcept.com/"],
+        )
 
     def test_pre_validate_patient_name(self):
         """Test pre_validate_patient_name accepts valid values and rejects invalid values"""

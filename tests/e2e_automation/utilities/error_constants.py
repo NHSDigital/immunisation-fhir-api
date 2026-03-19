@@ -15,7 +15,7 @@ ERROR_MAP = {
     },
     "empty_NHSNumber": {
         "code": "INVALID",
-        "diagnostics": "Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value must be a non-empty string",
+        "diagnostics": "Validation errors: contained[?(@.resourceType=='Patient')].identifier[?(@.system=='https://fhir.nhs.uk/Id/nhs-number')].value must be a non-empty string",
     },
     "invalid_include": {
         "code": "INVALID",
