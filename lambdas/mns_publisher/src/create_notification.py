@@ -79,6 +79,10 @@ def calculate_age_at_vaccination(birth_date: str, vaccination_date: str) -> int:
     """
     Calculate patient age in years at time of vaccination.
     Expects dates in format: YYYYMMDD or YYYYMMDDThhmmsszz
+    Note: This function performs a pure calculation and does not enforce domain validation.
+    If the vaccination date precedes the birth date, a negative age may be returned.
+    Validation of date correctness and logical consistency (e.g. vaccination after birth)
+    is expected to be handled upstream in the data ingestion pipeline.
     """
     date_of_birth = _parse_compact_date(birth_date, "PERSON_DOB")
     date_of_vaccination = _parse_compact_date(vaccination_date, "DATE_AND_TIME")
