@@ -1,7 +1,7 @@
 resource "aws_sqs_queue" "id_sync_queue" {
   name                       = "imms-${local.resource_scope}-id-sync-queue"
   kms_master_key_id          = data.aws_kms_key.existing_id_sync_sqs_encryption_key.arn
-  visibility_timeout_seconds = 2160
+  visibility_timeout_seconds = 2160 # as per AWS docs to be 6 times the Lambda function timeout
   redrive_policy = jsonencode({
     deadLetterTargetArn = aws_sqs_queue.id_sync_dlq.arn
     maxReceiveCount     = 4
