@@ -40,7 +40,21 @@ def request_with_retry_backoff(
         if data is not None:
             api_request_kwargs["data"] = data
 
-        response = requests.request(**api_request_kwargs)
+        try:
+            response = requests.request(**api_request_kwargs)
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+            if request_attempt < max_retries:
+                logger.warning(
+                    "Network error on attempt %d/%d: %s. Retrying...",
+                    request_attempt + 1,
+                    max_retries + 1,
+                    e,
+                )
+                time.sleep(Constants.API_CLIENTS_BACKOFF_SECONDS * (2**request_attempt))
+                continue
+            logger.error("Network error after %d attempts: %s", max_retries + 1, e)
+            raise
+
         if response.status_code not in Constants.RETRYABLE_STATUS_CODES:
             break
 
@@ -49,7 +63,6 @@ def request_with_retry_backoff(
                 f"Retryable response. Status={response.status_code}. "
                 f"Attempt={request_attempt + 1}/{max_retries + 1}. Retrying..."
             )
-
             time.sleep(Constants.API_CLIENTS_BACKOFF_SECONDS * (2**request_attempt))
 
     return response
