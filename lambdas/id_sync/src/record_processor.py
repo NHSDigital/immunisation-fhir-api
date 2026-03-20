@@ -1,6 +1,7 @@
 import json
 from typing import Any
 
+from common.api_clients.get_pds_details import pds_get_patient_details
 from common.clients import logger
 from exceptions.id_sync_exception import IdSyncException
 from ieds_db_operations import (
@@ -9,7 +10,7 @@ from ieds_db_operations import (
     get_items_from_patient_id,
     ieds_update_patient_id,
 )
-from pds_details import get_nhs_number_from_pds_resource, pds_get_patient_details
+from pds_details import get_nhs_number_from_pds_resource
 from utils import make_status
 
 
