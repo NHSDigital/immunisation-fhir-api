@@ -1,0 +1,20 @@
+Create Request is {"resourceType": "Immunization", "contained": [{"resourceType": "Practitioner", "id": "Pract1", "name": [{"family": "Furlong", "given": ["Darren"]}]}, {"resourceType": "Patient", "id": "Pat1", "identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9735415259"}], "name": [{"family": "BARTON", "given": ["MAUDE"]}], "gender": "female", "birthDate": "1928-03-27", "address": [{"use": "Home", "type": "Postal", "text": "Validate Obf", "line": ["LONDON"], "city": "nan", "district": "District", "state": "State", "postalCode": "W10 4LE", "country": "UK", "period": {"start": "2010-01-01", "end": "2029-12-30"}}]}], "extension": [{"url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure", "valueCodeableConcept": {"coding": [{"system": "http://snomed.info/sct", "code": "428975001"}]}}], "identifier": [{"system": "https://supplierABC/identifiers/vacc", "value": "2b03c6b5-1bb0-4539-ae78-8124321c5bef"}], "status": "completed", "vaccineCode": {"coding": [{"system": "http://snomed.info/sct", "code": "9903711000001109"}]}, "patient": {"reference": "#Pat1", "type": "Patient"}, "manufacturer": {"display": "GlaxoSmithKline UK Ltd"}, "location": {"identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "X99999"}}, "site": {"coding": [{"system": "http://snomed.info/sct", "code": "368208006"}]}, "route": {"coding": [{"system": "http://snomed.info/sct", "code": "78421000"}]}, "doseQuantity": {"value": 0.3, "unit": "Inhalation - unit of product usage", "system": "http://snomed.info/sct", "code": "2622896019"}, "performer": [{"actor": {"reference": "#Pract1", "type": "Practitioner"}}, {"actor": {"reference": "Organization/FPIW3", "type": "Organization", "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "FPIW3", "use": "usual", "type": {"coding": [{"system": "http://terminology.hl7.org/CodeSystem/v2-0203", "code": "123456", "display": "Test display performer"}], "text": "test string performer"}, "period": {"start": "2000-01-01", "end": "2025-01-01"}}}}], "reasonCode": [{"coding": [{"system": "http://snomed.info/sct", "code": "310578008", "display": "Routine immunization schedule"}]}], "protocolApplied": [{"targetDisease": [{"coding": [{"system": "http://snomed.info/sct", "code": "709410003", "display": "Haemophilus influenzae type b infection"}]}], "doseNumberPositiveInt": 1}], "occurrenceDateTime": "2026-03-20T14:28:30.957+00:00", "recorded": "2026-03-20T14:28:30.957+00:00", "primarySource": true, "lotNumber": "906677", "expirationDate": "2028-03-19"}
+201
+201
+
+ Immunization ID is f8609aab-0449-4dc0-9f9c-4b69610580bc and Etag is 1 
+
+Attempt 1: Found 1 items
+
+Found Immunization Delta items for ImmsID=f8609aab-0449-4dc0-9f9c-4b69610580bc
+
+Polling notification queue for CREATE messages (wait 10s)...
+Deleted non-matching message from notification queue
+Polling notification queue for CREATE messages (wait 10s)...
+Deleted non-matching message from notification queue
+Polling notification queue for CREATE messages (wait 10s)...
+Deleted CREATE message from notification queue
+Read CREATEd message from SQS: specversion='1.0' id='4cbf2193-68e6-4144-8332-2dcd85e776d6' source='uk.nhs.vaccinations-data-flow-management' type='imms-vaccination-record-change-1' time='20260320T14283000' subject='9735415259' dataref='https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/f8609aab-0449-4dc0-9f9c-4b69610580bc' filtering=Filtering(generalpractitioner='E87768', sourceorganisation='FPIW3', sourceapplication='TPP', subjectage=97, immunisationtype='HIB', action='CREATE')
+
+ Delete Request is https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/f8609aab-0449-4dc0-9f9c-4b69610580bc
+Patient Random has no NHS number or gp code is not setup, MNS message will go to Dead letter queue
