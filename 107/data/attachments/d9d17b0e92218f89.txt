@@ -1,0 +1,2 @@
+❌ Step failed! **valid vaccination record is created by 'RAVS' supplier** 
+ Error: Expected a CREATE message but queue returned empty
