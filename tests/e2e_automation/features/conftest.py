@@ -4,7 +4,10 @@ from pathlib import Path
 import allure
 import pytest
 from dotenv import load_dotenv
-from utilities.api_fhir_immunization_helper import empty_folder, get_response_body_for_display
+from utilities.api_fhir_immunization_helper import (
+    empty_folder,
+    get_response_body_for_display,
+)
 from utilities.api_gen_token import get_tokens
 from utilities.api_get_header import get_delete_url_header
 from utilities.apigee.apigee_env_helpers import use_temp_apigee_apps
@@ -14,9 +17,14 @@ from utilities.aws_token import refresh_sso_token, set_aws_session_token
 from utilities.context import ScenarioContext
 from utilities.enums import SupplierNameWithODSCode
 from utilities.http_requests_session import http_requests_session
+from utilities.sqs_message_halder import purge_all_queues
+
+from features.APITests.steps.common_steps import *  # noqa: F403
 
 # Ignore F403 * imports. Pytest BDD requires common steps to be imported in conftest
-from features.APITests.steps.common_steps import *  # noqa: F403
+from features.APITests.steps.common_steps import (
+    mns_event_will_be_triggered_with_correct_data_for_deleted_event,  # noqa: F401
+)
 from features.batchTests.Steps.batch_common_steps import *  # noqa: F403
 
 
@@ -65,6 +73,11 @@ def global_context():
         else set_aws_session_token()
     )
 
+    s3_env = os.getenv("S3_env")
+    aws_account_id = os.getenv("aws_account_id")
+    if s3_env and aws_account_id:
+        purge_all_queues(s3_env, aws_account_id)
+
 
 @pytest.fixture(scope="session")
 def temp_apigee_apps():
@@ -101,6 +114,7 @@ def context(request, global_context, temp_apigee_apps: list[ApigeeApp] | None) -
         "S3_env",
         "sub_environment",
         "LOCAL_RUN_WITHOUT_S3_UPLOAD",
+        "aws_account_id",
     ]
     for var in env_vars:
         setattr(ctx, var, os.getenv(var))
@@ -138,6 +152,7 @@ def pytest_bdd_after_scenario(request, feature, scenario):
             assert context.response.status_code == 204, (
                 f"Expected status code 204, but got {context.response.status_code}. Response: {get_response_body_for_display(context.response)}"
             )
+            mns_event_will_be_triggered_with_correct_data_for_deleted_event(context)
         else:
             print("Skipping delete: ImmsID is None")
 

@@ -1,3 +1,5 @@
+import math
+
 import pandas as pd
 
 from src.objectModels.api_data_objects import Address, HumanName, Identifier, Patient
@@ -42,6 +44,27 @@ def load_patient_by_id(id: str) -> Patient:
     )
 
 
+def get_gp_code_by_nhs_number(nhs_number: str) -> str | None:
+    df = pd.read_csv(csv_path, dtype=str)
+
+    match = df[df["nhs_number"] == nhs_number.strip()]
+    if match.empty:
+        raise ValueError(f"NHS number {nhs_number} not found in {csv_path}")
+
+    row = match.iloc[0]
+
+    gp_code = safe_str(row.get("gp_code"))
+    dss_end = safe_str(row.get("dss_record_end_date"))
+
+    if gp_code == "" or gp_code.lower() in ["null", "none"]:
+        return None
+
+    if dss_end != "":
+        return None
+
+    return gp_code
+
+
 def read_patient_from_csv(id: str):
     df = pd.read_csv(csv_path, dtype=str)
 
@@ -50,4 +73,12 @@ def read_patient_from_csv(id: str):
     if not valid_patients.empty:
         return valid_patients.sample(1).to_dict(orient="records")[0]
 
-    return None  # FIXED: Return None instead of raising an exception
+    return None
+
+
+def safe_str(value):
+    if value is None:
+        return ""
+    if isinstance(value, float) and math.isnan(value):
+        return ""
+    return str(value).strip()
