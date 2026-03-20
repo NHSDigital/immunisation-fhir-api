@@ -128,7 +128,10 @@ def get_occurrence_datetime(immunization: dict) -> Optional[datetime.datetime]:
 
 
 def create_diagnostics():
-    diagnostics = "Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value does not exists."
+    diagnostics = (
+        "Validation errors: contained[?(@.resourceType=='Patient')].identifier"
+        "[?(@.system=='https://fhir.nhs.uk/Id/nhs-number')].value does not exists."
+    )
     exp_error = {"diagnostics": diagnostics}
     return exp_error
 

@@ -206,7 +206,9 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
         """
         Test that the JSON data is accepted when it does not contain patient_identifier_value
         """
-        field_location = "contained[?(@.resourceType=='Patient')].identifier[0].value"
+        field_location = (
+            "contained[?(@.resourceType=='Patient')].identifier[?(@.system=='https://fhir.nhs.uk/Id/nhs-number')].value"
+        )
         self.mock_redis.hget.return_value = "COVID"
         self.mock_redis_getter.return_value = self.mock_redis
         MandationTests.test_missing_field_accepted(self, field_location)
