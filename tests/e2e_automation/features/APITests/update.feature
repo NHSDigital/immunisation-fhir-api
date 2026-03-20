@@ -30,6 +30,7 @@ Feature: Update the immunization of a patient
         And The X-Request-ID and X-Correlation-ID keys in header will populate correctly
         And The imms event table will be populated with the correct data for 'updated' event
         And The delta table will be populated with the correct data for updated event
+        And MNS event will be triggered with correct data for Updated event
 
 
     @smoke
@@ -41,14 +42,16 @@ Feature: Update the immunization of a patient
         And The Etag in header will containing the latest event version
         And The imms event table will be populated with the correct data for 'updated' event
         And The delta table will be populated with the correct data for updated event
+        And MNS event will be triggered with correct data for Updated event
         When I subsequently update the vaccination details of the original immunization event
         Then The request will be successful with the status code '200'
         And The Etag in header will containing the latest event version
         And The imms event table will be populated with the correct data for 'updated' event
         And The delta table will be populated with the correct data for updated event
+        And MNS event will be triggered with correct data for Updated event
 
     @smoke
-    @vaccine_type_ROTAVIRUS @patient_id_Random
+    @delete_cleanup @vaccine_type_ROTAVIRUS @patient_id_Random
     Scenario: Verify that update will be successful when request is triggered by other supplier with authorize permission
         Given valid vaccination record is created by 'TPP' supplier
         When Send a update for Immunization event created with patient address being updated by 'EMIS'
@@ -56,6 +59,8 @@ Feature: Update the immunization of a patient
         And The Etag in header will containing the latest event version
         And The imms event table will be populated with the correct data for 'updated' event
         And The delta table will be populated with the correct data for updated event
+        And MNS event will be triggered with correct data for Updated event
+
 
     @Delete_cleanUp @vaccine_type_RSV @patient_id_Mod11_NHS @supplier_name_Postman_Auth
     Scenario: Verify that the Update API will be successful with invalid but Mod11 compliant NHS Number
