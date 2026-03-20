@@ -1,0 +1,1 @@
+✅ Step Passed: **all rejected records are listed in the csv bus ack file and no imms id is generated
