@@ -17,5 +17,5 @@ logger: Logger = Logger(
     service=_SERVICE_NAME,
     level=os.environ.get("LOG_LEVEL", "INFO"),
     log_uncaught_exceptions=True,
-    location=os.environ.get("POWERTOOLS_LOGGER_LOG_CALLABLE_LOCATION", "false").lower() == "true",
+    location=False,
 )

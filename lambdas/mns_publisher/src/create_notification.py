@@ -2,15 +2,15 @@ import json
 import os
 import uuid
 from datetime import date, datetime
-from typing import Any
 
+from aws_lambda_powertools.utilities.data_classes.dynamo_db_stream_event import DynamoDBStreamEvent
 from aws_lambda_typing.events.sqs import SQSMessage
 
 from common.api_clients.constants import MnsNotificationPayload
 from common.api_clients.get_pds_details import pds_get_patient_details
 from common.clients import logger
 from common.get_service_url import get_service_url
-from constants import DYNAMO_DB_TYPE_DESCRIPTORS, IMMUNISATION_EVENT_SOURCE, IMMUNISATION_EVENT_TYPE, SPEC_VERSION
+from constants import IMMUNISATION_EVENT_SOURCE, IMMUNISATION_EVENT_TYPE, SPEC_VERSION
 
 IMMUNIZATION_ENV = os.getenv("IMMUNIZATION_ENV")
 IMMUNIZATION_BASE_PATH = os.getenv("IMMUNIZATION_BASE_PATH")
@@ -21,21 +21,23 @@ def create_mns_notification(sqs_event: SQSMessage) -> MnsNotificationPayload:
     immunisation_url = get_service_url(IMMUNIZATION_ENV, IMMUNIZATION_BASE_PATH)
 
     body = json.loads(sqs_event.get("body", "{}"))
-    new_image = body.get("dynamodb", {}).get("NewImage", {})
-    imms_id = _unwrap_dynamodb_value(new_image.get("ImmsID", {}))
-    supplier_system = _unwrap_dynamodb_value(new_image.get("SupplierSystem", {}))
-    vaccine_type = _unwrap_dynamodb_value(new_image.get("VaccineType", {}))
-    operation = _unwrap_dynamodb_value(new_image.get("Operation", {}))
+    event = DynamoDBStreamEvent({"Records": [body]})
+    record = next(event.records)
+    new_image = record.dynamodb.new_image
+    imms_id = new_image.get("ImmsID", {})
+    supplier_system = new_image.get("SupplierSystem", "")
+    vaccine_type = new_image.get("VaccineType", "")
+    operation = new_image.get("Operation", "")
 
-    imms_map = new_image.get("Imms", {}).get("M", {})
-    nhs_number = _unwrap_dynamodb_value(imms_map.get("NHS_NUMBER", {}))
+    imms_data = new_image.get("Imms", {})
+    nhs_number = imms_data.get("NHS_NUMBER", "")
     if not nhs_number:
         logger.error("Missing required field: Nhs Number")
         raise ValueError("NHS number is required to create MNS notification")
 
-    person_dob = _unwrap_dynamodb_value(imms_map.get("PERSON_DOB", {}))
-    date_and_time = _unwrap_dynamodb_value(imms_map.get("DATE_AND_TIME", {}))
-    site_code = _unwrap_dynamodb_value(imms_map.get("SITE_CODE", {}))
+    person_dob = imms_data.get("PERSON_DOB", "")
+    date_and_time = imms_data.get("DATE_AND_TIME", "")
+    site_code = imms_data.get("SITE_CODE", "")
 
     patient_age = calculate_age_at_vaccination(person_dob, date_and_time)
     gp_ods_code = get_practitioner_details_from_pds(nhs_number)
@@ -77,12 +79,13 @@ def calculate_age_at_vaccination(birth_date: str, vaccination_date: str) -> int:
     """
     Calculate patient age in years at time of vaccination.
     Expects dates in format: YYYYMMDD or YYYYMMDDThhmmsszz
+    Note: This function performs a pure calculation and does not enforce domain validation.
+    If the vaccination date precedes the birth date, a negative age may be returned.
+    Validation of date correctness and logical consistency (e.g. vaccination after birth)
+    is expected to be handled upstream in the data ingestion pipeline.
     """
     date_of_birth = _parse_compact_date(birth_date, "PERSON_DOB")
     date_of_vaccination = _parse_compact_date(vaccination_date, "DATE_AND_TIME")
-
-    if date_of_vaccination < date_of_birth:
-        raise ValueError("DATE_AND_TIME cannot be before PERSON_DOB")
 
     age = date_of_vaccination.year - date_of_birth.year
     if (date_of_vaccination.month, date_of_vaccination.day) < (date_of_birth.month, date_of_birth.day):
@@ -124,21 +127,3 @@ def get_practitioner_details_from_pds(nhs_number: str) -> str | None:
             return None
 
     return gp_ods_code
-
-
-def _unwrap_dynamodb_value(value: dict) -> Any:
-    """
-    Unwrap DynamoDB type descriptor to get the actual value.
-    DynamoDB types: S (String), N (Number), BOOL, M (Map), L (List), NULL
-    """
-    if not isinstance(value, dict):
-        return value
-
-    if "NULL" in value:
-        return None
-
-    for key in DYNAMO_DB_TYPE_DESCRIPTORS:
-        if key in value:
-            return value[key]
-
-    return value

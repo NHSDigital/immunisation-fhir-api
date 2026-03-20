@@ -140,23 +140,28 @@ def send_search_post_with_target_disease_and_dates(context):
     trigger_search_request_by_httpMethod(context, httpMethod="POST")
 
 
-@when("Send a search request with GET method using target-disease for Immunization event created with valid NHS Number")
-def send_search_get_with_target_disease_unauthorised_supplier(context):
+@when(
+    parsers.parse(
+        "Send a search request with GET method using target-disease for Immunization event created with valid NHS Number and patient identifier system '{patient_identifier_system}' and target-disease system '{target_disease_system}'"
+    )
+)
+def send_search_get_with_target_disease_unauthorised_supplier(context, patient_identifier_system, target_disease_system):
+    nhs_number = "9000000009"
     context.params = {
-        "patient.identifier": "https://fhir.nhs.uk/Id/nhs-number|9000000009",
-        "target-disease": "http://snomed.info/sct|14189004",
+        "patient.identifier": f"{patient_identifier_system}|{nhs_number}",
+        "target-disease": f"{target_disease_system}|14189004",
     }
     trigger_search_request_by_httpMethod(context, httpMethod="GET")
 
 
 @when(
     parsers.parse(
-        "Send a search request with '{httpMethod}' method with valid NHS Number and all invalid target-disease codes"
+        "Send a search request with '{httpMethod}' method with valid NHS Number and all invalid target-disease codes using patient identifier system '{patient_identifier_system}'"
     )
 )
-def send_search_request_with_all_invalid_target_disease_codes(context, httpMethod):
+def send_search_request_with_all_invalid_target_disease_codes(context, httpMethod, patient_identifier_system):
     context.params = context.request = {
-        "patient.identifier": "https://fhir.nhs.uk/Id/nhs-number|9000000009",
+        "patient.identifier": f"{patient_identifier_system}|9000000009",
         "target-disease": "invalid-no-pipe,wrong_system|123",
     }
     trigger_search_request_by_httpMethod(context, httpMethod=httpMethod)
@@ -164,15 +169,18 @@ def send_search_request_with_all_invalid_target_disease_codes(context, httpMetho
 
 @when(
     parsers.parse(
-        "Send a search request with '{httpMethod}' method using mixed valid and invalid target-disease codes for Immunization event created"
+        "Send a search request with '{httpMethod}' method using mixed valid and invalid target-disease codes for Immunization event created with target-disease system '{target_disease_system}' and invalid target-disease code '{invalid_target_disease_code}'"
     )
 )
-def send_search_post_with_mixed_valid_and_invalid_target_disease_codes(context, httpMethod):
+def send_search_post_with_mixed_valid_and_invalid_target_disease_codes(
+    context, httpMethod, target_disease_system, invalid_target_disease_code
+):
     patient_ident = context.create_object.contained[1].identifier[0]
     target = context.create_object.protocolApplied[0].targetDisease[0].coding[0]
+    context.invalid_target_disease_code = invalid_target_disease_code
     context.params = context.request = {
         "patient.identifier": f"{patient_ident.system}|{patient_ident.value}",
-        "target-disease": f"{target.system}|{target.code},{target.system}|999999",
+        "target-disease": f"{target.system}|{target.code},{target_disease_system}|{invalid_target_disease_code}",
     }
     trigger_search_request_by_httpMethod(context, httpMethod=httpMethod)
 
@@ -494,6 +502,7 @@ def validate_invalid_target_disease_codes_error(context):
 def validate_search_response_with_invalid_target_disease_operation_outcome(context):
     issue = read_issue_from_response(context)
     diagnostics = issue.get("diagnostics", "")
+    invalid_target_disease_code = getattr(context, "invalid_target_disease_code", None)
     assert issue.get("code") == "invalid", f"issue code should be 'invalid', got '{issue.get('code')}'"
     assert "Target disease code" in diagnostics, (
         f"issue diagnostics should mention 'Target disease code', got '{diagnostics}'"
@@ -501,8 +510,11 @@ def validate_search_response_with_invalid_target_disease_operation_outcome(conte
     assert "not a supported target disease in this service" in diagnostics, (
         f"issue diagnostics should mention unsupported target disease, got '{diagnostics}'"
     )
-    assert "999999" in diagnostics, (
-        "issue diagnostics should contain invalid target disease code '999999', got '{diagnostics}'"
+    assert invalid_target_disease_code is not None, (
+        "invalid target disease code was not set by the scenario step before assertion"
+    )
+    assert invalid_target_disease_code in diagnostics, (
+        f"issue diagnostics should contain invalid target disease code '{invalid_target_disease_code}', got '{diagnostics}'"
     )
 
 
