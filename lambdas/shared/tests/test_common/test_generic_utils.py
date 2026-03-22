@@ -1,9 +1,21 @@
 """Tests for generic utils"""
 
+import datetime
 import unittest
 from copy import deepcopy
 from unittest.mock import Mock, patch
 
+from common.models.utils.generic_utils import (
+    check_keys_in_sources,
+    create_diagnostics,
+    create_diagnostics_error,
+    extract_file_key_elements,
+    generate_field_location_for_name,
+    get_contained_practitioner,
+    get_nhs_number,
+    get_occurrence_datetime,
+    is_actor_referencing_contained_resource,
+)
 from common.models.utils.validation_utils import (
     convert_disease_codes_to_vaccine_type,
     get_vaccine_type,
@@ -24,6 +36,127 @@ class TestGenericUtils(unittest.TestCase):
     def tearDown(self):
         """Tear down after each test. This runs after every test"""
         self.redis_getter_patcher.stop()
+
+    def test_get_nhs_number_success(self):
+        """Test get_nhs_number returns NHS number when present"""
+        expected_nhs = "1234567890"
+        imms = {"contained": [{"resourceType": "Patient", "identifier": [{"value": expected_nhs}]}]}
+        result = get_nhs_number(imms)
+        self.assertEqual(result, expected_nhs)
+
+    def test_get_nhs_number_missing_patient(self):
+        """Test get_nhs_number returns 'TBC' when patient not found"""
+        imms = {"contained": []}
+        result = get_nhs_number(imms)
+        self.assertEqual(result, "TBC")
+
+    def test_get_nhs_number_missing_identifier(self):
+        """Test get_nhs_number returns 'TBC' when identifier not found"""
+        imms = {"contained": [{"resourceType": "Patient"}]}
+        result = get_nhs_number(imms)
+        self.assertEqual(result, "TBC")
+
+    def test_get_contained_practitioner(self):
+        """Test get_contained_practitioner returns practitioner resource"""
+        imms = {
+            "contained": [
+                {"resourceType": "Patient", "id": "patient1"},
+                {"resourceType": "Practitioner", "id": "practitioner1"},
+            ]
+        }
+        result = get_contained_practitioner(imms)
+        self.assertEqual(result["id"], "practitioner1")
+
+    def test_is_actor_referencing_contained_resource_true(self):
+        """Test is_actor_referencing_contained_resource returns True for matching reference"""
+        element = {"actor": {"reference": "#patient1"}}
+        result = is_actor_referencing_contained_resource(element, "patient1")
+        self.assertTrue(result)
+
+    def test_is_actor_referencing_contained_resource_false(self):
+        """Test is_actor_referencing_contained_resource returns False for non-matching reference"""
+        element = {"actor": {"reference": "#patient2"}}
+        result = is_actor_referencing_contained_resource(element, "patient1")
+        self.assertFalse(result)
+
+    def test_is_actor_referencing_contained_resource_missing_key(self):
+        """Test is_actor_referencing_contained_resource returns False when keys missing"""
+        element = {}
+        result = is_actor_referencing_contained_resource(element, "patient1")
+        self.assertFalse(result)
+
+    def test_get_occurrence_datetime_valid(self):
+        """Test get_occurrence_datetime returns datetime for valid occurrenceDateTime"""
+        immunization = {"occurrenceDateTime": "2023-01-15T10:30:00Z"}
+        result = get_occurrence_datetime(immunization)
+        # The result will be timezone-aware due to the 'Z' in the ISO string
+        expected = datetime.datetime(2023, 1, 15, 10, 30, 0, tzinfo=datetime.UTC)
+        self.assertEqual(result, expected)
+
+    def test_get_occurrence_datetime_none(self):
+        """Test get_occurrence_datetime returns None when occurrenceDateTime missing"""
+        immunization = {}
+        result = get_occurrence_datetime(immunization)
+        self.assertIsNone(result)
+
+    def test_create_diagnostics(self):
+        """Test create_diagnostics returns expected error structure"""
+        result = create_diagnostics()
+        expected = {
+            "diagnostics": "Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value does not exists."
+        }
+        self.assertEqual(result, expected)
+
+    def test_create_diagnostics_error_system(self):
+        """Test create_diagnostics_error for system mismatch"""
+        result = create_diagnostics_error("system")
+        expected = {"diagnostics": "Validation errors: identifier[0].system doesn't match with the stored content"}
+        self.assertEqual(result, expected)
+
+    def test_create_diagnostics_error_value(self):
+        """Test create_diagnostics_error for value mismatch"""
+        result = create_diagnostics_error("value")
+        expected = {"diagnostics": "Validation errors: identifier[0].value doesn't match with the stored content"}
+        self.assertEqual(result, expected)
+
+    def test_create_diagnostics_error_both(self):
+        """Test create_diagnostics_error for both system and value mismatch"""
+        result = create_diagnostics_error("Both")
+        expected = {
+            "diagnostics": "Validation errors: identifier[0].system and identifier[0].value doesn't match with the stored content"
+        }
+        self.assertEqual(result, expected)
+
+    def test_check_keys_in_sources_query_params(self):
+        """Test check_keys_in_sources with queryStringParameters"""
+        event = {"queryStringParameters": {"key1": "value1", "key2": "value2"}}
+        not_required_keys = ["key1"]
+        result = check_keys_in_sources(event, not_required_keys)
+        self.assertEqual(result, ["key1"])
+
+    def test_check_keys_in_sources_body(self):
+        """Test check_keys_in_sources with body content"""
+        import base64
+
+        body_data = "key1=value1&key2=value2"
+        encoded_body = base64.b64encode(body_data.encode()).decode()
+        event = {"body": encoded_body}
+        not_required_keys = ["key1"]
+        result = check_keys_in_sources(event, not_required_keys)
+        self.assertEqual(result, ["key1"])
+
+    def test_generate_field_location_for_name(self):
+        """Test generate_field_location_for_name creates correct path"""
+        result = generate_field_location_for_name("0", "given", "Patient")
+        expected = "contained[?(@.resourceType=='Patient')].name[0].given"
+        self.assertEqual(result, expected)
+
+    def test_extract_file_key_elements(self):
+        """Test extract_file_key_elements extracts vaccine type from file key"""
+        file_key = "COVID_VACCINE_DATA.JSON"
+        result = extract_file_key_elements(file_key)
+        expected = {"vaccine_type": "COVID"}
+        self.assertEqual(result, expected)
 
     def test_convert_disease_codes_to_vaccine_type_returns_vaccine_type(self):
         """

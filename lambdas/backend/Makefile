@@ -8,7 +8,7 @@ package: build
 	docker run --rm -v $(shell pwd)/build:/build imms-lambda-build
 
 test:
-	$(TEST_ENV) python -m unittest tests.local_lambda
+	$(TEST_ENV) python -m unittest tests.test_not_found_handler -v
 
 coverage-run:
 	$(TEST_ENV) coverage run --source=src -m unittest discover
