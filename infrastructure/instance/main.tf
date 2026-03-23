@@ -104,6 +104,10 @@ data "aws_kms_key" "existing_id_sync_sqs_encryption_key" {
   key_id = "alias/imms-event-id-sync-encryption"
 }
 
+data "aws_kms_key" "imms_subscribe_sqs_encryption_key" {
+  key_id = "alias/imms-event-id-sync-encryption"
+}
+
 data "aws_route53_zone" "project_zone" {
   name = local.project_domain_name
 }
