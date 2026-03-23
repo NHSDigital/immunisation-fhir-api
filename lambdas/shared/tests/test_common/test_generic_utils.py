@@ -103,7 +103,7 @@ class TestGenericUtils(unittest.TestCase):
         """Test create_diagnostics returns expected error structure"""
         result = create_diagnostics()
         expected = {
-            "diagnostics": "Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value does not exists."
+            "diagnostics": "Validation errors: contained[?(@.resourceType=='Patient')].identifier[?(@.system=='https://fhir.nhs.uk/Id/nhs-number')].value does not exists."
         }
         self.assertEqual(result, expected)
 
