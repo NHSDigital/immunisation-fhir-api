@@ -52,7 +52,7 @@ Feature: Update the immunization of a patient
         And MNS event will be triggered with correct data for Updated event
 
     @smoke
-    @delete_cleanup @vaccine_type_ROTAVIRUS @patient_id_Random
+    @delete_cleanup @vaccine_type_ROTAVIRUS @patient_id_NO_GP_NHS
     Scenario: Verify that update will be successful when request is triggered by other supplier with authorize permission
         Given valid vaccination record is created by 'TPP' supplier
         When Send a update for Immunization event created with patient address being updated by 'EMIS'

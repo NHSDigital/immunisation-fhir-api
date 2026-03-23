@@ -381,6 +381,13 @@ def mns_event_will_not_be_triggered_for_the_event(context):
     assert message_body is None, "Not expected a message but queue returned a message"
 
 
+@then("MNS event will not be triggered for the update event")
+def validate_mns_event_not_triggered_for_updated_event(context):
+    message_body = read_message(context, queue_type="notification", action="UPDATE")
+    print("no MNS update event is created")
+    assert message_body is None, "Not expected a message but queue returned a message"
+
+
 def trigger_the_updated_request(context):
     context.expected_version = int(context.expected_version) + 1
     context.create_object = context.update_object

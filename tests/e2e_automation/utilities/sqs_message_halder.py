@@ -32,7 +32,7 @@ def read_message(
 
     expected_dataref = f"{context.url}/{context.ImmsID}"
 
-    WAIT_TIME_SECONDS = 10
+    WAIT_TIME_SECONDS = 20
     empty_polls = 0
 
     while True:

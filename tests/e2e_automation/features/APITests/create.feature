@@ -103,7 +103,7 @@ Feature: Create the immunization event for a patient
         And MNS event will be triggered with correct data for created event
 
     @smoke
-    @Delete_cleanUp @vaccine_type_HIB @patient_id_Random @supplier_name_TPP
+    @Delete_cleanUp @vaccine_type_HIB @patient_id_NO_GP_NHS @supplier_name_TPP
     Scenario: Verify that VACCINATION_PROCEDURE_TERM, VACCINE_PRODUCT_TERM, SITE_OF_VACCINATION_TERM, ROUTE_OF_VACCINATION_TERM fields are blank in imms delta table if no text or value string or display field is present
         Given Valid json payload is created where vaccination terms has no text or value string or display field
         When Trigger the post create request
