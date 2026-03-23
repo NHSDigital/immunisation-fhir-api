@@ -13,6 +13,7 @@ from utilities.api_fhir_immunization_helper import (
 from utilities.api_get_header import get_update_url_header
 from utilities.date_helper import generate_date
 from utilities.enums import ActionFlag, Operation
+from utilities.sqs_message_halder import read_message
 
 from .common_steps import (
     mns_event_will_be_triggered_with_correct_data,
@@ -118,3 +119,10 @@ def validateForbiddenAccess(context, errorName):
 @then("MNS event will be triggered with correct data for Updated event")
 def validate_mns_event_triggered_for_updated_event(context):
     mns_event_will_be_triggered_with_correct_data(context=context, action="UPDATE")
+
+
+@then("MNS event will not be triggered for the update event")
+def validate_mns_event_not_triggered_for_updated_event(context):
+    message_body = read_message(context, queue_type="notification", action="UPDATE")
+    print("no MNS update event is created")
+    assert message_body is None, "Not expected a message but queue returned a message"

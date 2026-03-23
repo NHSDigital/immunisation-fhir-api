@@ -74,7 +74,7 @@ Feature: Create the immunization event for a patient
         And The terms are mapped to the respective text fields in imms delta table
         And MNS event will be triggered with correct data for created event
 
-    @Delete_cleanUp @vaccine_type_BCG @patient_id_Random @supplier_name_EMIS
+    @Delete_cleanUp @vaccine_type_BCG @patient_id_InvalidInPDS @supplier_name_EMIS
     Scenario: Verify that VACCINATION_PROCEDURE_TERM, VACCINE_PRODUCT_TERM fields are mapped to first instance of coding.display fields in imms delta table
         Given Valid json payload is created where vaccination terms has multiple instances of coding
         When Trigger the post create request
@@ -83,14 +83,14 @@ Feature: Create the immunization event for a patient
         And The terms are mapped to first instance of coding.display fields in imms delta table
         And MNS event will be triggered with correct data for created event
 
-    @Delete_cleanUp @vaccine_type_HEPB @patient_id_Random @supplier_name_MEDICUS
+    @Delete_cleanUp @vaccine_type_HEPB @patient_id_NullNHS @supplier_name_MEDICUS
     Scenario: Verify that VACCINATION_PROCEDURE_TERM, VACCINE_PRODUCT_TERM, SITE_OF_VACCINATION_TERM, ROUTE_OF_VACCINATION_TERM fields are mapped to correct instance of coding.display fields in imms delta table
         Given Valid json payload is created where vaccination terms has multiple instance of coding with different coding system
         When Trigger the post create request
         Then The request will be successful with the status code '201'
         And The location key and Etag in header will contain the Immunization Id and version
         And The terms are mapped to correct instance of coding.display fields in imms delta table
-        And MNS event will be triggered with correct data for created event
+        And MNS event will not be triggered for the event
 
     @smoke
     @Delete_cleanUp @vaccine_type_PERTUSSIS @patient_id_Random @supplier_name_EMIS
@@ -298,6 +298,19 @@ Feature: Create the immunization event for a patient
     @Delete_cleanUp @supplier_name_TPP @vaccine_type_BCG @patient_id_Random
     Scenario:  Verify that the POST Create API will create MNS event when patient is less then 1 year old
         Given Valid json payload is created where patient age is less then an year
+        When Trigger the post create request
+        Then The request will be successful with the status code '201'
+        And The location key and Etag in header will contain the Immunization Id and version
+        And The X-Request-ID and X-Correlation-ID keys in header will populate correctly
+        And The imms event table will be populated with the correct data for 'created' event
+        And The delta table will be populated with the correct data for created event
+        And MNS event will be triggered with correct data for created event
+
+
+    @smoke
+    @Delete_cleanUp @supplier_name_TPP @vaccine_type_BCG @patient_id_Random
+    Scenario:  Verify that the POST Create API will create MNS event when patient DOB is in future
+        Given Valid json payload is created where patient date is greater then vaccination occurrence date
         When Trigger the post create request
         Then The request will be successful with the status code '201'
         And The location key and Etag in header will contain the Immunization Id and version

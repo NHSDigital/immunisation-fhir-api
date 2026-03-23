@@ -241,7 +241,7 @@ def validate_to_compare_request_and_response(context, create_obj, created_event,
         fields_to_compare.append(
             (
                 "patient.identifier.value",
-                request_patient.identifier[0].value,
+                (request_patient.identifier[0].value if context.patient.identifier[0].value is not None else ""),
                 response_patient.identifier.value,
             )
         )
