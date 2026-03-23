@@ -211,6 +211,7 @@ jobs:
       DOCKERFILE_PATH: ${{ inputs.dockerfile_path }}
       TAG_PREFIX: ${{ inputs.image_tag_prefix }}
       LAMBDA_NAME: ${{ inputs.lambda_name }}
+      ENVIRONMENT: ${{ inputs.environment }}
       MANIFEST_NAME: ${{ inputs.manifest_name }}
       MANIFEST_S3_BUCKET: ${{ inputs.manifest_s3_bucket }}
       MANIFEST_S3_PREFIX: ${{ inputs.manifest_s3_prefix }}
@@ -266,20 +267,29 @@ jobs:
           IMAGE_URI_PINNED="${ECR_REGISTRY}/${ECR_REPOSITORY}@${IMAGE_DIGEST}"
           MANIFEST_FILE="${RUNNER_TEMP}/${LAMBDA_NAME}-manifest.json"
 
-          cat > "${MANIFEST_FILE}" <<EOF
-          {
-            "lambda_name": "${LAMBDA_NAME}",
-            "environment": "${{ inputs.environment }}",
-            "sub_environment": "${SUB_ENVIRONMENT}",
-            "deployment_mode": "build",
-            "image_version": "${GIT_TAG}",
-            "release_tag": "${REL_TAG}",
-            "repository": "${ECR_REPOSITORY}",
-            "image_digest": "${IMAGE_DIGEST}",
-            "image_uri": "${IMAGE_URI_PINNED}",
-            "source_sha": "${GITHUB_SHA}"
-          }
-          EOF
+          jq -n \
+            --arg lambda_name "${LAMBDA_NAME}" \
+            --arg environment "${ENVIRONMENT}" \
+            --arg sub_environment "${SUB_ENVIRONMENT}" \
+            --arg deployment_mode "build" \
+            --arg image_version "${GIT_TAG}" \
+            --arg release_tag "${REL_TAG}" \
+            --arg repository "${ECR_REPOSITORY}" \
+            --arg image_digest "${IMAGE_DIGEST}" \
+            --arg image_uri "${IMAGE_URI_PINNED}" \
+            --arg source_sha "${GITHUB_SHA}" \
+            '{
+              lambda_name: $lambda_name,
+              environment: $environment,
+              sub_environment: $sub_environment,
+              deployment_mode: $deployment_mode,
+              image_version: $image_version,
+              release_tag: $release_tag,
+              repository: $repository,
+              image_digest: $image_digest,
+              image_uri: $image_uri,
+              source_sha: $source_sha
+            }' > "${MANIFEST_FILE}"
 
           echo "image_version=${GIT_TAG}" >> "$GITHUB_OUTPUT"
           echo "image_digest=${IMAGE_DIGEST}" >> "$GITHUB_OUTPUT"
@@ -324,6 +334,8 @@ jobs:
       IMAGE_VERSION: ${{ inputs.image_version }}
       TAG_PREFIX: ${{ inputs.image_tag_prefix }}
       LAMBDA_NAME: ${{ inputs.lambda_name }}
+      ENVIRONMENT: ${{ inputs.environment }}
+      SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
       MANIFEST_NAME: ${{ inputs.manifest_name }}
     steps:
       - name: Connect to AWS
@@ -409,19 +421,27 @@ jobs:
           image_uri="${REPOSITORY_URI}@${image_digest}"
           manifest_file="${RUNNER_TEMP}/${LAMBDA_NAME}-manifest.json"
 
-          cat > "${manifest_file}" <<EOF
-          {
-            "lambda_name": "${LAMBDA_NAME}",
-            "environment": "${{ inputs.environment }}",
-            "sub_environment": "${{ inputs.sub_environment }}",
-            "deployment_mode": "reuse",
-            "image_version": "${requested_version}",
-            "repository": "${ECR_REPOSITORY}",
-            "image_digest": "${image_digest}",
-            "image_uri": "${image_uri}",
-            "source_sha": "${GITHUB_SHA}"
-          }
-          EOF
+          jq -n \
+            --arg lambda_name "${LAMBDA_NAME}" \
+            --arg environment "${ENVIRONMENT}" \
+            --arg sub_environment "${SUB_ENVIRONMENT}" \
+            --arg deployment_mode "reuse" \
+            --arg image_version "${requested_version}" \
+            --arg repository "${ECR_REPOSITORY}" \
+            --arg image_digest "${image_digest}" \
+            --arg image_uri "${image_uri}" \
+            --arg source_sha "${GITHUB_SHA}" \
+            '{
+              lambda_name: $lambda_name,
+              environment: $environment,
+              sub_environment: $sub_environment,
+              deployment_mode: $deployment_mode,
+              image_version: $image_version,
+              repository: $repository,
+              image_digest: $image_digest,
+              image_uri: $image_uri,
+              source_sha: $source_sha
+            }' > "${manifest_file}"
 
           echo "image_version=${requested_version}" >> "$GITHUB_OUTPUT"
           echo "image_digest=${image_digest}" >> "$GITHUB_OUTPUT"
@@ -451,4 +471,11 @@ jobs:
     steps:
       - name: Set terraform variable name output
         id: terraform-var
-        run: echo "terraform_variable_name=${{ inputs.terraform_variable_name }}" >> "$GITHUB_OUTPUT"
+        env:
+          TERRAFORM_VARIABLE_NAME: ${{ inputs.terraform_variable_name }}
+        run: |
+          {
+            echo "terraform_variable_name<<EOF"
+            echo "${TERRAFORM_VARIABLE_NAME}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
