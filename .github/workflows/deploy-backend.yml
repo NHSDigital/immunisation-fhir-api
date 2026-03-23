@@ -10,6 +10,10 @@ on:
         required: false
         type: boolean
         default: false
+      recordprocessor_image_tag:
+        required: false
+        type: string
+        default: ""
       recordprocessor_diff_base_sha:
         required: false
         type: string
@@ -94,6 +98,18 @@ jobs:
           RECORDPROCESSOR_DIFF_BASE_SHA: ${{ inputs.recordprocessor_diff_base_sha }}
           RECORDPROCESSOR_DIFF_HEAD_SHA: ${{ inputs.recordprocessor_diff_head_sha }}
         run: |
+          if ! git rev-parse --verify "${RECORDPROCESSOR_DIFF_BASE_SHA}^{commit}" >/dev/null 2>&1; then
+            echo "Base SHA '${RECORDPROCESSOR_DIFF_BASE_SHA}' is unavailable. Falling back to rebuild."
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if ! git rev-parse --verify "${RECORDPROCESSOR_DIFF_HEAD_SHA}^{commit}" >/dev/null 2>&1; then
+            echo "Head SHA '${RECORDPROCESSOR_DIFF_HEAD_SHA}' is unavailable. Falling back to rebuild."
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           if git diff --quiet "${RECORDPROCESSOR_DIFF_BASE_SHA}" "${RECORDPROCESSOR_DIFF_HEAD_SHA}" -- lambdas/recordprocessor/ lambdas/shared/src/common/; then
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
           else
@@ -171,14 +187,20 @@ jobs:
         env:
           REPOSITORY_NAME: imms-recordprocessor-repo
           TAG_PREFIX: ${{ inputs.sub_environment }}-
-          PROVIDED_IMAGE_TAG: ${{ github.event.inputs.recordprocessor_image_tag }}
+          PROVIDED_IMAGE_TAG: ${{ inputs.recordprocessor_image_tag }}
         run: |
+          if [ -n "${PROVIDED_IMAGE_TAG}" ]; then
+            aws ecr describe-images \
+              --repository-name "${REPOSITORY_NAME}" \
+              --region "${AWS_REGION}" \
+              --image-ids imageTag="${PROVIDED_IMAGE_TAG}" \
+              >/dev/null
+            echo "Using provided recordprocessor image tag: ${PROVIDED_IMAGE_TAG}"
+            echo "recordprocessor_image_tag=${PROVIDED_IMAGE_TAG}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
-            if [ -n "${PROVIDED_IMAGE_TAG}" ]; then
-              echo "Using provided recordprocessor image tag: ${PROVIDED_IMAGE_TAG}"
-              echo "recordprocessor_image_tag=${PROVIDED_IMAGE_TAG}" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
             echo "When build_recordprocessor_image is false, recordprocessor_image_tag must be provided."
             exit 1
           fi

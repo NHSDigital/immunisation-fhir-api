@@ -14,11 +14,11 @@ resource "aws_ecr_lifecycle_policy" "recordprocessor_repository_lifecycle_policy
   "rules": [
     {
       "rulePriority": 1,
-      "description": "Keep last 10 images",
+      "description": "Keep last 100 images",
       "selection": {
         "tagStatus": "any",
         "countType": "imageCountMoreThan",
-        "countNumber": 10
+        "countNumber": 100
       },
       "action": {
         "type": "expire"
