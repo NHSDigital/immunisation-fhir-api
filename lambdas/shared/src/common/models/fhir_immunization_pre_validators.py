@@ -45,6 +45,7 @@ class PreValidators:
             self.pre_validate_practitioner_reference,
             self.pre_validate_patient_identifier_extension,
             self.pre_validate_patient_identifier,
+            self.pre_validate_patient_identifier_system,
             self.pre_validate_patient_identifier_value,
             self.pre_validate_patient_name,
             self.pre_validate_patient_name_given,
@@ -271,17 +272,29 @@ class PreValidators:
         except (KeyError, IndexError):
             pass
 
-    def pre_validate_patient_identifier_value(self, values: dict) -> None:
+    def pre_validate_patient_identifier_system(self, values: dict) -> None:
         """
-        Pre-validate that, if contained[?(@.resourceType=='Patient')].identifier[0].value (
-        legacy CSV field name: NHS_NUMBER) exists, then it is a string of 10 characters
-        which does not contain spaces
+        Pre-validate that, if contained[?(@.resourceType=='Patient')].identifier[0].system exists,
+        then it is a non-empty string.
         """
-        field_location = "contained[?(@.resourceType=='Patient')].identifier[0].value"
+        field_location = "contained[?(@.resourceType=='Patient')].identifier[0].system"
         try:
             field_value = [x for x in values["contained"] if x.get("resourceType") == "Patient"][0]["identifier"][0][
-                "value"
+                "system"
             ]
+            PreValidation.for_string(field_value, field_location)
+        except (KeyError, IndexError):
+            pass
+
+    def pre_validate_patient_identifier_value(self, values: dict) -> None:
+        """
+        Pre-validate that, if the contained Patient has an NHS-number identifier,
+        its value is a string of 10 characters which does not contain spaces.
+        """
+        field_location = f"contained[?(@.resourceType=='Patient')].identifier[?(@.system=='{Urls.NHS_NUMBER}')].value"
+        try:
+            patient = [x for x in values["contained"] if x.get("resourceType") == "Patient"][0]
+            field_value = [x for x in patient["identifier"] if x.get("system") == Urls.NHS_NUMBER][0]["value"]
             PreValidation.for_string(field_value, field_location, defined_length=10, spaces_allowed=False)
             PreValidation.for_nhs_number(field_value, field_location)
         except (KeyError, IndexError):

@@ -4,6 +4,7 @@ from collections import Counter
 import boto3
 import pytest_check as check
 from boto3.dynamodb.conditions import Key
+from boto3.dynamodb.types import TypeDeserializer
 from botocore.config import Config
 from utilities.api_fhir_immunization_helper import extract_practitioner_name
 from utilities.context import ScenarioContext
@@ -23,6 +24,13 @@ from src.objectModels.api_data_objects import (
     Practitioner,
     ProtocolApplied,
 )
+
+deserializer = TypeDeserializer()
+
+
+def dynamodb_json_to_python(dynamo_json):
+    return {k: deserializer.deserialize(v) for k, v in dynamo_json.items()}
+
 
 my_config = Config(region_name="eu-west-2", connect_timeout=10, read_timeout=500)
 
@@ -132,7 +140,18 @@ def fetch_batch_audit_table_detail(aws_profile_name: str, filename: str, env: st
         delay *= 2
 
     print(f"\n❌ No items found for filename={filename} after {max_attempts} attempts.\n")
+
     return []
+
+
+def insert_item_into_delta_table(aws_profile_name: str, item: dict, env: str):
+    db = DynamoDBHelper(aws_profile_name, env)
+    tableImmsDelta = db.get_delta_table()
+
+    python_item = dynamodb_json_to_python(item)
+
+    response = tableImmsDelta.put_item(Item=python_item)
+    print("Item inserted:", response)
 
 
 def parse_imms_int_imms_event_response(

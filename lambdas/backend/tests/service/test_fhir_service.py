@@ -433,7 +433,8 @@ class TestCreateImmunization(TestFhirServiceBase):
         invalid_nhs_number = "9434765911"  # check digit 1 doesn't match result (9)
         imms = create_covid_immunization_dict_no_id(invalid_nhs_number)
         expected_msg = (
-            "Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value is not a valid NHS number"
+            "Validation errors: contained[?(@.resourceType=='Patient')].identifier"
+            "[?(@.system=='https://fhir.nhs.uk/Id/nhs-number')].value is not a valid NHS number"
         )
 
         with self.assertRaises(CustomValidationError) as error:
@@ -552,7 +553,8 @@ class TestUpdateImmunization(TestFhirServiceBase):
         self.imms_repo.update_immunization.assert_not_called()
         self.assertEqual(
             error.exception.message,
-            "Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value must be 10 characters",
+            "Validation errors: contained[?(@.resourceType=='Patient')].identifier"
+            "[?(@.system=='https://fhir.nhs.uk/Id/nhs-number')].value must be 10 characters",
         )
 
     def test_update_immunization_raises_not_found_error_when_no_existing_immunisation(self):
