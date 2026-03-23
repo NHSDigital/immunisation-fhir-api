@@ -26,22 +26,22 @@ def read_message(
     action="CREATE",
     wait_for_message=True,
     max_empty_polls=3,
+    wait_time_seconds=20,
 ):
     sqs = boto3.client("sqs", region_name="eu-west-2")
     queue_url = build_queue_url(context.S3_env, context.aws_account_id, queue_type)
 
     expected_dataref = f"{context.url}/{context.ImmsID}"
 
-    WAIT_TIME_SECONDS = 20
     empty_polls = 0
 
     while True:
-        print(f"Polling {queue_type} queue for {action} messages (wait {WAIT_TIME_SECONDS}s)...")
+        print(f"Polling {queue_type} queue for {action} messages (wait {wait_time_seconds}s)...")
 
         response = sqs.receive_message(
             QueueUrl=queue_url,
             MaxNumberOfMessages=10,
-            WaitTimeSeconds=WAIT_TIME_SECONDS,
+            WaitTimeSeconds=wait_time_seconds,
             VisibilityTimeout=30,
         )
 

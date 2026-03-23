@@ -376,14 +376,26 @@ def mns_event_will_be_triggered_with_correct_data_for_created_event(context):
 
 @then("MNS event will not be triggered for the event")
 def mns_event_will_not_be_triggered_for_the_event(context):
-    message_body = read_message(context, queue_type="notification", action="CREATE")
+    message_body = read_message(
+        context,
+        queue_type="notification",
+        action="CREATE",
+        wait_time_seconds=5,
+        max_empty_polls=1,
+    )
     print("No MNS create event is created")
     assert message_body is None, "Not expected a message but queue returned a message"
 
 
 @then("MNS event will not be triggered for the update event")
 def validate_mns_event_not_triggered_for_updated_event(context):
-    message_body = read_message(context, queue_type="notification", action="UPDATE")
+    message_body = read_message(
+        context,
+        queue_type="notification",
+        action="UPDATE",
+        wait_time_seconds=5,
+        max_empty_polls=3,
+    )
     print("no MNS update event is created")
     assert message_body is None, "Not expected a message but queue returned a message"
 
@@ -483,7 +495,13 @@ def validate_sqs_message(context, message_body, action):
 
 def mns_event_will_be_triggered_with_correct_data_for_deleted_event(context):
     if context.patient.identifier[0].value is None:
-        message_body = read_message(context, queue_type="notification", action="DELETE")
+        message_body = read_message(
+            context,
+            queue_type="notification",
+            action="DELETE",
+            wait_time_seconds=5,
+            max_empty_polls=3,
+        )
         print(
             "No MNS delete event is created as expected since NHS number is not present in the original immunization event"
         )
