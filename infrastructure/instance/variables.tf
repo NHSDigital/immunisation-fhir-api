@@ -103,14 +103,14 @@ variable "dynamodb_point_in_time_recovery_enabled" {
   default     = false
 }
 
-variable "recordprocessor_image_tag" {
-  description = "Tag of the recordprocessor (batch processor) container image in ECR. Must be supplied by CI/CD."
+variable "recordprocessor_image_uri" {
+  description = "Immutable URI of the recordprocessor (batch processor) container image in ECR. Must be supplied by CI/CD."
   type        = string
   default     = ""
 
   validation {
-    condition     = trimspace(var.recordprocessor_image_tag) != ""
-    error_message = "recordprocessor_image_tag must be provided."
+    condition     = trimspace(var.recordprocessor_image_uri) != ""
+    error_message = "recordprocessor_image_uri must be provided."
   }
 }
 

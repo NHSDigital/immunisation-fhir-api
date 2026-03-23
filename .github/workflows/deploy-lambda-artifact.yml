@@ -1,0 +1,454 @@
+name: Deploy Lambda Artifact
+
+on:
+  workflow_call:
+    inputs:
+      lambda_name:
+        description: Logical lambda identifier for logging and artifacts
+        required: true
+        type: string
+      environment:
+        description: GitHub environment containing AWS account variables
+        required: true
+        type: string
+      sub_environment:
+        description: Deployment sub-environment (for tag prefixing and diff context)
+        required: true
+        type: string
+      build_image:
+        description: Force a fresh build and publish
+        required: false
+        type: boolean
+        default: false
+      image_version:
+        description: Existing immutable image selector (tag, sha256 digest, or full image@sha256 URI)
+        required: false
+        type: string
+        default: ""
+      run_diff_check:
+        description: Enable commit range diff checks to determine build/reuse path
+        required: false
+        type: boolean
+        default: false
+      diff_base_sha:
+        description: Base commit SHA for diff checks
+        required: false
+        type: string
+        default: ""
+      diff_head_sha:
+        description: Head commit SHA for diff checks
+        required: false
+        type: string
+        default: ""
+      lambda_paths:
+        description: Newline-separated lambda paths to diff
+        required: true
+        type: string
+      shared_paths:
+        description: Newline-separated shared paths to diff
+        required: false
+        type: string
+        default: ""
+      docker_context_path:
+        description: Docker build context path
+        required: true
+        type: string
+      dockerfile_path:
+        description: Dockerfile path relative to repository root
+        required: true
+        type: string
+      ecr_repository:
+        description: Target ECR repository name
+        required: true
+        type: string
+      image_tag_prefix:
+        description: Optional prefix for generated tags (for example pr-123-)
+        required: false
+        type: string
+        default: ""
+      terraform_variable_name:
+        description: Terraform variable name to map to the resolved image URI
+        required: true
+        type: string
+      manifest_name:
+        description: Artifact name for deployment manifest upload
+        required: false
+        type: string
+        default: "lambda-image-manifest"
+      manifest_s3_bucket:
+        description: Optional S3 bucket for manifest upload
+        required: false
+        type: string
+        default: ""
+      manifest_s3_prefix:
+        description: Optional S3 key prefix for manifest upload
+        required: false
+        type: string
+        default: ""
+    outputs:
+      deployment_mode:
+        description: Deployment path selected by contract
+        value: ${{ jobs.resolve-outputs.outputs.deployment_mode }}
+      image_version:
+        description: Selected image selector (generated tag for build mode, supplied selector for reuse mode)
+        value: ${{ jobs.resolve-outputs.outputs.image_version }}
+      image_digest:
+        description: Resolved immutable image digest
+        value: ${{ jobs.resolve-outputs.outputs.image_digest }}
+      image_uri:
+        description: Resolved immutable ECR URI (repository@sha256:...)
+        value: ${{ jobs.resolve-outputs.outputs.image_uri }}
+      terraform_variable_name:
+        description: Terraform variable name associated with image_uri
+        value: ${{ jobs.resolve-outputs.outputs.terraform_variable_name }}
+
+jobs:
+  decide-deployment-path:
+    name: Decide deployment path
+    runs-on: ubuntu-latest
+    outputs:
+      deployment_mode: ${{ steps.decide.outputs.deployment_mode }}
+      has_changes: ${{ steps.decide.outputs.has_changes }}
+      reason: ${{ steps.decide.outputs.reason }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
+        with:
+          fetch-depth: 0
+
+      - name: Select build or reuse path
+        id: decide
+        env:
+          BUILD_IMAGE: ${{ inputs.build_image }}
+          RUN_DIFF_CHECK: ${{ inputs.run_diff_check }}
+          DIFF_BASE_SHA: ${{ inputs.diff_base_sha }}
+          DIFF_HEAD_SHA: ${{ inputs.diff_head_sha }}
+          IMAGE_VERSION: ${{ inputs.image_version }}
+          LAMBDA_PATHS: ${{ inputs.lambda_paths }}
+          SHARED_PATHS: ${{ inputs.shared_paths }}
+        run: |
+          set -euo pipefail
+
+          has_changes="false"
+          force_rebuild="false"
+          reason="manual"
+          paths=()
+
+          while IFS= read -r path_value; do
+            trimmed="$(echo "${path_value}" | xargs)"
+            if [ -n "${trimmed}" ]; then
+              paths+=("${trimmed}")
+            fi
+          done <<< "${LAMBDA_PATHS}"
+
+          while IFS= read -r path_value; do
+            trimmed="$(echo "${path_value}" | xargs)"
+            if [ -n "${trimmed}" ]; then
+              paths+=("${trimmed}")
+            fi
+          done <<< "${SHARED_PATHS}"
+
+          if [ "${RUN_DIFF_CHECK}" = "true" ]; then
+            if [ -z "${DIFF_BASE_SHA}" ] || [ -z "${DIFF_HEAD_SHA}" ]; then
+              echo "Diff SHA inputs are unavailable. Falling back to build."
+              force_rebuild="true"
+              reason="missing_diff_sha"
+            elif ! git rev-parse --verify "${DIFF_BASE_SHA}^{commit}" >/dev/null 2>&1; then
+              echo "Base SHA '${DIFF_BASE_SHA}' is unavailable. Falling back to build."
+              force_rebuild="true"
+              reason="invalid_base_sha"
+            elif ! git rev-parse --verify "${DIFF_HEAD_SHA}^{commit}" >/dev/null 2>&1; then
+              echo "Head SHA '${DIFF_HEAD_SHA}' is unavailable. Falling back to build."
+              force_rebuild="true"
+              reason="invalid_head_sha"
+            else
+              if [ "${#paths[@]}" -eq 0 ]; then
+                echo "No diff paths supplied. Falling back to build."
+                force_rebuild="true"
+                reason="missing_diff_paths"
+              elif git diff --quiet "${DIFF_BASE_SHA}" "${DIFF_HEAD_SHA}" -- "${paths[@]}"; then
+                has_changes="false"
+                reason="no_changes_detected"
+              else
+                has_changes="true"
+                reason="changes_detected"
+              fi
+            fi
+          fi
+
+          deployment_mode="reuse"
+          if [ "${BUILD_IMAGE}" = "true" ] || [ "${has_changes}" = "true" ] || [ "${force_rebuild}" = "true" ]; then
+            deployment_mode="build"
+          elif [ -z "${IMAGE_VERSION}" ] && [ "${RUN_DIFF_CHECK}" != "true" ]; then
+            echo "No image version supplied in reuse mode. Falling back to build."
+            deployment_mode="build"
+            reason="missing_image_version"
+          fi
+
+          echo "deployment_mode=${deployment_mode}" >> "$GITHUB_OUTPUT"
+          echo "has_changes=${has_changes}" >> "$GITHUB_OUTPUT"
+          echo "reason=${reason}" >> "$GITHUB_OUTPUT"
+
+  build-and-publish:
+    name: Build and publish image
+    needs: decide-deployment-path
+    if: ${{ needs.decide-deployment-path.outputs.deployment_mode == 'build' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+    permissions:
+      id-token: write
+      contents: read
+    outputs:
+      image_version: ${{ steps.build.outputs.image_version }}
+      image_digest: ${{ steps.build.outputs.image_digest }}
+      image_uri: ${{ steps.build.outputs.image_uri }}
+      deployment_mode: build
+    env:
+      AWS_REGION: eu-west-2
+      ECR_REPOSITORY: ${{ inputs.ecr_repository }}
+      DOCKER_CONTEXT_PATH: ${{ inputs.docker_context_path }}
+      DOCKERFILE_PATH: ${{ inputs.dockerfile_path }}
+      TAG_PREFIX: ${{ inputs.image_tag_prefix }}
+      LAMBDA_NAME: ${{ inputs.lambda_name }}
+      MANIFEST_NAME: ${{ inputs.manifest_name }}
+      MANIFEST_S3_BUCKET: ${{ inputs.manifest_s3_bucket }}
+      MANIFEST_S3_PREFIX: ${{ inputs.manifest_s3_prefix }}
+      SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
+
+      - name: Connect to AWS
+        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7
+        with:
+          aws-region: eu-west-2
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
+          role-session-name: github-actions
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076
+
+      - name: Build, publish and emit digest manifest
+        id: build
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          set -euo pipefail
+
+          SHORT_SHA="$(echo "${GITHUB_SHA}" | cut -c1-12)"
+          RELEASE_STAMP="$(date -u '+%Y.%m.%d').${GITHUB_RUN_NUMBER}"
+          GIT_TAG="${TAG_PREFIX}git-${SHORT_SHA}"
+          REL_TAG="${TAG_PREFIX}rel-${RELEASE_STAMP}"
+
+          IMAGE_URI_GIT="${ECR_REGISTRY}/${ECR_REPOSITORY}:${GIT_TAG}"
+          IMAGE_URI_REL="${ECR_REGISTRY}/${ECR_REPOSITORY}:${REL_TAG}"
+
+          docker build -f "${DOCKERFILE_PATH}" -t "${IMAGE_URI_GIT}" -t "${IMAGE_URI_REL}" "${DOCKER_CONTEXT_PATH}"
+          docker push "${IMAGE_URI_GIT}"
+          docker push "${IMAGE_URI_REL}"
+
+          IMAGE_DIGEST="$(
+            aws ecr describe-images \
+              --repository-name "${ECR_REPOSITORY}" \
+              --region "${AWS_REGION}" \
+              --image-ids imageTag="${GIT_TAG}" \
+              --query 'imageDetails[0].imageDigest' \
+              --output text
+          )"
+
+          if [ -z "${IMAGE_DIGEST}" ] || [ "${IMAGE_DIGEST}" = "None" ]; then
+            echo "Unable to resolve image digest for tag '${GIT_TAG}'."
+            exit 1
+          fi
+
+          IMAGE_URI_PINNED="${ECR_REGISTRY}/${ECR_REPOSITORY}@${IMAGE_DIGEST}"
+          MANIFEST_FILE="${RUNNER_TEMP}/${LAMBDA_NAME}-manifest.json"
+
+          cat > "${MANIFEST_FILE}" <<EOF
+          {
+            "lambda_name": "${LAMBDA_NAME}",
+            "environment": "${{ inputs.environment }}",
+            "sub_environment": "${SUB_ENVIRONMENT}",
+            "deployment_mode": "build",
+            "image_version": "${GIT_TAG}",
+            "release_tag": "${REL_TAG}",
+            "repository": "${ECR_REPOSITORY}",
+            "image_digest": "${IMAGE_DIGEST}",
+            "image_uri": "${IMAGE_URI_PINNED}",
+            "source_sha": "${GITHUB_SHA}"
+          }
+          EOF
+
+          echo "image_version=${GIT_TAG}" >> "$GITHUB_OUTPUT"
+          echo "image_digest=${IMAGE_DIGEST}" >> "$GITHUB_OUTPUT"
+          echo "image_uri=${IMAGE_URI_PINNED}" >> "$GITHUB_OUTPUT"
+          echo "manifest_file=${MANIFEST_FILE}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload deployment manifest
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        with:
+          name: ${{ env.MANIFEST_NAME }}-${{ inputs.lambda_name }}
+          path: ${{ steps.build.outputs.manifest_file }}
+
+      - name: Upload manifest to S3
+        if: ${{ env.MANIFEST_S3_BUCKET != '' }}
+        env:
+          MANIFEST_FILE: ${{ steps.build.outputs.manifest_file }}
+        run: |
+          set -euo pipefail
+
+          S3_KEY="${MANIFEST_S3_PREFIX%/}/${LAMBDA_NAME}/${GITHUB_RUN_ID}.json"
+          S3_KEY="${S3_KEY#/}"
+          aws s3 cp "${MANIFEST_FILE}" "s3://${MANIFEST_S3_BUCKET}/${S3_KEY}" --region "${AWS_REGION}"
+
+  resolve-and-reuse:
+    name: Resolve and reuse existing image
+    needs: decide-deployment-path
+    if: ${{ needs.decide-deployment-path.outputs.deployment_mode == 'reuse' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+    permissions:
+      id-token: write
+      contents: read
+    outputs:
+      image_version: ${{ steps.resolve.outputs.image_version }}
+      image_digest: ${{ steps.resolve.outputs.image_digest }}
+      image_uri: ${{ steps.resolve.outputs.image_uri }}
+      deployment_mode: reuse
+    env:
+      AWS_REGION: eu-west-2
+      ECR_REPOSITORY: ${{ inputs.ecr_repository }}
+      IMAGE_VERSION: ${{ inputs.image_version }}
+      TAG_PREFIX: ${{ inputs.image_tag_prefix }}
+      LAMBDA_NAME: ${{ inputs.lambda_name }}
+      MANIFEST_NAME: ${{ inputs.manifest_name }}
+    steps:
+      - name: Connect to AWS
+        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7
+        with:
+          aws-region: eu-west-2
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
+          role-session-name: github-actions
+
+      - name: Resolve immutable image reference
+        id: resolve
+        run: |
+          set -euo pipefail
+
+          REPOSITORY_URI="$(
+            aws ecr describe-repositories \
+              --repository-names "${ECR_REPOSITORY}" \
+              --region "${AWS_REGION}" \
+              --query 'repositories[0].repositoryUri' \
+              --output text
+          )"
+
+          requested_version="${IMAGE_VERSION}"
+          if [ -z "${requested_version}" ]; then
+            if [ -z "${TAG_PREFIX}" ]; then
+              echo "image_version is required when deployment mode is reuse and no image_tag_prefix is supplied."
+              exit 1
+            fi
+
+            requested_version="$(
+              aws ecr describe-images \
+                --repository-name "${ECR_REPOSITORY}" \
+                --region "${AWS_REGION}" \
+                --filter tagStatus=TAGGED \
+                --query 'reverse(sort_by(imageDetails,&imagePushedAt))[].imageTags[]' \
+                --output text \
+              | tr '\t' '\n' \
+              | grep "^${TAG_PREFIX}" \
+              | head -n1 || true
+            )"
+
+            if [ -z "${requested_version}" ]; then
+              echo "Unable to resolve an existing image tag for prefix '${TAG_PREFIX}'."
+              echo "Provide image_version or enable build_image to create a fresh image."
+              exit 1
+            fi
+
+            echo "Resolved latest image tag for prefix '${TAG_PREFIX}': ${requested_version}"
+          fi
+
+          image_digest=""
+
+          case "${requested_version}" in
+            *@sha256:*)
+              image_digest="${requested_version##*@}"
+              ;;
+            sha256:*)
+              image_digest="${requested_version}"
+              ;;
+            *)
+              image_digest="$(
+                aws ecr describe-images \
+                  --repository-name "${ECR_REPOSITORY}" \
+                  --region "${AWS_REGION}" \
+                  --image-ids imageTag="${requested_version}" \
+                  --query 'imageDetails[0].imageDigest' \
+                  --output text
+              )"
+              ;;
+          esac
+
+          if [ -z "${image_digest}" ] || [ "${image_digest}" = "None" ]; then
+            echo "Unable to resolve image digest for image version '${requested_version}'."
+            exit 1
+          fi
+
+          aws ecr describe-images \
+            --repository-name "${ECR_REPOSITORY}" \
+            --region "${AWS_REGION}" \
+            --image-ids imageDigest="${image_digest}" \
+            >/dev/null
+
+          image_uri="${REPOSITORY_URI}@${image_digest}"
+          manifest_file="${RUNNER_TEMP}/${LAMBDA_NAME}-manifest.json"
+
+          cat > "${manifest_file}" <<EOF
+          {
+            "lambda_name": "${LAMBDA_NAME}",
+            "environment": "${{ inputs.environment }}",
+            "sub_environment": "${{ inputs.sub_environment }}",
+            "deployment_mode": "reuse",
+            "image_version": "${requested_version}",
+            "repository": "${ECR_REPOSITORY}",
+            "image_digest": "${image_digest}",
+            "image_uri": "${image_uri}",
+            "source_sha": "${GITHUB_SHA}"
+          }
+          EOF
+
+          echo "image_version=${requested_version}" >> "$GITHUB_OUTPUT"
+          echo "image_digest=${image_digest}" >> "$GITHUB_OUTPUT"
+          echo "image_uri=${image_uri}" >> "$GITHUB_OUTPUT"
+          echo "manifest_file=${manifest_file}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload deployment manifest
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        with:
+          name: ${{ env.MANIFEST_NAME }}-${{ inputs.lambda_name }}
+          path: ${{ steps.resolve.outputs.manifest_file }}
+
+  resolve-outputs:
+    name: Resolve final outputs
+    runs-on: ubuntu-latest
+    needs:
+      - decide-deployment-path
+      - build-and-publish
+      - resolve-and-reuse
+    if: ${{ !cancelled() && (needs.build-and-publish.result == 'success' || needs.resolve-and-reuse.result == 'success') }}
+    outputs:
+      deployment_mode: ${{ needs.build-and-publish.outputs.deployment_mode || needs.resolve-and-reuse.outputs.deployment_mode }}
+      image_version: ${{ needs.build-and-publish.outputs.image_version || needs.resolve-and-reuse.outputs.image_version }}
+      image_digest: ${{ needs.build-and-publish.outputs.image_digest || needs.resolve-and-reuse.outputs.image_digest }}
+      image_uri: ${{ needs.build-and-publish.outputs.image_uri || needs.resolve-and-reuse.outputs.image_uri }}
+      terraform_variable_name: ${{ steps.terraform-var.outputs.terraform_variable_name }}
+    steps:
+      - name: Set terraform variable name output
+        id: terraform-var
+        run: echo "terraform_variable_name=${{ inputs.terraform_variable_name }}" >> "$GITHUB_OUTPUT"

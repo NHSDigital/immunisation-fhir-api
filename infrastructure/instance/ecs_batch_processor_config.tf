@@ -145,7 +145,7 @@ resource "aws_ecs_task_definition" "ecs_task" {
 
   container_definitions = jsonencode([{
     name      = "${local.short_prefix}-process-records-container"
-    image     = "${data.aws_ecr_repository.recordprocessor_repository.repository_url}:${var.recordprocessor_image_tag}"
+    image     = var.recordprocessor_image_uri
     essential = true
     environment = [
       {

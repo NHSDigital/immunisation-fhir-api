@@ -20,9 +20,9 @@ jobs:
     uses: ./.github/workflows/deploy-backend.yml
     with:
       apigee_environment: internal-dev
-      recordprocessor_diff_base_sha: ${{ github.event.before }}
-      recordprocessor_diff_head_sha: ${{ github.sha }}
-      run_recordprocessor_diff_check: true
+      diff_base_sha: ${{ github.event.before }}
+      diff_head_sha: ${{ github.sha }}
+      run_diff_check: true
       create_mns_subscription: true
       environment: dev
       sub_environment: internal-dev
@@ -85,9 +85,9 @@ jobs:
     uses: ./.github/workflows/deploy-backend.yml
     with:
       apigee_environment: ${{ matrix.sub_environment_name }}
-      recordprocessor_diff_base_sha: ${{ github.event.before }}
-      recordprocessor_diff_head_sha: ${{ github.sha }}
-      run_recordprocessor_diff_check: true
+      diff_base_sha: ${{ github.event.before }}
+      diff_head_sha: ${{ github.sha }}
+      run_diff_check: true
       create_mns_subscription: true
       environment: dev
       sub_environment: ${{ matrix.sub_environment_name }}
