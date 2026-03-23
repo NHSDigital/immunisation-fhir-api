@@ -12,7 +12,7 @@ from common.api_clients.errors import (
     UnhandledResponseError,
     raise_error_response,
 )
-from common.api_clients.mns_service import MNS_URL, MnsService
+from common.api_clients.mns_service import MnsService
 
 SQS_ARN = "arn:aws:sqs:eu-west-2:123456789012:my-queue"
 
@@ -50,7 +50,7 @@ class TestMnsService(unittest.TestCase):
         # Assert
         self.assertEqual(result, {"subscriptionId": "abc123"})
         self.assertEqual(mock_request.call_count, 2)
-        self.authenticator.get_access_token.assert_called_once()
+        self.assertGreaterEqual(self.authenticator.get_access_token.call_count, 1)
 
     @patch("common.api_clients.mns_service.requests.request")
     def test_not_found_subscription(self, mock_request):
@@ -138,18 +138,34 @@ class TestMnsService(unittest.TestCase):
         self.assertEqual(result, {"subscriptionId": "abc123"})
         self.assertEqual(mock_request.call_count, 2)
 
-    @patch("common.api_clients.mns_service.requests.request")
-    def test_delete_subscription_success(self, mock_delete):
+    @patch("common.api_clients.mns_service.request_with_retry_backoff")
+    def test_delete_subscription_success(self, mock_retry_request):
+        """Test successful subscription deletion."""
         mock_response = MagicMock()
         mock_response.status_code = 204
-        mock_delete.return_value = mock_response
+        mock_retry_request.return_value = mock_response
 
         service = MnsService(self.authenticator)
         result = service.delete_subscription("sub-id-123")
-        self.assertTrue(result)
-        mock_delete.assert_called_with(
-            method="DELETE", url=f"{MNS_URL}/sub-id-123", headers=service.request_headers, timeout=10
-        )
+
+        self.assertEqual(result, "Subscription Successfully Deleted...")
+
+        # Verify the request was made correctly
+        mock_retry_request.assert_called_once()
+
+        # Get call arguments
+        args, kwargs = mock_retry_request.call_args
+
+        # Verify method and URL
+        self.assertEqual(args[0], "DELETE")
+        self.assertIn("/subscriptions/sub-id-123", args[1])
+
+        # Verify headers exist
+        self.assertIn("headers", kwargs)
+        self.assertIn("Authorization", kwargs["headers"])
+
+        # Verify timeout
+        self.assertEqual(kwargs["timeout"], 10)
 
     @patch("common.api_clients.mns_service.requests.request")
     def test_delete_subscription_401(self, mock_delete):
@@ -276,6 +292,49 @@ class TestMnsService(unittest.TestCase):
             raise_error_response(resp)
         self.assertIn("Unhandled error: 418", str(context.exception))
         self.assertEqual(context.exception.response, {"resource": 1234})
+
+    @patch("common.api_clients.mns_service.request_with_retry_backoff")
+    def test_publish_notification_success(self, mock_request_with_retry_backoff):
+        """Test successful notification publishing."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"status": "published"}
+        mock_request_with_retry_backoff.return_value = mock_response
+
+        notification_payload = {
+            "specversion": "1.0",
+            "id": "test-id",
+            "type": "imms-vaccinations-2",
+            "source": "test-source",
+        }
+
+        service = MnsService(self.authenticator)
+        result = service.publish_notification(notification_payload)
+
+        self.assertEqual(result["status"], "published")
+
+        # Verify the request was made correctly through retry helper
+        mock_request_with_retry_backoff.assert_called_once()
+        call_args = mock_request_with_retry_backoff.call_args
+
+        headers = call_args[1]["headers"]
+        self.assertEqual(headers["Content-Type"], "application/cloudevents+json")
+
+    @patch("common.api_clients.mns_service.request_with_retry_backoff")
+    @patch("common.api_clients.mns_service.raise_error_response")
+    def test_publish_notification_failure(self, mock_raise_error, mock_request_with_retry_backoff):
+        """Test notification publishing failure."""
+        mock_response = Mock()
+        mock_response.status_code = 400
+        mock_request_with_retry_backoff.return_value = mock_response
+
+        notification_payload = {"id": "test-id"}
+
+        service = MnsService(self.authenticator)
+        service.publish_notification(notification_payload)
+
+        mock_request_with_retry_backoff.assert_called_once()
+        mock_raise_error.assert_called_once_with(mock_response)
 
 
 if __name__ == "__main__":

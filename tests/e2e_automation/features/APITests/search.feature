@@ -57,7 +57,7 @@ Feature: Search the immunization of a patient
         And The occurrenceDateTime of the immunization events should be within the Date From and Date To range
         Examples:
             | NHSNumber  | vaccine_type | DateFrom   | DateTo     |
-            | 9728403348 | FLU          | 2023-01-01 | 2023-06-04 |
+            | 9461267665 | FLU          | 2023-01-01 | 2023-06-04 |
 
     # Negative Scenarios
     @supplier_name_Postman_Auth
@@ -86,7 +86,7 @@ Feature: Search the immunization of a patient
         And The Search Response JSONs should contain correct error message for invalid include
         Examples:
             | NHSNumber  | vaccine_type | include |
-            | 9728403348 | COVID        | abc     |
+            | 9461267665 | COVID        | abc     |
 
     @smoke
     @supplier_name_Postman_Auth
@@ -99,10 +99,10 @@ Feature: Search the immunization of a patient
         And The Search Response JSONs should contain correct error message for invalid Date From, Date To and include
         Examples:
             | NHSNumber  | vaccine_type | DateFrom   | DateTo     | include              |
-            | 9728403348 | COVID        | 999-06-01  | 999-06-01  | abc                  |
-            | 9728403348 | COVID        | 2025-13-01 | 2025-12-01 | abc                  |
-            | 9728403348 | COVID        | 2025-05-12 | 2025-05-12 | abc                  |
-            | 9728403348 | COVID        | 999-06-01  | 999-06-01  | Immunization:patient |
+            | 9461267665 | COVID        | 999-06-01  | 999-06-01  | abc                  |
+            | 9461267665 | COVID        | 2025-13-01 | 2025-12-01 | abc                  |
+            | 9461267665 | COVID        | 2025-05-12 | 2025-05-12 | abc                  |
+            | 9461267665 | COVID        | 999-06-01  | 999-06-01  | Immunization:patient |
 
     @smoke
     @supplier_name_Postman_Auth
@@ -318,7 +318,7 @@ Feature: Search the immunization of a patient
     @smoke
     @Delete_cleanUp @supplier_name_TPP
     Scenario: Verify that immunization events retrieved by target-disease search are within Date From and Date To range
-        Given Valid vaccination record is created for '9728403348' and Disease Type 'SHINGLES' with recorded date as '2023-01-15'
+        Given Valid vaccination record is created for '9727805493' and Disease Type 'SHINGLES' with recorded date as '2023-01-15'
         When Send a search request with GET method using target-disease and Date From and Date To for Immunization event created
         Then The request will be successful with the status code '200'
         And The occurrenceDateTime of the immunization events should be within the Date From and Date To range
@@ -328,16 +328,16 @@ Feature: Search the immunization of a patient
 
     @supplier_name_SONAR
     Scenario: Verify that Search API returns 403 when target-disease resolves only to vaccine types supplier is not authorised for
-        When Send a search request with GET method using target-disease for Immunization event created with valid NHS Number
+        When Send a search request with GET method using target-disease for Immunization event created with valid NHS Number and patient identifier system 'https://fhir.nhs.uk/Id/nhs-number' and target-disease system 'http://snomed.info/sct'
         Then The request will be unsuccessful with the status code '403'
         And The Response JSONs should contain correct error message for 'unauthorized_access' access
 
     @supplier_name_Postman_Auth
     Scenario: Verify that Search API returns 400 when all target-disease values are invalid SNOMED codes
-        When Send a search request with 'GET' method with valid NHS Number and all invalid target-disease codes
+        When Send a search request with 'GET' method with valid NHS Number and all invalid target-disease codes using patient identifier system 'https://fhir.nhs.uk/Id/nhs-number'
         Then The request will be unsuccessful with the status code '400'
         And The Response JSONs should contain correct error message for invalid target-disease codes
-        When Send a search request with 'POST' method with valid NHS Number and all invalid target-disease codes
+        When Send a search request with 'POST' method with valid NHS Number and all invalid target-disease codes using patient identifier system 'https://fhir.nhs.uk/Id/nhs-number'
         Then The request will be unsuccessful with the status code '400'
         And The Response JSONs should contain correct error message for invalid target-disease codes
 
@@ -345,9 +345,9 @@ Feature: Search the immunization of a patient
     @Delete_cleanUp @supplier_name_Postman_Auth
     Scenario: Verify that Search API returns 200 with results and OperationOutcome when some target-disease values are invalid
         Given Valid vaccination record is created with Patient 'Random' and vaccine_type '6IN1'
-        When Send a search request with 'GET' method using mixed valid and invalid target-disease codes for Immunization event created
+        When Send a search request with 'GET' method using mixed valid and invalid target-disease codes for Immunization event created with target-disease system 'http://snomed.info/sct' and invalid target-disease code '99999'
         Then The request will be successful with the status code '200'
         And The Search Response should contain search results and OperationOutcome for invalid target-disease codes
-        When Send a search request with 'POST' method using mixed valid and invalid target-disease codes for Immunization event created
+        When Send a search request with 'POST' method using mixed valid and invalid target-disease codes for Immunization event created with target-disease system 'http://snomed.info/sct' and invalid target-disease code '99999'
         Then The request will be successful with the status code '200'
         And The Search Response should contain search results and OperationOutcome for invalid target-disease codes

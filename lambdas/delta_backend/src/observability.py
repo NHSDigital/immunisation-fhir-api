@@ -28,6 +28,5 @@ logger: Logger = Logger(
     level=os.environ.get("LOG_LEVEL", "INFO"),
     # Serialise uncaught exceptions as structured JSON.
     log_uncaught_exceptions=True,
-    # Set POWERTOOLS_LOGGER_LOG_CALLABLE_LOCATION=true to re-enable locally.
-    location=os.environ.get("POWERTOOLS_LOGGER_LOG_CALLABLE_LOCATION", "false").lower() == "true",
+    location=False,
 )

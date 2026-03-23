@@ -14,6 +14,7 @@ from utilities.error_constants import ERROR_MAP
 from features.APITests.steps.common_steps import (
     The_request_will_have_status_code,
     Trigger_the_post_create_request,
+    mns_event_will_be_triggered_with_correct_data,
     send_update_for_immunization_event,
     valid_json_payload_is_created,
     validate_etag_in_header,
@@ -62,6 +63,7 @@ def create_valid_vaccination_record_with_missing_mandatory_fields(context):
     Trigger_the_post_create_request(context)
     The_request_will_have_status_code(context, 201)
     validateCreateLocation(context)
+    mns_event_will_be_triggered_with_correct_data(context=context, action="CREATE")
 
 
 @when("An update to above  vaccination record is made through batch file upload")

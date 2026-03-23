@@ -18,3 +18,13 @@ output "id_sync_queue_arn" {
   description = "The ARN of the ID Sync (MNS NHS Number change) SQS queue"
   value       = aws_sqs_queue.id_sync_queue.arn
 }
+
+output "mns_test_queue_url" {
+  value       = module.mns_publisher.mns_test_queue_url
+  description = "URL of the MNS test notifications queue (from mns_publisher module) - DEV only"
+}
+
+output "mns_test_queue_arn" {
+  value       = module.mns_publisher.mns_test_queue_arn
+  description = "ARN of the MNS test notifications queue (from mns_publisher module) - DEV only"
+}

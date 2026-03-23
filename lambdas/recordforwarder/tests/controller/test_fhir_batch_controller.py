@@ -2,6 +2,7 @@ import unittest
 import uuid
 from unittest.mock import Mock, create_autospec
 
+from common.models.constants import Urls
 from common.models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
@@ -16,6 +17,15 @@ from test_common.testing_utils.immunization_utils import create_covid_immunizati
 
 def _make_immunization_pk(_id):
     return f"Immunization#{_id}"
+
+
+def _missing_patient_nhs_number_error():
+    return CustomValidationError(
+        message=(
+            "Validation errors: contained[?(@.resourceType=='Patient')].identifier"
+            f"[?(@.system=='{Urls.NHS_NUMBER}')].value does not exists"
+        )
+    )
 
 
 class TestCreateImmunizationBatchController(unittest.TestCase):
@@ -57,9 +67,7 @@ class TestCreateImmunizationBatchController(unittest.TestCase):
         imms_id = str(uuid.uuid4())
         imms_pk = _make_immunization_pk(imms_id)
         imms = create_covid_immunization(imms_id)
-        create_result = CustomValidationError(
-            message="Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value does not exists"
-        )
+        create_result = _missing_patient_nhs_number_error()
 
         message_body = {
             "supplier": "test_supplier",
@@ -177,9 +185,7 @@ class TestUpdateImmunizationBatchController(unittest.TestCase):
         imms_id = str(uuid.uuid4())
         imms_pk = _make_immunization_pk(imms_id)
         imms = create_covid_immunization(imms_id)
-        update_result = CustomValidationError(
-            message="Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value does not exists"
-        )
+        update_result = _missing_patient_nhs_number_error()
         message_body = {
             "supplier": "test_supplier",
             "fhir_json": imms.json(),
@@ -296,9 +302,7 @@ class TestDeleteImmunizationBatchController(unittest.TestCase):
         imms_id = str(uuid.uuid4())
         imms_pk = _make_immunization_pk(imms_id)
         imms = create_covid_immunization(imms_id)
-        update_result = CustomValidationError(
-            message="Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value does not exists"
-        )
+        update_result = _missing_patient_nhs_number_error()
         message_body = {
             "supplier": "test_supplier",
             "fhir_json": imms.json(),
