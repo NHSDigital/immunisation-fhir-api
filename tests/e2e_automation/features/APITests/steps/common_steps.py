@@ -63,6 +63,16 @@ def valid_json_payload_is_created_patient_age_is_less_then_a_year(context):
     context.immunization_object.contained[1].birthDate = dob.strftime("%Y-%m-%d")
 
 
+@given("Valid json payload is created where patient date is greater then vaccination occurrence date")
+def valid_json_payload_is_created_patient_age_is_in_future(context):
+    valid_json_payload_is_created(context)
+    today = datetime.now(UTC)
+    dob = today - timedelta(days=7)
+    context.immunization_object.contained[1].birthDate = dob.strftime("%Y-%m-%d")
+    occurrence_date = today - timedelta(days=14)
+    context.immunization_object.occurrenceDateTime = occurrence_date.isoformat()
+
+
 @given(parsers.parse("Valid json payload is created with Patient '{Patient}' and vaccine_type '{vaccine_type}'"))
 def The_Immunization_object_is_created_with_patient_for_vaccine_type(context, Patient, vaccine_type):
     context.vaccine_type = vaccine_type
@@ -123,7 +133,10 @@ def validVaccinationRecordIsCreated(context):
     Trigger_the_post_create_request(context)
     The_request_will_have_status_code(context, 201)
     validateCreateLocation(context)
-    mns_event_will_be_triggered_with_correct_data(context=context, action="CREATE")
+    if context.patient.identifier[0].value is not None:
+        mns_event_will_be_triggered_with_correct_data(context=context, action="CREATE")
+    else:
+        mns_event_will_not_be_triggered_for_the_event(context)
 
 
 @given(parsers.parse("valid vaccination record is created by '{Supplier}' supplier"))
@@ -271,7 +284,7 @@ def validate_imms_event_table_by_operation(context, operation: Operation):
         ),
         (
             "PatientPK",
-            f"Patient#{context.patient.identifier[0].value}",
+            f"Patient#{context.patient.identifier[0].value if context.patient.identifier[0].value is not None else 'TBC'}",
             item.get("PatientPK"),
         ),
         (
@@ -332,7 +345,6 @@ def send_update_for_immunization_event(context):
     context.update_object.contained[1].address[0].city = "Updated City"
     context.update_object.contained[1].address[0].state = "Updated State"
     trigger_the_updated_request(context)
-    mns_event_will_be_triggered_with_correct_data(context=context, action="UPDATE")
 
 
 @given("created event is being updated twice")
@@ -364,8 +376,27 @@ def mns_event_will_be_triggered_with_correct_data_for_created_event(context):
 
 @then("MNS event will not be triggered for the event")
 def mns_event_will_not_be_triggered_for_the_event(context):
-    message_body = read_message(context, queue_type="notification", wait_for_message=False)
-    print(f"Read message from SQS: {message_body}")
+    message_body = read_message(
+        context,
+        queue_type="notification",
+        action="CREATE",
+        wait_time_seconds=5,
+        max_empty_polls=1,
+    )
+    print("No MNS create event is created")
+    assert message_body is None, "Not expected a message but queue returned a message"
+
+
+@then("MNS event will not be triggered for the update event")
+def validate_mns_event_not_triggered_for_updated_event(context):
+    message_body = read_message(
+        context,
+        queue_type="notification",
+        action="UPDATE",
+        wait_time_seconds=5,
+        max_empty_polls=3,
+    )
+    print("no MNS update event is created")
     assert message_body is None, "Not expected a message but queue returned a message"
 
 
@@ -391,10 +422,6 @@ def calculate_age(birth_date_str: str, occurrence_datetime_str: str) -> int:
     age = occurrence.year - birth.year
     if (occurrence.month, occurrence.day) < (birth.month, birth.day):
         age -= 1
-
-    if age < 0:
-        age = 0
-
     return age
 
 
@@ -467,10 +494,18 @@ def validate_sqs_message(context, message_body, action):
 
 
 def mns_event_will_be_triggered_with_correct_data_for_deleted_event(context):
-    if context.patient.identifier[0].value is None or context.gp_code is not None:
-        print(
-            f"Patient {context.patient_id} has no NHS number or gp code is not setup, MNS message will go to Dead letter queue"
+    if context.patient.identifier[0].value is None:
+        message_body = read_message(
+            context,
+            queue_type="notification",
+            action="DELETE",
+            wait_time_seconds=5,
+            max_empty_polls=3,
         )
+        print(
+            "No MNS delete event is created as expected since NHS number is not present in the original immunization event"
+        )
+        assert message_body is None, "Not expected a message but queue returned a message"
     else:
         message_body = read_message(context, queue_type="notification", action="DELETE")
         print(f"Read deleted message from SQS: {message_body}")
@@ -479,14 +514,9 @@ def mns_event_will_be_triggered_with_correct_data_for_deleted_event(context):
 
 
 def mns_event_will_be_triggered_with_correct_data(context, action):
-    if context.patient.identifier[0].value is None or context.gp_code is not None:
-        print(
-            f"Patient {context.patient_id} has no NHS number or gp code is not setup, MNS message will go to Dead letter queue"
-        )
-    else:
-        message_body = read_message(context, queue_type="notification", action=action)
-        print(f"Read {action}d message from SQS: {message_body}")
-        assert message_body is not None, f"Expected a {action} message but queue returned empty"
-        context.gp_code = get_gp_code_by_nhs_number(context.patient.identifier[0].value)
-        context.patient_age = calculate_age(context.patient.birthDate, context.immunization_object.occurrenceDateTime)
-        validate_sqs_message(context, message_body, action)
+    message_body = read_message(context, queue_type="notification", action=action)
+    print(f"Read {action}d message from SQS: {message_body}")
+    assert message_body is not None, f"Expected a {action} message but queue returned empty"
+    context.gp_code = get_gp_code_by_nhs_number(context.patient.identifier[0].value)
+    context.patient_age = calculate_age(context.patient.birthDate, context.immunization_object.occurrenceDateTime)
+    validate_sqs_message(context, message_body, action)

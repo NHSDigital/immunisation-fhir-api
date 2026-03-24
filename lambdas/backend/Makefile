@@ -9,7 +9,6 @@ package: build
 
 test:
 	$(TEST_ENV) python -m unittest
-
 coverage-run:
 	$(TEST_ENV) coverage run --source=src -m unittest discover
 
