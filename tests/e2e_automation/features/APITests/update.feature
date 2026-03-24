@@ -11,6 +11,7 @@ Feature: Update the immunization of a patient
         And The X-Request-ID and X-Correlation-ID keys in header will populate correctly
         And The imms event table will be populated with the correct data for 'updated' event
         And The delta table will be populated with the correct data for updated event
+        And MNS event will be triggered with correct data for Updated event
 
 
     @vaccine_type_RSV @patient_id_Random
@@ -21,7 +22,7 @@ Feature: Update the immunization of a patient
         And The Response JSONs should contain correct error message for 'forbidden' access
 
 
-    @delete_cleanup @vaccine_type_RSV @patient_id_Random @supplier_name_RAVS
+    @delete_cleanup @vaccine_type_RSV @patient_id_NullNHS @supplier_name_RAVS
     Scenario: verify that vaccination record can be updated with valid vaccination detail
         Given I have created a valid vaccination record
         When I update the address of the original immunization event
@@ -30,7 +31,7 @@ Feature: Update the immunization of a patient
         And The X-Request-ID and X-Correlation-ID keys in header will populate correctly
         And The imms event table will be populated with the correct data for 'updated' event
         And The delta table will be populated with the correct data for updated event
-        And MNS event will be triggered with correct data for Updated event
+        And MNS event will not be triggered for the update event
 
 
     @smoke
@@ -51,7 +52,7 @@ Feature: Update the immunization of a patient
         And MNS event will be triggered with correct data for Updated event
 
     @smoke
-    @delete_cleanup @vaccine_type_ROTAVIRUS @patient_id_Random
+    @delete_cleanup @vaccine_type_ROTAVIRUS @patient_id_NO_GP_NHS
     Scenario: Verify that update will be successful when request is triggered by other supplier with authorize permission
         Given valid vaccination record is created by 'TPP' supplier
         When Send a update for Immunization event created with patient address being updated by 'EMIS'
@@ -62,7 +63,7 @@ Feature: Update the immunization of a patient
         And MNS event will be triggered with correct data for Updated event
 
 
-    @Delete_cleanUp @vaccine_type_RSV @patient_id_Mod11_NHS @supplier_name_Postman_Auth
+    @Delete_cleanUp @vaccine_type_RSV @patient_id_InvalidInPDS @supplier_name_Postman_Auth
     Scenario: Verify that the Update API will be successful with invalid but Mod11 compliant NHS Number
         Given I have created a valid vaccination record
         When I update the address of the original immunization event
@@ -71,6 +72,7 @@ Feature: Update the immunization of a patient
         And The X-Request-ID and X-Correlation-ID keys in header will populate correctly
         And The imms event table will be populated with the correct data for 'updated' event
         And The delta table will be populated with the correct data for updated event
+        And MNS event will be triggered with correct data for Updated event
 
     @Delete_cleanUp @vaccine_type_RSV @patient_id_Mod11_NHS @supplier_name_Postman_Auth
     Scenario Outline: Scenario Outline name: Verify that the Update API will be fails if occurrenceDateTime has future or invalid formatted date
