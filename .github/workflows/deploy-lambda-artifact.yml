@@ -186,18 +186,31 @@ jobs:
           IMAGE_URI_GIT="${ECR_REGISTRY}/${ECR_REPOSITORY}:${GIT_TAG}"
           IMAGE_URI_REL="${ECR_REGISTRY}/${ECR_REPOSITORY}:${REL_TAG}"
 
-          docker build -f "${DOCKERFILE_PATH}" -t "${IMAGE_URI_GIT}" -t "${IMAGE_URI_REL}" "${DOCKER_CONTEXT_PATH}"
-          docker push "${IMAGE_URI_GIT}"
-          docker push "${IMAGE_URI_REL}"
-
           IMAGE_DIGEST="$(
             aws ecr describe-images \
               --repository-name "${ECR_REPOSITORY}" \
               --region "${AWS_REGION}" \
               --image-ids imageTag="${GIT_TAG}" \
               --query 'imageDetails[0].imageDigest' \
-              --output text
+              --output text 2>/dev/null || true
           )"
+
+          if [ -z "${IMAGE_DIGEST}" ] || [ "${IMAGE_DIGEST}" = "None" ]; then
+            docker build -f "${DOCKERFILE_PATH}" -t "${IMAGE_URI_GIT}" -t "${IMAGE_URI_REL}" "${DOCKER_CONTEXT_PATH}"
+            docker push "${IMAGE_URI_GIT}"
+            docker push "${IMAGE_URI_REL}"
+
+            IMAGE_DIGEST="$(
+              aws ecr describe-images \
+                --repository-name "${ECR_REPOSITORY}" \
+                --region "${AWS_REGION}" \
+                --image-ids imageTag="${GIT_TAG}" \
+                --query 'imageDetails[0].imageDigest' \
+                --output text
+            )"
+          else
+            echo "Immutable tag '${GIT_TAG}' already exists. Reusing existing image digest."
+          fi
 
           if [ -z "${IMAGE_DIGEST}" ] || [ "${IMAGE_DIGEST}" = "None" ]; then
             echo "Unable to resolve image digest for tag '${GIT_TAG}'."
