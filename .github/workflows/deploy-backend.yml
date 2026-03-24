@@ -112,7 +112,7 @@ jobs:
         lambdas/recordprocessor/
       shared_paths: |
         lambdas/shared/src/common/
-      docker_context_path: .
+      docker_context_path: lambdas
       dockerfile_path: lambdas/recordprocessor/Dockerfile
       ecr_repository: imms-recordprocessor-repo
       image_tag_prefix: ${{ inputs.sub_environment }}-
