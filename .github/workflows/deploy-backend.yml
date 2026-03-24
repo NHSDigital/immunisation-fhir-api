@@ -118,7 +118,6 @@ jobs:
       image_tag_prefix: ${{ inputs.sub_environment }}-
       terraform_variable_name: recordprocessor_image_uri
       manifest_name: deploy-manifest
-    secrets: inherit
 
   terraform-plan:
     permissions:
