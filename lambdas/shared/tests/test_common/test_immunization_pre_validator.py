@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 
 from jsonpath_ng.ext import parse
 
-from common.models.constants import Constants
+from common.models.constants import Constants, Urls
 from common.models.fhir_immunization import ImmunizationValidator
 from common.models.fhir_immunization_pre_validators import PreValidators
 from common.models.utils.generic_utils import (
@@ -457,7 +457,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         """Test pre_validate_patient_identifier_value accepts valid values and rejects invalid values"""
         ValidatorModelTests.test_string_value(
             self,
-            field_location="contained[?(@.resourceType=='Patient')].identifier[0].value",
+            field_location=f"contained[?(@.resourceType=='Patient')].identifier[?(@.system=='{Urls.NHS_NUMBER}')].value",
             valid_strings_to_test=["9990548609"],
             defined_length=10,
             invalid_length_strings_to_test=["999054860", "99905486091", ""],
@@ -468,6 +468,26 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
                 "999054860 ",
                 "9990  8609",
             ],
+        )
+
+    def test_pre_validate_patient_identifier_value_accepts_non_nhs_identifier(self):
+        """Test pre_validate_patient_identifier_value ignores non-NHS patient identifiers"""
+        valid_json_data = deepcopy(self.json_data)
+        valid_json_data["contained"][1]["identifier"] = [
+            {
+                "system": "https://someother.codeableconcept.com/",
+                "value": "TVC15",
+            }
+        ]
+
+        self.assertIsNone(self.validator.validate(valid_json_data))
+
+    def test_pre_validate_patient_identifier_system(self):
+        """Test pre_validate_patient_identifier_system accepts valid values and rejects invalid values"""
+        ValidatorModelTests.test_string_value(
+            self,
+            field_location="contained[?(@.resourceType=='Patient')].identifier[0].system",
+            valid_strings_to_test=[Urls.NHS_NUMBER, "https://someother.codeableconcept.com/"],
         )
 
     def test_pre_validate_patient_name(self):
