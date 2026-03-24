@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 
 from constants import IMMUNISATION_EVENT_SOURCE, IMMUNISATION_EVENT_TYPE, SPEC_VERSION
 from create_notification import (
+    _parse_timestamp_to_iso,
     calculate_age_at_vaccination,
     create_mns_notification,
     get_practitioner_details_from_pds,
@@ -309,3 +310,15 @@ class TestGetPractitionerDetailsFromPds(unittest.TestCase):
             get_practitioner_details_from_pds("9481152782")
 
         self.assertEqual(str(context.exception), "PDS API error")
+
+
+class TestParseTimestampToIso(unittest.TestCase):
+    def test_utc_offset(self):
+        self.assertEqual(_parse_timestamp_to_iso("20240609T12000000"), "2024-06-09T12:00:00.000Z")
+
+    def test_bst_offset(self):
+        self.assertEqual(_parse_timestamp_to_iso("20240609T12000001"), "2024-06-09T12:00:00.000+01:00")
+
+    def test_invalid_format_raises(self):
+        with self.assertRaises(ValueError):
+            _parse_timestamp_to_iso("20240609 12000000")

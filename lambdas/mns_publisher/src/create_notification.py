@@ -1,7 +1,7 @@
 import json
 import os
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone
 
 from aws_lambda_powertools.utilities.data_classes.dynamo_db_stream_event import DynamoDBStreamEvent
 from aws_lambda_typing.events.sqs import SQSMessage
@@ -41,13 +41,14 @@ def create_mns_notification(sqs_event: SQSMessage) -> MnsNotificationPayload:
 
     patient_age = calculate_age_at_vaccination(person_dob, date_and_time)
     gp_ods_code = get_practitioner_details_from_pds(nhs_number)
+    mns_timestamp = _parse_timestamp_to_iso(date_and_time)
 
     return {
         "specversion": SPEC_VERSION,
         "id": str(uuid.uuid4()),
         "source": IMMUNISATION_EVENT_SOURCE,
         "type": IMMUNISATION_EVENT_TYPE,
-        "time": date_and_time,
+        "time": mns_timestamp,
         "subject": nhs_number,
         "dataref": f"{immunisation_url}/Immunization/{imms_id}",
         "filtering": {
@@ -127,3 +128,11 @@ def get_practitioner_details_from_pds(nhs_number: str) -> str | None:
             return None
 
     return gp_ods_code
+
+
+def _parse_timestamp_to_iso(timestamp: str) -> str:
+    dt_part = timestamp[:15]
+    tz_offset = int(timestamp[15:])
+    dt = datetime.strptime(dt_part, "%Y%m%dT%H%M%S")
+    tz = timezone(timedelta(hours=tz_offset))
+    return dt.replace(tzinfo=tz).isoformat(timespec="milliseconds").replace("+00:00", "Z")
