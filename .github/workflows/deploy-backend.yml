@@ -116,8 +116,6 @@ jobs:
       dockerfile_path: lambdas/recordprocessor/Dockerfile
       ecr_repository: imms-recordprocessor-repo
       image_tag_prefix: ${{ inputs.sub_environment }}-
-      terraform_variable_name: recordprocessor_image_uri
-      manifest_name: deploy-manifest
 
   terraform-plan:
     permissions:
