@@ -278,12 +278,6 @@ jobs:
             exit 1
           fi
 
-          aws ecr describe-images \
-            --repository-name "${ECR_REPOSITORY}" \
-            --region "${AWS_REGION}" \
-            --image-ids imageDigest="${image_digest}" \
-            >/dev/null
-
           image_uri="${REPOSITORY_URI}@${image_digest}"
 
           echo "image_version=${requested_version}" >> "$GITHUB_OUTPUT"
