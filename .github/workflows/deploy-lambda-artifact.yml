@@ -122,19 +122,19 @@ jobs:
           set -euo pipefail
 
           deployment_mode="reuse"
-          diff_paths=""
+          paths=()
 
           while IFS= read -r path_value; do
             trimmed="$(echo "${path_value}" | xargs)"
             if [ -n "${trimmed}" ]; then
-              diff_paths="${diff_paths}${trimmed}"$'\n'
+              paths+=("${trimmed}")
             fi
           done <<< "${LAMBDA_PATHS}"
 
           while IFS= read -r path_value; do
             trimmed="$(echo "${path_value}" | xargs)"
             if [ -n "${trimmed}" ]; then
-              diff_paths="${diff_paths}${trimmed}"$'\n'
+              paths+=("${trimmed}")
             fi
           done <<< "${SHARED_PATHS}"
 
@@ -143,10 +143,9 @@ jobs:
           elif [ "${RUN_DIFF_CHECK}" = "true" ]; then
             if [ -z "${DIFF_BASE_SHA}" ] || [ -z "${DIFF_HEAD_SHA}" ]; then
               deployment_mode="build"
-            elif [ -z "${diff_paths}" ]; then
+            elif [ "${#paths[@]}" -eq 0 ]; then
               deployment_mode="build"
             else
-              mapfile -t paths <<< "${diff_paths}"
               if ! git rev-parse --verify "${DIFF_BASE_SHA}^{commit}" >/dev/null 2>&1 || ! git rev-parse --verify "${DIFF_HEAD_SHA}^{commit}" >/dev/null 2>&1; then
                 deployment_mode="build"
               elif ! git diff --quiet "${DIFF_BASE_SHA}" "${DIFF_HEAD_SHA}" -- "${paths[@]}"; then
