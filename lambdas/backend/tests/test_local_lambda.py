@@ -1,3 +1,4 @@
+import os
 import tempfile
 import unittest
 
@@ -5,14 +6,14 @@ from local_lambda import load_string
 
 
 class TestLoadString(unittest.TestCase):
-    def test_load_string_reads_file_contents(self):
-        with tempfile.NamedTemporaryFile(mode="w+", delete=False) as tmp:
-            tmp.write("hello world")
-            tmp.seek(0)
+    def test_reads_file_contents(self):
+        fd, path = tempfile.mkstemp()
+        self.addCleanup(os.unlink, path)
+        with os.fdopen(fd, "w") as f:
+            f.write("hello world")
 
-            result = load_string(tmp.name)
-            self.assertEqual(result, "hello world")
+        self.assertEqual(load_string(path), "hello world")
 
-    def test_load_string_file_not_found(self):
+    def test_raises_if_file_not_found(self):
         with self.assertRaises(FileNotFoundError):
             load_string("/nonexistent/file/path.py")
