@@ -28,15 +28,9 @@ resource "aws_s3_bucket_versioning" "truststore_bucket" {
   }
 }
 
-data "aws_s3_bucket_policy" "cert_storage" {
-  bucket = data.aws_s3_bucket.cert_storage.bucket
-}
-
 data "aws_iam_policy_document" "cert_storage_https_only_s3_policy" {
-  source_policy_documents = [data.aws_s3_bucket_policy.cert_storage.policy]
-
   statement {
-    sid    = "EnforceHttpsOnly"
+    sid    = "HTTPSOnly"
     effect = "Deny"
 
     principals {
@@ -61,7 +55,7 @@ data "aws_iam_policy_document" "cert_storage_https_only_s3_policy" {
 
 data "aws_iam_policy_document" "truststore_https_only_s3_policy" {
   statement {
-    sid    = "EnforceHttpsOnly"
+    sid    = "HTTPSOnly"
     effect = "Deny"
 
     principals {
