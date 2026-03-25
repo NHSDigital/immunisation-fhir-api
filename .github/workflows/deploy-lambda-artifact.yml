@@ -66,6 +66,11 @@ on:
         required: false
         type: string
         default: ""
+      allow_implicit_tag_prefix_reuse:
+        description: Allow resolving latest tag by image_tag_prefix when image_version is not provided
+        required: false
+        type: boolean
+        default: false
     outputs:
       deployment_mode:
         description: Deployment path selected by contract
@@ -108,6 +113,7 @@ jobs:
       DIFF_BASE_SHA: ${{ inputs.diff_base_sha }}
       DIFF_HEAD_SHA: ${{ inputs.diff_head_sha }}
       IMAGE_VERSION: ${{ inputs.image_version }}
+      ALLOW_IMPLICIT_TAG_PREFIX_REUSE: ${{ inputs.allow_implicit_tag_prefix_reuse }}
       LAMBDA_PATHS: ${{ inputs.lambda_paths }}
       SHARED_PATHS: ${{ inputs.shared_paths }}
     steps:
@@ -239,8 +245,13 @@ jobs:
 
           requested_version="${IMAGE_VERSION}"
           if [ -z "${requested_version}" ]; then
+            if [ "${ALLOW_IMPLICIT_TAG_PREFIX_REUSE}" != "true" ]; then
+              echo "image_version is required for reuse deployments unless allow_implicit_tag_prefix_reuse is explicitly enabled."
+              exit 1
+            fi
+
             if [ -z "${TAG_PREFIX}" ]; then
-              echo "image_version is required when deployment mode is reuse and no image_tag_prefix is supplied."
+              echo "image_tag_prefix is required when allow_implicit_tag_prefix_reuse is enabled and image_version is not supplied."
               exit 1
             fi
 
@@ -324,6 +335,7 @@ jobs:
           fi
 
           manifest_file="${RUNNER_TEMP}/${LAMBDA_NAME}-manifest.json"
+          build_timestamp="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 
           jq -n \
             --arg lambda_name "${LAMBDA_NAME}" \
@@ -336,6 +348,12 @@ jobs:
             --arg image_digest "${image_digest}" \
             --arg image_uri "${image_uri}" \
             --arg source_sha "${GITHUB_SHA}" \
+            --arg git_ref "${GITHUB_REF}" \
+            --arg workflow_ref "${GITHUB_WORKFLOW_REF}" \
+            --arg run_id "${GITHUB_RUN_ID}" \
+            --arg run_attempt "${GITHUB_RUN_ATTEMPT}" \
+            --arg actor "${GITHUB_ACTOR}" \
+            --arg build_timestamp "${build_timestamp}" \
             '{
               lambda_name: $lambda_name,
               environment: $environment,
@@ -346,7 +364,13 @@ jobs:
               repository: $repository,
               image_digest: $image_digest,
               image_uri: $image_uri,
-              source_sha: $source_sha
+              source_sha: $source_sha,
+              git_ref: $git_ref,
+              workflow_ref: $workflow_ref,
+              run_id: $run_id,
+              run_attempt: $run_attempt,
+              actor: $actor,
+              build_timestamp: $build_timestamp
             }' > "${manifest_file}"
 
           echo "image_version=${image_version}" >> "$GITHUB_OUTPUT"
