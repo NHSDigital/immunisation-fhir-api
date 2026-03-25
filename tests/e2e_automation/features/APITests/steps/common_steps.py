@@ -36,7 +36,7 @@ from utilities.api_get_header import (
     get_delete_url_header,
     get_update_url_header,
 )
-from utilities.date_helper import is_valid_date, iso_to_compact
+from utilities.date_helper import is_valid_date
 from utilities.enums import Operation
 from utilities.http_requests_session import http_requests_session
 from utilities.sqs_message_halder import read_message
@@ -445,7 +445,7 @@ def validate_sqs_message(context, message_body, action):
     check.is_true(is_valid_uuid(message_body.id), f"Invalid UUID: {message_body.id}")
 
     check.is_true(
-        message_body.time == iso_to_compact(context.immunization_object.occurrenceDateTime),
+        message_body.time == context.immunization_object.occurrenceDateTime,
         f"msn event for {action} Time missing or empty: {message_body.time}",
     )
     expected_nhs_number = context.patient.identifier[0].value
