@@ -294,7 +294,11 @@ def validate_imms_delta_record_with_created_event(
             ),
             (
                 "NHS_NUMBER",
-                create_obj.contained[1].identifier[0].value,
+                (
+                    create_obj.contained[1].identifier[0].value
+                    if create_obj.contained[1].identifier[0].value is not None
+                    else ""
+                ),
                 imms_event.get("NHS_NUMBER"),
             ),
             (
