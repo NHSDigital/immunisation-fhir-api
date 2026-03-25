@@ -1,6 +1,6 @@
 import unittest
 
-from lambdas.backend.src.get_status_handler import get_status_handler
+from get_status_handler import get_status_handler
 
 
 class GetStatusHandler(unittest.TestCase):
