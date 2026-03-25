@@ -116,6 +116,7 @@ jobs:
       dockerfile_path: lambdas/recordprocessor/Dockerfile
       ecr_repository: imms-recordprocessor-repo
       image_tag_prefix: ${{ inputs.sub_environment }}-
+      allow_implicit_tag_prefix_reuse: ${{ startsWith(inputs.sub_environment, 'pr-') }}
 
   terraform-plan:
     permissions:
