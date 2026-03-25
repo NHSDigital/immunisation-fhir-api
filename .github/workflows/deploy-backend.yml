@@ -39,7 +39,7 @@ on:
     outputs:
       recordprocessor_image_version:
         description: Selected immutable image selector used for recordprocessor deployment
-        value: ${{ jobs.deploy-recordprocessor-image.outputs.image_version }}
+        value: ${{ jobs.deploy-recordprocessor-image.outputs.image_uri }}
   workflow_dispatch:
     inputs:
       apigee_environment:
@@ -120,7 +120,7 @@ jobs:
       dockerfile_path: lambdas/recordprocessor/Dockerfile
       ecr_repository: imms-recordprocessor-repo
       image_tag_prefix: ${{ inputs.sub_environment }}-
-      allow_implicit_tag_prefix_reuse: ${{ startsWith(inputs.sub_environment, 'pr-') }}
+      allow_implicit_tag_prefix_reuse: ${{ inputs.sub_environment == 'internal-dev' || startsWith(inputs.sub_environment, 'pr-') }}
 
   terraform-plan:
     permissions:
