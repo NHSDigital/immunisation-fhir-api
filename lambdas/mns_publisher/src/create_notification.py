@@ -131,30 +131,10 @@ def get_practitioner_details_from_pds(nhs_number: str) -> str | None:
 
 
 def _parse_timestamp_to_iso(timestamp: str) -> str:
-    if not isinstance(timestamp, str):
-        raise ValueError(
-            "DATE_AND_TIME must be a string in format YYYYMMDDTHHMMSS followed by timezone offset (e.g., '202312011200001')"
-        )
-
     if len(timestamp) <= 15:
-        raise ValueError(
-            "DATE_AND_TIME must be longer than 15 characters in format YYYYMMDDTHHMMSS followed by timezone offset (e.g., '202312011200001')"
-        )
-
+        raise ValueError("DATE_AND_TIME must be in YYYYMMDDTHHMMSSZ format (e.g., '202312011200001')")
     dt_part = timestamp[:15]
-    tz_offset_str = timestamp[15:]
-
-    try:
-        tz_offset = int(tz_offset_str)
-    except ValueError:
-        raise ValueError(
-            f"DATE_AND_TIME timezone offset '{tz_offset_str}' must be a valid integer (e.g., '1' for +01:00)"
-        )
-
-    try:
-        dt = datetime.strptime(dt_part, "%Y%m%dT%H%M%S")
-    except ValueError:
-        raise ValueError(f"DATE_AND_TIME date-time part '{dt_part}' must be in YYYYMMDDTHHMMSS format")
-
+    tz_offset = int(timestamp[15:17])
+    dt = datetime.strptime(dt_part, "%Y%m%dT%H%M%S")
     tz = timezone(timedelta(hours=tz_offset))
     return dt.replace(tzinfo=tz).isoformat(timespec="milliseconds").replace("+00:00", "Z")

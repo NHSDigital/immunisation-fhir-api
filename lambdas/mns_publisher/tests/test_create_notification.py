@@ -1,5 +1,6 @@
 import copy
 import json
+import re
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -313,12 +314,16 @@ class TestGetPractitionerDetailsFromPds(unittest.TestCase):
 
 
 class TestParseTimestampToIso(unittest.TestCase):
-    def test_utc_offset(self):
-        self.assertEqual(_parse_timestamp_to_iso("20240609T12000000"), "2024-06-09T12:00:00.000Z")
+    def test_utc_conversion(self):
+        self.assertEqual(_parse_timestamp_to_iso("20260212T17443700"), "2026-02-12T17:44:37.000Z")
 
-    def test_bst_offset(self):
-        self.assertEqual(_parse_timestamp_to_iso("20240609T12000001"), "2024-06-09T12:00:00.000+01:00")
+    def test_bst_conversion(self):
+        self.assertEqual(_parse_timestamp_to_iso("20260212T17443701"), "2026-02-12T17:44:37.000+01:00")
 
-    def test_invalid_format_raises(self):
+    def test_too_short_raises(self):
         with self.assertRaises(ValueError):
-            _parse_timestamp_to_iso("20240609 12000000")
+            _parse_timestamp_to_iso("20260212T1744")
+
+    def test_output_is_rfc3339(self):
+        rfc3339 = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}(Z|[+-]\d{2}:\d{2})$")
+        self.assertRegex(_parse_timestamp_to_iso("20260212T17443700"), rfc3339)
