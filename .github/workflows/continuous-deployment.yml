@@ -79,14 +79,14 @@ jobs:
       STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}
 
   deploy-higher-dev-envs:
-    needs: [run-internal-dev-tests]
+    needs: [run-internal-dev-tests, deploy-internal-dev-backend]
     strategy:
       matrix:
         sub_environment_name: [ref, internal-qa]
     uses: ./.github/workflows/deploy-backend.yml
     with:
       apigee_environment: ${{ matrix.sub_environment_name }}
-      recordprocessor_image_version: internal-dev-git-${{ github.sha }}
+      recordprocessor_image_version: ${{ needs.deploy-internal-dev-backend.outputs.recordprocessor_image_version }}
       diff_base_sha: ${{ github.event.before }}
       diff_head_sha: ${{ github.sha }}
       run_diff_check: true

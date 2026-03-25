@@ -36,6 +36,10 @@ on:
       sub_environment:
         required: true
         type: string
+    outputs:
+      recordprocessor_image_version:
+        description: Selected immutable image selector used for recordprocessor deployment
+        value: ${{ jobs.deploy-recordprocessor-image.outputs.image_version }}
   workflow_dispatch:
     inputs:
       apigee_environment:
