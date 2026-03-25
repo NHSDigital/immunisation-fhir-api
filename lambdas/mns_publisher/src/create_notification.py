@@ -1,7 +1,7 @@
 import json
 import os
 import uuid
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime
 
 from aws_lambda_powertools.utilities.data_classes.dynamo_db_stream_event import DynamoDBStreamEvent
 from aws_lambda_typing.events.sqs import SQSMessage
@@ -9,6 +9,7 @@ from aws_lambda_typing.events.sqs import SQSMessage
 from common.api_clients.constants import MnsNotificationPayload
 from common.api_clients.get_pds_details import pds_get_patient_details
 from common.clients import logger
+from common.converter_utils import timestamp_to_rfc3339
 from common.get_service_url import get_service_url
 from constants import IMMUNISATION_EVENT_SOURCE, IMMUNISATION_EVENT_TYPE, SPEC_VERSION
 
@@ -41,7 +42,7 @@ def create_mns_notification(sqs_event: SQSMessage) -> MnsNotificationPayload:
 
     patient_age = calculate_age_at_vaccination(person_dob, date_and_time)
     gp_ods_code = get_practitioner_details_from_pds(nhs_number)
-    mns_timestamp = _parse_timestamp_to_iso(date_and_time)
+    mns_timestamp = timestamp_to_rfc3339(date_and_time)
 
     return {
         "specversion": SPEC_VERSION,
@@ -128,13 +129,3 @@ def get_practitioner_details_from_pds(nhs_number: str) -> str | None:
             return None
 
     return gp_ods_code
-
-
-def _parse_timestamp_to_iso(timestamp: str) -> str:
-    if len(timestamp) <= 15:
-        raise ValueError("DATE_AND_TIME must be in YYYYMMDDTHHMMSSZ format (e.g., '202312011200001')")
-    dt_part = timestamp[:15]
-    tz_offset = int(timestamp[15:17])
-    dt = datetime.strptime(dt_part, "%Y%m%dT%H%M%S")
-    tz = timezone(timedelta(hours=tz_offset))
-    return dt.replace(tzinfo=tz).isoformat(timespec="milliseconds").replace("+00:00", "Z")
