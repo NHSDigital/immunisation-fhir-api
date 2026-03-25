@@ -89,7 +89,7 @@ jobs:
       recordprocessor_image_version: ${{ needs.deploy-internal-dev-backend.outputs.recordprocessor_image_version }}
       diff_base_sha: ${{ github.event.before }}
       diff_head_sha: ${{ github.sha }}
-      run_diff_check: true
+      run_diff_check: false
       create_mns_subscription: true
       environment: dev
       sub_environment: ${{ matrix.sub_environment_name }}

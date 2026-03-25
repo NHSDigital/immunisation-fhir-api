@@ -153,6 +153,8 @@ jobs:
 
           if [ "${BUILD_IMAGE}" = "true" ]; then
             deployment_mode="build"
+          elif [ -n "${IMAGE_VERSION}" ]; then
+            deployment_mode="reuse"
           elif [ "${RUN_DIFF_CHECK}" = "true" ]; then
             if [ -z "${DIFF_BASE_SHA}" ] || [ -z "${DIFF_HEAD_SHA}" ]; then
               deployment_mode="build"
