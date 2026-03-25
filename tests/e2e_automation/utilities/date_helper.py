@@ -25,12 +25,8 @@ def iso_to_compact(dt_str):
 
 
 def normalize_utc_suffix(timestamp: str) -> str:
-    dt = datetime.fromisoformat(timestamp)
-    iso_date = dt.isoformat(timespec="milliseconds")
-
-    if iso_date.endswith("+00:00"):
-        return iso_date.replace("+00:00", "Z")
-    return iso_date
+    dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+    return dt.isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
 
 def is_valid_date(date_str: str) -> bool:
