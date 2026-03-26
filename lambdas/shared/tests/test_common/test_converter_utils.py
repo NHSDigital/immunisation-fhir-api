@@ -16,7 +16,7 @@ class TestTimestampToRfc3339(unittest.TestCase):
             timestamp_to_rfc3339("20260212T1744")
 
     def test_output_is_rfc3339(self):
-        rfc3339 = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}(Z|[+-]\d{2}:\d{2})$")
+        rfc3339 = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})$")
         self.assertRegex(timestamp_to_rfc3339("20260212T17443700"), rfc3339)
 
     def test_non_string_raises_type_error(self):
