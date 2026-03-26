@@ -1,4 +1,7 @@
 test:
 	poetry run locust -f src/locustfile.py
 
-.PHONY: test
+test-read-only:
+	poetry run locust -f src/locustfile.py SearchUser
+
+.PHONY: test test-read-only
