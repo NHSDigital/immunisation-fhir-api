@@ -20,7 +20,7 @@ pytest = "~8.3.5"
 pytest-bdd = "~8.1.0"
 pytest-check = "~2.8.0"
 python-dotenv = "~1.2.2"
-requests = "~2.32.3"
+requests = "~2.33.0"
 typing_extensions = "~4.15.0"
 
 [build-system]
