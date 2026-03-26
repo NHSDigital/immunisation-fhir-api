@@ -447,7 +447,7 @@ def validate_sqs_message(context, message_body, action):
     imms_date_time = normalize_utc_suffix(context.immunization_object.occurrenceDateTime)
     check.is_true(
         message_body.time == imms_date_time,
-        f"msn event for {action} Time missing or empty: {message_body.time} {imms_date_time}",
+        f"msn event for {action} Time missing or mismatch: message_body.time = {message_body.time}, imms_date_time = {imms_date_time}",
     )
     expected_nhs_number = context.patient.identifier[0].value
     if expected_nhs_number is None:

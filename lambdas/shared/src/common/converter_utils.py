@@ -20,4 +20,4 @@ def timestamp_to_rfc3339(value: str, field_name: str = "DATE_AND_TIME") -> str:
         raise ValueError(f"{field_name} must contain a valid compact timestamp") from e
 
     tz = timezone(timedelta(hours=int(offset_suffix)))
-    return parsed_date.replace(tzinfo=tz).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+    return parsed_date.replace(tzinfo=tz).isoformat(timespec="seconds").replace("+00:00", "Z")
