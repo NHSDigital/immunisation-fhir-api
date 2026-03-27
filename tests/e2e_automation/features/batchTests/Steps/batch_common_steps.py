@@ -21,6 +21,7 @@ from src.objectModels.batch.batch_file_builder import (
     generate_file_name,
     save_record_to_batch_files_directory,
 )
+from src.objectModels.patient_loader import get_gp_code_by_nhs_number
 from utilities.batch_file_helper import (
     read_and_validate_csv_bus_ack_file_content,
     validate_bus_ack_file_for_error,
@@ -34,7 +35,16 @@ from utilities.batch_S3_buckets import (
     wait_and_read_ack_file,
     wait_for_file_to_move_archive,
 )
+from utilities.date_helper import normalize_utc_suffix
 from utilities.enums import ActionFlag, ActionMap, Operation
+from utilities.sqs_message_halder import read_message, read_messages_for_batch
+
+from features.APITests.steps.common_steps import (
+    calculate_age,
+    is_valid_uuid,
+    mns_event_will_be_triggered_with_correct_data,
+    mns_event_will_not_be_triggered_for_the_event,
+)
 
 
 def ignore_if_local_run(func):
@@ -299,6 +309,48 @@ def all_record_are_rejected_for_given_field_name(context):
     assert all_valid, "One or more records failed validation checks"
 
 
+@then(parsers.parse("MNS event will be triggered with correct data for all '{event_type}' events where NHS is not null"))
+def mns_event_will_be_triggered_with_correct_data_for_created_events_in_batch_file(context, event_type):
+    action = event_type.upper() if event_type.upper() in ["CREATE", "UPDATE"] else "CREATE"
+
+    df = context.vaccine_df.dropna(subset=["IMMS_ID"]).copy()
+    df["IMMS_ID_CLEAN"] = df["IMMS_ID"].astype(str).str.replace("Immunization#", "", regex=False)
+
+    valid_rows = []
+    for row in df.itertuples(index=False):
+        unique_id = row.UNIQUE_ID
+
+        if not unique_id.startswith("NullNHS"):
+            valid_rows.append(row)
+
+    if not valid_rows:
+        print("No valid NHS rows found — skipping MNS validation.")
+        return
+
+    # Now validate all messages for the batch
+    mns_event_will_be_triggered_for_batch_record(context=context, action=action, valid_rows=valid_rows)
+
+
+@then("MNS event will not be created for the records where NHS is null or empty")
+def mns_event_will_not_be_triggered_for_records_with_null_or_empty_nhs(context):
+    df = context.vaccine_df.copy()
+
+    null_nhs_rows = df[df["UNIQUE_ID"].astype(str).str.startswith("NullNHS")]
+
+    if null_nhs_rows.empty:
+        print("No records with NullNHS found — skipping this check.")
+        return
+
+    context.ImmsID = null_nhs_rows["IMMS_ID"].iloc[0]
+
+    mns_event_will_not_be_triggered_for_the_event(context)
+
+
+@then("Api updated event will trigger MNS event with correct data")
+def mns_event_will_be_triggered_with_correct_data_for_api_updated_events(context):
+    mns_event_will_be_triggered_with_correct_data(context=context, action="UPDATE")
+
+
 def normalize(value):
     return "" if pd.isna(value) or value == "" else value
 
@@ -442,4 +494,123 @@ def validate_imms_delta_table_for_deleted_records_in_batch_file(context):
             delete_item,
             Operation.deleted.value,
             ActionFlag.deleted.value,
+        )
+
+
+def mns_event_will_be_triggered_for_batch_record(context, action, valid_rows):
+    if context.mns_validation_required.strip().lower() != "true":
+        print(
+            f"MNS event validation is skipped since mns_validation_required is set to {context.mns_validation_required}"
+        )
+        return
+
+    messages = read_messages_for_batch(context, queue_type="notification", valid_rows=valid_rows)
+
+    print(f"Read {len(messages)} {action} message(s) from SQS")
+
+    assert messages, f"Expected at least one {action} message but queue returned empty"
+
+    row_lookup = {str(row.NHS_NUMBER): row for row in valid_rows}
+
+    for msg in messages:
+        nhs = msg.subject  # NHS number from SQS message
+
+        assert nhs in row_lookup, f"Received message for NHS {nhs} but it does not exist in valid_rows"
+
+        row = row_lookup[nhs]
+
+        context.nhs_number = row.NHS_NUMBER
+        context.gp_code = get_gp_code_by_nhs_number(row.NHS_NUMBER)
+        context.patient_age = calculate_age(row.PERSON_DOB, row.DATE_AND_TIME)
+        context.ImmsID = msg.dataref.split("/")[-1]  # IMMS ID from SQS message
+
+        print(f"Validating message for NHS {nhs}, IMMS ID {context.ImmsID}")
+
+        validate_sqs_message_for_batch_record(context, msg, row)
+
+
+def mns_delete_event_will_be_triggered_with_correct_data_for_batch_record(context, row):
+    if row.NHS_NUMBER is None:
+        message_body = read_message(
+            context,
+            queue_type="notification",
+            wait_time_seconds=5,
+            max_empty_polls=3,
+        )
+        print(
+            "No MNS delete event is created as expected since NHS number is not present in the original immunization event"
+        )
+        assert message_body is None, "Not expected a message but queue returned a message"
+    else:
+        message_body = read_message(context, queue_type="notification")
+        print(f"Read deleted message from SQS: {message_body} for NHS {row.NHS_NUMBER} and IMMS ID {context.ImmsID}")
+        assert message_body is not None, "Expected a  delete message but queue returned empty"
+        validate_sqs_message_for_batch_record(context, message_body, row)
+
+
+def validate_sqs_message_for_batch_record(context, message_body, row):
+    check.is_true(message_body.specversion == "1.0")
+    check.is_true(message_body.source == "uk.nhs.vaccinations-data-flow-management")
+    check.is_true(message_body.type == "imms-vaccination-record-change-1")
+
+    check.is_true(is_valid_uuid(message_body.id), f"Invalid UUID: {message_body.id}")
+
+    imms_date_time = normalize_utc_suffix(row.DATE_AND_TIME)
+    check.is_true(
+        message_body.time == f"{imms_date_time}Z",
+        f"msn event for {row.NHS_NUMBER} Time missing or mismatch: message_body.time = {message_body.time}, imms_date_time = {imms_date_time}",
+    )
+    expected_nhs_number = row.NHS_NUMBER
+    if expected_nhs_number is None:
+        expected_nhs_number = ""
+    check.is_true(
+        message_body.subject == expected_nhs_number,
+        f"msn event for {row.NHS_NUMBER}Subject mismatch: expected {expected_nhs_number}, got {message_body.subject}",
+    )
+
+    check.is_true(
+        message_body.dataref == f"{context.url}/{row.IMMS_ID_CLEAN}",
+        f"msn event for {row.NHS_NUMBER} DataRef mismatch: expected {context.url}/{row.IMMS_ID_CLEAN}, got {message_body.dataref}",
+    )
+
+    if context.S3_env not in ["int", "preprod"]:
+        check.is_true(
+            message_body.filtering is not None,
+            f"msn event for {row.NHS_NUMBER} Filtering is missing in the message body",
+        )
+
+        check.is_true(
+            normalize(message_body.filtering.generalpractitioner) == normalize(context.gp_code),
+            f"msn event for {row.NHS_NUMBER} GP code mismatch: expected {context.gp_code}, got {message_body.filtering.generalpractitioner}",
+        )
+
+        expected_org = row.SITE_CODE
+        check.is_true(
+            normalize(message_body.filtering.sourceorganisation) == normalize(expected_org),
+            f"msn event for {row.NHS_NUMBER} Source org mismatch: expected {expected_org}, got {message_body.filtering.sourceorganisation}",
+        )
+
+        check.is_true(
+            message_body.filtering.sourceapplication.upper() == context.supplier_name.upper(),
+            f"msn event for {row.NHS_NUMBER} Source application mismatch: expected {context.supplier_name}, got {message_body.filtering.sourceapplication}",
+        )
+
+        check.is_true(
+            message_body.filtering.subjectage == context.patient_age,
+            f"msn event for {row.NHS_NUMBER} Age mismatch: expected {context.patient_age}, got {message_body.filtering.subjectage}",
+        )
+
+        check.is_true(
+            message_body.filtering.immunisationtype == context.vaccine_type.upper(),
+            f"msn event for {row.NHS_NUMBER} Immunisation type mismatch: expected {context.vaccine_type.upper()}, got {message_body.filtering.immunisationtype}",
+        )
+        action = row.ACTION_FLAG.upper() if row.ACTION_FLAG.upper() in ["UPDATE", "DELETE"] else "CREATE"
+        check.is_true(
+            message_body.filtering.action == action.upper(),
+            f"msn event for {row.NHS_NUMBER} Action mismatch: expected {action.upper()}, got {message_body.filtering.action}",
+        )
+    else:
+        check.is_true(
+            message_body.filtering is None,
+            f"msn event for {row.NHS_NUMBER} Filtering is present in the message body when it shouldn't be for int environment",
         )

@@ -10,11 +10,13 @@ from utilities.batch_file_helper import (
 )
 from utilities.enums import GenderCode
 from utilities.error_constants import ERROR_MAP
+from utilities.sqs_message_halder import read_message
 
 from features.APITests.steps.common_steps import (
     The_request_will_have_status_code,
     Trigger_the_post_create_request,
     mns_event_will_be_triggered_with_correct_data,
+    mns_event_will_not_be_triggered_for_the_event,
     send_update_for_immunization_event,
     valid_json_payload_is_created,
     validate_etag_in_header,
@@ -272,3 +274,44 @@ def validate_bus_ack_file_for_error_by_surname(context, file_rows) -> bool:
                 row_valid = False
             overall_valid = overall_valid and row_valid
     return overall_valid
+
+
+@then("MNS event will be triggered with correct data for both events where NHS is not null")
+def mns_event_will_be_triggered_with_correct_data_for_both_events_in_batch_file(
+    context,
+):
+    df = context.vaccine_df.dropna(subset=["IMMS_ID"]).copy()
+    df["IMMS_ID_CLEAN"] = df["IMMS_ID"].astype(str).str.replace("Immunization#", "", regex=False)
+
+    for row in df.itertuples(index=False):
+        action = row["ACTION_FLAG"] if row["ACTION_FLAG"].strip().lower() == "update" else "CREATE"
+        imms_id = row.IMMS_ID_CLEAN
+        unique_id = row.UNIQUE_ID
+
+        if (
+            unique_id.startswith("OldNHSNo")
+            or unique_id.startswith("NullNHS")
+            or unique_id.startswith("InvalidInPDS")
+            or unique_id.startswith("NO_GP_NHS")
+        ):
+            mns_event_will_not_be_triggered_for_the_event(context)
+            continue
+
+        context.ImmsID = imms_id
+        expected_count = 2
+        found = 0
+        attempts = 0
+        max_attempts = 10
+
+        while found < expected_count and attempts < max_attempts:
+            attempts += 1
+            message_body = read_message(context, queue_type="notification")
+
+            if message_body is None:
+                continue
+
+            found += 1
+            print(f"Message {found}/2 found for UNIQUE_ID: {unique_id}, ImmsID: {imms_id}, Action: {action}")
+
+        if found < expected_count:
+            raise AssertionError(f"Expected 2 events for IMMS ID {imms_id}, but only found {found}")
