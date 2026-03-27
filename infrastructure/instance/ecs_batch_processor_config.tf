@@ -1,4 +1,3 @@
-# Define the ECS Cluster
 resource "aws_ecs_cluster" "ecs_cluster" {
   name = "${local.short_prefix}-ecs-cluster"
 
@@ -11,59 +10,8 @@ resource "aws_ecs_cluster" "ecs_cluster" {
   }
 }
 
-# Locals for Lambda processing paths and hash
-locals {
-  processing_lambda_dir     = abspath("${path.root}/../../lambdas/recordprocessor")
-  processing_path_include   = ["**"]
-  processing_path_exclude   = ["**/__pycache__/**"]
-  processing_files_include  = setunion([for f in local.processing_path_include : fileset(local.processing_lambda_dir, f)]...)
-  processing_files_exclude  = setunion([for f in local.processing_path_exclude : fileset(local.processing_lambda_dir, f)]...)
-  processing_lambda_files   = sort(setsubtract(local.processing_files_include, local.processing_files_exclude))
-  processing_lambda_dir_sha = sha1(join("", [for f in local.processing_lambda_files : filesha1("${local.processing_lambda_dir}/${f}")]))
-  image_tag                 = "latest"
-}
-
-# Create ECR Repository for processing.
-resource "aws_ecr_repository" "processing_repository" {
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-  name         = "${local.short_prefix}-processing-repo"
-  force_delete = local.is_temp
-}
-
-# Build and Push Docker Image to ECR (Reusing the existing module)
-module "processing_docker_image" {
-  source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version = "8.7.0"
-
-  create_ecr_repo  = false
-  docker_file_path = "./recordprocessor/Dockerfile"
-  ecr_repo         = aws_ecr_repository.processing_repository.name
-  ecr_repo_lifecycle_policy = jsonencode({
-    "rules" : [
-      {
-        "rulePriority" : 1,
-        "description" : "Keep only the last 2 images",
-        "selection" : {
-          "tagStatus" : "any",
-          "countType" : "imageCountMoreThan",
-          "countNumber" : 2
-        },
-        "action" : {
-          "type" : "expire"
-        }
-      }
-    ]
-  })
-
-  platform      = "linux/amd64"
-  use_image_tag = false
-  source_path   = abspath("${path.root}/../../lambdas")
-  triggers = {
-    dir_sha        = local.processing_lambda_dir_sha
-    shared_dir_sha = local.shared_dir_sha
-  }
+data "aws_ecr_repository" "recordprocessor_repository" {
+  name = "${var.project_short_name}-recordprocessor-repo"
 }
 
 # Define the IAM Role for ECS Task Execution
@@ -157,7 +105,7 @@ resource "aws_iam_policy" "ecs_task_exec_policy" {
         Action = [
           "ecr:GetAuthorizationToken"
         ],
-        Resource = "arn:aws:ecr:${var.aws_region}:${var.immunisation_account_id}:repository/${local.short_prefix}-processing-repo"
+        Resource = "arn:aws:ecr:${var.aws_region}:${var.immunisation_account_id}:repository/${data.aws_ecr_repository.recordprocessor_repository.name}"
       },
       {
         "Effect" : "Allow",
@@ -197,7 +145,7 @@ resource "aws_ecs_task_definition" "ecs_task" {
 
   container_definitions = jsonencode([{
     name      = "${local.short_prefix}-process-records-container"
-    image     = "${aws_ecr_repository.processing_repository.repository_url}:${local.image_tag}"
+    image     = var.recordprocessor_image_uri
     essential = true
     environment = [
       {
