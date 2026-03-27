@@ -6,6 +6,26 @@ on:
       apigee_environment:
         required: true
         type: string
+      build_recordprocessor_image:
+        required: false
+        type: boolean
+        default: false
+      recordprocessor_image_version:
+        required: false
+        type: string
+        default: ""
+      diff_base_sha:
+        required: false
+        type: string
+        default: ""
+      diff_head_sha:
+        required: false
+        type: string
+        default: ""
+      run_diff_check:
+        required: false
+        type: boolean
+        default: false
       create_mns_subscription:
         required: false
         type: boolean
@@ -16,6 +36,10 @@ on:
       sub_environment:
         required: true
         type: string
+    outputs:
+      recordprocessor_image_version:
+        description: Selected immutable image selector used for recordprocessor deployment
+        value: ${{ jobs.deploy-recordprocessor-image.outputs.image_uri }}
   workflow_dispatch:
     inputs:
       apigee_environment:
@@ -39,6 +63,31 @@ on:
           - dev
           - preprod
           - prod
+      build_recordprocessor_image:
+        description: Build and publish a new recordprocessor image
+        required: true
+        type: boolean
+        default: true
+      recordprocessor_image_version:
+        description: Existing immutable recordprocessor image selector (tag, digest, or image URI) for reuse mode
+        required: false
+        type: string
+        default: ""
+      diff_base_sha:
+        description: Base commit SHA for diff checks
+        required: false
+        type: string
+        default: ""
+      diff_head_sha:
+        description: Head commit SHA for diff checks
+        required: false
+        type: string
+        default: ""
+      run_diff_check:
+        description: Enable diff checks to auto-build on code changes
+        required: true
+        type: boolean
+        default: false
       sub_environment:
         type: string
         description: Set the sub environment name e.g. pr-xxx, or green/blue in higher environments
@@ -51,11 +100,40 @@ env: # Sonarcloud - do not allow direct usage of untrusted data
 run-name: Deploy Backend - ${{ inputs.environment }} ${{ inputs.sub_environment }}
 
 jobs:
+  deploy-recordprocessor-image:
+    name: Deploy recordprocessor image
+    uses: ./.github/workflows/deploy-lambda-artifact.yml
+    with:
+      lambda_name: recordprocessor
+      environment: ${{ inputs.environment }}
+      sub_environment: ${{ inputs.sub_environment }}
+      build_image: ${{ inputs.build_recordprocessor_image }}
+      image_version: ${{ inputs.recordprocessor_image_version }}
+      run_diff_check: ${{ inputs.run_diff_check }}
+      diff_base_sha: ${{ inputs.diff_base_sha }}
+      diff_head_sha: ${{ inputs.diff_head_sha }}
+      lambda_paths: |
+        lambdas/recordprocessor/
+      shared_paths: |
+        lambdas/shared/src/common/
+      docker_context_path: lambdas
+      dockerfile_path: lambdas/recordprocessor/Dockerfile
+      ecr_repository: imms-recordprocessor-repo
+      image_tag_prefix: ${{ inputs.sub_environment }}-
+      allow_implicit_tag_prefix_reuse: ${{ inputs.sub_environment == 'internal-dev' || startsWith(inputs.sub_environment, 'pr-') }}
+
   terraform-plan:
     permissions:
       id-token: write
       contents: read
+    needs:
+      - deploy-recordprocessor-image
+    if: ${{ !cancelled() && needs.deploy-recordprocessor-image.result == 'success' }}
+    outputs:
+      recordprocessor_image_uri: ${{ needs.deploy-recordprocessor-image.outputs.image_uri }}
     runs-on: ubuntu-latest
+    env:
+      TF_VAR_recordprocessor_image_uri: ${{ needs.deploy-recordprocessor-image.outputs.image_uri }}
     environment:
       name: ${{ inputs.environment }}
     steps:
@@ -95,7 +173,10 @@ jobs:
       id-token: write
       contents: read
     needs: terraform-plan
+    if: ${{ !cancelled() && needs.terraform-plan.result == 'success' }}
     runs-on: ubuntu-latest
+    env:
+      TF_VAR_recordprocessor_image_uri: ${{ needs.terraform-plan.outputs.recordprocessor_image_uri }}
     environment:
       name: ${{ inputs.environment }}
     steps:
