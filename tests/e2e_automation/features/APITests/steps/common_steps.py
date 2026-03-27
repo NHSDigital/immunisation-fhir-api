@@ -437,6 +437,11 @@ def normalize(value: str) -> str:
     return value.strip().upper() if value else ""
 
 
+def populate_expected_mns_fields(context):
+    context.gp_code = get_gp_code_by_nhs_number(context.patient.identifier[0].value)
+    context.patient_age = calculate_age(context.patient.birthDate, context.immunization_object.occurrenceDateTime)
+
+
 def validate_sqs_message(context, message_body, action):
     check.is_true(message_body.specversion == "1.0")
     check.is_true(message_body.source == "uk.nhs.vaccinations-data-flow-management")
@@ -511,13 +516,23 @@ def mns_event_will_be_triggered_with_correct_data_for_deleted_event(context):
         message_body = read_message(context, queue_type="notification", action="DELETE")
         print(f"Read deleted message from SQS: {message_body}")
         assert message_body is not None, "Expected a  delete message but queue returned empty"
+        populate_expected_mns_fields(context)
         validate_sqs_message(context, message_body, "DELETE")
 
 
 def mns_event_will_be_triggered_with_correct_data(context, action):
-    message_body = read_message(context, queue_type="notification", action=action)
+    wait_time_seconds = 20
+    max_empty_polls = 3
+    if action.upper() == "CREATE":
+        max_empty_polls = 6
+    message_body = read_message(
+        context,
+        queue_type="notification",
+        action=action,
+        wait_time_seconds=wait_time_seconds,
+        max_empty_polls=max_empty_polls,
+    )
     print(f"Read {action}d message from SQS: {message_body}")
     assert message_body is not None, f"Expected a {action} message but queue returned empty"
-    context.gp_code = get_gp_code_by_nhs_number(context.patient.identifier[0].value)
-    context.patient_age = calculate_age(context.patient.birthDate, context.immunization_object.occurrenceDateTime)
+    populate_expected_mns_fields(context)
     validate_sqs_message(context, message_body, action)
