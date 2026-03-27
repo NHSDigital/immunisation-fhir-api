@@ -438,8 +438,18 @@ def normalize(value: str) -> str:
 
 
 def populate_expected_mns_fields(context):
-    context.gp_code = get_gp_code_by_nhs_number(context.patient.identifier[0].value)
-    context.patient_age = calculate_age(context.patient.birthDate, context.immunization_object.occurrenceDateTime)
+    if getattr(context, "gp_code", None) is None:
+        context.gp_code = get_gp_code_by_nhs_number(context.patient.identifier[0].value)
+
+    if getattr(context, "patient_age", None) is None:
+        try:
+            context.patient_age = calculate_age(
+                context.patient.birthDate, context.immunization_object.occurrenceDateTime
+            )
+        except ValueError:
+            # Some negative update scenarios intentionally inject invalid DOB values.
+            # Keep patient_age unset here instead of failing teardown validation setup.
+            context.patient_age = None
 
 
 def validate_sqs_message(context, message_body, action):
@@ -483,10 +493,11 @@ def validate_sqs_message(context, message_body, action):
         f"msn event for {action} Source application mismatch: expected {context.supplier_name}, got {message_body.filtering.sourceapplication}",
     )
 
-    check.is_true(
-        message_body.filtering.subjectage == context.patient_age,
-        f"msn event for {action} Age mismatch: expected {context.patient_age}, got {message_body.filtering.subjectage}",
-    )
+    if context.patient_age is not None:
+        check.is_true(
+            message_body.filtering.subjectage == context.patient_age,
+            f"msn event for {action} Age mismatch: expected {context.patient_age}, got {message_body.filtering.subjectage}",
+        )
 
     check.is_true(
         message_body.filtering.immunisationtype == context.vaccine_type.upper(),
