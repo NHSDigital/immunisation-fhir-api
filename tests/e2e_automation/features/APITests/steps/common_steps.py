@@ -351,8 +351,10 @@ def send_update_for_immunization_event(context):
 def created_event_is_being_updated_twice(context):
     send_update_for_immunization_event(context)
     The_request_will_have_status_code(context, 200)
+    mns_event_will_be_triggered_with_correct_data(context=context, action="UPDATE")
     send_update_for_vaccination_detail(context)
     The_request_will_have_status_code(context, 200)
+    mns_event_will_be_triggered_with_correct_data(context=context, action="UPDATE")
 
 
 @given("created event is being deleted")
@@ -380,7 +382,7 @@ def mns_event_will_not_be_triggered_for_the_event(context):
         context,
         queue_type="notification",
         wait_time_seconds=5,
-        max_empty_polls=1,
+        max_total_wait_seconds=20,
     )
     print("No MNS create event is created")
     assert message_body is None, "Not expected a message but queue returned a message"
@@ -392,7 +394,7 @@ def validate_mns_event_not_triggered_for_updated_event(context):
         context,
         queue_type="notification",
         wait_time_seconds=5,
-        max_empty_polls=3,
+        max_total_wait_seconds=20,
     )
     print("no MNS update event is created")
     assert message_body is None, "Not expected a message but queue returned a message"
@@ -518,7 +520,7 @@ def mns_event_will_be_triggered_with_correct_data_for_deleted_event(context):
             context,
             queue_type="notification",
             wait_time_seconds=5,
-            max_empty_polls=3,
+            max_total_wait_seconds=20,
         )
         print(
             "No MNS delete event is created as expected since NHS number is not present in the original immunization event"

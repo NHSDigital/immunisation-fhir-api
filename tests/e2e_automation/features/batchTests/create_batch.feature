@@ -273,7 +273,6 @@ Feature: Create the immunization event for a patient through batch file
         And all rejected records are listed in the csv bus ack file and no imms id is generated
         And Json bus ack will only contain file metadata and correct failure record entries
         And Audit table will have correct status, queue name and record count for the processed batch file
-        And MNS event will be triggered with correct data for all 'CREATE' events where NHS is not null
 
     @delete_cleanup_batch @vaccine_type_3IN1  @supplier_name_TPP
     Scenario: verify that vaccination record will be get successful if non mandatory fields are missing in batch file

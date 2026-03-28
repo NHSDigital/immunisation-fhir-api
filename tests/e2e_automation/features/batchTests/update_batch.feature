@@ -10,7 +10,9 @@ Feature: Create the immunization event for a patient through batch file and upda
             | InvalidInPDS | InvalidInPDS_NhsNumber |
             | SFlag        | SFlag_NhsNumber        |
             | Mod11_NHS    | Mod11_NhSNumber        |
-            | OldNHSNo     | OldNHSNo               |
+            | NullNHS      | NullNHS_NhsNumber      |
+            | OldNHSNo     | OldNHS_NhsNumber       |
+            | NO_GP_NHS    | NO_GP_NhsNumber        |
         When batch file is uploaded in s3 bucket
         Then file will be moved to destination bucket and inf ack file will be created
         And inf ack file has success status for processed batch file

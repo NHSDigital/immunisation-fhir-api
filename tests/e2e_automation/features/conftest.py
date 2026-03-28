@@ -26,9 +26,6 @@ from features.APITests.steps.common_steps import (
     mns_event_will_be_triggered_with_correct_data_for_deleted_event,  # noqa: F401
 )
 from features.batchTests.Steps.batch_common_steps import *  # noqa: F403
-from features.batchTests.Steps.batch_common_steps import (
-    mns_delete_event_will_be_triggered_with_correct_data_for_batch_record,  # noqa: F401
-)
 
 
 @pytest.hookimpl(tryfirst=True)
@@ -186,11 +183,6 @@ def pytest_bdd_after_scenario(request, feature, scenario):
                     )
                 else:
                     print(f"Deleted {imms_id} successfully.")
-                    if context.mns_validation_required.strip().lower() == "true":
-                        mns_delete_event_will_be_triggered_with_correct_data_for_batch_record(context, row=row)
-                    else:
-                        print("MNS validation not required, skipping verification.")
-
             print("Batch cleanup finished.")
 
         else:

@@ -1,4 +1,5 @@
 import json
+import time
 
 import boto3
 from botocore.exceptions import ClientError
@@ -28,18 +29,25 @@ def build_queue_url(env, aws_account_id, queue_type: str) -> str:
 def read_message(
     context,
     queue_type="notification",
-    max_empty_polls=4,
     wait_time_seconds=20,
+    max_total_wait_seconds=120,
 ):
     sqs = boto3.client("sqs", region_name="eu-west-2")
     queue_url = build_queue_url(context.S3_env, context.aws_account_id, queue_type)
 
     expected_dataref = f"{context.url}/{context.ImmsID}"
 
-    empty_polls = 0
+    start_time = time.time()
+
+    print(f"Waiting for message with dataref: {expected_dataref}")
 
     while True:
-        print(f"Polling {queue_type} queue for messages (wait {wait_time_seconds}s)...")
+        elapsed = time.time() - start_time
+        if elapsed > max_total_wait_seconds:
+            print("Stopping — reached max wait time.")
+            return None
+
+        print(f"Polling {queue_type} queue (wait {wait_time_seconds}s)...")
 
         response = sqs.receive_message(
             QueueUrl=queue_url,
@@ -51,27 +59,20 @@ def read_message(
         messages = response.get("Messages", [])
 
         if not messages:
-            empty_polls += 1
-            print(f"No messages returned (empty poll {empty_polls}/{max_empty_polls})")
-
-            if empty_polls >= max_empty_polls:
-                print("Stopping — queue quiet or wait disabled.")
-                return None
-
+            print("No messages returned — continuing to poll...")
             continue
-
-        empty_polls = 0
 
         for msg in messages:
             body = MnsEvent(**json.loads(msg["Body"]))
+            dataref = body.dataref
 
-            if body.dataref == expected_dataref:
+            if dataref == expected_dataref:
                 sqs.delete_message(QueueUrl=queue_url, ReceiptHandle=msg["ReceiptHandle"])
-                print(f"Deleted matched message from {queue_type} queue")
+                print(f"Matched and deleted message for {dataref}")
                 return body
 
             sqs.delete_message(QueueUrl=queue_url, ReceiptHandle=msg["ReceiptHandle"])
-            print(f"Deleted non-matching message from {queue_type} queue")
+            print(f"Deleted non-matching message: {dataref}")
 
 
 def purge_all_queues(env, aws_account_id):
@@ -100,24 +101,30 @@ def read_messages_for_batch(
     context,
     queue_type="notification",
     valid_rows=None,
-    max_empty_polls=3,
     wait_time_seconds=20,
+    max_total_wait_seconds=180,
 ):
     sqs = boto3.client("sqs", region_name="eu-west-2")
     queue_url = build_queue_url(context.S3_env, context.aws_account_id, queue_type)
 
     context.url = context.baseUrl + "/Immunization"
 
-    # Build expected datarefs from IMMS_ID_CLEAN
+    expected_count = len(valid_rows)
+
     expected_datarefs = {f"{context.url}/{str(row.IMMS_ID_CLEAN)}" for row in valid_rows}
 
     matched_messages = []
-    empty_polls = 0
+    start_time = time.time()
 
-    print(f"Expecting {len(expected_datarefs)} MNS messages for this batch")
+    print(f"Expecting {expected_count} messages for {len(valid_rows)} NHS numbers")
 
-    while len(matched_messages) < len(expected_datarefs):
-        print(f"Polling {queue_type} queue for messages (wait {wait_time_seconds}s)...")
+    while len(matched_messages) < expected_count:
+        elapsed = time.time() - start_time
+        if elapsed > max_total_wait_seconds:
+            print("Stopping — reached max wait time.")
+            break
+
+        print(f"Polling SQS ({queue_type})...")
 
         response = sqs.receive_message(
             QueueUrl=queue_url,
@@ -129,16 +136,8 @@ def read_messages_for_batch(
         messages = response.get("Messages", [])
 
         if not messages:
-            empty_polls += 1
-            print(f"No messages returned (empty poll {empty_polls}/{max_empty_polls})")
-
-            if empty_polls >= max_empty_polls:
-                print("Stopping — queue quiet, max empty polls reached.")
-                break
-
+            print("No messages returned — continuing to poll...")
             continue
-
-        empty_polls = 0
 
         for msg in messages:
             body = MnsEvent(**json.loads(msg["Body"]))
@@ -146,9 +145,8 @@ def read_messages_for_batch(
 
             if dataref in expected_datarefs:
                 matched_messages.append(body)
-                print(f"Matched message for {dataref}")
+                print(f"Matched: {dataref}")
 
-            # Always delete — keep queue clean
             sqs.delete_message(QueueUrl=queue_url, ReceiptHandle=msg["ReceiptHandle"])
 
     return matched_messages

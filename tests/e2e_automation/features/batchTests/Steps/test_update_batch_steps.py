@@ -1,3 +1,4 @@
+import datetime
 import uuid
 
 import pandas as pd
@@ -10,13 +11,11 @@ from utilities.batch_file_helper import (
 )
 from utilities.enums import GenderCode
 from utilities.error_constants import ERROR_MAP
-from utilities.sqs_message_halder import read_message
 
 from features.APITests.steps.common_steps import (
     The_request_will_have_status_code,
     Trigger_the_post_create_request,
     mns_event_will_be_triggered_with_correct_data,
-    mns_event_will_not_be_triggered_for_the_event,
     send_update_for_immunization_event,
     valid_json_payload_is_created,
     validate_etag_in_header,
@@ -32,6 +31,7 @@ from features.APITests.steps.test_update_steps import (
 )
 
 from .batch_common_steps import (
+    build_batch_row_from_api_object,
     build_dataFrame_using_datatable,
     create_batch_file,
 )
@@ -71,33 +71,14 @@ def create_valid_vaccination_record_with_missing_mandatory_fields(context):
 @when("An update to above  vaccination record is made through batch file upload")
 def upload_batch_file_to_s3_for_update(context):
     record = build_batch_file(context)
-    context.vaccine_df = pd.DataFrame([record.dict()])
-    context.vaccine_df.loc[
-        0,
-        [
-            "NHS_NUMBER",
-            "PERSON_FORENAME",
-            "PERSON_SURNAME",
-            "PERSON_GENDER_CODE",
-            "PERSON_DOB",
-            "PERSON_POSTCODE",
-            "ACTION_FLAG",
-            "UNIQUE_ID",
-            "UNIQUE_ID_URI",
-        ],
-    ] = [
-        context.create_object.contained[1].identifier[0].value,
-        context.create_object.contained[1].name[0].given[0],
-        context.create_object.contained[1].name[0].family,
-        context.create_object.contained[1].gender,
-        context.create_object.contained[1].birthDate.replace("-", ""),
-        context.create_object.contained[1].address[0].postalCode,
-        "UPDATE",
-        context.create_object.identifier[0].value,
-        context.create_object.identifier[0].system,
-    ]
-    context.expected_version = 2
+    df = pd.DataFrame([record.dict()])
+
+    delete_fields = build_batch_row_from_api_object(context)
+    df.loc[0, delete_fields.keys()] = delete_fields.values()
+
+    context.vaccine_df = df
     create_batch_file(context)
+    context.expected_version = 2
 
 
 @then("The delta and imms event table will be populated with the correct data for api created event")
@@ -123,6 +104,11 @@ def send_update_for_immunization_event_with_vaccination_detail_updated(context):
     context.immunization_object.contained[1].address[0].postalCode = row["PERSON_POSTCODE"]
     context.immunization_object.identifier[0].value = row["UNIQUE_ID"]
     context.immunization_object.identifier[0].system = row["UNIQUE_ID_URI"]
+    context.immunization_object.performer[1].actor.identifier.value = row["SITE_CODE"]
+    dt = datetime.strptime(row["DATE_AND_TIME"], "%Y%m%dT%H%M%S")
+
+    formatted = dt.strftime("%Y%m%dT%H%M%S") + "00"
+    context.immunization_object.occurrenceDateTime = formatted
     send_update_for_immunization_event(context)
 
 
@@ -274,44 +260,3 @@ def validate_bus_ack_file_for_error_by_surname(context, file_rows) -> bool:
                 row_valid = False
             overall_valid = overall_valid and row_valid
     return overall_valid
-
-
-@then("MNS event will be triggered with correct data for both events where NHS is not null")
-def mns_event_will_be_triggered_with_correct_data_for_both_events_in_batch_file(
-    context,
-):
-    df = context.vaccine_df.dropna(subset=["IMMS_ID"]).copy()
-    df["IMMS_ID_CLEAN"] = df["IMMS_ID"].astype(str).str.replace("Immunization#", "", regex=False)
-
-    for row in df.itertuples(index=False):
-        action = row["ACTION_FLAG"] if row["ACTION_FLAG"].strip().lower() == "update" else "CREATE"
-        imms_id = row.IMMS_ID_CLEAN
-        unique_id = row.UNIQUE_ID
-
-        if (
-            unique_id.startswith("OldNHSNo")
-            or unique_id.startswith("NullNHS")
-            or unique_id.startswith("InvalidInPDS")
-            or unique_id.startswith("NO_GP_NHS")
-        ):
-            mns_event_will_not_be_triggered_for_the_event(context)
-            continue
-
-        context.ImmsID = imms_id
-        expected_count = 2
-        found = 0
-        attempts = 0
-        max_attempts = 10
-
-        while found < expected_count and attempts < max_attempts:
-            attempts += 1
-            message_body = read_message(context, queue_type="notification")
-
-            if message_body is None:
-                continue
-
-            found += 1
-            print(f"Message {found}/2 found for UNIQUE_ID: {unique_id}, ImmsID: {imms_id}, Action: {action}")
-
-        if found < expected_count:
-            raise AssertionError(f"Expected 2 events for IMMS ID {imms_id}, but only found {found}")

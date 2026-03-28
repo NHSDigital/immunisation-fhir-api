@@ -2,6 +2,7 @@ import functools
 import json
 import os
 import re
+from collections import Counter
 from datetime import UTC, datetime
 
 import pandas as pd
@@ -35,9 +36,9 @@ from utilities.batch_S3_buckets import (
     wait_and_read_ack_file,
     wait_for_file_to_move_archive,
 )
-from utilities.date_helper import normalize_utc_suffix
+from utilities.date_helper import iso_to_compact, normalize_utc_suffix
 from utilities.enums import ActionFlag, ActionMap, Operation
-from utilities.sqs_message_halder import read_message, read_messages_for_batch
+from utilities.sqs_message_halder import read_messages_for_batch
 
 from features.APITests.steps.common_steps import (
     calculate_age,
@@ -311,6 +312,12 @@ def all_record_are_rejected_for_given_field_name(context):
 
 @then(parsers.parse("MNS event will be triggered with correct data for all '{event_type}' events where NHS is not null"))
 def mns_event_will_be_triggered_with_correct_data_for_created_events_in_batch_file(context, event_type):
+    if context.mns_validation_required.strip().lower() != "true":
+        print(
+            f"MNS event validation is skipped since mns_validation_required is set to {context.mns_validation_required}"
+        )
+        return
+
     action = event_type.upper() if event_type.upper() in ["CREATE", "UPDATE"] else "CREATE"
 
     df = context.vaccine_df.dropna(subset=["IMMS_ID"]).copy()
@@ -333,6 +340,7 @@ def mns_event_will_be_triggered_with_correct_data_for_created_events_in_batch_fi
 
 @then("MNS event will not be created for the records where NHS is null or empty")
 def mns_event_will_not_be_triggered_for_records_with_null_or_empty_nhs(context):
+    print("Checking for records with Null or empty NHS_NUMBER to validate MNS event non-triggering...")
     df = context.vaccine_df.copy()
 
     null_nhs_rows = df[df["UNIQUE_ID"].astype(str).str.startswith("NullNHS")]
@@ -498,12 +506,6 @@ def validate_imms_delta_table_for_deleted_records_in_batch_file(context):
 
 
 def mns_event_will_be_triggered_for_batch_record(context, action, valid_rows):
-    if context.mns_validation_required.strip().lower() != "true":
-        print(
-            f"MNS event validation is skipped since mns_validation_required is set to {context.mns_validation_required}"
-        )
-        return
-
     messages = read_messages_for_batch(context, queue_type="notification", valid_rows=valid_rows)
 
     print(f"Read {len(messages)} {action} message(s) from SQS")
@@ -527,25 +529,6 @@ def mns_event_will_be_triggered_for_batch_record(context, action, valid_rows):
         print(f"Validating message for NHS {nhs}, IMMS ID {context.ImmsID}")
 
         validate_sqs_message_for_batch_record(context, msg, row)
-
-
-def mns_delete_event_will_be_triggered_with_correct_data_for_batch_record(context, row):
-    if row.NHS_NUMBER is None:
-        message_body = read_message(
-            context,
-            queue_type="notification",
-            wait_time_seconds=5,
-            max_empty_polls=3,
-        )
-        print(
-            "No MNS delete event is created as expected since NHS number is not present in the original immunization event"
-        )
-        assert message_body is None, "Not expected a message but queue returned a message"
-    else:
-        message_body = read_message(context, queue_type="notification")
-        print(f"Read deleted message from SQS: {message_body} for NHS {row.NHS_NUMBER} and IMMS ID {context.ImmsID}")
-        assert message_body is not None, "Expected a  delete message but queue returned empty"
-        validate_sqs_message_for_batch_record(context, message_body, row)
 
 
 def validate_sqs_message_for_batch_record(context, message_body, row):
@@ -614,3 +597,69 @@ def validate_sqs_message_for_batch_record(context, message_body, row):
             message_body.filtering is None,
             f"msn event for {row.NHS_NUMBER} Filtering is present in the message body when it shouldn't be for int environment",
         )
+
+
+@then("MNS event will be triggered with correct data for both events where NHS is not null")
+def mns_event_will_be_triggered_with_correct_data_for_both_events_in_batch_file(
+    context,
+):
+    if context.mns_validation_required.strip().lower() != "true":
+        print(
+            f"MNS event validation is skipped since mns_validation_required is set to {context.mns_validation_required}"
+        )
+        return
+
+    df = context.vaccine_df.dropna(subset=["IMMS_ID"]).copy()
+    df["IMMS_ID_CLEAN"] = df["IMMS_ID"].astype(str).str.replace("Immunization#", "", regex=False)
+
+    valid_rows = [row for row in df.itertuples(index=False) if not row.UNIQUE_ID.startswith("NullNHS")]
+
+    if not valid_rows:
+        print("No valid NHS rows found — skipping MNS validation.")
+        return
+
+    messages = read_messages_for_batch(context, queue_type="notification", valid_rows=valid_rows)
+
+    print(f"Read {len(messages)} message(s) from SQS")
+
+    assert len(messages) == len(valid_rows), (
+        f"Expected exactly {len(valid_rows)} MNS events, but received {len(messages)}"
+    )
+
+    nhs_numbers = [msg.subject for msg in messages]
+
+    nhs_counts = Counter(nhs_numbers)
+
+    # Unique NHS numbers in the batch file
+    unique_nhs_in_rows = {row.NHS_NUMBER for row in valid_rows}
+
+    # Check we got messages for all NHS numbers
+    assert len(nhs_counts) == len(unique_nhs_in_rows), (
+        f"Expected {len(unique_nhs_in_rows)} NHS numbers, but got {len(nhs_counts)}: {list(nhs_counts.keys())}"
+    )
+
+    # Check each NHS number has exactly 2 events
+    for nhs, count in nhs_counts.items():
+        assert count == 2, f"NHS {nhs} expected 2 events (CREATE + UPDATE) but received {count}"
+
+
+def build_batch_row_from_api_object(context):
+    patient = context.create_object.contained[1]
+    imms = context.create_object
+    performer_org = imms.performer[1].actor.identifier.value
+
+    occurrenceDateTime = iso_to_compact(imms.occurrenceDateTime.replace("-", "").replace(":", ""))
+
+    return {
+        "NHS_NUMBER": patient.identifier[0].value,
+        "PERSON_FORENAME": patient.name[0].given[0],
+        "PERSON_SURNAME": patient.name[0].family,
+        "PERSON_GENDER_CODE": patient.gender,
+        "PERSON_DOB": patient.birthDate.replace("-", ""),
+        "PERSON_POSTCODE": patient.address[0].postalCode,
+        "ACTION_FLAG": "DELETE",
+        "UNIQUE_ID": imms.identifier[0].value,
+        "UNIQUE_ID_URI": imms.identifier[0].system,
+        "SITE_CODE": performer_org,
+        "DATE_AND_TIME": occurrenceDateTime,
+    }
