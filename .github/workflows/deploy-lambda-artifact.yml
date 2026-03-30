@@ -400,5 +400,5 @@ jobs:
       - name: Upload deployment manifest
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
-          name: deploy-manifest-${{ inputs.lambda_name }}-${{ inputs.environment }}-${{ inputs.sub_environment }}-${{ github.run_attempt }}
+          name: deploy-manifest-${{ inputs.lambda_name }}
           path: ${{ steps.manifest.outputs.manifest_file }}
