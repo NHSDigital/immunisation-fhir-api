@@ -1,5 +1,5 @@
-import datetime
 import uuid
+from datetime import datetime
 
 import pandas as pd
 from pytest_bdd import given, scenarios, then, when
@@ -105,9 +105,12 @@ def send_update_for_immunization_event_with_vaccination_detail_updated(context):
     context.immunization_object.identifier[0].value = row["UNIQUE_ID"]
     context.immunization_object.identifier[0].system = row["UNIQUE_ID_URI"]
     context.immunization_object.performer[1].actor.identifier.value = row["SITE_CODE"]
-    dt = datetime.strptime(row["DATE_AND_TIME"], "%Y%m%dT%H%M%S")
+    base_date = row["DATE_AND_TIME"][:15]
+    frac = row["DATE_AND_TIME"][15:]
+    dt = datetime.strptime(base_date, "%Y%m%dT%H%M%S")
 
-    formatted = dt.strftime("%Y%m%dT%H%M%S") + "00"
+    formatted = dt.strftime(f"%Y-%m-%dT%H:%M:%S.{frac}+00:00")
+
     context.immunization_object.occurrenceDateTime = formatted
     send_update_for_immunization_event(context)
 

@@ -482,7 +482,7 @@ def validate_sqs_message(context, message_body, action):
             f"msn event for {action} GP code mismatch: expected {context.gp_code}, got {message_body.filtering.generalpractitioner}",
         )
 
-        expected_org = context.create_object.performer[1].actor.identifier.value
+        expected_org = context.immunization_object.performer[1].actor.identifier.value
         check.is_true(
             normalize(message_body.filtering.sourceorganisation) == normalize(expected_org),
             f"msn event for {action} Source org mismatch: expected {expected_org}, got {message_body.filtering.sourceorganisation}",

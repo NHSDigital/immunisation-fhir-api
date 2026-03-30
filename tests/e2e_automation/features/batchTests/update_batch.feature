@@ -56,8 +56,8 @@ Feature: Create the immunization event for a patient through batch file and upda
         And Audit table will have correct status, queue name and record count for the processed batch file
         And The imms event table will be populated with the correct data for 'created' event for records in batch file
         And The delta table will be populated with the correct data for all created records in batch file
-        When Send a update for Immunization event created with vaccination detail being updated through API request
         And MNS event will be triggered with correct data for all 'CREATE' events where NHS is not null
+        When Send a update for Immunization event created with vaccination detail being updated through API request
         Then Api request will be successful and tables will be updated correctly
         And Api updated event will trigger MNS event with correct data
 
