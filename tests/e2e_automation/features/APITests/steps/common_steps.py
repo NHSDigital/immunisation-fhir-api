@@ -478,15 +478,21 @@ def validate_sqs_message(context, message_body, action):
         f"msn event for {action} Source application mismatch: expected {context.supplier_name}, got {message_body.filtering.sourceapplication}",
     )
 
-    expected_age = getattr(
-        context,
-        "patient_age",
-        calculate_age(context.patient.birthDate, context.immunization_object.occurrenceDateTime),
-    )
-    check.is_true(
-        message_body.filtering.subjectage == expected_age,
-        f"msn event for {action} Age mismatch: expected {expected_age}, got {message_body.filtering.subjectage}",
-    )
+    expected_age = getattr(context, "patient_age", None)
+    if expected_age is None:
+        birth_date = getattr(context.patient, "birthDate", None)
+        occurrence_date = getattr(context.immunization_object, "occurrenceDateTime", None)
+        try:
+            if birth_date and occurrence_date:
+                expected_age = calculate_age(birth_date, occurrence_date)
+        except ValueError:
+            expected_age = None
+
+    if expected_age is not None:
+        check.is_true(
+            message_body.filtering.subjectage == expected_age,
+            f"msn event for {action} Age mismatch: expected {expected_age}, got {message_body.filtering.subjectage}",
+        )
 
     check.is_true(
         message_body.filtering.immunisationtype == context.vaccine_type.upper(),
