@@ -1,0 +1,7 @@
+
+ Read Request is https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/b88c290c-b515-428c-9861-08cd2b0db6ea?_summary
+404
+404
+
+ Error Response - 
+ resourceType='OperationOutcome' id='fba4add1-2dee-44e9-b90f-345552b02444' meta=Meta(profile=['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']) issue=[Issue(severity='error', code='not-found', details=Details(coding=[Coding(system='https://fhir.nhs.uk/Codesystem/http-error-codes', code='NOT-FOUND')]), diagnostics='Immunization resource does not exist. ID: b88c290c-b515-428c-9861-08cd2b0db6ea')]
