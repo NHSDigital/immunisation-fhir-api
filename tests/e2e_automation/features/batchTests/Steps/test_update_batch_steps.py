@@ -73,8 +73,8 @@ def upload_batch_file_to_s3_for_update(context):
     record = build_batch_file(context)
     df = pd.DataFrame([record.dict()])
 
-    delete_fields = build_batch_row_from_api_object(context)
-    df.loc[0, delete_fields.keys()] = delete_fields.values()
+    batch_fields = build_batch_row_from_api_object(context, "UPDATE")
+    df.loc[0, list(batch_fields.keys())] = list(batch_fields.values())
 
     context.vaccine_df = df
     create_batch_file(context)

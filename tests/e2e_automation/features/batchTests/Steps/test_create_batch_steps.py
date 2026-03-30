@@ -16,7 +16,6 @@ scenarios("batchTests/create_batch.feature")
 def valid_batch_file_is_created_with_minimum_details(datatable, context):
     build_dataFrame_using_datatable(datatable, context)
     columns_to_clear = [
-        "NHS_NUMBER",
         "VACCINATION_PROCEDURE_TERM",
         "VACCINE_PRODUCT_CODE",
         "VACCINE_PRODUCT_TERM",

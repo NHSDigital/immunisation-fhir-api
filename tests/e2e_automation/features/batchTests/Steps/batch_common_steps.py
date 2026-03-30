@@ -643,7 +643,7 @@ def mns_event_will_be_triggered_with_correct_data_for_both_events_in_batch_file(
         assert count == 2, f"NHS {nhs} expected 2 events (CREATE + UPDATE) but received {count}"
 
 
-def build_batch_row_from_api_object(context):
+def build_batch_row_from_api_object(context, action):
     patient = context.create_object.contained[1]
     imms = context.create_object
     performer_org = imms.performer[1].actor.identifier.value
@@ -657,7 +657,7 @@ def build_batch_row_from_api_object(context):
         "PERSON_GENDER_CODE": patient.gender,
         "PERSON_DOB": patient.birthDate.replace("-", ""),
         "PERSON_POSTCODE": patient.address[0].postalCode,
-        "ACTION_FLAG": "DELETE",
+        "ACTION_FLAG": action.upper(),
         "UNIQUE_ID": imms.identifier[0].value,
         "UNIQUE_ID_URI": imms.identifier[0].system,
         "SITE_CODE": performer_org,
