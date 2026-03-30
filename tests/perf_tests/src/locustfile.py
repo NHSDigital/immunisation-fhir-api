@@ -10,17 +10,17 @@ from locust import HttpUser, constant_throughput, task
 
 from common.api_clients.authentication import AppRestrictedAuth
 from common.clients import get_secrets_manager_client
+from common.models.constants import Urls
 from objectModels import patient_loader
 from objectModels.api_immunization_builder import create_immunization_object
 from objectModels.patient_loader import load_patient_by_id
 
 CONTENT_TYPE_FHIR_JSON = "application/fhir+json"
 
-APIGEE_ENVIRONMENT = os.getenv("APIGEE_ENVIRONMENT")
+APIGEE_ENVIRONMENT = os.getenv("APIGEE_ENVIRONMENT", "ref")
 if not APIGEE_ENVIRONMENT:
     raise ValueError("APIGEE_ENVIRONMENT must be set")
 
-PERF_SUPPLIER_SYSTEM = os.getenv("PERF_SUPPLIER_SYSTEM", "EMIS").upper()
 PERF_CREATE_TASK_RPS_PER_USER = float(os.getenv("PERF_CREATE_RPS_PER_USER", "1"))
 
 IMMUNIZATION_TARGETS = [
@@ -37,20 +37,6 @@ IMMUNIZATION_TARGETS = [
     "SHINGLES",
 ]
 
-NHS_NUMBERS = [
-    "9160742623",
-    "9822833040",
-    "9406813963",
-    "9505768028",
-    "9429583158",
-    "9728553366",
-    "9153271653",
-    "9067110124",
-    "9244495082",
-    "9940401264",
-]
-
-NHS_SYSTEM = "https://fhir.nhs.uk/Id/nhs-number"
 CREATE_SUCCESS_STATUSES = {200, 201, 202}
 DELETE_SUCCESS_STATUSES = {200, 202, 204}
 
@@ -59,7 +45,7 @@ patient_loader.csv_path = str(Path(__file__).resolve().parents[2] / "e2e_automat
 
 def _load_valid_patients():
     patient_df = pd.read_csv(patient_loader.csv_path, dtype=str)
-    valid_patients = patient_df[patient_df["id"] == "Valid_NHS"]["id"].tolist()
+    valid_patients = patient_df[patient_df["id"] == "Valid_NHS"]["nhs_number"].tolist()
     if not valid_patients:
         raise ValueError(f"No valid patients found in {patient_loader.csv_path}")
     return valid_patients
@@ -83,7 +69,6 @@ class BaseImmunizationUser(HttpUser):
             "Accept": CONTENT_TYPE_FHIR_JSON,
             "Authorization": f"Bearer {self.authenticator.get_access_token()}",
             "Content-Type": CONTENT_TYPE_FHIR_JSON,
-            "SupplierSystem": PERF_SUPPLIER_SYSTEM,
             "X-Correlation-ID": str(uuid.uuid4()),
             "X-Request-ID": str(uuid.uuid4()),
         }
@@ -113,11 +98,11 @@ class SearchUser(BaseImmunizationUser):
 
     @task
     def search_single_vacc_type(self):
-        nhs_number = random.choice(NHS_NUMBERS)
+        nhs_number = random.choice(VALID_PATIENT_IDS)
         immunization_target = random.choice(IMMUNIZATION_TARGETS)
         query = urlencode(
             {
-                "patient.identifier": f"{NHS_SYSTEM}|{nhs_number}",
+                "patient.identifier": f"{Urls.NHS_NUMBER}|{nhs_number}",
                 "-immunization.target": immunization_target,
             }
         )
@@ -129,10 +114,10 @@ class SearchUser(BaseImmunizationUser):
 
     @task
     def search_multiple_vacc_types(self):
-        nhs_number = random.choice(NHS_NUMBERS)
+        nhs_number = random.choice(VALID_PATIENT_IDS)
         query = urlencode(
             {
-                "patient.identifier": f"{NHS_SYSTEM}|{nhs_number}",
+                "patient.identifier": f"{Urls.NHS_NUMBER}|{nhs_number}",
                 "-immunization.target": ",".join(IMMUNIZATION_TARGETS),
             }
         )
