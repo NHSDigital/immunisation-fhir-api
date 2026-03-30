@@ -1,0 +1,40 @@
+✅ Pipe-delimited file saved to: /home/runner/work/immunisation-fhir-api/immunisation-fhir-api/tests/e2e_automation/batch_files_directory/6IN1_Vaccinations_v5_YGA_20260330T11544800.csv
+Batch file created: 6IN1_Vaccinations_v5_YGA_20260330T11544800.csv
+Upload successful: 6IN1_Vaccinations_v5_YGA_20260330T11544800.csv → immunisation-batch-internal-qa-data-sources
+Batch file uploaded to S3: 6IN1_Vaccinations_v5_YGA_20260330T11544800.csv
+Waiting for file in archive: s3://immunisation-batch-internal-qa-data-sources/archive/6IN1_Vaccinations_v5_YGA_20260330T11544800.csv
+Still waiting... (0s)
+Still waiting... (5s)
+Still waiting... (10s)
+Still waiting... (15s)
+Still waiting... (20s)
+Still waiting... (25s)
+Still waiting... (30s)
+File found in archive: archive/6IN1_Vaccinations_v5_YGA_20260330T11544800.csv
+Waiting for ACK files starting with 'ack/6IN1_Vaccinations_v5_YGA_20260330T11544800' in bucket: immunisation-batch-internal-qa-data-destinations
+[MODE] Expecting ONLY CSV ACK file
+[FOUND] .csv file located: ack/6IN1_Vaccinations_v5_YGA_20260330T11544800_InfAck_20260330T11544900.csv
+[COMPLETE] All expected ACK files received
+Waiting for ACK files starting with 'forwardedFile/6IN1_Vaccinations_v5_YGA_20260330T11544800' in bucket: immunisation-batch-internal-qa-data-destinations
+[MODE] Expecting BOTH CSV and JSON ACK files
+[FOUND] .csv file located: forwardedFile/6IN1_Vaccinations_v5_YGA_20260330T11544800_BusAck_20260330T11544900.csv
+[FOUND] .json file located: forwardedFile/6IN1_Vaccinations_v5_YGA_20260330T11544800_BusAck_20260330T11544900.json
+[COMPLETE] All expected ACK files received
+No rows found in BUS ACK file for successful records
+Attempt 1: Found 1 items
+
+Found Audit detail for filename=6IN1_Vaccinations_v5_YGA_20260330T11544800.csv
+
+
+ Imms Event response is {'Items': [{'PatientPK': 'Patient#9732234172', 'SupplierSystem': 'TPP', 'Version': Decimal('1'), 'Resource': '{"resourceType": "Immunization", "status": "completed", "protocolApplied": [{"targetDisease": [{"coding": [{"system": "http://snomed.info/sct", "code": "398102009", "display": "Acute poliomyelitis"}]}, {"coding": [{"system": "http://snomed.info/sct", "code": "397430003", "display": "Diphtheria caused by Corynebacterium diphtheriae"}]}, {"coding": [{"system": "http://snomed.info/sct", "code": "709410003", "display": "Haemophilus influenzae type b infection"}]}, {"coding": [{"system": "http://snomed.info/sct", "code": "27836007", "display": "Pertussis"}]}, {"coding": [{"system": "http://snomed.info/sct", "code": "76902006", "display": "Tetanus"}]}, {"coding": [{"system": "http://snomed.info/sct", "code": "66071002", "display": "Type B viral hepatitis"}]}], "doseNumberPositiveInt": 1}], "reasonCode": [{"coding": [{"system": "http://snomed.info/sct", "code": "443684005"}]}], "recorded": "2026-03-30", "identifier": [{"value": "Valid_NhsNumber-20260330T115448", "system": "https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk"}], "patient": {"reference": "#Patient1"}, "contained": [{"id": "Patient1", "resourceType": "Patient", "birthDate": "1974-12-13", "gender": "female", "address": [{"postalCode": "M14 4SU"}], "identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9732234172"}], "name": [{"family": "BRYAN", "given": ["WINNIE"]}]}, {"resourceType": "Practitioner", "id": "Practitioner1", "name": [{"family": "Tests", "given": ["Automation"]}]}], "vaccineCode": {"coding": [{"system": "http://snomed.info/sct", "code": "1162634005", "display": "Pediatric vaccine product containing only acellular Bordetella pertussis, Clostridium tetani and Corynebacterium diphtheriae toxoids, Haemophilus influenzae type b conjugated, Hepatitis B virus and inactivated Human poliovirus antigens"}]}, "manufacturer": {"display": "GlaxoSmithKline UK Ltd"}, "expirationDate": "2026-03-30", "lotNumber": "432707", "extension": [{"url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure", "valueCodeableConcept": {"coding": [{"system": "http://snomed.info/sct", "code": "1082441000000108", "display": "First diphtheria, tetanus and acellular pertussis, inactivated polio, Haemophilus influenzae type b and hepatitis B vaccination"}]}}], "occurrenceDateTime": "2026-03-30T11:53:58+00:00", "primarySource": true, "site": {"coding": [{"system": "http://snomed.info/sct", "code": "368209003", "display": "Right upper arm structure"}]}, "route": {"coding": [{"system": "http://snomed.info/sct", "code": "34206005", "display": "Subcutaneous route (qualifier value)"}]}, "doseQuantity": {"value": 0.5, "unit": "millilitre", "system": "http://snomed.info/sct", "code": "ml"}, "performer": [{"actor": {"type": "Organization", "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "X99999"}}}, {"actor": {"reference": "#Practitioner1"}}], "location": {"identifier": {"value": "X99999", "system": "https://fhir.nhs.uk/Id/ods-organization-code"}}, "id": "586a3dce-67db-405f-9fee-07acdbb8d51f"}', 'PK': 'Immunization#586a3dce-67db-405f-9fee-07acdbb8d51f', 'Operation': 'CREATE', 'IdentifierPK': 'https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk#Valid_NhsNumber-20260330T115448', 'PatientSK': '6IN1#586a3dce-67db-405f-9fee-07acdbb8d51f'}], 'Count': 1, 'ScannedCount': 1, 'ResponseMetadata': {'RequestId': 'EA4UFBEQIULVUUKHVLCRNBCRJRVV4KQNSO5AEMVJF66Q9ASUAAJG', 'HTTPStatusCode': 200, 'HTTPHeaders': {'server': 'Server', 'date': 'Mon, 30 Mar 2026 11:55:25 GMT', 'content-type': 'application/x-amz-json-1.0', 'content-length': '3823', 'connection': 'keep-alive', 'x-amzn-requestid': 'EA4UFBEQIULVUUKHVLCRNBCRJRVV4KQNSO5AEMVJF66Q9ASUAAJG', 'x-amz-crc32': '4153273627'}, 'RetryAttempts': 0}} 
+
+Attempt 1: Found 1 items
+
+Found Immunization Delta items for ImmsID=586a3dce-67db-405f-9fee-07acdbb8d51f
+
+
+ Delete Request is https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/586a3dce-67db-405f-9fee-07acdbb8d51f
+Waiting for message with dataref: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/586a3dce-67db-405f-9fee-07acdbb8d51f
+Polling notification queue (wait 20s)...
+Matched and deleted message for https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/586a3dce-67db-405f-9fee-07acdbb8d51f
+Read deleted message from SQS: specversion='1.0' id='3fb0345c-8fe6-4366-9546-fee3c55bd0aa' source='uk.nhs.vaccinations-data-flow-management' type='imms-vaccination-record-change-1' time='2026-03-30T11:53:58Z' subject='9732234172' dataref='https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/586a3dce-67db-405f-9fee-07acdbb8d51f' filtering=Filtering(generalpractitioner='P84009', sourceorganisation='X99999', sourceapplication='TPP', subjectage=51, immunisationtype='6IN1', action='CREATE')
