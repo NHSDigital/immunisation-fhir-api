@@ -48,6 +48,12 @@ jobs:
           make init apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
           make workspace apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
           echo "ID_SYNC_QUEUE_ARN=$(make -s output name=id_sync_queue_arn)" >> $GITHUB_ENV
+          recordprocessor_image_uri="$(make -s output name=recordprocessor_image_uri 2>/dev/null || true)"
+          if [ -z "${recordprocessor_image_uri}" ]; then
+            # Destroy still evaluates variable validation, so provide a non-empty fallback when output is unavailable.
+            recordprocessor_image_uri="placeholder.dkr.ecr.eu-west-2.amazonaws.com/imms-recordprocessor-repo@sha256:0000000000000000000000000000000000000000000000000000000000000000"
+          fi
+          echo "TF_VAR_recordprocessor_image_uri=${recordprocessor_image_uri}" >> $GITHUB_ENV
 
       - name: Install poetry
         run: pip install poetry==2.1.4
@@ -75,3 +81,51 @@ jobs:
         working-directory: infrastructure/instance
         run: |
           make destroy apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
+
+      - name: Cleanup PR ECR images by prefix
+        env:
+          AWS_REGION: eu-west-2
+          IMAGE_TAG_PREFIX: ${{ env.BACKEND_SUB_ENVIRONMENT }}-
+        run: |
+          set -euo pipefail
+
+          cleanup_repo_by_prefix() {
+            local repository_name="$1"
+            local image_tags
+            local image_ids_args=""
+
+            if ! aws ecr describe-repositories \
+              --repository-names "${repository_name}" \
+              --region "${AWS_REGION}" \
+              >/dev/null 2>&1; then
+              echo "Repository '${repository_name}' does not exist. Skipping."
+              return
+            fi
+
+            image_tags=$(
+              aws ecr list-images \
+                --repository-name "${repository_name}" \
+                --region "${AWS_REGION}" \
+                --filter tagStatus=TAGGED \
+                --query "imageIds[?starts_with(imageTag, \`${IMAGE_TAG_PREFIX}\`)].imageTag" \
+                --output text
+            )
+
+            if [ -z "${image_tags}" ] || [ "${image_tags}" = "None" ]; then
+              echo "No images found in '${repository_name}' for prefix '${IMAGE_TAG_PREFIX}'."
+              return
+            fi
+
+            for image_tag in ${image_tags}; do
+              echo "Queueing image tag '${image_tag}' from '${repository_name}' for deletion..."
+              image_ids_args="${image_ids_args} imageTag=${image_tag}"
+            done
+
+            aws ecr batch-delete-image \
+              --repository-name "${repository_name}" \
+              --region "${AWS_REGION}" \
+              --image-ids ${image_ids_args} \
+              --output json
+          }
+
+          cleanup_repo_by_prefix "imms-recordprocessor-repo"
