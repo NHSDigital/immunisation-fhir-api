@@ -27,7 +27,7 @@ COPY ./shared/src/common ./common
 COPY ./id_sync/src .
 
 # Set correct permissions
-RUN chmod 644 $(find . -type f) && chmod 755 $(find . -type d)
+RUN chmod -R u=rwX,go=rX .
 
 # Build as non-root user
 USER 1001:1001

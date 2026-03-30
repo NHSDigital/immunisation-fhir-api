@@ -27,7 +27,7 @@ COPY ./shared/src/common ./common
 COPY ./delta_backend/src .
 
 # Set correct permissions
-RUN chmod 644 $(find . -type f) && chmod 755 $(find . -type d)
+RUN chmod -R u=rwX,go=rX .
 
 # Switch to the non-root user for running the container
 USER 1001:1001
