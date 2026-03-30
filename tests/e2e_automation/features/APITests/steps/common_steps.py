@@ -478,9 +478,14 @@ def validate_sqs_message(context, message_body, action):
         f"msn event for {action} Source application mismatch: expected {context.supplier_name}, got {message_body.filtering.sourceapplication}",
     )
 
+    expected_age = getattr(
+        context,
+        "patient_age",
+        calculate_age(context.patient.birthDate, context.immunization_object.occurrenceDateTime),
+    )
     check.is_true(
-        message_body.filtering.subjectage == context.patient_age,
-        f"msn event for {action} Age mismatch: expected {context.patient_age}, got {message_body.filtering.subjectage}",
+        message_body.filtering.subjectage == expected_age,
+        f"msn event for {action} Age mismatch: expected {expected_age}, got {message_body.filtering.subjectage}",
     )
 
     check.is_true(
