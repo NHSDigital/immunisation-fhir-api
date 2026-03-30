@@ -1,10 +1,10 @@
 import json
 import random
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from venv import logger
 
 import pytest_check as check
-from pytest_bdd import given, parsers, scenarios, then
+from pytest_bdd import given, parsers, scenarios, then, when
 from src.dynamoDB.dynamo_db_helper import (
     fetch_immunization_events_detail,
     fetch_immunization_int_delta_detail_by_immsID,
@@ -19,13 +19,20 @@ from src.objectModels.api_immunization_builder import (
     build_vaccine_procedure_extension,
     get_vaccine_details,
 )
-from utilities.api_fhir_immunization_helper import validate_to_compare_request_and_response
+from utilities.api_fhir_immunization_helper import (
+    validate_to_compare_request_and_response,
+)
 from utilities.date_helper import generate_date
 from utilities.enums import ActionFlag, Operation
 from utilities.text_helper import get_text
-from utilities.vaccination_constants import ROUTE_MAP, SITE_MAP, VACCINATION_PROCEDURE_MAP, VACCINE_CODE_MAP
+from utilities.vaccination_constants import (
+    ROUTE_MAP,
+    SITE_MAP,
+    VACCINATION_PROCEDURE_MAP,
+    VACCINE_CODE_MAP,
+)
 
-from .common_steps import valid_json_payload_is_created
+from .common_steps import Trigger_the_post_create_request, valid_json_payload_is_created
 
 scenarios("APITests/create.feature")
 
@@ -39,7 +46,7 @@ def createValidJsonPayloadWithDoseNumberPositiveInt(context, doseNumberPositiveI
 @given("Valid json payload is created where date fields has past date")
 def create_valid_json_payload_with_past_dates(context):
     valid_json_payload_is_created(context)
-    today = datetime.now(timezone.utc)
+    today = datetime.now(UTC)
     context.immunization_object.contained[1].birthDate = str((today - timedelta(days=150)).date())
     context.immunization_object.occurrenceDateTime = str((today - timedelta(days=15)).isoformat(timespec="milliseconds"))
     context.immunization_object.recorded = str((today - timedelta(days=20)).date())
@@ -168,9 +175,21 @@ def validate_imms_event_table(context):
             item.get("IdentifierPK"),
         ),
         ("Operation", Operation.created.value, item.get("Operation")),
-        ("PatientPK", f"Patient#{context.patient.identifier[0].value}", item.get("PatientPK")),
-        ("PatientSK", f"{context.vaccine_type.upper()}#{context.ImmsID}", item.get("PatientSK")),
-        ("SupplierSystem", context.supplier_name.lower(), item.get("SupplierSystem").lower()),
+        (
+            "PatientPK",
+            f"Patient#{context.patient.identifier[0].value}",
+            item.get("PatientPK"),
+        ),
+        (
+            "PatientSK",
+            f"{context.vaccine_type.upper()}#{context.ImmsID}",
+            item.get("PatientSK"),
+        ),
+        (
+            "SupplierSystem",
+            context.supplier_name.lower(),
+            item.get("SupplierSystem").lower(),
+        ),
         ("Version", 1, item.get("Version")),
     ]
 
@@ -184,7 +203,10 @@ def validate_imms_event_table(context):
 def validate_imms_delta_table_by_ImmsID(context):
     create_obj = context.create_object
     item = fetch_immunization_int_delta_detail_by_immsID(
-        context.aws_profile_name, context.ImmsID, context.S3_env, context.expected_version
+        context.aws_profile_name,
+        context.ImmsID,
+        context.S3_env,
+        context.expected_version,
     )
     assert item, f"Item not found in response for ImmsID: {context.ImmsID}"
 
@@ -315,3 +337,8 @@ def create_request_with_invalid_gender(context, gender):
 def create_request_with_empty_nam(context):
     valid_json_payload_is_created(context)
     context.immunization_object.contained[1].name = None
+
+
+@when("Trigger another post create request with same unique_id and unique_id_uri")
+def trigger_post_create_with_same_unique_id(context):
+    Trigger_the_post_create_request(context)

@@ -4,6 +4,7 @@ from csv import writer
 from io import BytesIO, StringIO
 
 from common.clients import get_s3_client
+from common.file_utils import get_file_key_without_ext
 from common.models.batch_constants import ACK_BUCKET_NAME
 
 
@@ -27,15 +28,16 @@ def make_ack_data(
         "RESPONSE_CODE": ("20013" if (validation_passed and message_delivered) else "10002"),
         "RESPONSE_DISPLAY": (success_display if (validation_passed and message_delivered) else failure_display),
         "RECEIVED_TIME": created_at_formatted_string,
-        "MAILBOX_FROM": "",  # TODO: Leave blank for DPS, add mailbox if from mesh mailbox
-        "LOCAL_ID": "",  # TODO: Leave blank for DPS, add from ctl file if data picked up from MESH mailbox
+        "MAILBOX_FROM": "",  # VED-197 TODO: Leave blank for DPS, add mailbox if from mesh mailbox
+        "LOCAL_ID": "",  # VED-197 TODO: Leave blank for DPS, add from ctl file if data picked up from MESH mailbox
         "MESSAGE_DELIVERY": message_delivered,
     }
 
 
 def upload_ack_file(file_key: str, ack_data: dict, created_at_formatted_string: str) -> None:
     """Formats the ack data into a csv file and uploads it to the ack bucket"""
-    ack_filename = "ack/" + file_key.replace(".csv", f"_InfAck_{created_at_formatted_string}.csv")
+    file_key_without_ext = get_file_key_without_ext(file_key)
+    ack_filename = f"ack/{file_key_without_ext}_InfAck_{created_at_formatted_string}.csv"
 
     # Create CSV file with | delimiter, filetype .csv
     csv_buffer = StringIO()

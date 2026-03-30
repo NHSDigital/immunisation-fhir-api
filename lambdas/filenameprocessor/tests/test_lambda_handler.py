@@ -1,6 +1,7 @@
 """Tests for lambda_handler"""
 
 import json
+import os
 from contextlib import ExitStack
 from copy import deepcopy
 from json import loads as json_loads
@@ -120,7 +121,8 @@ class TestLambdaHandlerDataSource(TestCase):
         created_at_formatted_string: str = MOCK_CREATED_AT_FORMATTED_STRING,
     ) -> str:
         """Returns the ack file key for the given file key"""
-        return f"ack/{file_key.replace('.csv', '_InfAck_' + created_at_formatted_string + '.csv')}"
+        file_key_without_ext = os.path.splitext(file_key)[0]
+        return f"ack/{file_key_without_ext}_InfAck_{created_at_formatted_string}.csv"
 
     @staticmethod
     def generate_expected_failure_inf_ack_content(message_id: str, created_at_formatted_string: str) -> str:
@@ -288,8 +290,8 @@ class TestLambdaHandlerDataSource(TestCase):
         archived_obj = s3_client.get_object(Bucket=BucketNames.SOURCE, Key=archived_key)
         self.assertIsNotNone(archived_obj)
 
-        # Also verify file copied to DPS destination bucket under dps_destination/<file_key>
-        dps_key = f"dps_destination/{test_cases[0].file_key}"
+        # Also verify file copied to DPS destination bucket under generic/EXTENDED_ATTRIBUTES_DAILY_1/<file_key>
+        dps_key = f"generic/EXTENDED_ATTRIBUTES_DAILY_1/{test_cases[0].file_key}"
         copied_obj = s3_client.get_object(Bucket=BucketNames.DPS_DESTINATION, Key=dps_key)
         self.assertIsNotNone(copied_obj)
 
@@ -463,7 +465,7 @@ class TestLambdaHandlerDataSource(TestCase):
         # Ensure processed path hit by checking archive move in source bucket
         s3_client.get_object(Bucket=BucketNames.SOURCE, Key=f"extended-attributes-archive/{csv_key}")
         # And verify copy to DPS destination
-        s3_client.get_object(Bucket=BucketNames.DPS_DESTINATION, Key=f"dps_destination/{csv_key}")
+        s3_client.get_object(Bucket=BucketNames.DPS_DESTINATION, Key=f"generic/EXTENDED_ATTRIBUTES_DAILY_1/{csv_key}")
 
         # .DAT accepted
         dat_key = MockFileDetails.extended_attributes_file.file_key[:-3] + "dat"
@@ -474,7 +476,7 @@ class TestLambdaHandlerDataSource(TestCase):
         ):
             lambda_handler(self.make_event([self.make_record(dat_key)]), None)
         s3_client.get_object(Bucket=BucketNames.SOURCE, Key=f"extended-attributes-archive/{dat_key}")
-        s3_client.get_object(Bucket=BucketNames.DPS_DESTINATION, Key=f"dps_destination/{dat_key}")
+        s3_client.get_object(Bucket=BucketNames.DPS_DESTINATION, Key=f"generic/EXTENDED_ATTRIBUTES_DAILY_1/{dat_key}")
 
         # Invalid extension fails
         bad_ext_key = csv_key[:-3] + "txt"

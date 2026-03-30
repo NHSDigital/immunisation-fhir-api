@@ -1,6 +1,5 @@
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional
 
 from .generic_utils import is_valid_simple_snomed, nhs_number_mod11_check
 
@@ -46,10 +45,10 @@ class PreValidation:
     def for_list(
         field_value: list,
         field_location: str,
-        defined_length: Optional[int] = None,
-        max_length: Optional[int] = None,
+        defined_length: int | None = None,
+        max_length: int | None = None,
         elements_are_strings: bool = False,
-        string_element_max_length: Optional[int] = None,
+        string_element_max_length: int | None = None,
         elements_are_dicts: bool = False,
     ):
         """
@@ -78,7 +77,7 @@ class PreValidation:
         field_value: str,
         field_location: str,
         elements_are_strings: bool = False,
-        string_element_max_length: Optional[int] = None,
+        string_element_max_length: int | None = None,
         elements_are_dicts: bool = False,
     ):
         if elements_are_strings:

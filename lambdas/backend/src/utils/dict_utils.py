@@ -1,9 +1,9 @@
 """Generic helper module for Python dictionary utility functions"""
 
-from typing import Any, Optional
+from typing import Any
 
 
-def get_field(target_dict: dict, *args: str, default: Optional[Any] = None) -> Any:
+def get_field(target_dict: dict, *args: str, default: Any | None = None) -> Any:
     """Safely retrieves a value from a dictionary. Supports nested dictionaries."""
     if not target_dict or not isinstance(target_dict, dict):
         return default

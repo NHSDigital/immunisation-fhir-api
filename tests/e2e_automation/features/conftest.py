@@ -4,7 +4,10 @@ from pathlib import Path
 import allure
 import pytest
 from dotenv import load_dotenv
-from utilities.api_fhir_immunization_helper import empty_folder
+from utilities.api_fhir_immunization_helper import (
+    empty_folder,
+    get_response_body_for_display,
+)
 from utilities.api_gen_token import get_tokens
 from utilities.api_get_header import get_delete_url_header
 from utilities.apigee.apigee_env_helpers import use_temp_apigee_apps
@@ -14,9 +17,14 @@ from utilities.aws_token import refresh_sso_token, set_aws_session_token
 from utilities.context import ScenarioContext
 from utilities.enums import SupplierNameWithODSCode
 from utilities.http_requests_session import http_requests_session
+from utilities.sqs_message_halder import purge_all_queues
+
+from features.APITests.steps.common_steps import *  # noqa: F403
 
 # Ignore F403 * imports. Pytest BDD requires common steps to be imported in conftest
-from features.APITests.steps.common_steps import *  # noqa: F403
+from features.APITests.steps.common_steps import (
+    mns_event_will_be_triggered_with_correct_data_for_deleted_event,  # noqa: F401
+)
 from features.batchTests.Steps.batch_common_steps import *  # noqa: F403
 
 
@@ -24,13 +32,21 @@ from features.batchTests.Steps.batch_common_steps import *  # noqa: F403
 def pytest_bdd_after_step(request, feature, scenario, step, step_func, step_func_args):
     if not step.failed:
         message = f"✅ Step Passed: **{step.name}"
-        allure.attach(message, name=f"Step Passed: {step.name}", attachment_type=allure.attachment_type.TEXT)
+        allure.attach(
+            message,
+            name=f"Step Passed: {step.name}",
+            attachment_type=allure.attachment_type.TEXT,
+        )
 
 
 @pytest.hookimpl(tryfirst=True)
 def pytest_bdd_step_error(request, feature, scenario, step, exception):
     message = f"❌ Step failed! **{step.name}** \n Error: {exception}"
-    allure.attach(message, name=f"Step Failed: {step.name}", attachment_type=allure.attachment_type.TEXT)
+    allure.attach(
+        message,
+        name=f"Step Failed: {step.name}",
+        attachment_type=allure.attachment_type.TEXT,
+    )
 
 
 @pytest.hookimpl(tryfirst=True)
@@ -51,9 +67,16 @@ def setup_environment():
 @pytest.fixture(scope="session")
 def global_context():
     aws_profile_name = os.getenv("aws_profile_name")
-    refresh_sso_token(aws_profile_name) if os.getenv(
-        "aws_token_refresh", "false"
-    ).strip().lower() == "true" else set_aws_session_token()
+    (
+        refresh_sso_token(aws_profile_name)
+        if os.getenv("aws_token_refresh", "false").strip().lower() == "true"
+        else set_aws_session_token()
+    )
+
+    s3_env = os.getenv("S3_env")
+    aws_account_id = os.getenv("aws_account_id")
+    if s3_env and aws_account_id:
+        purge_all_queues(s3_env, aws_account_id)
 
 
 @pytest.fixture(scope="session")
@@ -91,6 +114,7 @@ def context(request, global_context, temp_apigee_apps: list[ApigeeApp] | None) -
         "S3_env",
         "sub_environment",
         "LOCAL_RUN_WITHOUT_S3_UPLOAD",
+        "aws_account_id",
     ]
     for var in env_vars:
         setattr(ctx, var, os.getenv(var))
@@ -126,24 +150,35 @@ def pytest_bdd_after_scenario(request, feature, scenario):
             print(f"\n Delete Request is {context.url}/{context.ImmsID}")
             context.response = http_requests_session.delete(f"{context.url}/{context.ImmsID}", headers=context.headers)
             assert context.response.status_code == 204, (
-                f"Expected status code 204, but got {context.response.status_code}. Response: {context.response.json()}"
+                f"Expected status code 204, but got {context.response.status_code}. Response: {get_response_body_for_display(context.response)}"
             )
+            mns_event_will_be_triggered_with_correct_data_for_deleted_event(context)
         else:
             print("Skipping delete: ImmsID is None")
 
     if "delete_cleanup_batch" in tags:
-        get_tokens(context, context.supplier_name)
-        context.vaccine_df["IMMS_ID_CLEAN"] = (
-            context.vaccine_df["IMMS_ID"].astype(str).str.replace("Immunization#", "", regex=False)
-        )
+        if "IMMS_ID" in context.vaccine_df.columns and context.vaccine_df["IMMS_ID"].notna().any():
+            get_tokens(context, context.supplier_name)
 
-        for imms_id in context.vaccine_df["IMMS_ID_CLEAN"].dropna().unique():
-            delete_url = f"{context.url}/{imms_id}"
-            print(f"Sending DELETE request to: {delete_url}")
-            response = http_requests_session.delete(delete_url, headers=context.headers)
-
-            assert response.status_code == 204, (
-                f" Failed to delete {imms_id}: expected 204, got {response.status_code}. Response: {response.text}"
+            context.vaccine_df["IMMS_ID_CLEAN"] = (
+                context.vaccine_df["IMMS_ID"].astype(str).str.replace("Immunization#", "", regex=False)
             )
 
-        print("✅ All IMMS_IDs deleted successfully.")
+            for imms_id in context.vaccine_df["IMMS_ID_CLEAN"].dropna().unique():
+                delete_url = f"{context.url}/{imms_id}"
+                print(f"Sending DELETE request to: {delete_url}")
+
+                response = http_requests_session.delete(delete_url, headers=context.headers)
+
+                if response.status_code != 204:
+                    print(
+                        f"Cleanup DELETE returned {response.status_code} for {imms_id} (teardown best-effort, not failing test). Response: {get_response_body_for_display(response)}"
+                    )
+                else:
+                    print(f"Deleted {imms_id} successfully.")
+
+            print("Batch cleanup finished.")
+        else:
+            print(
+                " No IMMS_ID column or no values present as test failed due to as exception — skipping delete cleanup."
+            )

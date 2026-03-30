@@ -1,7 +1,7 @@
 """Module for the batch processor filter Lambda exception wrapper"""
 
+from collections.abc import Callable
 from functools import wraps
-from typing import Callable
 
 from common.clients import logger
 from exceptions import EventAlreadyProcessingForSupplierAndVaccTypeError

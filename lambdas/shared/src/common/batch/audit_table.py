@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from datetime import datetime
 
 from common.clients import get_dynamodb_client, logger
 from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys, audit_table_key_data_types_map
@@ -17,7 +17,7 @@ def create_audit_table_item(
     expiry_timestamp: int,
     queue_name: str,
     file_status: str,
-    error_details: Optional[str] = None,
+    error_details: str | None = None,
 ) -> None:
     """
     Creates an audit table item with the file details
@@ -78,7 +78,7 @@ def update_audit_table_item(
 
 def _build_ddb_update_parameters(
     attrs_to_update: dict[AuditTableKeys, any],
-) -> Tuple[str, dict[str, any], dict[str, any]]:
+) -> tuple[str, dict[str, any], dict[str, any]]:
     """Assembles an UpdateExpression, ExpressionAttributeNames and ExpressionAttributeValues for the DynamoDB Update"""
     update_expression = "SET "
     expression_attr_names = {}
@@ -109,6 +109,25 @@ def _build_audit_table_update_log_message(file_key: str, message_id: str, attrs_
         + " successfully updated in the audit table: "
         + list_of_updates_str
     )
+
+
+def get_ingestion_start_time_by_message_id(event_message_id: str) -> int:
+    """Retrieves ingestion start time by unique event message ID"""
+    # Required by JSON ack file
+    audit_record = dynamodb_client.get_item(
+        TableName=AUDIT_TABLE_NAME, Key={AuditTableKeys.MESSAGE_ID: {"S": event_message_id}}
+    )
+
+    ingestion_start_time_str = audit_record.get("Item", {}).get(AuditTableKeys.INGESTION_START_TIME, {}).get("S")
+    if not ingestion_start_time_str:
+        return 0
+    try:
+        ingestion_start_time = int(
+            (datetime.strptime(ingestion_start_time_str, "%Y%m%dT%H%M%S00") - datetime(1970, 1, 1)).total_seconds()
+        )
+    except ValueError:
+        return 0
+    return ingestion_start_time
 
 
 def get_record_count_and_failures_by_message_id(event_message_id: str) -> tuple[int, int]:

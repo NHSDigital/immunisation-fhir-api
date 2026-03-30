@@ -2,7 +2,7 @@ import functools
 import json
 import os
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pandas as pd
 import pytest_check as check
@@ -22,12 +22,18 @@ from src.objectModels.batch.batch_file_builder import (
     save_record_to_batch_files_directory,
 )
 from utilities.batch_file_helper import (
-    read_and_validate_bus_ack_file_content,
+    read_and_validate_csv_bus_ack_file_content,
     validate_bus_ack_file_for_error,
     validate_bus_ack_file_for_successful_records,
     validate_inf_ack_file,
+    validate_json_bus_ack_file_failure_records,
+    validate_json_bus_ack_file_structure_and_metadata,
 )
-from utilities.batch_S3_buckets import upload_file_to_S3, wait_and_read_ack_file, wait_for_file_to_move_archive
+from utilities.batch_S3_buckets import (
+    upload_file_to_S3,
+    wait_and_read_ack_file,
+    wait_for_file_to_move_archive,
+)
 from utilities.enums import ActionFlag, ActionMap, Operation
 
 
@@ -72,7 +78,6 @@ def ignore_local_run_set_test_data(func):
                 context.vaccine_df = pd.DataFrame()  # fallback to empty
 
             return None
-
         return func(*args, **kwargs)
 
     return wrapper
@@ -83,6 +88,13 @@ def ignore_local_run_set_test_data(func):
 def valid_batch_file_is_created_with_details(datatable, context):
     build_dataFrame_using_datatable(datatable, context)
     create_batch_file(context)
+
+
+@given("batch file is created for below data as full dataset with file extension dat")
+@ignore_if_local_run
+def valid_batch_file_is_created_with_details_and_dat_extension(datatable, context):
+    build_dataFrame_using_datatable(datatable, context)
+    create_batch_file(context, file_ext="dat")
 
 
 @when("same batch file is uploaded again in s3 bucket")
@@ -97,8 +109,21 @@ def batch_file_upload_in_s3_bucket(context):
 
 @then("file will be moved to destination bucket and inf ack file will be created")
 def ack_file_will_be_moved_to_destination_bucket(context):
-    context.fileContent = wait_and_read_ack_file(context, "ack")
-    assert context.fileContent, f"File not found in destination bucket after timeout:  {context.forwarded_prefix}"
+    result = wait_and_read_ack_file(context, "ack")
+    actual_file_name = result["csv"]["key"]
+    check.is_true(
+        actual_file_name.endswith(".csv"),
+        f"Expected ACK file extension is .csv but got {actual_file_name}",
+    )
+    check.is_true(
+        actual_file_name.startswith(context.forwarded_prefix),
+        f"Expected ACK file name to start with {context.forwarded_prefix} but got {actual_file_name}",
+    )
+    check.is_true(
+        "_InfAck_" in actual_file_name,
+        f"Expected ACK file name to contain '_InfAck_actual_file_name' but got {actual_file_name}",
+    )
+    context.fileContent = result["csv"]["content"]
 
 
 @then("inf ack file has success status for processed batch file")
@@ -107,23 +132,78 @@ def all_records_are_processed_successfully_in_the_inf_ack_file(context):
     assert all_valid, "One or more records failed validation checks"
 
 
-@then("bus ack file will be created")
+@then("bus ack files will be created")
 def file_will_be_moved_to_destination_bucket(context):
-    context.fileContent = wait_and_read_ack_file(context, "forwardedFile")
-    assert context.fileContent, f"File not found in destination bucket after timeout: {context.forwarded_prefix}"
+    result = wait_and_read_ack_file(context, "forwardedFile")
+    assert isinstance(result, dict), f"Expected both CSV and JSON ACK files but got: {type(result)}"
+
+    actual_file_name = result["csv"]["key"]
+    check.is_true(
+        actual_file_name.endswith(".csv"),
+        f"Expected ACK file extension is .csv but got {actual_file_name}",
+    )
+    check.is_true(
+        actual_file_name.startswith(context.forwarded_prefix),
+        f"Expected ACK file name to start with {context.forwarded_prefix} but got {actual_file_name}",
+    )
+    check.is_true(
+        "_BusAck_" in actual_file_name,
+        f"Expected ACK file name to contain '_BusAck_actual_file_name' but got {actual_file_name}",
+    )
+    context.fileContent = result["csv"]["content"]
+    actual_file_name = result["json"]["key"]
+    check.is_true(
+        actual_file_name.endswith(".json"),
+        f"Expected ACK file extension is .json but got {actual_file_name}",
+    )
+    check.is_true(
+        actual_file_name.startswith(context.forwarded_prefix),
+        f"Expected ACK file name to start with {context.forwarded_prefix} but got {actual_file_name}",
+    )
+    check.is_true(
+        "_BusAck_" in actual_file_name,
+        f"Expected ACK file name to contain '_BusAck_actual_file_name' but got {actual_file_name}",
+    )
+    context.fileContentJson = result["json"]["content"]
+
+    assert context.fileContent, (
+        f"BUS Ack csv File not found in destination bucket after timeout: {context.forwarded_prefix}"
+    )
+    assert context.fileContentJson, (
+        f"BUS Ack JSON file not found in destination bucket after timeout: {context.forwarded_prefix}"
+    )
 
 
-@then("bus ack will not have any entry of successfully processed records")
+@then("CSV bus ack will not have any entry of successfully processed records")
 def all_records_are_processed_successfully_in_the_batch_file(context):
-    file_rows = read_and_validate_bus_ack_file_content(context)
+    file_rows = read_and_validate_csv_bus_ack_file_content(context)
     all_valid = validate_bus_ack_file_for_successful_records(context, file_rows)
     assert all_valid, "One or more records failed validation checks"
+
+
+@then("Json bus ack will only contain file metadata and no failure record entry")
+def json_bus_ack_will_only_contain_file_metadata_and_no_record_entries(context):
+    json_content = context.fileContentJson
+    assert json_content is not None, "BUS Ack JSON content is None"
+    validate_json_bus_ack_file_structure_and_metadata(context)
+    success = validate_json_bus_ack_file_failure_records(context, expected_failure=False)
+    assert success, "Failed to validate JSON bus ack file failure records"
+
+
+@then("Json bus ack will only contain file metadata and correct failure record entries")
+def json_bus_ack_will_only_contain_file_metadata_and_correct_failure_record_entries(
+    context,
+):
+    json_content = context.fileContentJson
+    assert json_content is not None, "BUS Ack JSON content is None"
+    validate_json_bus_ack_file_structure_and_metadata(context)
+    success = validate_json_bus_ack_file_failure_records(context, expected_failure=True)
+    assert success, "Failed to validate JSON bus ack file failure records"
 
 
 @then("Audit table will have correct status, queue name and record count for the processed batch file")
 def validate_imms_audit_table(context):
     table_query_response = fetch_batch_audit_table_detail(context.aws_profile_name, context.filename, context.S3_env)
-
     assert isinstance(table_query_response, list) and table_query_response, (
         f"Item not found in response for filename: {context.filename}"
     )
@@ -198,7 +278,11 @@ def validate_imms_event_table_for_all_records_in_batch_file(context, operation: 
             ("Operation", Operation[operation].value, item.get("Operation")),
             ("SupplierSystem", context.supplier_name, item.get("SupplierSystem")),
             ("PatientPK", f"Patient#{nhs_number}", item.get("PatientPK")),
-            ("PatientSK", f"{context.vaccine_type.upper()}#{context.ImmsID}", item.get("PatientSK")),
+            (
+                "PatientSK",
+                f"{context.vaccine_type.upper()}#{context.ImmsID}",
+                item.get("PatientSK"),
+            ),
             ("Version", int(context.expected_version), int(item.get("Version"))),
         ]
 
@@ -208,9 +292,9 @@ def validate_imms_event_table_for_all_records_in_batch_file(context, operation: 
         validate_to_compare_batch_record_with_event_table_record(context, batch_record, created_event)
 
 
-@then("all records are rejected in the bus ack file and no imms id is generated")
+@then("all rejected records are listed in the csv bus ack file and no imms id is generated")
 def all_record_are_rejected_for_given_field_name(context):
-    file_rows = read_and_validate_bus_ack_file_content(context)
+    file_rows = read_and_validate_csv_bus_ack_file_content(context)
     all_valid = validate_bus_ack_file_for_error(context, file_rows)
     assert all_valid, "One or more records failed validation checks"
 
@@ -238,11 +322,17 @@ def create_batch_file(context, file_ext: str = "csv", fileName: str = None, deli
 
 
 def build_dataFrame_using_datatable(datatable, context):
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
+    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S")
     headers = datatable[0]
     rows = datatable[1:]
 
-    table_list = [(row[headers.index("patient_id")], f"{row[headers.index('unique_id')]}-{timestamp}") for row in rows]
+    table_list = [
+        (
+            row[headers.index("patient_id")],
+            f"{row[headers.index('unique_id')]}-{timestamp}",
+        )
+        for row in rows
+    ]
     records = []
     for patient_id, unique_id in table_list:
         context.patient_id = patient_id
@@ -288,7 +378,8 @@ def validate_imms_delta_table_for_newly_created_records_in_batch_file(context):
         create_items = [i for i in delta_items if i.get("Operation") == "CREATE"]
 
         check.is_true(
-            len(create_items) == 1, f"Expected exactly 1 CREATE record for IMMS_ID {clean_id}, found {len(create_items)}"
+            len(create_items) == 1,
+            f"Expected exactly 1 CREATE record for IMMS_ID {clean_id}, found {len(create_items)}",
         )
 
         create_item = create_items[0]
@@ -297,7 +388,11 @@ def validate_imms_delta_table_for_newly_created_records_in_batch_file(context):
             batch_record = {k: normalize(v) for k, v in row.to_dict().items()}
 
             validate_imms_delta_record_with_batch_record(
-                context, batch_record, create_item, Operation.created.value, ActionFlag.created.value
+                context,
+                batch_record,
+                create_item,
+                Operation.created.value,
+                ActionFlag.created.value,
             )
 
 
@@ -314,7 +409,11 @@ def validate_imms_delta_table_for_updated_records_in_batch_file(context):
             item = update_items.pop(updated_index)
 
             validate_imms_delta_record_with_batch_record(
-                context, batch_record, item, Operation.updated.value, ActionFlag.updated.value
+                context,
+                batch_record,
+                item,
+                Operation.updated.value,
+                ActionFlag.updated.value,
             )
 
 
@@ -338,5 +437,9 @@ def validate_imms_delta_table_for_deleted_records_in_batch_file(context):
         batch_record = {k: normalize(v) for k, v in row.to_dict().items()}
 
         validate_imms_delta_record_with_batch_record(
-            context, batch_record, delete_item, Operation.deleted.value, ActionFlag.deleted.value
+            context,
+            batch_record,
+            delete_item,
+            Operation.deleted.value,
+            ActionFlag.deleted.value,
         )

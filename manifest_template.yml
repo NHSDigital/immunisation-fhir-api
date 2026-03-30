@@ -106,16 +106,16 @@ APIGEE_ENVIRONMENTS:
     display_name_suffix: Reference
     ratelimiting:
       immunisation-fhir-api-ref:
-        # 5 requests per second on average
+        # 500 requests per second on average
         quota:
           enabled: true
-          limit: 300
+          limit: 30000
           interval: 1
           timeunit: minute
-        # 10 requests per second max
+        # 1000 requests per second max
         spikeArrest:
           enabled: true
-          ratelimit: 600pm
+          ratelimit: 60000pm
       app:
         quota:
           enabled: false

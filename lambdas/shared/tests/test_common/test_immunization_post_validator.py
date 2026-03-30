@@ -206,7 +206,9 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
         """
         Test that the JSON data is accepted when it does not contain patient_identifier_value
         """
-        field_location = "contained[?(@.resourceType=='Patient')].identifier[0].value"
+        field_location = (
+            "contained[?(@.resourceType=='Patient')].identifier[?(@.system=='https://fhir.nhs.uk/Id/nhs-number')].value"
+        )
         self.mock_redis.hget.return_value = "COVID"
         self.mock_redis_getter.return_value = self.mock_redis
         MandationTests.test_missing_field_accepted(self, field_location)
@@ -447,20 +449,6 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
             valid_json_data["protocolApplied"][0]["doseNumberString"] = "Dose sequence not recorded"
             MandationTests.test_missing_field_accepted(self, dose_number_positive_int_field_location, valid_json_data)
 
-    # NOTE: THIS TEST IS COMMENTED OUT AS IT IS TESTING A REQUIRED ELEMENT (VALIDATION SHOULD ALWAYS PASS),
-    # AND THE MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE TEST, IT MAY NEED REINSTATED LATER.
-    # def test_post_vaccine_code_coding_code(self):
-    #     """Test that the JSON data is rejected when vaccine_code_coding_code is absent"""
-    #     field_location = "vaccineCode.coding[?(@.system=='http://snomed.info/sct')].code"
-    #     MandationTests.test_missing_field_accepted(self, field_location)
-
-    # NOTE: THIS TEST IS COMMENTED OUT AS IT IS TESTING A REQUIRED ELEMENT (VALIDATION SHOULD ALWAYS PASS),
-    # AND THE MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE TEST, IT MAY NEED REINSTATED LATER.
-    # def test_post_vaccine_code_coding_display(self):
-    #     """Test that the JSON data is accepted when vaccine_code_coding_display is absent"""
-    #     field_location = "vaccineCode.coding[?(@.system=='http://snomed.info/sct')].display"
-    #     MandationTests.test_missing_field_accepted(self, field_location)
-
     def test_post_manufacturer_display(self):
         """
         Test that present or absent manufacturer_display is accepted or rejected
@@ -504,35 +492,6 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
         for vaccine_type in self.all_vaccine_types:
             MandationTests.test_missing_field_accepted(self, field_location, self.completed_json_data[vaccine_type])
 
-    # NOTE: THIS TEST IS COMMENTED OUT AS IT IS TESTING A REQUIRED ELEMENT (VALIDATION SHOULD ALWAYS PASS),
-    # AND THE MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE TEST, IT MAY NEED REINSTATED LATER.
-    # def test_post_site_coding_code(self):
-    #     """Test that the JSON data is accepted when site_coding_code is absent"""
-    #     MandationTests.test_missing_field_accepted(self, "site.coding[?(@.system=='http://snomed.info/sct')].code")
-
-    # NOTE: THIS TEST IS COMMENTED OUT AS IT IS TESTING A REQUIRED ELEMENT (VALIDATION SHOULD ALWAYS PASS),
-    # AND THE MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE TEST, IT MAY NEED REINSTATED LATER.
-    # def test_post_site_coding_display(self):
-    #     """Test that the JSON data is accepted when site_coding_display is absent"""
-    #     MandationTests.test_missing_field_accepted(self, "site.coding[?(@.system=='http://snomed.info/sct')].display")
-
-    # NOTE: THIS TEST IS COMMENTED OUT AS IT IS TESTING A REQUIRED ELEMENT (VALIDATION SHOULD ALWAYS PASS),
-    # AND THE MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE TEST, IT MAY NEED REINSTATED LATER.
-    # def test_post_route_coding_code(self):
-    #     """
-    #     Test that present or absent route_coding_code is accepted or rejected
-    #     as appropriate dependent on other fields
-    #     """
-    #     field_location = "route.coding[?(@.system=='http://snomed.info/sct')].code"
-    #     for vaccine_type in self.all_vaccine_types:
-    #         MandationTests.test_missing_field_accepted(self, field_location, self.completed_json_data[vaccine_type])
-
-    # NOTE: THIS TEST IS COMMENTED OUT AS IT IS TESTING A REQUIRED ELEMENT (VALIDATION SHOULD ALWAYS PASS),
-    # AND THE MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE TEST, IT MAY NEED REINSTATED LATER.
-    # def test_post_route_coding_display(self):
-    #     """Test that the JSON data is accepted when route_coding_display is absent"""
-    #     MandationTests.test_missing_field_accepted(self, "route.coding[?(@.system=='http://snomed.info/sct')].display")
-
     def test_post_dose_quantity_value(self):
         """
         Test that present or absent dose_quantity_value is accepted or rejected as appropriate dependent on other fields
@@ -571,13 +530,6 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
         self.mock_redis.hget.return_value = "COVID"
         self.mock_redis_getter.return_value = self.mock_redis
         MandationTests.test_missing_field_accepted(self, "doseQuantity.unit")
-
-    # NOTE: THIS TEST IS COMMENTED OUT AS IT IS TESTING A REQUIRED ELEMENT (VALIDATION SHOULD ALWAYS PASS),
-    # AND THE MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE TEST, IT MAY NEED REINSTATED LATER.
-    # def test_post_reason_code_coding_code(self):
-    #     """Test that the JSON data is accepted when reason_code_coding_code is absent"""
-    #     for index in range(len(self.completed_json_data["COVID"]["reasonCode"])):
-    #         MandationTests.test_missing_field_accepted(self, f"reasonCode[{index}].coding[0].code")
 
     def test_post_organization_identifier_system(self):
         """Test that the JSON data is rejected if it does not contain organization_identifier_system"""
@@ -703,3 +655,41 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
 
         actual_error_message = str(cm.exception)
         self.assertIn(expected_error_message, actual_error_message)
+
+    # Note: these tests are commented out as they are testing required elements (validation should always pass),
+    # and the means to access the values have not been confirmed. Do not delete the tests, they may need reinstating later.
+    # def test_post_vaccine_code_coding_code(self):
+    #     """Test that the JSON data is rejected when vaccine_code_coding_code is absent"""
+    #     field_location = "vaccineCode.coding[?(@.system=='http://snomed.info/sct')].code"
+    #     MandationTests.test_missing_field_accepted(self, field_location)
+    #
+    # def test_post_vaccine_code_coding_display(self):
+    #     """Test that the JSON data is accepted when vaccine_code_coding_display is absent"""
+    #     field_location = "vaccineCode.coding[?(@.system=='http://snomed.info/sct')].display"
+    #     MandationTests.test_missing_field_accepted(self, field_location)
+    #
+    # def test_post_site_coding_code(self):
+    #     """Test that the JSON data is accepted when site_coding_code is absent"""
+    #     MandationTests.test_missing_field_accepted(self, "site.coding[?(@.system=='http://snomed.info/sct')].code")
+    #
+    # def test_post_site_coding_display(self):
+    #     """Test that the JSON data is accepted when site_coding_display is absent"""
+    #     MandationTests.test_missing_field_accepted(self, "site.coding[?(@.system=='http://snomed.info/sct')].display")
+    #
+    # def test_post_route_coding_code(self):
+    #     """
+    #     Test that present or absent route_coding_code is accepted or rejected
+    #     as appropriate dependent on other fields
+    #     """
+    #     field_location = "route.coding[?(@.system=='http://snomed.info/sct')].code"
+    #     for vaccine_type in self.all_vaccine_types:
+    #         MandationTests.test_missing_field_accepted(self, field_location, self.completed_json_data[vaccine_type])
+    #
+    # def test_post_route_coding_display(self):
+    #     """Test that the JSON data is accepted when route_coding_display is absent"""
+    #     MandationTests.test_missing_field_accepted(self, "route.coding[?(@.system=='http://snomed.info/sct')].display")
+    #
+    # def test_post_reason_code_coding_code(self):
+    #     """Test that the JSON data is accepted when reason_code_coding_code is absent"""
+    #     for index in range(len(self.completed_json_data["COVID"]["reasonCode"])):
+    #         MandationTests.test_missing_field_accepted(self, f"reasonCode[{index}].coding[0].code")

@@ -26,6 +26,7 @@ See https://nhsd-confluence.digital.nhs.uk/display/APM/Glossary.
 | `id_sync`                | **Imms Cross-cutting** – Handles [MNS](https://digital.nhs.uk/developer/api-catalogue/multicast-notification-service) NHS Number Change events and applies updates to affected records. |
 | `mesh_processor`         | **Imms Batch** – Triggered when new files are received via MESH. Moves them into the Imms Batch processing system.                                                                      |
 | `mns_subscription`       | **Imms Cross-cutting** – Simple helper Lambda which sets up our required MNS subscription. Used in pipelines in DEV.                                                                    |
+| `perf_tests`             | **Imms API** – Locust performance tests for the Immunisation API.                                                                                                                       |
 | `recordforwarder`        | **Imms Batch** – Consumes from the stream and applies the processed batch file row operations (CUD) to IEDS.                                                                            |
 | `recordprocessor`        | **Imms Batch** – ECS Task - **not** a Lambda function - responsible for processing batch file rows and forwarding to the stream.                                                        |
 | `redis_sync`             | **Imms Cross-cutting** – Handles config file updates. E.g. disease mapping or permission files.                                                                                         |
@@ -50,13 +51,12 @@ GitHub Actions for our entire pipeline.
 
 ### Infrastructure
 
-| Folder                 | Description                                                      |
-| ---------------------- | ---------------------------------------------------------------- |
-| `account`              | Base infrastructure components deployed on a per account basis.  |
-| `grafana`              | Terraform configuration for Grafana, built on top of core infra. |
-| `instance`             | Core Terraform app infrastructure.                               |
-| `terraform_aws_backup` | Streamlined backup processing with AWS.                          |
-| `proxies`              | Apigee API proxy definitions.                                    |
+| Folder                 | Description                                                     |
+| ---------------------- | --------------------------------------------------------------- |
+| `account`              | Base infrastructure components deployed on a per account basis. |
+| `instance`             | Core Terraform app infrastructure.                              |
+| `terraform_aws_backup` | Streamlined backup processing with AWS.                         |
+| `proxies`              | Apigee API proxy definitions.                                   |
 
 ---
 
@@ -277,3 +277,20 @@ run a different set of tests. To do this:
 Please note that this project requires that all commits are verified using a GPG key.
 To set up a GPG key please follow the instructions specified here:
 https://docs.github.com/en/authentication/managing-commit-signature-verification
+
+## AWS configuration: getting credentials for AWS federated user accounts
+
+If you need to run commands that interact with AWS resources e.g. running a terraform plan against a dev environment locally
+then you will need to configure AWS credentials.
+
+Once you have been granted access, the `Access Keys` section within the AWS Access Portal will present you with several
+options. It is _recommended_ to use `Option 2: Add a profile to your AWS credentials file`.
+
+This is because the way that Python unittests using `moto` have been implemented is brittle and cannot handle other methods
+such as IAM Identity Centre SSO. In future, we should consider following [moto recommendations](https://docs.getmoto.org/en/latest/docs/getting_started.html#how-do-i-avoid-tests-from-mutating-my-real-infrastructure)
+to ensure our tests are authentication type agnostic and are fully robust.
+
+If you _are_ using another option, such as SSO, and want to run unit tests then you will need to:
+
+- Add dummy values for `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` to the .env file in the Lambda dir you are testing.
+- Ensure those values are set before running the test, i.e. using the standard setup with direnv and a .envrc file

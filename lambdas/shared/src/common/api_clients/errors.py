@@ -38,7 +38,7 @@ class TokenValidationError(RuntimeError):
         return create_operation_outcome(
             resource_id=str(uuid.uuid4()),
             severity=Severity.error,
-            code=Code.invalid,
+            code=Code.invalid_access_token,
             diagnostics=msg,
         )
 
@@ -155,6 +155,14 @@ class UnhandledResponseError(RuntimeError):
             code=Code.exception,
             diagnostics=self.__str__(),
         )
+
+
+class PdsSyncException(Exception):
+    """Custom exception for Pds Sync errors."""
+
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(message)
 
 
 def raise_error_response(response):

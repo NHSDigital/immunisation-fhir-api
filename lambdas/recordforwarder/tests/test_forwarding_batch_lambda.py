@@ -3,7 +3,6 @@ import copy
 import json
 import os
 import unittest
-from typing import Optional
 from unittest import TestCase
 from unittest.mock import ANY, MagicMock, Mock, patch
 
@@ -124,7 +123,7 @@ class TestForwardLambdaHandler(TestCase):
     @staticmethod
     def generate_input(
         row_id: int,
-        identifier_value: Optional[str] = None,
+        identifier_value: str | None = None,
         file_key: str = "test_file_key",
         created_at_formatted_string: str = "2025-01-24T12:00:00Z",
         include_fhir_json: bool = True,
@@ -385,7 +384,7 @@ class TestForwardLambdaHandler(TestCase):
                     "diagnostics": create_diagnostics_dictionary(
                         ResourceNotFoundError(
                             resource_type="Immunization",
-                            resource_id="Immunization#4d2ac1eb-080f-4e54-9598-f2d53334681c",
+                            resource_id="https://www.ravs.england.nhs.uk/#RSV_002",
                         )
                     ),
                 },
@@ -415,7 +414,7 @@ class TestForwardLambdaHandler(TestCase):
                     "diagnostics": create_diagnostics_dictionary(
                         ResourceNotFoundError(
                             resource_type="Immunization",
-                            resource_id="Immunization#4d2ac1eb-080f-4e54-9598-f2d53334681c",
+                            resource_id="https://www.ravs.england.nhs.uk/#RSV_002",
                         )
                     ),
                 },
@@ -700,7 +699,7 @@ class TestForwardLambdaHandler(TestCase):
                     "diagnostics": create_diagnostics_dictionary(
                         ResourceNotFoundError(
                             resource_type="Immunization",
-                            resource_id="Immunization#4d2ac1eb-080f-4e54-9598-f2d53334687r",
+                            resource_id="https://www.ravs.england.nhs.uk/#UPDATE_TEST",
                         )
                     ),
                 },

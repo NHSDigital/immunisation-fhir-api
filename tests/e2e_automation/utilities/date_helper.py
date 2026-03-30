@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 
 def format_timestamp(timestamp):
@@ -24,6 +24,11 @@ def iso_to_compact(dt_str):
     return dt.strftime("%Y%m%dT%H%M%S00")
 
 
+def normalize_utc_suffix(timestamp: str) -> str:
+    dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+    return dt.replace(microsecond=0).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
 def is_valid_date(date_str: str) -> bool:
     try:
         datetime.strptime(date_str, "%Y-%m-%d")
@@ -33,7 +38,7 @@ def is_valid_date(date_str: str) -> bool:
 
 
 def generate_date(date_str: str) -> str:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     match date_str:
         case "future_occurrence":
             return (now + timedelta(seconds=500)).isoformat(timespec="milliseconds")

@@ -33,7 +33,7 @@ class TestErrors(unittest.TestCase):
         self.assert_operation_outcome(outcome)
         issue = outcome.get("issue")[0]
         self.assertEqual(issue.get("severity"), errors.Severity.error)
-        self.assertEqual(issue.get("code"), errors.Code.invalid)
+        self.assertEqual(issue.get("code"), errors.Code.invalid_access_token)
         self.assertEqual(issue.get("diagnostics"), "Missing/Invalid Token")
 
     def test_errors_conflict_error(self):

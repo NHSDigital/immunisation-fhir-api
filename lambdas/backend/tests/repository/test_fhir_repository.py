@@ -391,6 +391,7 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
         """it should update the immunisation record"""
         imms_id = "an-imms-id"
         imms = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER)
+        immunization = Immunization.parse_obj(imms)
         identifier = Identifier(system=imms["identifier"][0]["system"], value=imms["identifier"][0]["value"])
         existing_record_metadata = ImmunizationRecordMetadata(
             identifier=identifier, resource_version=1, is_deleted=False, is_reinstated=False
@@ -400,7 +401,7 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
         self.table.update_item = MagicMock(return_value=dynamo_response)
 
         # When
-        updated_version = self.repository.update_immunization(imms_id, imms, existing_record_metadata, "Test")
+        updated_version = self.repository.update_immunization(imms_id, immunization, existing_record_metadata, "Test")
 
         # Then
         update_exp = (
@@ -420,7 +421,7 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
                 ":timestamp": ANY,
                 ":patient_pk": _make_patient_pk(patient_id),
                 ":patient_sk": patient_sk,
-                ":imms_resource_val": json.dumps(imms),
+                ":imms_resource_val": immunization.json(use_decimal=True),
                 ":operation": "UPDATE",
                 ":version": 2,
                 ":supplier_system": "Test",
@@ -433,6 +434,7 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
         """it should reinstate a deleted record when requested via the update operation"""
         imms_id = "an-imms-id"
         imms = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER)
+        immunization = Immunization.parse_obj(imms)
         identifier = Identifier(system=imms["identifier"][0]["system"], value=imms["identifier"][0]["value"])
         existing_record_metadata = ImmunizationRecordMetadata(
             identifier=identifier, resource_version=2, is_deleted=True, is_reinstated=False
@@ -442,7 +444,7 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
         self.table.update_item = MagicMock(return_value=dynamo_response)
 
         # When
-        updated_version = self.repository.update_immunization(imms_id, imms, existing_record_metadata, "Test")
+        updated_version = self.repository.update_immunization(imms_id, immunization, existing_record_metadata, "Test")
 
         # Then
         update_exp = (
@@ -462,7 +464,7 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
                 ":timestamp": ANY,
                 ":patient_pk": _make_patient_pk(patient_id),
                 ":patient_sk": patient_sk,
-                ":imms_resource_val": json.dumps(imms),
+                ":imms_resource_val": immunization.json(use_decimal=True),
                 ":operation": "UPDATE",
                 ":version": 3,
                 ":supplier_system": "Test",
@@ -477,6 +479,7 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
         condition, as a check is made first to retrieve the record."""
         imms_id = "an-id"
         imms = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER)
+        immunization = Immunization.parse_obj(imms)
         identifier = Identifier(system=imms["identifier"][0]["system"], value=imms["identifier"][0]["value"])
         existing_record_metadata = ImmunizationRecordMetadata(
             identifier=identifier, resource_version=2, is_deleted=True, is_reinstated=False
@@ -489,7 +492,7 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
 
         with self.assertRaises(ResourceNotFoundError) as e:
             # When
-            self.repository.update_immunization(imms_id, imms, existing_record_metadata, "Test")
+            self.repository.update_immunization(imms_id, immunization, existing_record_metadata, "Test")
 
         # Then
         self.assertEqual(str(e.exception), "Immunization resource does not exist. ID: an-id")
@@ -728,9 +731,10 @@ class TestImmunizationDecimals(TestFhirRepositoryBase):
         existing_record_metadata = ImmunizationRecordMetadata(
             identifier=identifier, resource_version=1, is_deleted=False, is_reinstated=False
         )
+        immunization = Immunization.parse_obj(imms)
 
         # When
-        updated_version = self.repository.update_immunization(imms_id, imms, existing_record_metadata, "Test")
+        updated_version = self.repository.update_immunization(imms_id, immunization, existing_record_metadata, "Test")
         self.assertEqual(updated_version, 2)
 
         update_exp = (
@@ -750,7 +754,7 @@ class TestImmunizationDecimals(TestFhirRepositoryBase):
                 ":timestamp": ANY,
                 ":patient_pk": _make_patient_pk(patient_id),
                 ":patient_sk": patient_sk,
-                ":imms_resource_val": json.dumps(imms, use_decimal=True),
+                ":imms_resource_val": immunization.json(use_decimal=True),
                 ":operation": "UPDATE",
                 ":version": 2,
                 ":supplier_system": "Test",

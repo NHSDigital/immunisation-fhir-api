@@ -288,6 +288,38 @@ class TestGetImmunizationByIdentifier(TestFhirServiceBase):
             Immunization.construct(**{"resourceType": "Immunization", "id": "1234-some-id", "meta": {"versionId": 1}}),
         )
 
+    def test_get_immunization_by_identifier_returns_patient_created_without_nhs_number(self):
+        """VED-1073 - the contained patient within an Immunization resource MAY be created without an NHS Number as per
+        the business rules. The identifier retrieval should still succeed when this is the case."""
+        mock_resource_no_nhs_number = create_covid_immunization_dict("1234-some-id", omit_nhs_number=True)
+
+        self.mock_redis.hget.return_value = "COVID"
+        self.mock_redis_getter.return_value = self.mock_redis
+        self.authoriser.authorise.return_value = True
+        self.imms_repo.get_immunization_by_identifier.return_value = mock_resource_no_nhs_number, self.mock_resource_meta
+
+        # When
+        result = self.fhir_service.get_immunization_by_identifier(self.test_identifier, self.MOCK_SUPPLIER_NAME, None)
+
+        # Then
+        self.imms_repo.get_immunization_by_identifier.assert_called_once_with(self.test_identifier)
+        self.authoriser.authorise.assert_called_once_with(self.MOCK_SUPPLIER_NAME, ApiOperationCode.SEARCH, {"COVID"})
+
+        self.assertEqual(result.type, "searchset")
+        self.assertEqual(result.total, 1)
+        self.assertEqual(
+            result.link[0],
+            BundleLink.construct(
+                relation="self",
+                url="https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization?identifier=some-"
+                "system|some-value",
+            ),
+        )
+
+        # Search function adds meta to the resource
+        mock_resource_no_nhs_number["meta"] = {"versionId": "1"}
+        self.assertEqual(result.entry[0].resource, Immunization.parse_obj(mock_resource_no_nhs_number))
+
 
 class TestCreateImmunization(TestFhirServiceBase):
     """Tests for FhirService.create_immunization"""
@@ -401,7 +433,8 @@ class TestCreateImmunization(TestFhirServiceBase):
         invalid_nhs_number = "9434765911"  # check digit 1 doesn't match result (9)
         imms = create_covid_immunization_dict_no_id(invalid_nhs_number)
         expected_msg = (
-            "Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value is not a valid NHS number"
+            "Validation errors: contained[?(@.resourceType=='Patient')].identifier"
+            "[?(@.system=='https://fhir.nhs.uk/Id/nhs-number')].value is not a valid NHS number"
         )
 
         with self.assertRaises(CustomValidationError) as error:
@@ -497,9 +530,13 @@ class TestUpdateImmunization(TestFhirServiceBase):
         self.imms_repo.get_immunization_resource_and_metadata_by_id.assert_called_once_with(
             imms_id, include_deleted=True
         )
-        self.imms_repo.update_immunization.assert_called_once_with(
-            imms_id, updated_immunisation, existing_resource_meta, "Test"
-        )
+        self.imms_repo.update_immunization.assert_called_once()
+        call_args = self.imms_repo.update_immunization.call_args[0]
+        self.assertEqual(call_args[0], imms_id)
+        self.assertIsInstance(call_args[1], Immunization)
+        self.assertEqual(call_args[1].id, imms_id)
+        self.assertEqual(call_args[2], existing_resource_meta)
+        self.assertEqual(call_args[3], "Test")
         self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.UPDATE, {"COVID"})
 
     def test_update_immunization_raises_validation_exception_when_nhs_number_invalid(self):
@@ -516,7 +553,8 @@ class TestUpdateImmunization(TestFhirServiceBase):
         self.imms_repo.update_immunization.assert_not_called()
         self.assertEqual(
             error.exception.message,
-            "Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value must be 10 characters",
+            "Validation errors: contained[?(@.resourceType=='Patient')].identifier"
+            "[?(@.system=='https://fhir.nhs.uk/Id/nhs-number')].value must be 10 characters",
         )
 
     def test_update_immunization_raises_not_found_error_when_no_existing_immunisation(self):
@@ -934,3 +972,39 @@ class TestSearchImmunizations(TestFhirServiceBase):
             self.MOCK_SUPPLIER_SYSTEM_NAME, ApiOperationCode.SEARCH, {vaccine_type}
         )
         self.imms_repo.find_immunizations.assert_not_called()
+
+    def test_search_immunizations_includes_operation_outcome_when_invalid_immunization_targets_provided(self):
+        """it should include an OperationOutcome in the bundle when invalid -immunization.target values were provided"""
+        mock_resource = create_covid_immunization_dict("1234-some-id")
+        vaccine_type = "COVID"
+        self.authoriser.filter_permitted_vacc_types.return_value = {vaccine_type}
+        self.imms_repo.find_immunizations.return_value = [mock_resource]
+
+        result = self.fhir_service.search_immunizations(
+            VALID_NHS_NUMBER,
+            {vaccine_type},
+            self.MOCK_SUPPLIER_SYSTEM_NAME,
+            None,
+            None,
+            None,
+            invalid_immunization_targets=["TEST_VALUE", "CHICKENS"],
+        )
+
+        self.assertEqual(result.type, "searchset")
+        self.assertEqual(result.total, 1)
+        self.assertEqual(len(result.entry), 3)
+        self.assertEqual(result.entry[0].resource.resource_type, "Immunization")
+        self.assertEqual(result.entry[1].resource.resource_type, "Patient")
+        self.assertEqual(result.entry[2].resource.resource_type, "OperationOutcome")
+        issue_0 = result.entry[2].resource.issue[0]
+        diagnostics = issue_0["diagnostics"] if isinstance(issue_0, dict) else issue_0.diagnostics
+        self.assertIn("TEST_VALUE", diagnostics)
+        self.assertIn("CHICKENS", diagnostics)
+        self.assertIn("invalid -immunization.target value(s) that were ignored", diagnostics)
+        self.assertEqual(
+            result.link[0].url,
+            "https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization"
+            "?immunization.target=COVID"
+            "&-immunization.target=COVID"
+            "&patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C9990548609",
+        )

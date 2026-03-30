@@ -45,8 +45,9 @@ class Constants:
             "address",
         },
     }
-
-    ALLOWED_CONTAINED_RESOURCES = {"Practitioner", "Patient"}
+    PATIENT_RESOURCE_TYPE = "Patient"
+    PRACTITIONER_RESOURCE_TYPE = "Practitioner"
+    ALLOWED_CONTAINED_RESOURCES = {PRACTITIONER_RESOURCE_TYPE, PATIENT_RESOURCE_TYPE}
 
     # As per Personal Demographics Service (PDS) FHIR API, the maximum length of a family name is 35 characters:
     # https://digital.nhs.uk/developer/api-catalogue/personal-demographics-service-fhir#post-/Patient
@@ -67,7 +68,7 @@ class Urls:
 
     NHS_NUMBER = "https://fhir.nhs.uk/Id/nhs-number"
     VACCINATION_PROCEDURE = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure"
-    SNOMED = "http://snomed.info/sct"  # NOSONAR(S5332)
+    SNOMED = "http://snomed.info/sct"
     NHS_NUMBER_VERIFICATION_STATUS_STRUCTURE_DEFINITION = (
         "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-NHSNumberVerificationStatus"
     )
@@ -76,7 +77,7 @@ class Urls:
     )
     ODS_ORGANIZATION_CODE = "https://fhir.nhs.uk/Id/ods-organization-code"
     URN_SCHOOL_NUMBER = "https://fhir.hl7.org.uk/Id/urn-school-number"
-    NULL_FLAVOUR_CODES = "http://terminology.hl7.org/CodeSystem/v3-NullFlavor"  # NOSONAR(S5332)
+    NULL_FLAVOUR_CODES = "http://terminology.hl7.org/CodeSystem/v3-NullFlavor"
 
 
 class RedisHashKeys:
@@ -85,3 +86,5 @@ class RedisHashKeys:
     DISEASES_TO_VACCINE_TYPE_HASH_KEY = "diseases_to_vacc"
     SUPPLIER_PERMISSIONS_HASH_KEY = "supplier_permissions"
     VACCINE_TYPE_TO_DISEASES_HASH_KEY = "vacc_to_diseases"
+    TARGET_DISEASE_LIST_KEY = "target_disease_list"
+    TARGET_DISEASE_TO_VACCS_KEY = "target_disease_to_vaccs"

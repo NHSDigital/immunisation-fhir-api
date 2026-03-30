@@ -1,6 +1,6 @@
 """Tests for utils_for_filenameprocessor functions"""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -38,7 +38,7 @@ class TestUtilsForFilenameprocessor(TestCase):
 
     def test_get_creation_and_expiry_times(self):
         """Test that get_creation_and_expiry_times can correctly get the created_at_formatted_string"""
-        mock_last_modified_created_at = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        mock_last_modified_created_at = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         mock_last_modified_s3_response = {"LastModified": mock_last_modified_created_at}
 
         expected_result_created_at = "20240101T12000000"

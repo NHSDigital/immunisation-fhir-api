@@ -1,5 +1,6 @@
 """File of values which can be used for testing"""
 
+import os
 from datetime import datetime
 from unittest.mock import patch
 
@@ -54,7 +55,8 @@ class FileDetails:
 
         self.file_key = file_key
 
-        self.ack_file_key = f"ack/{self.file_key[:-4]}_InfAck_{self.created_at_formatted_string}.csv"
+        file_key_without_ext = os.path.splitext(self.file_key)[0]
+        self.ack_file_key = f"ack/{file_key_without_ext}_InfAck_{self.created_at_formatted_string}.csv"
 
         self.permissions_list = [f"{self.vaccine_type}_FULL"]
         self.permissions_config = {self.supplier: self.permissions_list}

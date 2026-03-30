@@ -1,7 +1,8 @@
 import random
+import string
 import uuid
 from datetime import datetime, timedelta
-from typing import Any, Dict, List
+from typing import Any
 
 from utilities.date_helper import generate_date
 from utilities.vaccination_constants import (
@@ -52,7 +53,8 @@ def build_vaccine_procedure_code(vaccine_type: str, text: str = None, add_extens
                 stringValue=selected_vaccine_procedure["stringValue"],
             ),
             create_extension(
-                "http://hl7.org/fhir/StructureDefinition/coding-sctdescid", idValue=selected_vaccine_procedure["idValue"]
+                "http://hl7.org/fhir/StructureDefinition/coding-sctdescid",
+                idValue=selected_vaccine_procedure["idValue"],
             ),
         ]
 
@@ -81,8 +83,12 @@ def build_location_identifier() -> Location:
 
 
 def get_vaccine_details(
-    vaccine_type: str, vacc_text: str = None, lot_number: str = "", expiry_date: str = "", add_extensions: bool = True
-) -> Dict[str, Any]:
+    vaccine_type: str,
+    vacc_text: str = None,
+    lot_number: str = "",
+    expiry_date: str = "",
+    add_extensions: bool = True,
+) -> dict[str, Any]:
     selected_vaccine = random.choice(VACCINE_CODE_MAP[vaccine_type.upper()])
 
     extensions = None
@@ -93,7 +99,8 @@ def get_vaccine_details(
                 stringValue=selected_vaccine["stringValue"],
             ),
             create_extension(
-                "http://hl7.org/fhir/StructureDefinition/coding-sctdescid", idValue=selected_vaccine["idValue"]
+                "http://hl7.org/fhir/StructureDefinition/coding-sctdescid",
+                idValue=selected_vaccine["idValue"],
             ),
         ]
 
@@ -126,15 +133,16 @@ def get_vaccine_details(
     }
 
 
-def build_performer() -> List[Performer]:
+def build_performer() -> list[Performer]:
+    org_code = random_ods_code()
     return [
         Performer(actor=Reference(reference="#Pract1", type="Practitioner")),
         Performer(
             actor=Reference(
-                reference="Organization/B0C4P",
+                reference=f"Organization/{org_code}",
                 type="Organization",
                 identifier=Identifier(
-                    value="B0C4P",
+                    value=f"{org_code}",
                     system="https://fhir.nhs.uk/Id/ods-organization-code",
                     use="usual",
                     type=CodeableConcept(
@@ -157,6 +165,10 @@ def build_performer() -> List[Performer]:
     ]
 
 
+def random_ods_code(length=5) -> str:
+    return "".join(random.choices(string.ascii_uppercase + string.digits, k=length))
+
+
 def remove_empty_fields(data):
     """Recursively removes fields with empty values from a dictionary."""
     if isinstance(data, dict):
@@ -175,11 +187,22 @@ def build_site_route(obj: Coding, text: str = None, add_extensions: bool = True)
                 "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay",
                 stringValue=obj["stringValue"],
             ),
-            create_extension("http://hl7.org/fhir/StructureDefinition/coding-sctdescid", idValue=obj["idValue"]),
+            create_extension(
+                "http://hl7.org/fhir/StructureDefinition/coding-sctdescid",
+                idValue=obj["idValue"],
+            ),
         ]
 
     return CodeableConcept(
-        coding=[Coding(system=obj["system"], code=obj["code"], display=obj["display"], extension=extensions)], text=text
+        coding=[
+            Coding(
+                system=obj["system"],
+                code=obj["code"],
+                display=obj["display"],
+                extension=extensions,
+            )
+        ],
+        text=text,
     )
 
 
@@ -189,7 +212,12 @@ def build_protocol_applied(vaccine_type: str, doseNumber: int = 1) -> ProtocolAp
         targetDisease=[
             CodeableConcept(
                 coding=[
-                    Coding(system=disease["system"], code=disease["code"], display=disease["display"], extension=None)
+                    Coding(
+                        system=disease["system"],
+                        code=disease["code"],
+                        display=disease["display"],
+                        extension=None,
+                    )
                 ]
             )
             for disease in list_of_diseases

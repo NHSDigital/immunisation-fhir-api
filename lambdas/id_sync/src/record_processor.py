@@ -1,6 +1,7 @@
 import json
-from typing import Any, Dict
+from typing import Any
 
+from common.api_clients.get_pds_details import pds_get_patient_details
 from common.clients import logger
 from exceptions.id_sync_exception import IdSyncException
 from ieds_db_operations import (
@@ -9,11 +10,11 @@ from ieds_db_operations import (
     get_items_from_patient_id,
     ieds_update_patient_id,
 )
-from pds_details import get_nhs_number_from_pds_resource, pds_get_patient_details
+from pds_details import get_nhs_number_from_pds_resource
 from utils import make_status
 
 
-def process_record(event_record: Dict[str, Any]) -> Dict[str, Any]:
+def process_record(event_record: dict[str, Any]) -> dict[str, Any]:
     logger.info("Processing record with SQS messageId: %s", event_record.get("messageId"))
     body_text = event_record.get("body", "")
 
@@ -33,7 +34,7 @@ def process_record(event_record: Dict[str, Any]) -> Dict[str, Any]:
     return process_nhs_number(nhs_number)
 
 
-def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
+def process_nhs_number(nhs_number: str) -> dict[str, Any]:
     try:
         pds_patient_resource = pds_get_patient_details(nhs_number)
     except IdSyncException as e:
