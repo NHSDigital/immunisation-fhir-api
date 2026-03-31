@@ -2,7 +2,11 @@ from pytest_bdd import given, scenarios
 from src.objectModels.batch.batch_file_builder import get_batch_date
 from utilities.text_helper import get_text
 
-from .batch_common_steps import build_dataFrame_using_datatable, create_batch_file, ignore_if_local_run
+from .batch_common_steps import (
+    build_dataFrame_using_datatable,
+    create_batch_file,
+    ignore_if_local_run,
+)
 
 scenarios("batchTests/create_batch.feature")
 
@@ -12,7 +16,6 @@ scenarios("batchTests/create_batch.feature")
 def valid_batch_file_is_created_with_minimum_details(datatable, context):
     build_dataFrame_using_datatable(datatable, context)
     columns_to_clear = [
-        "NHS_NUMBER",
         "VACCINATION_PROCEDURE_TERM",
         "VACCINE_PRODUCT_CODE",
         "VACCINE_PRODUCT_TERM",
@@ -131,8 +134,14 @@ def valid_batch_file_is_created_with_missing_mandatory_fields(datatable, context
     context.vaccine_df.loc[1, "SITE_CODE_TYPE_URI"] = ""
     context.vaccine_df.loc[2, "LOCATION_CODE"] = ""
     context.vaccine_df.loc[3, "LOCATION_CODE_TYPE_URI"] = ""
-    context.vaccine_df.loc[4, ["UNIQUE_ID", "PERSON_SURNAME"]] = ["", "no_unique_identifiers"]
-    context.vaccine_df.loc[5, ["UNIQUE_ID_URI", "PERSON_SURNAME"]] = ["", "no_unique_identifiers"]
+    context.vaccine_df.loc[4, ["UNIQUE_ID", "PERSON_SURNAME"]] = [
+        "",
+        "no_unique_identifiers",
+    ]
+    context.vaccine_df.loc[5, ["UNIQUE_ID_URI", "PERSON_SURNAME"]] = [
+        "",
+        "no_unique_identifiers",
+    ]
     context.vaccine_df.loc[6, "PRIMARY_SOURCE"] = ""
     context.vaccine_df.loc[7, "VACCINATION_PROCEDURE_CODE"] = ""
     context.vaccine_df.loc[8, "SITE_CODE"] = " "
@@ -140,7 +149,10 @@ def valid_batch_file_is_created_with_missing_mandatory_fields(datatable, context
     context.vaccine_df.loc[10, "LOCATION_CODE"] = " "
     context.vaccine_df.loc[11, "LOCATION_CODE_TYPE_URI"] = " "
     context.vaccine_df.loc[12, ["UNIQUE_ID", "PERSON_SURNAME"]] = [" ", "no_unique_id"]
-    context.vaccine_df.loc[13, ["UNIQUE_ID_URI", "PERSON_SURNAME"]] = [" ", "no_unique_id_uri"]
+    context.vaccine_df.loc[13, ["UNIQUE_ID_URI", "PERSON_SURNAME"]] = [
+        " ",
+        "no_unique_id_uri",
+    ]
     context.vaccine_df.loc[14, "PRIMARY_SOURCE"] = " "
     context.vaccine_df.loc[15, "VACCINATION_PROCEDURE_CODE"] = " "
     context.vaccine_df.loc[16, "PRIMARY_SOURCE"] = "test"

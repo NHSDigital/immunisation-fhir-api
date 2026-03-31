@@ -6,7 +6,7 @@ SFlag,9449310475,test1,test2,unknown,1980-11-01,Validate Obf,"1, obf_2",obf_3,ob
 InvalidInPDS,7085531614,test1,test2,unknown,1980-11-01,Validate Obf,"1, obf_2",obf_3,obf_4,obf_5,LS01 1AB,obf_7,2000-01-01,2025-01-01,,,
 InvalidInPDS,1542293278,test1,test2,unknown,1980-11-01,Validate Obf,"1, obf_2",obf_3,obf_4,obf_5,LS01 1AB,obf_7,2000-01-01,2025-01-01,,,
 InvalidMOD11Check,1234567890,test1,test2,unknown,1980-11-01,Validate Obf,"1, obf_2",obf_3,obf_4,obf_5,LS01 1AB,obf_7,2000-01-01,2025-01-01,,,
-OldNHSNo,9452372230,test1,test2,unknown,1980-11-01,Validate Obf,"1, obf_2",obf_3,obf_4,obf_5,LS01 1AB,obf_7,2000-01-01,2025-01-01,,,
+OldNHSNo,9452372230,test1,test2,unknown,1980-11-01,Validate Obf,"1, obf_2",obf_3,obf_4,obf_5,LS01 1AB,obf_7,2000-01-01,2025-01-01,E82045,,
 SupersedeNhsNo,9467351307,test1,test2,unknown,1980-11-01,Validate Obf,"1, obf_2",obf_3,obf_4,obf_5,LS01 1AB,obf_7,2000-01-01,2025-01-01,,,
 Invalid_NHS,9461267665,STERLING,SOKHI,unknown,2007-11-25,217A,ROUNDHAY ROAD,City,district,State,LS8 4HS,UK,2013-12-22,2033-01-01,B83013,,
 Mod11_NHS,2788584652,STERLING,Sal,unknown,2007-11-25,217A,ROUNDHAY ROAD,City,district,State,LS8 4HS,UK,2013-12-22,2033-01-01,,,
