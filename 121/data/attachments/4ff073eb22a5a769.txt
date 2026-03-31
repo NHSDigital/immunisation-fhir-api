@@ -1,0 +1,22 @@
+
+ Search GET Request - 
+ patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number|9449304424&-immunization.target=COVID&-date.from=2026-03-31&_include=Immunization:patient
+
+ Search GET Response - 
+ {'resourceType': 'OperationOutcome', 'id': '27ea3a80-6540-4439-b185-b86b28937014', 'meta': {'profile': ['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']}, 'issue': [{'severity': 'error', 'code': 'forbidden', 'details': {'coding': [{'system': 'https://fhir.nhs.uk/Codesystem/http-error-codes', 'code': 'FORBIDDEN'}]}, 'diagnostics': 'Unauthorized request for vaccine type'}]}
+403
+403
+
+ Error Response - 
+ resourceType='OperationOutcome' id='27ea3a80-6540-4439-b185-b86b28937014' meta=Meta(profile=['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']) issue=[Issue(severity='error', code='forbidden', details=Details(coding=[Coding(system='https://fhir.nhs.uk/Codesystem/http-error-codes', code='FORBIDDEN')]), diagnostics='Unauthorized request for vaccine type')]
+
+ Search Post Request - 
+ patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number|9449304424&-immunization.target=COVID&-date.from=2026-03-31&_include=Immunization:patient
+
+ Search POST Response - 
+ {'resourceType': 'OperationOutcome', 'id': '86a83975-ade4-4d49-ba29-a4012526ab99', 'meta': {'profile': ['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']}, 'issue': [{'severity': 'error', 'code': 'forbidden', 'details': {'coding': [{'system': 'https://fhir.nhs.uk/Codesystem/http-error-codes', 'code': 'FORBIDDEN'}]}, 'diagnostics': 'Unauthorized request for vaccine type'}]}
+403
+403
+
+ Error Response - 
+ resourceType='OperationOutcome' id='86a83975-ade4-4d49-ba29-a4012526ab99' meta=Meta(profile=['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']) issue=[Issue(severity='error', code='forbidden', details=Details(coding=[Coding(system='https://fhir.nhs.uk/Codesystem/http-error-codes', code='FORBIDDEN')]), diagnostics='Unauthorized request for vaccine type')]

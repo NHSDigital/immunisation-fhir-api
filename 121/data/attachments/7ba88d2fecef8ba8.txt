@@ -1,0 +1,22 @@
+
+ Search GET Request - 
+ patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number|9461267665&-immunization.target=COVID&_include=abc
+
+ Search GET Response - 
+ {'resourceType': 'OperationOutcome', 'id': '8a2abd4c-cb29-4dd7-800f-9ad3f7d6a7c1', 'meta': {'profile': ['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']}, 'issue': [{'severity': 'error', 'code': 'invalid', 'details': {'coding': [{'system': 'https://fhir.nhs.uk/Codesystem/http-error-codes', 'code': 'INVALID'}]}, 'diagnostics': "Search parameter _include may only be 'Immunization:patient' if provided."}]}
+400
+400
+
+ Error Response - 
+ resourceType='OperationOutcome' id='8a2abd4c-cb29-4dd7-800f-9ad3f7d6a7c1' meta=Meta(profile=['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']) issue=[Issue(severity='error', code='invalid', details=Details(coding=[Coding(system='https://fhir.nhs.uk/Codesystem/http-error-codes', code='INVALID')]), diagnostics="Search parameter _include may only be 'Immunization:patient' if provided.")]
+
+ Search Post Request - 
+ patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number|9461267665&-immunization.target=COVID&_include=abc
+
+ Search POST Response - 
+ {'resourceType': 'OperationOutcome', 'id': '18d9fc60-7ec5-4134-b311-a1e5451c0c1c', 'meta': {'profile': ['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']}, 'issue': [{'severity': 'error', 'code': 'invalid', 'details': {'coding': [{'system': 'https://fhir.nhs.uk/Codesystem/http-error-codes', 'code': 'INVALID'}]}, 'diagnostics': "Search parameter _include may only be 'Immunization:patient' if provided."}]}
+400
+400
+
+ Error Response - 
+ resourceType='OperationOutcome' id='18d9fc60-7ec5-4134-b311-a1e5451c0c1c' meta=Meta(profile=['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']) issue=[Issue(severity='error', code='invalid', details=Details(coding=[Coding(system='https://fhir.nhs.uk/Codesystem/http-error-codes', code='INVALID')]), diagnostics="Search parameter _include may only be 'Immunization:patient' if provided.")]

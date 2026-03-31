@@ -1,0 +1,1 @@
+✅ Step Passed: **I send a search request with Post method using an invalid identifier header for Immunization event created

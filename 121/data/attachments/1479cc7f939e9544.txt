@@ -1,0 +1,2 @@
+❌ Step failed! **MNS event will not be triggered for the event** 
+ Error: Not expected a message but queue returned a message

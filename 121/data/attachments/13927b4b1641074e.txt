@@ -1,0 +1,1 @@
+✅ Step Passed: **Send a search request with GET method using target-disease for Immunization event created with valid NHS Number and patient identifier system 'https://fhir.nhs.uk/Id/nhs-number' and target-disease system 'http://snomed.info/sct'
