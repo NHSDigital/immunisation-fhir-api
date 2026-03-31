@@ -4,6 +4,7 @@ from pathlib import Path
 import allure
 import pytest
 from dotenv import load_dotenv
+from src.dynamoDB.dynamo_db_helper import cleanup_failed_audit_records_for_filename
 from utilities.api_fhir_immunization_helper import (
     empty_folder,
     get_response_body_for_display,
@@ -150,14 +151,29 @@ def pytest_bdd_after_scenario(request, feature, scenario):
     if "Delete_cleanUp" in tags:
         if context.ImmsID is not None:
             print(f"\n Delete Request is {context.url}/{context.ImmsID}")
-            context.response = http_requests_session.delete(f"{context.url}/{context.ImmsID}", headers=context.headers)
-            assert context.response.status_code == 204, (
-                f"Expected status code 204, but got {context.response.status_code}. Response: {get_response_body_for_display(context.response)}"
-            )
-            if context.mns_validation_required.strip().lower() == "true":
-                mns_event_will_be_triggered_with_correct_data_for_deleted_event(context)
-            else:
-                print("MNS validation not required, skipping MNS event verification for deleted event.")
+            try:
+                context.response = http_requests_session.delete(
+                    f"{context.url}/{context.ImmsID}", headers=context.headers
+                )
+                if context.response.status_code in (401, 403):
+                    # Apigee token has expired during a long test session (~13 min run).
+                    # The token is scoped per-scenario but the DELETE runs post-scenario.
+                    # Log a warning and skip — do NOT assert, as this would report the
+                    # teardown expiry as the test failure and mask the actual scenario result.
+                    print(
+                        f"[TEARDOWN][WARN] DELETE returned {context.response.status_code} for "
+                        f"{context.ImmsID} — Apigee token likely expired. Skipping teardown assertion."
+                    )
+                else:
+                    assert context.response.status_code == 204, (
+                        f"Expected status code 204, but got {context.response.status_code}. "
+                        f"Response: {get_response_body_for_display(context.response)}"
+                    )
+                    mns_event_will_be_triggered_with_correct_data_for_deleted_event(context)
+            except AssertionError:
+                raise
+            except Exception as e:
+                print(f"[TEARDOWN][WARN] Delete cleanup error for {context.ImmsID}: {e}")
         else:
             print("Skipping delete: ImmsID is None")
 
@@ -165,25 +181,32 @@ def pytest_bdd_after_scenario(request, feature, scenario):
         if "IMMS_ID" in context.vaccine_df.columns and context.vaccine_df["IMMS_ID"].notna().any():
             get_tokens(context, context.supplier_name)
 
-            df = context.vaccine_df.dropna(subset=["IMMS_ID"]).copy()
-            df["IMMS_ID_CLEAN"] = df["IMMS_ID"].astype(str).str.replace("Immunization#", "", regex=False)
+            context.vaccine_df["IMMS_ID_CLEAN"] = (
+                context.vaccine_df["IMMS_ID"].astype(str).str.replace("Immunization#", "", regex=False)
+            )
 
-            for row in df.itertuples(index=False):
-                imms_id = row.IMMS_ID_CLEAN
+            for imms_id in context.vaccine_df["IMMS_ID_CLEAN"].dropna().unique():
                 delete_url = f"{context.url}/{imms_id}"
-
                 print(f"Sending DELETE request to: {delete_url}")
+
                 response = http_requests_session.delete(delete_url, headers=context.headers)
 
                 if response.status_code != 204:
                     print(
-                        f"Cleanup DELETE returned {response.status_code} for {imms_id} "
-                        f"(teardown best-effort, not failing test). "
-                        f"Response: {get_response_body_for_display(response)}"
+                        f"Cleanup DELETE returned {response.status_code} for {imms_id} (teardown best-effort, not failing test). Response: {get_response_body_for_display(response)}"
                     )
                 else:
                     print(f"Deleted {imms_id} successfully.")
-            print("Batch cleanup finished.")
 
+            print("Batch cleanup finished.")
         else:
-            print("No IMMS_ID values available — skipping delete cleanup.")
+            print(
+                " No IMMS_ID column or no values present as test failed due to as exception — skipping delete cleanup."
+            )
+
+    # Unconditional audit table cleanup for every batch scenario.
+    # This handles the case where the @when archive-wait assert raised before
+    # the @then step containing the old inline cleanup call could execute,
+    # leaving a "Failed" record inthe next test run's DynamoDB query.
+    if hasattr(context, "filename") and context.filename and hasattr(context, "S3_env") and context.S3_env:
+        cleanup_failed_audit_records_for_filename(context.filename, context.aws_profile_name, context.S3_env)

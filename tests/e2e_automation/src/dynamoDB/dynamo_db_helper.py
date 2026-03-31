@@ -6,6 +6,7 @@ import pytest_check as check
 from boto3.dynamodb.conditions import Key
 from boto3.dynamodb.types import TypeDeserializer
 from botocore.config import Config
+from botocore.exceptions import ClientError
 from utilities.api_fhir_immunization_helper import extract_practitioner_name
 from utilities.context import ScenarioContext
 from utilities.date_helper import (
@@ -1057,6 +1058,8 @@ def extract_patient_and_practitioner(contained):
 
 
 def get_gender_code(input: str) -> GenderCode:
+    if input is None:
+        raise ValueError("get_gender_code received None — check PERSON_GENDER_CODE in patient data")
     normalized = input.strip().lower()
     try:
         return GenderCode[normalized]
@@ -1070,21 +1073,99 @@ def get_gender_code(input: str) -> GenderCode:
     raise ValueError(f"Invalid gender input: {input}")
 
 
-def update_audit_table_for_failed_status(item: dict, aws_profile_name: str, env: str):
+def update_audit_table_for_failed_status(item: dict, aws_profile_name: str, env: str) -> bool:
+    """
+    Updates a single audit record from 'Failed' to 'Not processed - Automation testing'.
+    Returns True if the update was performed, False otherwise.
+
+    Called directly from @then steps for the immediate inline cleanup path, and also
+    delegated to by cleanup_failed_audit_records_for_filename for the teardown safety-net path.
+    """
     if item.get("status") != "Failed":
-        return
+        return False
+
+    message_id = item.get("message_id")
+    if not message_id:
+        print(f"⚠️ Skipping cleanup: 'message_id' missing from item: {item}")
+        return False
 
     db = DynamoDBHelper(aws_profile_name, env)
     table = db.get_batch_audit_table()
 
-    key = {"message_id": item["message_id"]}
+    try:
+        response = table.update_item(
+            Key={"message_id": message_id},
+            UpdateExpression="SET #s = :new_status",
+            ConditionExpression="attribute_exists(message_id) AND #s = :current_status",
+            ExpressionAttributeNames={"#s": "status"},
+            ExpressionAttributeValues={
+                ":new_status": "Not processed - Automation testing",
+                ":current_status": "Failed",
+            },
+            ReturnValues="UPDATED_NEW",
+        )
+        print(f"✅ Updated audit status for message_id={message_id}: {response.get('Attributes')}")
+        return True
+    except ClientError as e:
+        code = e.response["Error"]["Code"]
+        if code == "ConditionalCheckFailedException":
+            # Status already changed (race between inline call and teardown call) — safe to ignore
+            print(f"ℹAudit record message_id={message_id} no longer 'Failed', skipping.")
+        else:
+            print(f"DynamoDB error cleaning up message_id={message_id}: {e}")
+        return False
 
-    response = table.update_item(
-        Key=key,
-        UpdateExpression="SET #s = :new_status",
-        ExpressionAttributeNames={"#s": "status"},
-        ExpressionAttributeValues={":new_status": "Not processed - Automation testing"},
-        ReturnValues="UPDATED_NEW",
+
+def cleanup_failed_audit_records_for_filename(filename: str, aws_profile_name: str, env: str) -> int:
+    """
+    Queries the audit table's filename_index GSI for all records matching `filename`,
+    then updates every record with status='Failed' to 'Not processed - Automation testing'.
+
+    Designed to be called unconditionally in pytest_bdd_after_scenario so that 'Failed'
+    records are always cleaned up even when earlier test steps raised before the inline
+    update_audit_table_for_failed_status call could execute.
+
+    Returns the count of records that were updated.
+    """
+    if not filename:
+        return 0
+
+    db = DynamoDBHelper(aws_profile_name, env)
+    table = db.get_batch_audit_table()
+
+    # Paginate through all items for this filename (DynamoDB returns max 1 MB per call)
+    items = []
+    exclusive_start_key = None
+
+    while True:
+        query_kwargs = {
+            "IndexName": "filename_index",
+            "KeyConditionExpression": Key("filename").eq(filename),
+        }
+        if exclusive_start_key:
+            query_kwargs["ExclusiveStartKey"] = exclusive_start_key
+
+        try:
+            response = table.query(**query_kwargs)
+        except ClientError as e:
+            print(f"Failed to query audit table for filename={filename}: {e}")
+            return 0
+
+        items.extend(response.get("Items", []))
+        exclusive_start_key = response.get("LastEvaluatedKey")
+        if not exclusive_start_key:
+            break
+
+    if not items:
+        print(f"No audit records found for filename={filename}, nothing to clean up.")
+        return 0
+
+    updated = sum(
+        update_audit_table_for_failed_status(item, aws_profile_name, env)
+        for item in items
+        if item.get("status") == "Failed"
     )
 
-    print(f"✅ Updated audit status for message_id={key['message_id']}: {response.get('Attributes')}")
+    if updated:
+        print(f"✅ Cleaned up {updated} 'Failed' audit record(s) for filename={filename}.")
+    return updated
