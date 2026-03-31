@@ -378,14 +378,19 @@ def mns_event_will_be_triggered_with_correct_data_for_created_event(context):
 
 @then("MNS event will not be triggered for the event")
 def mns_event_will_not_be_triggered_for_the_event(context):
-    message_body = read_message(
-        context,
-        queue_type="notification",
-        wait_time_seconds=5,
-        max_total_wait_seconds=20,
-    )
-    print("No MNS create event is created")
-    assert message_body is None, "Not expected a message but queue returned a message"
+    if context.mns_validation_required.strip().lower() == "true":
+        message_body = read_message(
+            context,
+            queue_type="notification",
+            wait_time_seconds=5,
+            max_total_wait_seconds=20,
+        )
+        print("No MNS create event is created")
+        assert message_body is None, "Not expected a message but queue returned a message"
+    else:
+        print(
+            f"MNS event validation is skipped since mns_validation_required is set to {context.mns_validation_required}"
+        )
 
 
 @then("MNS event will not be triggered for the update event")
