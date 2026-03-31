@@ -2,11 +2,23 @@ import pandas as pd
 from pytest_bdd import given, scenarios, then, when
 from src.objectModels.batch.batch_file_builder import build_batch_file
 
-from features.APITests.steps.common_steps import validate_imms_event_table_by_operation, validVaccinationRecordIsCreated
-from features.APITests.steps.test_create_steps import validate_imms_delta_table_by_ImmsID
-from features.APITests.steps.test_delete_steps import validate_imms_delta_table_by_deleted_ImmsID
+from features.APITests.steps.common_steps import (
+    validate_imms_event_table_by_operation,
+    validVaccinationRecordIsCreated,
+)
+from features.APITests.steps.test_create_steps import (
+    validate_imms_delta_table_by_ImmsID,
+)
+from features.APITests.steps.test_delete_steps import (
+    validate_imms_delta_table_by_deleted_ImmsID,
+)
 
-from .batch_common_steps import build_dataFrame_using_datatable, create_batch_file, ignore_if_local_run
+from .batch_common_steps import (
+    build_batch_row_from_api_object,
+    build_dataFrame_using_datatable,
+    create_batch_file,
+    ignore_if_local_run,
+)
 
 scenarios("batchTests/delete_batch.feature")
 
@@ -31,31 +43,12 @@ def create_valid_vaccination_record_through_api(context):
 @when("An delete to above vaccination record is made through batch file upload")
 def upload_batch_file_to_s3_for_update(context):
     record = build_batch_file(context)
-    context.vaccine_df = pd.DataFrame([record.dict()])
-    context.vaccine_df.loc[
-        0,
-        [
-            "NHS_NUMBER",
-            "PERSON_FORENAME",
-            "PERSON_SURNAME",
-            "PERSON_GENDER_CODE",
-            "PERSON_DOB",
-            "PERSON_POSTCODE",
-            "ACTION_FLAG",
-            "UNIQUE_ID",
-            "UNIQUE_ID_URI",
-        ],
-    ] = [
-        context.create_object.contained[1].identifier[0].value,
-        context.create_object.contained[1].name[0].given[0],
-        context.create_object.contained[1].name[0].family,
-        context.create_object.contained[1].gender,
-        context.create_object.contained[1].birthDate.replace("-", ""),
-        context.create_object.contained[1].address[0].postalCode,
-        "DELETE",
-        context.create_object.identifier[0].value,
-        context.create_object.identifier[0].system,
-    ]
+    df = pd.DataFrame([record.dict()])
+
+    batch_fields = build_batch_row_from_api_object(context, "DELETE")
+    df.loc[0, list(batch_fields.keys())] = list(batch_fields.values())
+
+    context.vaccine_df = df
     create_batch_file(context)
     context.vaccine_df.loc[0, "IMMS_ID"] = context.ImmsID
 
@@ -69,21 +62,14 @@ def validate_imms_delta_table_for_api_created_event(context):
 
 @when("Delete above vaccination record is made through batch file upload with mandatory field missing")
 def upload_batch_file_to_s3_for_update_with_mandatory_field_missing(context):
-    # Build base record
     record = build_batch_file(context)
-    context.vaccine_df = pd.DataFrame([record.dict()])
-    base_fields = {
-        "NHS_NUMBER": context.create_object.contained[1].identifier[0].value,
-        "PERSON_FORENAME": context.create_object.contained[1].name[0].given[0],
-        "PERSON_SURNAME": context.create_object.contained[1].name[0].family,
-        "PERSON_GENDER_CODE": context.create_object.contained[1].gender,
-        "PERSON_DOB": "",
-        "PERSON_POSTCODE": context.create_object.contained[1].address[0].postalCode,
-        "ACTION_FLAG": "DELETE",
-        "UNIQUE_ID": context.create_object.identifier[0].value,
-        "UNIQUE_ID_URI": context.create_object.identifier[0].system,
-    }
-    context.vaccine_df.loc[0, list(base_fields.keys())] = list(base_fields.values())
+    df = pd.DataFrame([record.dict()])
+
+    batch_fields = build_batch_row_from_api_object(context, "DELETE")
+    batch_fields["PERSON_DOB"] = ""
+    df.loc[0, list(batch_fields.keys())] = list(batch_fields.values())
+
+    context.vaccine_df = df
     create_batch_file(context)
     context.vaccine_df.loc[0, "IMMS_ID"] = context.ImmsID
 
