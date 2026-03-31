@@ -100,6 +100,21 @@ def valid_batch_file_is_created_with_details(datatable, context):
     create_batch_file(context)
 
 
+@given("batch file is received for below data form DPS with all three action flag for each record")
+@ignore_if_local_run
+def valid_batch_file_is_created_for_DPSFULL(datatable, context):
+    build_dataFrame_using_datatable(datatable, context)
+    df_new = context.vaccine_df.copy()
+    df_update = df_new.copy()
+    df_update[["ACTION_FLAG", "EXPIRY_DATE"]] = ["UPDATE", "20281231"]
+    df_delete = df_new.copy()
+    df_delete[["ACTION_FLAG", "EXPIRY_DATE"]] = ["DELETE", "20281231"]
+    context.vaccine_df = pd.concat([df_new, df_update, df_delete], ignore_index=True)
+    file_name = f"{context.vaccine_type}_Vaccinations_v5_DPSFULL"
+    create_batch_file(context, fileName=file_name)
+    context.expected_version = 2
+
+
 @given("batch file is created for below data as full dataset with file extension dat")
 @ignore_if_local_run
 def valid_batch_file_is_created_with_details_and_dat_extension(datatable, context):
@@ -225,6 +240,34 @@ def validate_imms_audit_table(context):
 def validate_imms_delta_table_for_created_records_in_batch_file(context):
     preload_delta_data(context)
     validate_imms_delta_table_for_newly_created_records_in_batch_file(context)
+
+
+@then("The delta table will not be populated with DPSFULL records in batch file")
+def validate_imms_delta_table_for_dpsfull_records(context):
+    df = context.vaccine_df
+
+    check.is_true("IMMS_ID" in df.columns, "Column 'IMMS_ID' not found in vaccine_df")
+
+    valid_rows = df[df["IMMS_ID"].notnull()]
+    check.is_true(not valid_rows.empty, "No rows with non-null IMMS_ID found in vaccine_df")
+
+    grouped = valid_rows.groupby("IMMS_ID")
+
+    for imms_id in grouped:
+        clean_id = imms_id[0].replace("Immunization#", "")
+
+        delta_items = fetch_immunization_int_delta_detail_by_immsID(
+            context.aws_profile_name,
+            clean_id,
+            context.S3_env,
+            max_attempts=2,
+            delay=5,
+        )
+
+        check.is_true(
+            not delta_items,
+            f"Delta records were unexpectedly found for IMMS_ID: {clean_id}",
+        )
 
 
 @then("The delta table will be populated with the correct data for all updated records in batch file")
@@ -483,7 +526,11 @@ def validate_imms_delta_table_for_deleted_records_in_batch_file(context):
 
 
 def _is_null_nhs_row(row) -> bool:
-    return str(row.UNIQUE_ID).startswith("NullNHS") or str(row.NHS_NUMBER).strip() in ("", "None", "nan")
+    return str(row.UNIQUE_ID).startswith("NullNHS") or str(row.NHS_NUMBER).strip() in (
+        "",
+        "None",
+        "nan",
+    )
 
 
 def _assert_no_mns_events_for_null_nhs_rows(context, null_nhs_rows, wait_seconds=20):
@@ -491,8 +538,6 @@ def _assert_no_mns_events_for_null_nhs_rows(context, null_nhs_rows, wait_seconds
         print("No NullNHS rows — skipping negative MNS check.")
         return
 
-    # Use an unreachable expected_count so the poller runs for the full wait_seconds,
-    # then check that nothing arrived for these datarefs.
     unexpected = read_messages_for_batch(
         context,
         queue_type="notification",

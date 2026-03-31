@@ -89,12 +89,16 @@ def fetch_immunization_events_detail_by_IdentifierPK(
     return response
 
 
-def fetch_immunization_int_delta_detail_by_immsID(aws_profile_name: str, ImmsID: str, env: str, expected_item: int = 1):
+def fetch_immunization_int_delta_detail_by_immsID(
+    aws_profile_name: str,
+    ImmsID: str,
+    env: str,
+    expected_item: int = 1,
+    max_attempts=5,
+    delay=2,
+):
     db = DynamoDBHelper(aws_profile_name, env)
     tableImmsDelta = db.get_delta_table()
-
-    max_attempts = 5
-    delay = 2  # seconds
 
     for attempt in range(1, max_attempts + 1):
         response = tableImmsDelta.query(

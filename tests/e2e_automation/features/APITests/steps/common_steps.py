@@ -395,14 +395,7 @@ def mns_event_will_not_be_triggered_for_the_event(context):
 
 @then("MNS event will not be triggered for the update event")
 def validate_mns_event_not_triggered_for_updated_event(context):
-    message_body = read_message(
-        context,
-        queue_type="notification",
-        wait_time_seconds=5,
-        max_total_wait_seconds=20,
-    )
-    print("no MNS update event is created")
-    assert message_body is None, "Not expected a message but queue returned a message"
+    mns_event_will_not_be_triggered_for_the_event(context)
 
 
 def trigger_the_updated_request(context):

@@ -135,7 +135,8 @@ def context(request, global_context, temp_apigee_apps: list[ApigeeApp] | None) -
             ctx.patient_id = tag.split("patient_id_")[1]
         if tag.startswith("supplier_name_"):
             ctx.supplier_name = tag.split("supplier_name_")[1]
-            get_tokens(ctx, ctx.supplier_name)
+            if ctx.supplier_name != "DPSFULL":
+                get_tokens(ctx, ctx.supplier_name)
             ctx.supplier_name = tag.split("supplier_name_")[1]
             ctx.supplier_ods_code = SupplierNameWithODSCode[ctx.supplier_name].value
 
@@ -163,7 +164,8 @@ def pytest_bdd_after_scenario(request, feature, scenario):
 
     if "delete_cleanup_batch" in tags:
         if "IMMS_ID" in context.vaccine_df.columns and context.vaccine_df["IMMS_ID"].notna().any():
-            get_tokens(context, context.supplier_name)
+            supplier_name = context.supplier_name if context.supplier_name != "DPSFULL" else "Postman_Auth"
+            get_tokens(context, supplier_name)
 
             df = context.vaccine_df.dropna(subset=["IMMS_ID"]).copy()
             df["IMMS_ID_CLEAN"] = df["IMMS_ID"].astype(str).str.replace("Immunization#", "", regex=False)
