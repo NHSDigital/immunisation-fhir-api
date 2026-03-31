@@ -23,7 +23,6 @@ Feature: Create the immunization event for a patient through batch file
         And The imms event table will be populated with the correct data for 'created' event for records in batch file
         And The delta table will be populated with the correct data for all created records in batch file
         And MNS event will be triggered with correct data for all 'CREATE' events where NHS is not null
-        And MNS event will not be created for the records where NHS is null or empty
 
     @smoke
     @delete_cleanup_batch @vaccine_type_MMR  @supplier_name_TPP
@@ -47,7 +46,6 @@ Feature: Create the immunization event for a patient through batch file
         And The imms event table will be populated with the correct data for 'created' event for records in batch file
         And The delta table will be populated with the correct data for all created records in batch file
         And MNS event will be triggered with correct data for all 'CREATE' events where NHS is not null
-        And MNS event will not be created for the records where NHS is null or empty
 
     @vaccine_type_FLU  @supplier_name_MAVIS
     Scenario: Verify that vaccination record will be get rejected if date_and_time is invalid in batch file

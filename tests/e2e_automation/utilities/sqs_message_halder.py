@@ -103,13 +103,12 @@ def read_messages_for_batch(
     valid_rows=None,
     wait_time_seconds=20,
     max_total_wait_seconds=180,
+    expected_count=0,
 ):
     sqs = boto3.client("sqs", region_name="eu-west-2")
     queue_url = build_queue_url(context.S3_env, context.aws_account_id, queue_type)
 
     context.url = context.baseUrl + "/Immunization"
-
-    expected_count = len(valid_rows)
 
     expected_datarefs = {f"{context.url}/{str(row.IMMS_ID_CLEAN)}" for row in valid_rows}
 

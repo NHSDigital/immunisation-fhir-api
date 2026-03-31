@@ -24,7 +24,6 @@ Feature: Create the immunization event for a patient through batch file and upda
         And The delta table will be populated with the correct data for all created records in batch file
         And The delta table will be populated with the correct data for all updated records in batch file
         And MNS event will be triggered with correct data for both events where NHS is not null
-        And MNS event will not be created for the records where NHS is null or empty
 
     @Delete_cleanUp @vaccine_type_ROTAVIRUS @patient_id_Random @supplier_name_EMIS
     Scenario: Verify that the API vaccination record will be successful updated by batch file upload
