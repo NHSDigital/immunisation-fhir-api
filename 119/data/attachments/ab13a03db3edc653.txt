@@ -1,0 +1,1 @@
+✅ Step Passed: **Send a search request with 'GET' method using target-disease and -immunization.target for Immunization event created

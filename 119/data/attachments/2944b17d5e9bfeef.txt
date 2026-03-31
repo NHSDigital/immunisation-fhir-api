@@ -1,0 +1,2 @@
+❌ Step failed! **I have created a valid vaccination record** 
+ Error: {"fault":{"faultstring":"Execution of ServiceCallout ServiceCallout.PostTokenCis2 failed. Reason: ResponseCode 400 is treated as error","detail":{"errorcode":"steps.servicecallout.ExecutionFailed"}}}

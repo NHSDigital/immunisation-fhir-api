@@ -1,0 +1,1 @@
+✅ Step Passed: **Send a search request with 'GET' method with valid NHS Number '9461267665' and valid Disease Type 'COVID' and Date From '2025-13-01' and Date To '2025-12-01' and include 'abc'
