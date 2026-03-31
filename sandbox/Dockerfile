@@ -17,7 +17,7 @@ COPY ./specification ./specification
 RUN jq ".paths += $(cat HealthStatusEndpoint.json)" immunisation-fhir-api.json > updated-spec.json
 
 # Second Stage
-FROM stoplight/prism:5
+FROM stoplight/prism:5.14.2
 
 # Create a non-root user in the Prism container
 USER root
