@@ -17,7 +17,7 @@ from utilities.aws_token import refresh_sso_token, set_aws_session_token
 from utilities.context import ScenarioContext
 from utilities.enums import SupplierNameWithODSCode
 from utilities.http_requests_session import http_requests_session
-from utilities.sqs_message_halder import purge_all_queues
+from utilities.sqs_message_halder import purge_all_queues  # noqa: F403
 
 from features.APITests.steps.common_steps import *  # noqa: F403
 
@@ -75,7 +75,8 @@ def global_context():
 
     s3_env = os.getenv("S3_env")
     aws_account_id = os.getenv("aws_account_id")
-    if s3_env and aws_account_id:
+    mns_validation_required = os.getenv("mns_validation_required", "false").strip().lower() == "true"
+    if s3_env and aws_account_id and mns_validation_required:
         purge_all_queues(s3_env, aws_account_id)
 
 
@@ -115,6 +116,7 @@ def context(request, global_context, temp_apigee_apps: list[ApigeeApp] | None) -
         "sub_environment",
         "LOCAL_RUN_WITHOUT_S3_UPLOAD",
         "aws_account_id",
+        "mns_validation_required",
     ]
     for var in env_vars:
         setattr(ctx, var, os.getenv(var))
@@ -152,7 +154,10 @@ def pytest_bdd_after_scenario(request, feature, scenario):
             assert context.response.status_code == 204, (
                 f"Expected status code 204, but got {context.response.status_code}. Response: {get_response_body_for_display(context.response)}"
             )
-            mns_event_will_be_triggered_with_correct_data_for_deleted_event(context)
+            if context.mns_validation_required.strip().lower() == "true":
+                mns_event_will_be_triggered_with_correct_data_for_deleted_event(context)
+            else:
+                print("MNS validation not required, skipping MNS event verification for deleted event.")
         else:
             print("Skipping delete: ImmsID is None")
 
@@ -160,25 +165,25 @@ def pytest_bdd_after_scenario(request, feature, scenario):
         if "IMMS_ID" in context.vaccine_df.columns and context.vaccine_df["IMMS_ID"].notna().any():
             get_tokens(context, context.supplier_name)
 
-            context.vaccine_df["IMMS_ID_CLEAN"] = (
-                context.vaccine_df["IMMS_ID"].astype(str).str.replace("Immunization#", "", regex=False)
-            )
+            df = context.vaccine_df.dropna(subset=["IMMS_ID"]).copy()
+            df["IMMS_ID_CLEAN"] = df["IMMS_ID"].astype(str).str.replace("Immunization#", "", regex=False)
 
-            for imms_id in context.vaccine_df["IMMS_ID_CLEAN"].dropna().unique():
+            for row in df.itertuples(index=False):
+                imms_id = row.IMMS_ID_CLEAN
                 delete_url = f"{context.url}/{imms_id}"
-                print(f"Sending DELETE request to: {delete_url}")
 
+                print(f"Sending DELETE request to: {delete_url}")
                 response = http_requests_session.delete(delete_url, headers=context.headers)
 
                 if response.status_code != 204:
                     print(
-                        f"Cleanup DELETE returned {response.status_code} for {imms_id} (teardown best-effort, not failing test). Response: {get_response_body_for_display(response)}"
+                        f"Cleanup DELETE returned {response.status_code} for {imms_id} "
+                        f"(teardown best-effort, not failing test). "
+                        f"Response: {get_response_body_for_display(response)}"
                     )
                 else:
                     print(f"Deleted {imms_id} successfully.")
-
             print("Batch cleanup finished.")
+
         else:
-            print(
-                " No IMMS_ID column or no values present as test failed due to as exception — skipping delete cleanup."
-            )
+            print("No IMMS_ID values available — skipping delete cleanup.")
