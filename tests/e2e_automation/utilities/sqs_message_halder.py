@@ -31,6 +31,7 @@ def read_message(
     queue_type="notification",
     wait_time_seconds=20,
     max_total_wait_seconds=120,
+    excluded_event_ids=None,
 ):
     sqs = boto3.client("sqs", region_name="eu-west-2")
     queue_url = build_queue_url(context.S3_env, context.aws_account_id, queue_type)
@@ -67,6 +68,10 @@ def read_message(
             dataref = body.dataref
 
             if dataref == expected_dataref:
+                if excluded_event_ids and body.id in excluded_event_ids:
+                    sqs.delete_message(QueueUrl=queue_url, ReceiptHandle=msg["ReceiptHandle"])
+                    print(f"Deleted already-consumed matching message id={body.id} for {dataref}")
+                    continue
                 sqs.delete_message(QueueUrl=queue_url, ReceiptHandle=msg["ReceiptHandle"])
                 print(f"Matched and deleted message for {dataref}")
                 return body

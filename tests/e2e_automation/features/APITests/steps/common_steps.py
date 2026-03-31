@@ -378,11 +378,13 @@ def mns_event_will_be_triggered_with_correct_data_for_created_event(context):
 
 @then("MNS event will not be triggered for the event")
 def mns_event_will_not_be_triggered_for_the_event(context):
+    consumed_mns_event_ids = getattr(context, "consumed_mns_event_ids", set())
     message_body = read_message(
         context,
         queue_type="notification",
         wait_time_seconds=5,
         max_total_wait_seconds=20,
+        excluded_event_ids=consumed_mns_event_ids,
     )
     print("No MNS create event is created")
     assert message_body is None, "Not expected a message but queue returned a message"
@@ -390,11 +392,13 @@ def mns_event_will_not_be_triggered_for_the_event(context):
 
 @then("MNS event will not be triggered for the update event")
 def validate_mns_event_not_triggered_for_updated_event(context):
+    consumed_mns_event_ids = getattr(context, "consumed_mns_event_ids", set())
     message_body = read_message(
         context,
         queue_type="notification",
         wait_time_seconds=5,
         max_total_wait_seconds=20,
+        excluded_event_ids=consumed_mns_event_ids,
     )
     print("no MNS update event is created")
     assert message_body is None, "Not expected a message but queue returned a message"
@@ -538,6 +542,9 @@ def mns_event_will_be_triggered_with_correct_data(context, action):
         message_body = read_message(context, queue_type="notification")
         print(f"Read {action}d message from SQS: {message_body}")
         assert message_body is not None, f"Expected a {action} message but queue returned empty"
+        if not hasattr(context, "consumed_mns_event_ids"):
+            context.consumed_mns_event_ids = set()
+        context.consumed_mns_event_ids.add(message_body.id)
         context.gp_code = get_gp_code_by_nhs_number(context.patient.identifier[0].value)
         context.patient_age = calculate_age(context.patient.birthDate, context.immunization_object.occurrenceDateTime)
         validate_sqs_message(context, message_body, action)
