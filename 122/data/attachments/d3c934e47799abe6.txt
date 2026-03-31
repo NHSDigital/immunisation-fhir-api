@@ -1,0 +1,1 @@
+✅ Step Passed: **batch file is uploaded in s3 bucket

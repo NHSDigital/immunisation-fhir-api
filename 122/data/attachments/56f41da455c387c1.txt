@@ -1,0 +1,153 @@
+Create Request is {"resourceType": "Immunization", "contained": [{"resourceType": "Practitioner", "id": "Pract1", "name": [{"family": "Furlong", "given": ["Darren"]}]}, {"resourceType": "Patient", "id": "Pat1", "identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number"}], "name": [{"family": "test1", "given": ["test2"]}], "gender": "unknown", "birthDate": "1981-12-01", "address": [{"use": "Home", "type": "Postal", "text": "Validate Obf", "line": ["1, obf_2"], "city": "obf_3", "district": "obf_4", "state": "obf_5", "postalCode": "LS01 1AB", "country": "obf_7", "period": {"start": "2000-01-01", "end": "2025-01-01"}}]}], "extension": [{"url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure", "valueCodeableConcept": {"coding": [{"extension": [{"url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay", "valueString": "Administration of first intranasal seasonal influenza vaccination (procedure)"}, {"url": "http://hl7.org/fhir/StructureDefinition/coding-sctdescid", "valueId": "884861000000100"}], "system": "http://snomed.info/sct", "code": "884861000000100", "display": "Seasonal influenza vaccination (procedure)"}]}}], "identifier": [{"system": "https://supplierABC/identifiers/vacc", "value": "d6b67bfb-2751-4f9d-a7ac-deb27d622582"}], "status": "completed", "vaccineCode": {"coding": [{"extension": [{"url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay", "valueString": "Quadrivalent influenza vaccine (split virion, inactivated) suspension for injection 0.5ml pre-filled syringes"}, {"url": "http://hl7.org/fhir/StructureDefinition/coding-sctdescid", "valueId": "3468041100001107"}], "system": "http://snomed.info/sct", "code": "34680411000001107", "display": "Quadrivalent influenza vaccine (split virion, inactivated) suspension for injection 0.5ml pre-filled syringes (Sanofi Pasteur)"}]}, "patient": {"reference": "#Pat1", "type": "Patient"}, "manufacturer": {"display": "Sanofi Pasteur"}, "location": {"identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "X99999"}}, "site": {"coding": [{"extension": [{"url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay", "valueString": "Left upper arm structure (body structure)"}, {"url": "http://hl7.org/fhir/StructureDefinition/coding-sctdescid", "valueId": "36820006"}], "system": "http://snomed.info/sct", "code": "368208006", "display": "Left upper arm structure"}]}, "route": {"coding": [{"extension": [{"url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay", "valueString": "Intramuscular route (qualifier value)"}, {"url": "http://hl7.org/fhir/StructureDefinition/coding-sctdescid", "valueId": "7842100"}], "system": "http://snomed.info/sct", "code": "78421000", "display": "Intramuscular"}]}, "doseQuantity": {"value": 0.3, "unit": "Inhalation - unit of product usage", "system": "http://snomed.info/sct", "code": "2622896019"}, "performer": [{"actor": {"reference": "#Pract1", "type": "Practitioner"}}, {"actor": {"reference": "Organization/XYH8Z", "type": "Organization", "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "XYH8Z", "use": "usual", "type": {"coding": [{"system": "http://terminology.hl7.org/CodeSystem/v2-0203", "code": "123456", "display": "Test display performer"}], "text": "test string performer"}, "period": {"start": "2000-01-01", "end": "2025-01-01"}}}}], "reasonCode": [{"coding": [{"system": "http://snomed.info/sct", "code": "310578008", "display": "Routine immunization schedule"}]}], "protocolApplied": [{"targetDisease": [{"coding": [{"system": "http://snomed.info/sct", "code": "6142004", "display": "Influenza"}]}], "doseNumberPositiveInt": 1}], "occurrenceDateTime": "2026-03-31T17:35:29.012+00:00", "recorded": "2026-03-31T17:35:29.012+00:00", "primarySource": true, "lotNumber": "682077", "expirationDate": "2028-03-30"}
+201
+201
+
+ Immunization ID is bee346ce-31b0-42bd-afad-ba813e5c161a and Etag is 1 
+
+MNS event validation is skipped since mns_validation_required is set to false
+
+ Search Post Request - 
+ {'identifier': 'https://supplierABC/identifiers/vacc|d6b67bfb-2751-4f9d-a7ac-deb27d622582'}
+
+ Search POST Response - 
+ {'resourceType': 'Bundle', 'type': 'searchset', 'link': [{'relation': 'self', 'url': 'https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization?identifier=https://supplierABC/identifiers/vacc|d6b67bfb-2751-4f9d-a7ac-deb27d622582'}], 'entry': [{'fullUrl': 'https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/bee346ce-31b0-42bd-afad-ba813e5c161a', 'resource': {'resourceType': 'Immunization', 'id': 'bee346ce-31b0-42bd-afad-ba813e5c161a', 'meta': {'versionId': '1'}, 'extension': [{'url': 'https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure', 'valueCodeableConcept': {'coding': [{'extension': [{'url': 'https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay', 'valueString': 'Administration of first intranasal seasonal influenza vaccination (procedure)'}, {'url': 'http://hl7.org/fhir/StructureDefinition/coding-sctdescid', 'valueId': '884861000000100'}], 'system': 'http://snomed.info/sct', 'code': '884861000000100', 'display': 'Seasonal influenza vaccination (procedure)'}]}}], 'identifier': [{'use': 'official', 'system': 'https://supplierABC/identifiers/vacc', 'value': 'd6b67bfb-2751-4f9d-a7ac-deb27d622582'}], 'status': 'completed', 'vaccineCode': {'coding': [{'extension': [{'url': 'https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay', 'valueString': 'Quadrivalent influenza vaccine (split virion, inactivated) suspension for injection 0.5ml pre-filled syringes'}, {'url': 'http://hl7.org/fhir/StructureDefinition/coding-sctdescid', 'valueId': '3468041100001107'}], 'system': 'http://snomed.info/sct', 'code': '34680411000001107', 'display': 'Quadrivalent influenza vaccine (split virion, inactivated) suspension for injection 0.5ml pre-filled syringes (Sanofi Pasteur)'}]}, 'patient': {'reference': 'urn:uuid:02065c9f-ee02-4df4-b447-3b0588360584', 'type': 'Patient', 'identifier': {'system': 'https://fhir.nhs.uk/Id/nhs-number'}}, 'occurrenceDateTime': '2026-03-31T17:35:29.012000+00:00', 'recorded': '2026-03-31T17:35:29.012000+00:00', 'primarySource': True, 'location': {'identifier': {'system': 'https://fhir.nhs.uk/Id/ods-organization-code', 'value': 'X99999'}}, 'manufacturer': {'display': 'Sanofi Pasteur'}, 'lotNumber': '682077', 'expirationDate': '2028-03-30', 'site': {'coding': [{'extension': [{'url': 'https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay', 'valueString': 'Left upper arm structure (body structure)'}, {'url': 'http://hl7.org/fhir/StructureDefinition/coding-sctdescid', 'valueId': '36820006'}], 'system': 'http://snomed.info/sct', 'code': '368208006', 'display': 'Left upper arm structure'}]}, 'route': {'coding': [{'extension': [{'url': 'https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay', 'valueString': 'Intramuscular route (qualifier value)'}, {'url': 'http://hl7.org/fhir/StructureDefinition/coding-sctdescid', 'valueId': '7842100'}], 'system': 'http://snomed.info/sct', 'code': '78421000', 'display': 'Intramuscular'}]}, 'doseQuantity': {'value': 0.3, 'unit': 'Inhalation - unit of product usage', 'system': 'http://snomed.info/sct', 'code': '2622896019'}, 'performer': [{'actor': {'reference': 'Organization/XYH8Z', 'type': 'Organization', 'identifier': {'use': 'usual', 'type': {'coding': [{'system': 'http://terminology.hl7.org/CodeSystem/v2-0203', 'code': '123456', 'display': 'Test display performer'}], 'text': 'test string performer'}, 'system': 'https://fhir.nhs.uk/Id/ods-organization-code', 'value': 'XYH8Z', 'period': {'start': '2000-01-01', 'end': '2025-01-01'}}}}], 'reasonCode': [{'coding': [{'system': 'http://snomed.info/sct', 'code': '310578008', 'display': 'Routine immunization schedule'}]}], 'protocolApplied': [{'targetDisease': [{'coding': [{'system': 'http://snomed.info/sct', 'code': '6142004', 'display': 'Influenza'}]}], 'doseNumberPositiveInt': 1}]}, 'search': {'mode': 'match'}}], 'total': 1}
+200
+200
+Waiting for message with dataref: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/_search/bee346ce-31b0-42bd-afad-ba813e5c161a
+Polling notification queue (wait 5s)...
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/220bd8d7-d2d4-4168-949e-648bb261e90c
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/29c618aa-af39-4062-9d88-813f09a908a4
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/29c618aa-af39-4062-9d88-813f09a908a4
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/411ca08f-7451-4e45-934d-e03bc17568a9
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/411ca08f-7451-4e45-934d-e03bc17568a9
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/55a9c37f-52c0-4faa-af56-5e87d8a6827f
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/78ad3e87-6f79-42c2-bd4b-80f9cd6e67a2
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/da5b462a-1964-4693-a021-2441c89aa854
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/22dc0839-5ced-43c2-9a10-d9069177c336
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/97d74f7b-85c9-4808-be6c-4189e862aea8
+Polling notification queue (wait 5s)...
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/5e8e1b64-189f-4384-a5f1-fc7d17563210
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/5e8e1b64-189f-4384-a5f1-fc7d17563210
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/5e8e1b64-189f-4384-a5f1-fc7d17563210
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/36f165b3-c13b-4004-a201-9e6487df4779
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/5bc89ae3-aa12-4b29-a9e6-50b12c8c5d5a
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/7f5bede1-f3a9-4af4-b7ed-1cbe56aaed42
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/f09b798e-cf67-4d09-8b84-66d91297761a
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/95afc5ae-21c6-4f95-9753-a19db2de1788
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/74e10acc-7b6e-4707-968b-9e51b3516778
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/9bb2d672-6c6d-4ea5-adea-df6287a4ef6b
+Polling notification queue (wait 5s)...
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/81895997-0073-41fb-8aff-d131efc2524e
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/97d74f7b-85c9-4808-be6c-4189e862aea8
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/5fb8b76d-f0d8-4099-9666-177ca7bc37d4
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/affad95c-930b-4e52-8ab3-cb3fbeea3292
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/e14c8a39-dc30-498a-87fb-6fcd87b6a19c
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/9f091dd5-d228-497a-b878-3d276355a83a
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/21b4d61a-67d7-4a87-934b-94e128604953
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/c6d9fa83-d709-46c8-b90b-9d4d00d10a16
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/3809c29a-f062-4dae-91f6-fd1b65e14342
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/3809c29a-f062-4dae-91f6-fd1b65e14342
+Polling notification queue (wait 5s)...
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/772f8d0e-b379-4db8-960e-2446897c6b0b
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/83eb3e3a-c17c-40da-8206-2a645bf19cf5
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/5dabc611-3228-4b2c-8ac8-cebee1f8ea46
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/5b872c55-67d7-4f63-8280-0fb9551be2f3
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/c0c25d31-80d8-4dd0-a747-8a2dd776b52d
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/eb5b9468-d6a3-4dff-923e-e40ef65faa13
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/d07d7743-49fd-4cf8-b1f6-f0c1927bf5d8
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/c7da7ae2-f714-4f25-8e32-2723392a7807
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/86843d6d-9cf6-43d1-bf17-536618d10d1f
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/76292b9c-2bbf-4c20-af62-650b1fd2060d
+Polling notification queue (wait 5s)...
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/01bf6db4-e5ce-42ad-8861-0e2ce7267a55
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/01bf6db4-e5ce-42ad-8861-0e2ce7267a55
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/01bf6db4-e5ce-42ad-8861-0e2ce7267a55
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/01bf6db4-e5ce-42ad-8861-0e2ce7267a55
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/1416bc5b-9f95-4839-9fd6-ecda9a5fec30
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/220bd8d7-d2d4-4168-949e-648bb261e90c
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/5bc89ae3-aa12-4b29-a9e6-50b12c8c5d5a
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/7f5bede1-f3a9-4af4-b7ed-1cbe56aaed42
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/7f5bede1-f3a9-4af4-b7ed-1cbe56aaed42
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/bf216b78-d69c-44e6-9d88-99160f30f5df
+Polling notification queue (wait 5s)...
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/81895997-0073-41fb-8aff-d131efc2524e
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/affad95c-930b-4e52-8ab3-cb3fbeea3292
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/50167f3b-445c-496d-b715-6b85e0a521d7
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/acefe97f-3555-4a2d-b61d-25292d8e57f6
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/83a1f587-ef7d-40f5-8698-c3f49ad84737
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/4140abd8-b563-4725-b350-0037d4d959d1
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/4140abd8-b563-4725-b350-0037d4d959d1
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/d15af5e0-1daa-46b2-80d3-6d447a30c140
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/c6c32513-3860-4a66-aaa1-567f9ea073fd
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/c6d9fa83-d709-46c8-b90b-9d4d00d10a16
+Polling notification queue (wait 5s)...
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/5e8e1b64-189f-4384-a5f1-fc7d17563210
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/36f165b3-c13b-4004-a201-9e6487df4779
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/f09b798e-cf67-4d09-8b84-66d91297761a
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/bf216b78-d69c-44e6-9d88-99160f30f5df
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/8b19536b-144a-4c5c-92f9-6536af3db048
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/55a9c37f-52c0-4faa-af56-5e87d8a6827f
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/f6b5b118-8074-43eb-b18a-090fd10e13a0
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/61e05cf5-f9d3-450b-b9cc-101b6fd1c886
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/5fb8b76d-f0d8-4099-9666-177ca7bc37d4
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/1ebd6205-bd40-4ced-aa42-1b66ac283b38
+Polling notification queue (wait 5s)...
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/83d7a97c-b32c-47bf-b81e-4cd8dd916fa0
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/26e9757e-1a0a-4f21-997f-05fed55d9038
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/6ea672e1-aa16-45b0-8f59-0748bae409b1
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/7c03bf9e-97ef-4310-9431-5b3f50e856f6
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/9d7e3bf9-421d-45e6-b518-9c585a0595eb
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/dd9e48de-cf13-4ffe-9aa4-cf3c805ea4ad
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/2a7103d5-6bc0-473f-9e8a-d614b233115a
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/2a7103d5-6bc0-473f-9e8a-d614b233115a
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/c7da7ae2-f714-4f25-8e32-2723392a7807
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/8273aa41-48ce-4fa5-a4b8-275f6913e18c
+Polling notification queue (wait 5s)...
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/1416bc5b-9f95-4839-9fd6-ecda9a5fec30
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/5bc89ae3-aa12-4b29-a9e6-50b12c8c5d5a
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/7f5bede1-f3a9-4af4-b7ed-1cbe56aaed42
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/95afc5ae-21c6-4f95-9753-a19db2de1788
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/78ad3e87-6f79-42c2-bd4b-80f9cd6e67a2
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/74e10acc-7b6e-4707-968b-9e51b3516778
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/7d0c068c-3f66-4652-b9ef-43ef077cfd4a
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/fadab8d3-b7c1-4edd-810e-c1defd73ace0
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/da5b462a-1964-4693-a021-2441c89aa854
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/fc44f054-3dc1-4aba-b86f-1dfaa94a6357
+Polling notification queue (wait 5s)...
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/f6b5b118-8074-43eb-b18a-090fd10e13a0
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/acefe97f-3555-4a2d-b61d-25292d8e57f6
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/5c5a9ec8-8f92-423d-8ffe-b2f5b027474e
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/50167f3b-445c-496d-b715-6b85e0a521d7
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/4868a03a-3d0c-406d-aaea-08cf16ec8742
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/2ff00d5e-8c83-4586-97b5-548418b4e0c3
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/d15af5e0-1daa-46b2-80d3-6d447a30c140
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/18c16e85-7de0-4e41-b0c8-7b74d6efb24c
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/57ca3071-cdaf-48f9-9265-753ed3a8efb3
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/a2e9c775-fd4c-4662-8466-1f8263a78148
+Polling notification queue (wait 5s)...
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/13296288-07ec-40d8-b646-1413cdad3ad9
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/c19af2ed-3141-4b8b-b9be-0bf554e9348a
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/09b16a9c-72b7-439e-beb5-03be1bf3f1bf
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/6230122c-1bdc-47bd-85c9-7c766dbb7e4e
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/2b6bf399-74d0-42ce-86e8-64896711738e
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/ea903698-b98b-4bcc-8d78-bcd55e82e1b3
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/832e4b58-db7f-4286-83db-ab3b4167d41e
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/6433d2ee-be19-446a-8448-c6d50fd9c950
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/c87c1067-a43b-4054-abf0-9e20055072b8
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/934c485f-c1f6-4157-92e2-c5c6afca3adf
+Polling notification queue (wait 5s)...
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/dd0bf23f-152a-43c9-a20d-923eafc94a88
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/772f8d0e-b379-4db8-960e-2446897c6b0b
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/83eb3e3a-c17c-40da-8206-2a645bf19cf5
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/5492e3d7-a00a-4fd2-982b-db2aac0870e9
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/5492e3d7-a00a-4fd2-982b-db2aac0870e9
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/9d7e3bf9-421d-45e6-b518-9c585a0595eb
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/68703b5a-7c96-49d5-a242-d86a02a0bff7
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/5b872c55-67d7-4f63-8280-0fb9551be2f3
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/d07d7743-49fd-4cf8-b1f6-f0c1927bf5d8
+Deleted non-matching message: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/09fb6b40-e258-4705-87a9-2fa6551a8bc7
+Stopping — reached max wait time.
+no MNS update event is created
+
+ Delete Request is https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/bee346ce-31b0-42bd-afad-ba813e5c161a
+MNS validation not required, skipping MNS event verification for deleted event.
