@@ -322,34 +322,13 @@ def mns_event_will_be_triggered_with_correct_data_for_created_events_in_batch_fi
     df = context.vaccine_df.dropna(subset=["IMMS_ID"]).copy()
     df["IMMS_ID_CLEAN"] = df["IMMS_ID"].astype(str).str.replace("Immunization#", "", regex=False)
 
-    valid_rows = []
-    for row in df.itertuples(index=False):
-        valid_rows.append(row)
+    valid_rows = list(df.itertuples(index=False))
 
     if not valid_rows:
         print("No valid NHS rows found — skipping MNS validation.")
         return
 
-    # Now validate all messages for the batch
     mns_event_will_be_triggered_for_batch_record(context=context, action=action, valid_rows=valid_rows)
-
-
-# @then("MNS event will not be created for the records where NHS is null or empty")
-# def mns_event_will_not_be_triggered_for_records_with_null_or_empty_nhs(context):
-#     print(
-#         "Checking for records with Null or empty NHS_NUMBER to validate MNS event non-triggering..."
-#     )
-#     df = context.vaccine_df.copy()
-
-#     null_nhs_rows = df[df["UNIQUE_ID"].astype(str).str.startswith("NullNHS")]
-
-#     if null_nhs_rows.empty:
-#         print("No records with NullNHS found — skipping this check.")
-#         return
-
-#     context.ImmsID = null_nhs_rows["IMMS_ID"].iloc[0]
-
-#     mns_event_will_not_be_triggered_for_the_event(context)
 
 
 @then("Api updated event will trigger MNS event with correct data")
@@ -503,31 +482,45 @@ def validate_imms_delta_table_for_deleted_records_in_batch_file(context):
         )
 
 
-def mns_event_will_be_triggered_for_batch_record(context, action, valid_rows):
-    # Lookup only rows with NHS_NUMBER
-    row_lookup = {
-        str(row.NHS_NUMBER): row for row in valid_rows if str(row.NHS_NUMBER).strip() not in ("", "None", "nan")
-    }
+def _is_null_nhs_row(row) -> bool:
+    return str(row.UNIQUE_ID).startswith("NullNHS") or str(row.NHS_NUMBER).strip() in ("", "None", "nan")
 
-    # Expected count excludes NullNHS rows
-    expected_count = sum(
-        1
-        for row in valid_rows
-        if str(row.NHS_NUMBER).strip() not in ("", "None", "nan") and not str(row.UNIQUE_ID).startswith("NullNHS")
+
+def _assert_no_mns_events_for_null_nhs_rows(context, null_nhs_rows, wait_seconds=20):
+    if not null_nhs_rows:
+        print("No NullNHS rows — skipping negative MNS check.")
+        return
+
+    # Use an unreachable expected_count so the poller runs for the full wait_seconds,
+    # then check that nothing arrived for these datarefs.
+    unexpected = read_messages_for_batch(
+        context,
+        queue_type="notification",
+        valid_rows=null_nhs_rows,
+        expected_count=len(null_nhs_rows) + 1,
+        max_total_wait_seconds=wait_seconds,
     )
+
+    assert not unexpected, f"Unexpected MNS events received for NullNHS records: {[msg.dataref for msg in unexpected]}"
+
+
+def mns_event_will_be_triggered_for_batch_record(context, action, valid_rows):
+    null_nhs_rows = [row for row in valid_rows if _is_null_nhs_row(row)]
+    positive_rows = [row for row in valid_rows if not _is_null_nhs_row(row)]
+
+    row_lookup = {str(row.NHS_NUMBER): row for row in positive_rows}
 
     messages = read_messages_for_batch(
         context,
         queue_type="notification",
-        valid_rows=valid_rows,
-        expected_count=expected_count,
+        valid_rows=positive_rows,
+        expected_count=len(positive_rows),
     )
 
     print(f"Read {len(messages)} {action} message(s) from SQS")
 
     assert messages, f"Expected at least one {action} message but queue returned empty"
 
-    # Validate only messages with NHS_NUMBER
     for msg in messages:
         nhs = msg.subject
 
@@ -544,19 +537,7 @@ def mns_event_will_be_triggered_for_batch_record(context, action, valid_rows):
 
         validate_sqs_message_for_batch_record(context, msg, row)
 
-    null_nhs_rows = [row for row in valid_rows if str(row.UNIQUE_ID).startswith("NullNHS")]
-
-    if not null_nhs_rows:
-        print("No records with NullNHS found — skipping this check.")
-        return
-
-    # Extract IMMS IDs from messages
-    message_imms_ids = {msg.dataref.split("/")[-1] for msg in messages}
-
-    for row in null_nhs_rows:
-        assert row.IMMS_ID_CLEAN not in message_imms_ids, (
-            f"Unexpected MNS event for NullNHS record: UNIQUE_ID={row.UNIQUE_ID}, IMMS_ID_CLEAN={row.IMMS_ID_CLEAN}"
-        )
+    _assert_no_mns_events_for_null_nhs_rows(context, null_nhs_rows)
 
 
 def validate_sqs_message_for_batch_record(context, message_body, row):
@@ -637,51 +618,41 @@ def mns_event_will_be_triggered_with_correct_data_for_both_events_in_batch_file(
         )
         return
 
-    # Keep ALL rows with IMMS_ID
     df = context.vaccine_df.dropna(subset=["IMMS_ID"]).copy()
     df["IMMS_ID_CLEAN"] = df["IMMS_ID"].astype(str).str.replace("Immunization#", "", regex=False)
 
-    # valid_rows = ALL rows (including NullNHS)
-    valid_rows = [row for row in df.itertuples(index=False)]
+    all_rows = list(df.itertuples(index=False))
 
-    if not valid_rows:
+    if not all_rows:
         print("No rows found — skipping MNS validation.")
         return
 
-    expected_rows = [
-        row
-        for row in valid_rows
-        if str(row.NHS_NUMBER).strip() not in ("", "None", "nan") and not str(row.UNIQUE_ID).startswith("NullNHS")
-    ]
-
-    expected_count = len(expected_rows)
+    null_nhs_rows = [row for row in all_rows if _is_null_nhs_row(row)]
+    expected_rows = [row for row in all_rows if not _is_null_nhs_row(row)]
 
     messages = read_messages_for_batch(
         context,
         queue_type="notification",
-        valid_rows=valid_rows,
-        expected_count=expected_count,
+        valid_rows=expected_rows,
+        expected_count=len(expected_rows),
     )
 
     print(f"Read {len(messages)} message(s) from SQS")
 
-    assert len(messages) == expected_count, f"Expected {expected_count} MNS events, but received {len(messages)}"
+    assert len(messages) == len(expected_rows), f"Expected {len(expected_rows)} MNS events, but received {len(messages)}"
 
-    # Extract NHS numbers from messages
-    nhs_numbers = [msg.subject for msg in messages]
-    nhs_counts = Counter(nhs_numbers)
-
-    # Unique NHS numbers that SHOULD produce events
+    nhs_counts = Counter(msg.subject for msg in messages)
     expected_nhs_numbers = {row.NHS_NUMBER for row in expected_rows}
 
-    # Check we got messages for all expected NHS numbers
     assert len(nhs_counts) == len(expected_nhs_numbers), (
         f"Expected {len(expected_nhs_numbers)} NHS numbers, but got {len(nhs_counts)}: {list(nhs_counts.keys())}"
     )
 
-    # Check each NHS number has exactly 2 events
+    # Check each NHS number has exactly 2 events (one CREATE, one UPDATE)
     for nhs, count in nhs_counts.items():
         assert count == 2, f"NHS {nhs} expected 2 events (CREATE + UPDATE) but received {count}"
+
+    _assert_no_mns_events_for_null_nhs_rows(context, null_nhs_rows)
 
 
 def build_batch_row_from_api_object(context, action):
