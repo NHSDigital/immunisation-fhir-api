@@ -75,7 +75,7 @@ updates:
     directories:
       - "/infrastructure/account"
       - "/infrastructure/instance"
-      - "/infrastructure/terraform_aws_backup/**"
+      - "/infrastructure/backup/**"
     schedule:
       interval: "daily"
     open-pull-requests-limit: 1
