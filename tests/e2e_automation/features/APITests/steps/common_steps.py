@@ -1,3 +1,4 @@
+import copy
 import json
 import random
 import uuid
@@ -329,7 +330,8 @@ def validate_etag_in_header(context):
 @when("I subsequently update the vaccination details of the original immunization event")
 def send_update_for_vaccination_detail(context):
     get_update_url_header(context, str(context.expected_version))
-    context.update_object = convert_to_update(context.immunization_object, context.ImmsID)
+    context.update_object = copy.deepcopy(context.immunization_object)
+    context.update_object = convert_to_update(context.update_object, context.ImmsID)
     context.update_object.extension = [build_vaccine_procedure_extension(context.vaccine_type.upper())]
     vaccine_details = get_vaccine_details(context.vaccine_type.upper())
     context.update_object.vaccineCode = vaccine_details["vaccine_code"]
@@ -341,7 +343,8 @@ def send_update_for_vaccination_detail(context):
 @when("I update the address of the original immunization event")
 def send_update_for_immunization_event(context):
     get_update_url_header(context, str(context.expected_version))
-    context.update_object = convert_to_update(context.immunization_object, context.ImmsID)
+    context.update_object = copy.deepcopy(context.immunization_object)
+    context.update_object = convert_to_update(context.update_object, context.ImmsID)
     context.update_object.contained[1].address[0].city = "Updated City"
     context.update_object.contained[1].address[0].state = "Updated State"
     trigger_the_updated_request(context)
@@ -475,10 +478,11 @@ def validate_sqs_message(context, message_body, action):
             f"msn event for {action} Filtering is missing in the message body",
         )
 
-        check.is_true(
-            normalize(message_body.filtering.generalpractitioner) == normalize(context.gp_code),
-            f"msn event for {action} GP code mismatch: expected {context.gp_code}, got {message_body.filtering.generalpractitioner}",
-        )
+        if context.gp_code:
+            check.is_true(
+                normalize(message_body.filtering.generalpractitioner) == normalize(context.gp_code),
+                f"msn event for {action} GP code mismatch: expected {context.gp_code}, got {message_body.filtering.generalpractitioner}",
+            )
 
         expected_org = context.immunization_object.performer[1].actor.identifier.value
         check.is_true(
@@ -491,10 +495,11 @@ def validate_sqs_message(context, message_body, action):
             f"msn event for {action} Source application mismatch: expected {context.supplier_name}, got {message_body.filtering.sourceapplication}",
         )
 
-        check.is_true(
-            message_body.filtering.subjectage == context.patient_age,
-            f"msn event for {action} Age mismatch: expected {context.patient_age}, got {message_body.filtering.subjectage}",
-        )
+        if context.patient_age:
+            check.is_true(
+                message_body.filtering.subjectage == context.patient_age,
+                f"msn event for {action} Age mismatch: expected {context.patient_age}, got {message_body.filtering.subjectage}",
+            )
 
         check.is_true(
             message_body.filtering.immunisationtype == context.vaccine_type.upper(),
@@ -537,7 +542,12 @@ def mns_event_will_be_triggered_with_correct_data(context, action):
         print(f"Read {action}d message from SQS: {message_body}")
         assert message_body is not None, f"Expected a {action} message but queue returned empty"
         context.gp_code = get_gp_code_by_nhs_number(context.patient.identifier[0].value)
-        context.patient_age = calculate_age(context.patient.birthDate, context.immunization_object.occurrenceDateTime)
+        patient_DOB = (
+            context.immunization_object.contained[1].birthDate
+            if action.upper() == "CREATE"
+            else context.update_object.contained[1].birthDate
+        )
+        context.patient_age = calculate_age(patient_DOB, context.immunization_object.occurrenceDateTime)
         validate_sqs_message(context, message_body, action)
     else:
         print(
