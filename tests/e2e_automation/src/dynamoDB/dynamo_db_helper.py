@@ -1,3 +1,4 @@
+import datetime
 import time
 from collections import Counter
 from datetime import UTC
@@ -26,6 +27,8 @@ from src.objectModels.api_data_objects import (
     Practitioner,
     ProtocolApplied,
 )
+
+AUTOMATION_TEST_STATUS = "Not processed - Automation testing"
 
 deserializer = TypeDeserializer()
 
@@ -1096,12 +1099,13 @@ def update_audit_table_for_failed_status(item: dict, aws_profile_name: str, env:
     try:
         response = table.update_item(
             Key={"message_id": message_id},
-            UpdateExpression="SET #s = :new_status",
+            UpdateExpression="SET #s = :new_status, cleaned_at = :ts",
             ConditionExpression="attribute_exists(message_id) AND #s = :current_status",
             ExpressionAttributeNames={"#s": "status"},
             ExpressionAttributeValues={
-                ":new_status": "Not processed - Automation testing",
+                ":new_status": AUTOMATION_TEST_STATUS,
                 ":current_status": "Failed",
+                ":ts": datetime.now(UTC).strftime("%Y%m%dT%H%M%S00"),
             },
             ReturnValues="UPDATED_NEW",
         )
@@ -1172,7 +1176,7 @@ def cleanup_failed_audit_records_for_filename(filename: str, aws_profile_name: s
     return updated
 
 
-def cleanup_failed_audit_records_before_tests(aws_profile_name: str, env: str, hours: int = 48) -> int:
+def cleanup_failed_audit_records_before_tests(aws_profile_name: str, env: str, hours: int = 24) -> int:
     """
     Scans the audit table for all records with status='Failed' whose timestamp
     falls within the last `hours` hours, and updates them to
@@ -1226,6 +1230,6 @@ def cleanup_failed_audit_records_before_tests(aws_profile_name: str, env: str, h
     updated = sum(update_audit_table_for_failed_status(item, aws_profile_name, env) for item in items)
 
     print(
-        f"[PRE-TEST CLEANUP] Updated {updated} of {len(items)} 'Failed' audit record(s) to 'Not processed - Automation testing'."
+        f"[PRE-TEST CLEANUP] Updated {updated} of {len(items)} 'Failed' audit record(s) to '{AUTOMATION_TEST_STATUS}'."
     )
     return updated
