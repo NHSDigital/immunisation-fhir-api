@@ -38,9 +38,8 @@ plan-ci: workspace
 plan-changes: workspace
 	 $(tf_cmd) plan $(tf_vars) -out=plan && $(tf_cmd) show -no-color -json plan | jq -r '.resource_changes[] | select(.change.actions[0]=="update" or .change.actions[0]=="create" or .change.actions[0]=="add") | .address'
 
-# TODO - remove --auto-approve once we've switched to the new deployment pipeline in GitHub Actions
 apply: workspace
-	$(tf_cmd) apply $(tf_vars) --auto-approve
+	$(tf_cmd) apply $(tf_vars)
 
 apply-ci: workspace
 	$(tf_cmd) apply $(tf_vars) -input=false tfplan
@@ -54,7 +53,7 @@ destroy: workspace
 	$(tf_cmd) workspace delete $(sub_environment)
 
 graph: workspace
-	$(tf_cmd) graph 
+	$(tf_cmd) graph
 
 output:
 	$(tf_cmd) output -raw $(name)
