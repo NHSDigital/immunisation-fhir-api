@@ -4,7 +4,10 @@ from pathlib import Path
 import allure
 import pytest
 from dotenv import load_dotenv
-from src.dynamoDB.dynamo_db_helper import cleanup_failed_audit_records_for_filename
+from src.dynamoDB.dynamo_db_helper import (
+    cleanup_failed_audit_records_before_tests,
+    cleanup_failed_audit_records_for_filename,
+)
 from utilities.api_fhir_immunization_helper import (
     empty_folder,
     get_response_body_for_display,
@@ -77,6 +80,12 @@ def global_context():
     s3_env = os.getenv("S3_env")
     aws_account_id = os.getenv("aws_account_id")
     mns_validation_required = os.getenv("mns_validation_required", "false").strip().lower() == "true"
+
+    # Pre-test cleanup: update any 'Failed' audit records from the last 48 hours
+    # so they don't block the batch_processor_filter from processing new files.
+    if s3_env and aws_profile_name:
+        cleanup_failed_audit_records_before_tests(aws_profile_name, s3_env)
+
     if s3_env and aws_account_id and mns_validation_required:
         purge_all_queues(s3_env, aws_account_id)
 
@@ -174,7 +183,10 @@ def pytest_bdd_after_scenario(request, feature, scenario):
                         f"Expected status code 204, but got {context.response.status_code}. "
                         f"Response: {get_response_body_for_display(context.response)}"
                     )
-                    mns_event_will_be_triggered_with_correct_data_for_deleted_event(context)
+                    if context.mns_validation_required.strip().lower() == "true":
+                        mns_event_will_be_triggered_with_correct_data_for_deleted_event(context)
+                    else:
+                        print("MNS validation not required, skipping MNS event verification for deleted event.")
             except AssertionError:
                 raise
             except Exception as e:
@@ -205,13 +217,11 @@ def pytest_bdd_after_scenario(request, feature, scenario):
 
             print("Batch cleanup finished.")
         else:
-            print(
-                " No IMMS_ID column or no values present as test failed due to as exception — skipping delete cleanup."
-            )
+            print("No IMMS_ID column or no values present as test failed due to an exception — skipping delete cleanup.")
 
     # Unconditional audit table cleanup for every batch scenario.
     # This handles the case where the @when archive-wait assert raised before
     # the @then step containing the old inline cleanup call could execute,
-    # leaving a "Failed" record inthe next test run's DynamoDB query.
+    # leaving a "Failed" record in the next test run's DynamoDB query.
     if hasattr(context, "filename") and context.filename and hasattr(context, "S3_env") and context.S3_env:
         cleanup_failed_audit_records_for_filename(context.filename, context.aws_profile_name, context.S3_env)

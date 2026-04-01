@@ -1,5 +1,6 @@
 import time
 from collections import Counter
+from datetime import UTC
 
 import boto3
 import pytest_check as check
@@ -1168,4 +1169,63 @@ def cleanup_failed_audit_records_for_filename(filename: str, aws_profile_name: s
 
     if updated:
         print(f"✅ Cleaned up {updated} 'Failed' audit record(s) for filename={filename}.")
+    return updated
+
+
+def cleanup_failed_audit_records_before_tests(aws_profile_name: str, env: str, hours: int = 48) -> int:
+    """
+    Scans the audit table for all records with status='Failed' whose timestamp
+    falls within the last `hours` hours, and updates them to
+    'Not processed - Automation testing'.
+
+    Intended to be called once per session (in conftest.py) before tests run,
+    so that stale 'Failed' records left by previous runs do not block the
+    batch_processor_filter from picking up new files.
+
+    Returns the count of records that were updated.
+    """
+    from datetime import datetime, timedelta
+
+    db = DynamoDBHelper(aws_profile_name, env)
+    table = db.get_batch_audit_table()
+
+    cutoff = (datetime.now(UTC) - timedelta(hours=hours)).strftime("%Y%m%dT%H%M%S00")
+
+    items: list[dict] = []
+    exclusive_start_key = None
+
+    while True:
+        scan_kwargs = {
+            "FilterExpression": "#s = :failed AND #ts >= :cutoff",
+            "ExpressionAttributeNames": {"#s": "status", "#ts": "timestamp"},
+            "ExpressionAttributeValues": {
+                ":failed": "Failed",
+                ":cutoff": cutoff,
+            },
+        }
+        if exclusive_start_key:
+            scan_kwargs["ExclusiveStartKey"] = exclusive_start_key
+
+        try:
+            response = table.scan(**scan_kwargs)
+        except ClientError as e:
+            print(f"[PRE-TEST CLEANUP] Failed to scan audit table: {e}")
+            return 0
+
+        items.extend(response.get("Items", []))
+        exclusive_start_key = response.get("LastEvaluatedKey")
+        if not exclusive_start_key:
+            break
+
+    if not items:
+        print(f"[PRE-TEST CLEANUP] No 'Failed' audit records found in the last {hours} hours.")
+        return 0
+
+    print(f"[PRE-TEST CLEANUP] Found {len(items)} 'Failed' audit record(s) from the last {hours} hours. Updating...")
+
+    updated = sum(update_audit_table_for_failed_status(item, aws_profile_name, env) for item in items)
+
+    print(
+        f"[PRE-TEST CLEANUP] Updated {updated} of {len(items)} 'Failed' audit record(s) to 'Not processed - Automation testing'."
+    )
     return updated
