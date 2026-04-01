@@ -85,7 +85,12 @@ def global_context():
 def temp_apigee_apps():
     if use_temp_apigee_apps():
         apigee_app_mgr = ApigeeOnDemandAppManager()
-        created_apps = apigee_app_mgr.setup_apps_and_product()
+        try:
+            created_apps = apigee_app_mgr.setup_apps_and_product()
+        except Exception as e:
+            print(f"[WARN] Apigee on-demand app setup failed — tests requiring dynamic apps will fail individually: {e}")
+            yield None
+            return
 
         for test_app in created_apps:
             os.environ[f"{test_app.supplier}_client_Id"] = test_app.client_id
