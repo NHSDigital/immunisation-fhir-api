@@ -8,12 +8,16 @@ updates:
   - package-ecosystem: "docker"
     directories:
       - "/lambdas/ack_backend"
+      - "/lambdas/backend"
       - "/lambdas/batch_processor_filter"
       - "/lambdas/delta_backend"
       - "/lambdas/filenameprocessor"
+      - "/lambdas/id_sync"
       - "/lambdas/mesh_processor"
+      - "/lambdas/mns_publisher"
       - "/lambdas/recordforwarder"
       - "/lambdas/recordprocessor"
+      - "/lambdas/redis_sync"
       - "/sandbox"
     schedule:
       interval: "daily"
@@ -57,11 +61,14 @@ updates:
       - "/lambdas/id_sync"
       - "/lambdas/mesh_processor"
       - "/lambdas/mns_subscription"
+      - "/lambdas/mns_publisher"
       - "/lambdas/recordforwarder"
       - "/lambdas/recordprocessor"
       - "/lambdas/redis_sync"
       - "/lambdas/shared"
       - "/tests/e2e_automation"
+      - "/tests/perf_tests"
+      - "/quality_checks"
     schedule:
       interval: "daily"
     open-pull-requests-limit: 1
@@ -75,6 +82,7 @@ updates:
     directories:
       - "/infrastructure/account"
       - "/infrastructure/instance"
+      - "/infrastructure/mesh"
       - "/infrastructure/terraform_aws_backup/**"
     schedule:
       interval: "daily"
