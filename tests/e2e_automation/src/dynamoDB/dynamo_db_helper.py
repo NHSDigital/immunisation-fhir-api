@@ -1092,3 +1092,32 @@ def update_audit_table_for_failed_status(item: dict, aws_profile_name: str, env:
     )
 
     print(f"✅ Updated audit status for message_id={key['message_id']}: {response.get('Attributes')}")
+
+
+def update_audit_table_for_failed_File_status_with_file_name(file_name: str, aws_profile_name: str, env: str):
+    db = DynamoDBHelper(aws_profile_name, env)
+    tableImmsAudit = db.get_batch_audit_table()
+
+    response = tableImmsAudit.query(
+        IndexName="filename_index",
+        KeyConditionExpression=Key("filename").eq(file_name),
+    )
+    items = response.get("Items", [])
+
+    if items:
+        print(f"\nFound Audit detail for filename={file_name}\n")
+        for item in items:
+            if item.get("status") == "Failed":
+                key = {"message_id": item["message_id"]}
+
+                update_response = tableImmsAudit.update_item(
+                    Key=key,
+                    UpdateExpression="SET #s = :new_status",
+                    ExpressionAttributeNames={"#s": "status"},
+                    ExpressionAttributeValues={":new_status": "Not processed - Automation testing - Failed test"},
+                    ReturnValues="UPDATED_NEW",
+                )
+
+                print(f"Updated audit status for message_id={key['message_id']}: {update_response.get('Attributes')}")
+            else:
+                print(f"Skipping update for message_id={item['message_id']} with status '{item.get('status')}'")
