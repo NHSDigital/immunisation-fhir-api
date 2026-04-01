@@ -171,12 +171,29 @@ def pytest_bdd_after_scenario(request, feature, scenario):
                 )
                 if context.response.status_code in (401, 403):
                     # Apigee token has expired during a long test session (~13 min run).
-                    # The token is scoped per-scenario but the DELETE runs post-scenario.
-                    # Log a warning and skip — do NOT assert, as this would report the
-                    # teardown expiry as the test failure and mask the actual scenario result.
+                    # Refresh the token and retry the DELETE once before giving up.
                     print(
                         f"[TEARDOWN][WARN] DELETE returned {context.response.status_code} for "
-                        f"{context.ImmsID} — Apigee token likely expired. Skipping teardown assertion."
+                        f"{context.ImmsID} — Apigee token likely expired. Refreshing token and retrying..."
+                    )
+                    try:
+                        get_tokens(context, context.supplier_name)
+                        get_delete_url_header(context)
+                        context.response = http_requests_session.delete(
+                            f"{context.url}/{context.ImmsID}", headers=context.headers
+                        )
+                    except Exception as refresh_err:
+                        print(
+                            f"[TEARDOWN][WARN] Token refresh failed for {context.ImmsID}: {refresh_err}. Skipping teardown."
+                        )
+                        context.response = None
+
+                if context.response is None:
+                    pass
+                elif context.response.status_code in (401, 403):
+                    print(
+                        f"[TEARDOWN][WARN] DELETE still returned {context.response.status_code} for "
+                        f"{context.ImmsID} after token refresh. Skipping teardown assertion."
                     )
                 else:
                     assert context.response.status_code == 204, (
