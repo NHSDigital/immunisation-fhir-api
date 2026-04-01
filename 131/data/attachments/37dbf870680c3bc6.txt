@@ -1,0 +1,1 @@
+✅ Step Passed: **Valid json payload is created where patient surname is 'name_length_36'

@@ -1,0 +1,1 @@
+✅ Step Passed: **Send a search request with POST method using target-disease and Date From and Date To for Immunization event created
