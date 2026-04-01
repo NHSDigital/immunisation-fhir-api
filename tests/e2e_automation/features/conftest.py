@@ -191,7 +191,7 @@ def pytest_bdd_after_scenario(request, feature, scenario):
                 print(f"Sending DELETE request to: {delete_url}")
                 response = http_requests_session.delete(delete_url, headers=context.headers)
 
-                if response.status_code != 204:
+                if response.status_code in (401, 403):
                     print(
                         f"Cleanup DELETE returned {response.status_code} for {imms_id} "
                         f"(teardown best-effort, not failing test). "
