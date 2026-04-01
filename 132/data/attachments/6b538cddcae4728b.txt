@@ -1,0 +1,1 @@
+✅ Step Passed: **The delta table will not be populated with DPSFULL records in batch file
