@@ -1,0 +1,7 @@
+❌ Step failed! **Valid json payload is created where patient forename is 'white_space_array'** 
+ Error: <html>
+<head><title>403 Forbidden</title></head>
+<body>
+<center><h1>403 Forbidden</h1></center>
+</body>
+</html>
