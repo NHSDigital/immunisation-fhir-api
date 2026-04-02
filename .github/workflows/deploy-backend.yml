@@ -14,6 +14,14 @@ on:
         required: false
         type: string
         default: ""
+      build_ack_backend_image:
+        required: false
+        type: boolean
+        default: false
+      ack_backend_image_version:
+        required: false
+        type: string
+        default: ""
       diff_base_sha:
         required: false
         type: string
@@ -40,6 +48,9 @@ on:
       recordprocessor_image_version:
         description: Selected immutable image selector used for recordprocessor deployment
         value: ${{ jobs.deploy-recordprocessor-image.outputs.image_uri }}
+      ack_backend_image_version:
+        description: Selected immutable image selector used for ack backend deployment
+        value: ${{ jobs.deploy-ack-backend-image.outputs.image_uri }}
   workflow_dispatch:
     inputs:
       apigee_environment:
@@ -70,6 +81,16 @@ on:
         default: true
       recordprocessor_image_version:
         description: Existing immutable recordprocessor image selector (tag, digest, or image URI) for reuse mode
+        required: false
+        type: string
+        default: ""
+      build_ack_backend_image:
+        description: Build and publish a new ack backend image
+        required: true
+        type: boolean
+        default: true
+      ack_backend_image_version:
+        description: Existing immutable ack backend image selector (tag, digest, or image URI) for reuse mode
         required: false
         type: string
         default: ""
@@ -122,18 +143,43 @@ jobs:
       image_tag_prefix: ${{ inputs.sub_environment }}-
       allow_implicit_tag_prefix_reuse: ${{ inputs.sub_environment == 'internal-dev' || startsWith(inputs.sub_environment, 'pr-') }}
 
+  deploy-ack-backend-image:
+    name: Deploy ack backend image
+    uses: ./.github/workflows/deploy-lambda-artifact.yml
+    with:
+      lambda_name: ack-backend
+      environment: ${{ inputs.environment }}
+      sub_environment: ${{ inputs.sub_environment }}
+      build_image: ${{ inputs.build_ack_backend_image }}
+      image_version: ${{ inputs.ack_backend_image_version }}
+      run_diff_check: ${{ inputs.run_diff_check }}
+      diff_base_sha: ${{ inputs.diff_base_sha }}
+      diff_head_sha: ${{ inputs.diff_head_sha }}
+      lambda_paths: |
+        lambdas/ack_backend/
+      shared_paths: |
+        lambdas/shared/src/common/
+      docker_context_path: lambdas
+      dockerfile_path: lambdas/ack_backend/Dockerfile
+      ecr_repository: imms-ackbackend-repo
+      image_tag_prefix: ${{ inputs.sub_environment }}-
+      allow_implicit_tag_prefix_reuse: ${{ inputs.sub_environment == 'internal-dev' || startsWith(inputs.sub_environment, 'pr-') }}
+
   terraform-plan:
     permissions:
       id-token: write
       contents: read
     needs:
       - deploy-recordprocessor-image
-    if: ${{ !cancelled() && needs.deploy-recordprocessor-image.result == 'success' }}
+      - deploy-ack-backend-image
+    if: ${{ !cancelled() && needs.deploy-recordprocessor-image.result == 'success' && needs.deploy-ack-backend-image.result == 'success' }}
     outputs:
       recordprocessor_image_uri: ${{ needs.deploy-recordprocessor-image.outputs.image_uri }}
+      ack_backend_image_uri: ${{ needs.deploy-ack-backend-image.outputs.image_uri }}
     runs-on: ubuntu-latest
     env:
       TF_VAR_recordprocessor_image_uri: ${{ needs.deploy-recordprocessor-image.outputs.image_uri }}
+      TF_VAR_ack_backend_image_uri: ${{ needs.deploy-ack-backend-image.outputs.image_uri }}
     environment:
       name: ${{ inputs.environment }}
     steps:
@@ -177,6 +223,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TF_VAR_recordprocessor_image_uri: ${{ needs.terraform-plan.outputs.recordprocessor_image_uri }}
+      TF_VAR_ack_backend_image_uri: ${{ needs.terraform-plan.outputs.ack_backend_image_uri }}
     environment:
       name: ${{ inputs.environment }}
     steps:

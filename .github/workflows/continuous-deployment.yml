@@ -21,6 +21,7 @@ jobs:
     with:
       apigee_environment: internal-dev
       build_recordprocessor_image: false
+      build_ack_backend_image: false
       diff_base_sha: ${{ github.event.before }}
       diff_head_sha: ${{ github.sha }}
       run_diff_check: true
@@ -87,6 +88,7 @@ jobs:
     with:
       apigee_environment: ${{ matrix.sub_environment_name }}
       recordprocessor_image_version: ${{ needs.deploy-internal-dev-backend.outputs.recordprocessor_image_version }}
+      ack_backend_image_version: ${{ needs.deploy-internal-dev-backend.outputs.ack_backend_image_version }}
       diff_base_sha: ${{ github.event.before }}
       diff_head_sha: ${{ github.sha }}
       run_diff_check: false

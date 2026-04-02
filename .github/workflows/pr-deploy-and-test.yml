@@ -21,6 +21,7 @@ jobs:
     with:
       apigee_environment: internal-dev
       build_recordprocessor_image: ${{ github.event.action == 'opened' || github.event.action == 'reopened' }}
+      build_ack_backend_image: ${{ github.event.action == 'opened' || github.event.action == 'reopened' }}
       diff_base_sha: ${{ github.event.before }}
       diff_head_sha: ${{ github.event.pull_request.head.sha }}
       run_diff_check: ${{ github.event.action == 'synchronize' }}

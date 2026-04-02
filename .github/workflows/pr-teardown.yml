@@ -53,7 +53,13 @@ jobs:
             # Destroy still evaluates variable validation, so provide a non-empty fallback when output is unavailable.
             recordprocessor_image_uri="placeholder.dkr.ecr.eu-west-2.amazonaws.com/imms-recordprocessor-repo@sha256:0000000000000000000000000000000000000000000000000000000000000000"
           fi
+          ack_backend_image_uri="$(make -s output name=ack_backend_image_uri 2>/dev/null || true)"
+          if [ -z "${ack_backend_image_uri}" ]; then
+            # Destroy still evaluates variable validation, so provide a non-empty fallback when output is unavailable.
+            ack_backend_image_uri="placeholder.dkr.ecr.eu-west-2.amazonaws.com/imms-ackbackend-repo@sha256:0000000000000000000000000000000000000000000000000000000000000000"
+          fi
           echo "TF_VAR_recordprocessor_image_uri=${recordprocessor_image_uri}" >> $GITHUB_ENV
+          echo "TF_VAR_ack_backend_image_uri=${ack_backend_image_uri}" >> $GITHUB_ENV
 
       - name: Install poetry
         run: pip install poetry==2.1.4
@@ -129,3 +135,4 @@ jobs:
           }
 
           cleanup_repo_by_prefix "imms-recordprocessor-repo"
+          cleanup_repo_by_prefix "imms-ackbackend-repo"
