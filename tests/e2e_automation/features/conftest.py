@@ -204,7 +204,7 @@ def pytest_bdd_after_scenario(request, feature, scenario):
         else:
             print("No IMMS_ID values available — skipping delete cleanup.")
 
-    if "Batch_File_Validation_Feature" in tags:
+    if "Batch_File_Validation" in tags:
         update_audit_table_for_failed_File_status_with_file_name(
             context.filename, context.aws_profile_name, context.S3_env
         )

@@ -1074,26 +1074,6 @@ def get_gender_code(input: str) -> GenderCode:
     raise ValueError(f"Invalid gender input: {input}")
 
 
-def update_audit_table_for_failed_status(item: dict, aws_profile_name: str, env: str):
-    if item.get("status") != "Failed":
-        return
-
-    db = DynamoDBHelper(aws_profile_name, env)
-    table = db.get_batch_audit_table()
-
-    key = {"message_id": item["message_id"]}
-
-    response = table.update_item(
-        Key=key,
-        UpdateExpression="SET #s = :new_status",
-        ExpressionAttributeNames={"#s": "status"},
-        ExpressionAttributeValues={":new_status": "Not processed - Automation testing"},
-        ReturnValues="UPDATED_NEW",
-    )
-
-    print(f"✅ Updated audit status for message_id={key['message_id']}: {response.get('Attributes')}")
-
-
 def update_audit_table_for_failed_File_status_with_file_name(file_name: str, aws_profile_name: str, env: str):
     db = DynamoDBHelper(aws_profile_name, env)
     tableImmsAudit = db.get_batch_audit_table()
@@ -1114,7 +1094,7 @@ def update_audit_table_for_failed_File_status_with_file_name(file_name: str, aws
                     Key=key,
                     UpdateExpression="SET #s = :new_status",
                     ExpressionAttributeNames={"#s": "status"},
-                    ExpressionAttributeValues={":new_status": "Not processed - Automation testing - Failed test"},
+                    ExpressionAttributeValues={":new_status": "Not processed - Automation testing"},
                     ReturnValues="UPDATED_NEW",
                 )
 
