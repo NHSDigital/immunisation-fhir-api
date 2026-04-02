@@ -1,0 +1,8 @@
+❌ Step failed! **Valid vaccination record is created with Patient 'SupersedeNhsNo' and vaccine_type 'HEPB'** 
+ Error: 
+          {
+            "error": "invalid_request",
+            "error_description": "client_id is invalid",
+            "message_id": "rrt-7370264874869134972-b-geu2-1488111-26172870-1"
+          }
+        

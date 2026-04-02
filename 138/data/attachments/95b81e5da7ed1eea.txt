@@ -1,0 +1,8 @@
+❌ Step failed! **Valid vaccination record is created with Patient 'Random' and vaccine_type '4IN1'** 
+ Error: 
+          {
+            "error": "invalid_request",
+            "error_description": "client_id is invalid",
+            "message_id": "rrt-1218537127512898586-c-geu2-3410126-29536028-1"
+          }
+        

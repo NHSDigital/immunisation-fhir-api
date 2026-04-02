@@ -1,0 +1,8 @@
+❌ Step failed! **Valid json payload is created where vaccination terms has multiple instances of coding** 
+ Error: 
+          {
+            "error": "invalid_request",
+            "error_description": "client_id is invalid",
+            "message_id": "rrt-6828204091890872726-b-geu2-908673-29655596-1"
+          }
+        

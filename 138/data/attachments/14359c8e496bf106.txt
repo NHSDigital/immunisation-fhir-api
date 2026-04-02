@@ -1,0 +1,8 @@
+❌ Step failed! **I have created a valid vaccination record** 
+ Error: 
+          {
+            "error": "invalid_request",
+            "error_description": "client_id is invalid",
+            "message_id": "rrt-1218537127512898586-c-geu2-3410122-29538016-1"
+          }
+        

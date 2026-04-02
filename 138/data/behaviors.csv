@@ -1,0 +1,7 @@
+"BROKEN","EPIC","FAILED","FEATURE","PASSED","SKIPPED","STORY","UNKNOWN"
+"0","Immunization Service","1","Update the immunization of a patient","24","0","","0"
+"0","Immunization Service","20","Create the immunization event for a patient","65","0","","0"
+"0","Immunization Service","11","Search the immunization of a patient","55","0","","0"
+"0","Immunization Service","3","Read the immunization of a patient","4","0","","0"
+"0","Immunization Service","0","Get the API status","3","1","","0"
+"0","Immunization Service","0","Delete an immunization of a patient","6","0","","0"
