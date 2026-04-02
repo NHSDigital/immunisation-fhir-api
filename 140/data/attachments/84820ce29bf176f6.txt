@@ -1,0 +1,8 @@
+❌ Step failed! **Send a update for Immunization event created with patient address being updated by 'EMIS'** 
+ Error: 
+          {
+            "error": "invalid_request",
+            "error_description": "client_id is invalid",
+            "message_id": "rrt-2783968177653546012-b-geu2-239405-30914645-1"
+          }
+        

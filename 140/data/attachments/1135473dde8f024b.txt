@@ -1,0 +1,8 @@
+❌ Step failed! **Valid vaccination record is created with Patient 'SupersedeNhsNo' and vaccine_type 'PERTUSSIS'** 
+ Error: 
+          {
+            "error": "invalid_request",
+            "error_description": "client_id is invalid",
+            "message_id": "rrt-8481396257490088341-c-geu2-3874394-28722469-1"
+          }
+        

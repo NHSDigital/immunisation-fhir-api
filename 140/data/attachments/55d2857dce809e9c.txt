@@ -1,0 +1,8 @@
+❌ Step failed! **Valid vaccination record is created with Patient 'SFlag' and vaccine_type '3IN1'** 
+ Error: 
+          {
+            "error": "invalid_request",
+            "error_description": "client_id is invalid",
+            "message_id": "rrt-2186491381571648539-a-geu2-3052897-30553328-1"
+          }
+        
