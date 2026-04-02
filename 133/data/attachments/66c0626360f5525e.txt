@@ -1,0 +1,1 @@
+✅ Step Passed: **Api updated event will trigger MNS event with correct data
