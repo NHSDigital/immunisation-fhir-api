@@ -2,7 +2,6 @@ import pandas as pd
 from pytest_bdd import given, parsers, scenarios, then
 from src.dynamoDB.dynamo_db_helper import (
     fetch_batch_audit_table_detail,
-    update_audit_table_for_failed_status,
     validate_audit_table_record,
 )
 from src.objectModels.batch.batch_file_builder import BatchVaccinationRecord
@@ -108,4 +107,3 @@ def validate_imms_audit_table(context, status, queue_name, error_details):
     sorted_items = sorted(table_query_response, key=lambda x: x["timestamp"], reverse=True)
     item = sorted_items[0]
     validate_audit_table_record(context, item, status, error_details, queue_name)
-    update_audit_table_for_failed_status(item, context.aws_profile_name, context.S3_env)
