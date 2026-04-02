@@ -1087,7 +1087,7 @@ def update_audit_table_for_failed_File_status_with_file_name(file_name: str, aws
     if items:
         print(f"\nFound Audit detail for filename={file_name}\n")
         for item in items:
-            if item.get("status") == "Failed":
+            if item.get("status") in ["Failed", "Queued", "Processing"]:
                 key = {"message_id": item["message_id"]}
 
                 update_response = tableImmsAudit.update_item(
