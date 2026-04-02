@@ -70,7 +70,7 @@ on:
           - Batch_File_Validation_Feature
       mns_validation_required:
         description: Set to true if you want the MNS validation to be performed as part of the tests. please keep in mind it will increase execution time.
-        default: "false"
+        default: false
         type: boolean
 
 env:
@@ -82,6 +82,7 @@ env:
   PROXY_NAME: ${{ startsWith(inputs.sub_environment, 'pr-') && format('immunisation-fhir-api-{0}', inputs.sub_environment) || format('immunisation-fhir-api-{0}', inputs.apigee_environment) }}
   STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}
   SOURCE_COMMIT_ID: ${{ github.sha }}
+  MNS_VALIDATION_REQUIRED: ${{ inputs.mns_validation_required || startsWith(inputs.sub_environment, 'pr-') || inputs.apigee_environment == 'internal-dev' }}
 
 jobs:
   wait-for-deployment:
@@ -212,7 +213,7 @@ jobs:
           echo "::add-mask::$token"
           echo "APIGEE_ACCESS_TOKEN=$token" >> $GITHUB_ENV
 
-      - name: Run Pytest-BDD ${{ inputs.service_under_test }} tests with the ${{ inputs.suite_to_run }} filter
+      - name: Run Pytest-BDD ${{ inputs.service_under_test }} tests with the ${{ inputs.suite_to_run }} filter wit MNS validation set to ${{ env.MNS_VALIDATION_REQUIRED }}
         working-directory: tests/e2e_automation
         env:
           S3_env: ${{ startsWith(inputs.sub_environment, 'int-') && 'preprod' || inputs.sub_environment }}
@@ -239,7 +240,7 @@ jobs:
           MEDICUS_client_Id: ${{ secrets.MEDICUS_client_Id }}
           MEDICUS_client_Secret: ${{ secrets.MEDICUS_client_Secret }}
           aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
-          mns_validation_required: ${{ inputs.mns_validation_required || startsWith(inputs.sub_environment, 'pr-') || inputs.apigee_environment == 'internal-dev' }}
+          mns_validation_required: ${{ env.MNS_VALIDATION_REQUIRED }}
           TEST_PATH: ${{ inputs.service_under_test == 'batch' && 'features/batchTests' || inputs.service_under_test == 'fhir_api' && 'features/APITests' || 'features' }}
           TEST_FILTER: ${{ inputs.suite_to_run == 'proxy_smoke' && 'Status_feature' || inputs.suite_to_run }}
         run: poetry run pytest "$TEST_PATH" -m "$TEST_FILTER" --junitxml=output/test-results.xml --alluredir=output/allure-results
