@@ -70,7 +70,7 @@ on:
           - Batch_File_Validation_Feature
       mns_validation_required:
         description: Set to true if you want the MNS validation to be performed as part of the tests. please keep in mind it will increase execution time.
-        default: "false"
+        default: false
         type: boolean
 
 env:
