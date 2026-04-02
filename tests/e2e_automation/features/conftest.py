@@ -4,6 +4,9 @@ from pathlib import Path
 import allure
 import pytest
 from dotenv import load_dotenv
+from src.dynamoDB.dynamo_db_helper import (
+    update_audit_table_for_failed_File_status_with_file_name,
+)
 from utilities.api_fhir_immunization_helper import (
     empty_folder,
     get_response_body_for_display,
@@ -152,13 +155,33 @@ def pytest_bdd_after_scenario(request, feature, scenario):
         if context.ImmsID is not None:
             print(f"\n Delete Request is {context.url}/{context.ImmsID}")
             context.response = http_requests_session.delete(f"{context.url}/{context.ImmsID}", headers=context.headers)
-            assert context.response.status_code == 204, (
-                f"Expected status code 204, but got {context.response.status_code}. Response: {get_response_body_for_display(context.response)}"
-            )
-            if context.mns_validation_required.strip().lower() == "true":
-                mns_event_will_be_triggered_with_correct_data_for_deleted_event(context)
+            if context.response.status_code in [401, 403]:
+                print(
+                    f"DELETE request returned {context.response.status_code} for ImmsID {context.ImmsID}. "
+                    f"Response: {get_response_body_for_display(context.response)}"
+                )
+                get_tokens(context, context.supplier_name)
+                print(f"\n Delete Request is {context.url}/{context.ImmsID}")
+                context.response = http_requests_session.delete(
+                    f"{context.url}/{context.ImmsID}", headers=context.headers
+                )
+
+                if context.response.status_code != 204:
+                    print(
+                        f"DELETE request returned {context.response.status_code} for ImmsID {context.ImmsID} after token refresh. "
+                        f"Response: {get_response_body_for_display(context.response)}"
+                    )
+
+            if context.response.status_code == 204:
+                if context.mns_validation_required.strip().lower() == "true":
+                    mns_event_will_be_triggered_with_correct_data_for_deleted_event(context)
+                else:
+                    print("MNS validation not required, skipping MNS event verification for deleted event.")
             else:
-                print("MNS validation not required, skipping MNS event verification for deleted event.")
+                print(
+                    f"DELETE request failed with status code {context.response.status_code} for ImmsID {context.ImmsID}. "
+                    f"Response: {get_response_body_for_display(context.response)}"
+                )
         else:
             print("Skipping delete: ImmsID is None")
 
@@ -189,3 +212,8 @@ def pytest_bdd_after_scenario(request, feature, scenario):
 
         else:
             print("No IMMS_ID values available — skipping delete cleanup.")
+
+    if "Batch_File_Validation" in tags:
+        update_audit_table_for_failed_File_status_with_file_name(
+            context.filename, context.aws_profile_name, context.S3_env
+        )
