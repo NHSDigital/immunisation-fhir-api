@@ -213,7 +213,7 @@ jobs:
           echo "::add-mask::$token"
           echo "APIGEE_ACCESS_TOKEN=$token" >> $GITHUB_ENV
 
-      - name: Run Pytest-BDD ${{ inputs.service_under_test }} tests with the ${{ inputs.suite_to_run }} filter wit MNS validation set to ${{ env.MNS_VALIDATION_REQUIRED }}
+      - name: Run Pytest-BDD ${{ inputs.service_under_test }} tests with the ${{ inputs.suite_to_run }} filter and MNS validation set to ${{ env.MNS_VALIDATION_REQUIRED }}
         working-directory: tests/e2e_automation
         env:
           S3_env: ${{ startsWith(inputs.sub_environment, 'int-') && 'preprod' || inputs.sub_environment }}
