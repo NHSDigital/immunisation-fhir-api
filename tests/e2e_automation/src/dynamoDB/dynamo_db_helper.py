@@ -1074,21 +1074,30 @@ def get_gender_code(input: str) -> GenderCode:
     raise ValueError(f"Invalid gender input: {input}")
 
 
-def update_audit_table_for_failed_status(item: dict, aws_profile_name: str, env: str):
-    if item.get("status") != "Failed":
-        return
-
+def update_audit_table_for_failed_File_status_with_file_name(file_name: str, aws_profile_name: str, env: str):
     db = DynamoDBHelper(aws_profile_name, env)
-    table = db.get_batch_audit_table()
+    tableImmsAudit = db.get_batch_audit_table()
 
-    key = {"message_id": item["message_id"]}
-
-    response = table.update_item(
-        Key=key,
-        UpdateExpression="SET #s = :new_status",
-        ExpressionAttributeNames={"#s": "status"},
-        ExpressionAttributeValues={":new_status": "Not processed - Automation testing"},
-        ReturnValues="UPDATED_NEW",
+    response = tableImmsAudit.query(
+        IndexName="filename_index",
+        KeyConditionExpression=Key("filename").eq(file_name),
     )
+    items = response.get("Items", [])
 
-    print(f"✅ Updated audit status for message_id={key['message_id']}: {response.get('Attributes')}")
+    if items:
+        print(f"\nFound Audit detail for filename={file_name}\n")
+        for item in items:
+            if item.get("status") in ["Failed", "Queued", "Processing"]:
+                key = {"message_id": item["message_id"]}
+
+                update_response = tableImmsAudit.update_item(
+                    Key=key,
+                    UpdateExpression="SET #s = :new_status",
+                    ExpressionAttributeNames={"#s": "status"},
+                    ExpressionAttributeValues={":new_status": "Not processed - Automation testing"},
+                    ReturnValues="UPDATED_NEW",
+                )
+
+                print(f"Updated audit status for message_id={key['message_id']}: {update_response.get('Attributes')}")
+            else:
+                print(f"Skipping update for message_id={item['message_id']} with status '{item.get('status')}'")
