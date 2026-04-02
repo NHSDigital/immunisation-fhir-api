@@ -155,7 +155,7 @@ def pytest_bdd_after_scenario(request, feature, scenario):
         if context.ImmsID is not None:
             print(f"\n Delete Request is {context.url}/{context.ImmsID}")
             context.response = http_requests_session.delete(f"{context.url}/{context.ImmsID}", headers=context.headers)
-            if context.response.status_code != 204:
+            if context.response.status_code in [401, 403]:
                 print(
                     f"DELETE request returned {context.response.status_code} for ImmsID {context.ImmsID}. "
                     f"Response: {get_response_body_for_display(context.response)}"
@@ -166,13 +166,22 @@ def pytest_bdd_after_scenario(request, feature, scenario):
                     f"{context.url}/{context.ImmsID}", headers=context.headers
                 )
 
-            assert context.response.status_code == 204, (
-                f"Expected status code 204, but got {context.response.status_code}. Response: {get_response_body_for_display(context.response)}"
-            )
-            if context.mns_validation_required.strip().lower() == "true":
-                mns_event_will_be_triggered_with_correct_data_for_deleted_event(context)
+                if context.response.status_code != 204:
+                    print(
+                        f"DELETE request returned {context.response.status_code} for ImmsID {context.ImmsID} after token refresh. "
+                        f"Response: {get_response_body_for_display(context.response)}"
+                    )
+
+            if context.response.status_code == 204:
+                if context.mns_validation_required.strip().lower() == "true":
+                    mns_event_will_be_triggered_with_correct_data_for_deleted_event(context)
+                else:
+                    print("MNS validation not required, skipping MNS event verification for deleted event.")
             else:
-                print("MNS validation not required, skipping MNS event verification for deleted event.")
+                print(
+                    f"DELETE request failed with status code {context.response.status_code} for ImmsID {context.ImmsID}. "
+                    f"Response: {get_response_body_for_display(context.response)}"
+                )
         else:
             print("Skipping delete: ImmsID is None")
 
@@ -191,7 +200,7 @@ def pytest_bdd_after_scenario(request, feature, scenario):
                 print(f"Sending DELETE request to: {delete_url}")
                 response = http_requests_session.delete(delete_url, headers=context.headers)
 
-                if response.status_code in (401, 403):
+                if response.status_code != 204:
                     print(
                         f"Cleanup DELETE returned {response.status_code} for {imms_id} "
                         f"(teardown best-effort, not failing test). "

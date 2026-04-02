@@ -93,7 +93,7 @@ Feature: Validate the file level and columns validations for vaccination batch f
         And bus ack file will not be created
         And Audit table will have 'Failed', 'TPP_3IN1' and 'File headers are invalid.' for the processed batch file
 
-    @Batch_File_Validation@vaccine_type_3IN1  @supplier_name_EMIS
+    @Batch_File_Validation @vaccine_type_3IN1  @supplier_name_EMIS
     Scenario: verify that vaccination file will be rejected if additional column is present
         Given batch file is created with additional column person age for below data
             | patient_id | unique_id       |
