@@ -37,7 +37,8 @@ bucket_matches_account_state() {
 candidate_buckets=()
 
 if [ -n "$state_bucket_environment" ]; then
-  candidate_buckets+=("immunisation-${state_bucket_environment}-terraform-state-files")
+  printf 'immunisation-%s-terraform-state-files\n' "$state_bucket_environment"
+  exit 0
 fi
 
 candidate_buckets+=("immunisation-terraform-state-files")
