@@ -190,16 +190,9 @@ jobs:
 
           echo "deployment_mode=${deployment_mode}" >> "$GITHUB_OUTPUT"
 
-      - name: Login to Amazon ECR
-        id: login-ecr
+      - name: Prepare build metadata
+        id: build-check
         if: ${{ steps.decide.outputs.deployment_mode == 'build' }}
-        uses: aws-actions/amazon-ecr-login@183a1442edf41672e66566b7fc560e297a290896
-
-      - name: Build, publish and emit digest manifest
-        id: build
-        if: ${{ steps.decide.outputs.deployment_mode == 'build' }}
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           set -euo pipefail
 
@@ -208,10 +201,18 @@ jobs:
           GIT_TAG="${TAG_PREFIX}git-${SHORT_SHA}"
           REL_TAG="${TAG_PREFIX}rel-${RELEASE_STAMP}"
 
-          IMAGE_URI_GIT="${ECR_REGISTRY}/${ECR_REPOSITORY}:${GIT_TAG}"
-          IMAGE_URI_REL="${ECR_REGISTRY}/${ECR_REPOSITORY}:${REL_TAG}"
+          REPOSITORY_URI="$(
+            aws ecr describe-repositories \
+              --repository-names "${ECR_REPOSITORY}" \
+              --region "${AWS_REGION}" \
+              --query 'repositories[0].repositoryUri' \
+              --output text
+          )"
 
-          IMAGE_DIGEST="$(
+          IMAGE_URI_GIT="${REPOSITORY_URI}:${GIT_TAG}"
+          IMAGE_URI_REL="${REPOSITORY_URI}:${REL_TAG}"
+
+          EXISTING_IMAGE_DIGEST="$(
             aws ecr describe-images \
               --repository-name "${ECR_REPOSITORY}" \
               --region "${AWS_REGION}" \
@@ -220,19 +221,58 @@ jobs:
               --output text 2>/dev/null || true
           )"
 
-          if [ -z "${IMAGE_DIGEST}" ] || [ "${IMAGE_DIGEST}" = "None" ]; then
-            docker build -f "${DOCKERFILE_PATH}" -t "${IMAGE_URI_GIT}" -t "${IMAGE_URI_REL}" "${DOCKER_CONTEXT_PATH}"
-            docker push "${IMAGE_URI_GIT}"
-            docker push "${IMAGE_URI_REL}"
+          SHOULD_BUILD="false"
+          if [ -z "${EXISTING_IMAGE_DIGEST}" ] || [ "${EXISTING_IMAGE_DIGEST}" = "None" ]; then
+            SHOULD_BUILD="true"
+          fi
 
-            IMAGE_DIGEST="$(
-              aws ecr describe-images \
-                --repository-name "${ECR_REPOSITORY}" \
-                --region "${AWS_REGION}" \
-                --image-ids imageTag="${GIT_TAG}" \
-                --query 'imageDetails[0].imageDigest' \
-                --output text
-            )"
+          echo "git_tag=${GIT_TAG}" >> "$GITHUB_OUTPUT"
+          echo "release_tag=${REL_TAG}" >> "$GITHUB_OUTPUT"
+          echo "repository_uri=${REPOSITORY_URI}" >> "$GITHUB_OUTPUT"
+          echo "image_uri_git=${IMAGE_URI_GIT}" >> "$GITHUB_OUTPUT"
+          echo "image_uri_rel=${IMAGE_URI_REL}" >> "$GITHUB_OUTPUT"
+          echo "existing_image_digest=${EXISTING_IMAGE_DIGEST}" >> "$GITHUB_OUTPUT"
+          echo "should_build=${SHOULD_BUILD}" >> "$GITHUB_OUTPUT"
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        if: ${{ steps.decide.outputs.deployment_mode == 'build' && steps.build-check.outputs.should_build == 'true' }}
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076
+
+      - name: Set up Docker Buildx
+        if: ${{ steps.decide.outputs.deployment_mode == 'build' && steps.build-check.outputs.should_build == 'true' }}
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and publish image with layer caching
+        id: build-image
+        if: ${{ steps.decide.outputs.deployment_mode == 'build' && steps.build-check.outputs.should_build == 'true' }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.DOCKER_CONTEXT_PATH }}
+          file: ${{ env.DOCKERFILE_PATH }}
+          push: true
+          tags: |
+            ${{ steps.build-check.outputs.image_uri_git }}
+            ${{ steps.build-check.outputs.image_uri_rel }}
+          cache-from: type=gha,scope=${{ env.ECR_REPOSITORY }}
+          cache-to: type=gha,mode=max,scope=${{ env.ECR_REPOSITORY }}
+
+      - name: Emit build digest manifest
+        id: build
+        if: ${{ steps.decide.outputs.deployment_mode == 'build' }}
+        env:
+          REPOSITORY_URI: ${{ steps.build-check.outputs.repository_uri }}
+          GIT_TAG: ${{ steps.build-check.outputs.git_tag }}
+          REL_TAG: ${{ steps.build-check.outputs.release_tag }}
+          EXISTING_IMAGE_DIGEST: ${{ steps.build-check.outputs.existing_image_digest }}
+          SHOULD_BUILD: ${{ steps.build-check.outputs.should_build }}
+          BUILT_IMAGE_DIGEST: ${{ steps.build-image.outputs.digest }}
+        run: |
+          set -euo pipefail
+
+          IMAGE_DIGEST="${EXISTING_IMAGE_DIGEST}"
+          if [ "${SHOULD_BUILD}" = "true" ]; then
+            IMAGE_DIGEST="${BUILT_IMAGE_DIGEST}"
           else
             echo "Immutable tag '${GIT_TAG}' already exists. Reusing existing image digest."
           fi
@@ -242,7 +282,7 @@ jobs:
             exit 1
           fi
 
-          IMAGE_URI_PINNED="${ECR_REGISTRY}/${ECR_REPOSITORY}@${IMAGE_DIGEST}"
+          IMAGE_URI_PINNED="${REPOSITORY_URI}@${IMAGE_DIGEST}"
           echo "image_version=${GIT_TAG}" >> "$GITHUB_OUTPUT"
           echo "image_digest=${IMAGE_DIGEST}" >> "$GITHUB_OUTPUT"
           echo "image_uri=${IMAGE_URI_PINNED}" >> "$GITHUB_OUTPUT"
