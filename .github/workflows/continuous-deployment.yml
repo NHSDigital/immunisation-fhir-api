@@ -15,8 +15,16 @@ jobs:
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
+  account-terraform:
+    uses: ./.github/workflows/account-terraform.yml
+    with:
+      base_sha: ${{ github.event.before }}
+      head_sha: ${{ github.sha }}
+      environment: dev
+      artifact_name: dev-account-tfplan
+
   deploy-internal-dev-backend:
-    needs: [run-quality-checks]
+    needs: [run-quality-checks, account-terraform]
     uses: ./.github/workflows/deploy-backend.yml
     with:
       apigee_environment: internal-dev

@@ -25,8 +25,14 @@ init-reconfigure:
 plan: workspace
 	 $(tf_cmd) plan $(tf_vars)
 
+plan-ci: workspace
+	$(tf_cmd) plan $(tf_vars) -out=tfplan -input=false
+
 apply: workspace
 	$(tf_cmd) apply $(tf_vars) -auto-approve
+
+apply-ci: workspace
+	$(tf_cmd) apply $(tf_vars) -input=false tfplan
 
 clean:
 	rm -rf build .terraform upload-key
