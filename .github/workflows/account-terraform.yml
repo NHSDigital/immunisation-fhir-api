@@ -77,9 +77,8 @@ jobs:
       - name: Resolve account terraform state bucket
         id: account-state-bucket
         env:
-          CONFIGURED_ACCOUNT_TERRAFORM_STATE_BUCKET: ${{ vars.ACCOUNT_TERRAFORM_STATE_BUCKET }}
+          CONFIGURED_ACCOUNT_TERRAFORM_STATE_BUCKET: ${{ vars.ACCOUNT_TERRAFORM_STATE_BUCKET || (inputs.environment == 'dev' && 'immunisation-terraform-state-files' || '') }}
           ACCOUNT_TERRAFORM_STATE_ENVIRONMENT: ${{ inputs.state_bucket_environment }}
-          ACCOUNT_TERRAFORM_WORKSPACE: ${{ inputs.environment }}
         run: |
           bucket_name="$(bash ./utilities/scripts/resolve_account_terraform_state_bucket.sh)"
           if [ -z "$bucket_name" ]; then
@@ -143,9 +142,8 @@ jobs:
       - name: Resolve account terraform state bucket
         id: account-state-bucket
         env:
-          CONFIGURED_ACCOUNT_TERRAFORM_STATE_BUCKET: ${{ vars.ACCOUNT_TERRAFORM_STATE_BUCKET }}
+          CONFIGURED_ACCOUNT_TERRAFORM_STATE_BUCKET: ${{ vars.ACCOUNT_TERRAFORM_STATE_BUCKET || (inputs.environment == 'dev' && 'immunisation-terraform-state-files' || '') }}
           ACCOUNT_TERRAFORM_STATE_ENVIRONMENT: ${{ inputs.state_bucket_environment }}
-          ACCOUNT_TERRAFORM_WORKSPACE: ${{ inputs.environment }}
         run: |
           bucket_name="$(bash ./utilities/scripts/resolve_account_terraform_state_bucket.sh)"
           if [ -z "$bucket_name" ]; then
