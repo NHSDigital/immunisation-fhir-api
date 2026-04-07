@@ -79,6 +79,7 @@ jobs:
         env:
           CONFIGURED_ACCOUNT_TERRAFORM_STATE_BUCKET: ${{ vars.ACCOUNT_TERRAFORM_STATE_BUCKET }}
           ACCOUNT_TERRAFORM_STATE_ENVIRONMENT: ${{ inputs.state_bucket_environment }}
+          ACCOUNT_TERRAFORM_WORKSPACE: ${{ inputs.environment }}
         run: |
           bucket_name="$(bash ./utilities/scripts/resolve_account_terraform_state_bucket.sh)"
           if [ -z "$bucket_name" ]; then
@@ -143,6 +144,7 @@ jobs:
         env:
           CONFIGURED_ACCOUNT_TERRAFORM_STATE_BUCKET: ${{ vars.ACCOUNT_TERRAFORM_STATE_BUCKET }}
           ACCOUNT_TERRAFORM_STATE_ENVIRONMENT: ${{ inputs.state_bucket_environment }}
+          ACCOUNT_TERRAFORM_WORKSPACE: ${{ inputs.environment }}
         run: |
           bucket_name="$(bash ./utilities/scripts/resolve_account_terraform_state_bucket.sh)"
           if [ -z "$bucket_name" ]; then
