@@ -2,8 +2,10 @@
 
 set -o nounset errexit pipefail
 
-if [ -n "${CONFIGURED_ACCOUNT_TERRAFORM_STATE_BUCKET:-}" ]; then
-  printf '%s\n' "$CONFIGURED_ACCOUNT_TERRAFORM_STATE_BUCKET"
+configured_bucket="$(printf '%s' "${CONFIGURED_ACCOUNT_TERRAFORM_STATE_BUCKET:-}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+
+if [ -n "$configured_bucket" ]; then
+  printf '%s\n' "$configured_bucket"
   exit 0
 fi
 
