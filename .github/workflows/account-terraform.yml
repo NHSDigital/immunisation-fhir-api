@@ -86,6 +86,7 @@ jobs:
             echo "Resolved empty account terraform state bucket." >&2
             exit 1
           fi
+          echo "Resolved account terraform state bucket: $bucket_name"
           echo "bucket_name=$bucket_name" >> "$GITHUB_OUTPUT"
 
       - name: Terraform Init (account)
@@ -151,6 +152,7 @@ jobs:
             echo "Resolved empty account terraform state bucket." >&2
             exit 1
           fi
+          echo "Resolved account terraform state bucket: $bucket_name"
           echo "bucket_name=$bucket_name" >> "$GITHUB_OUTPUT"
 
       - name: Retrieve Account Terraform Plan

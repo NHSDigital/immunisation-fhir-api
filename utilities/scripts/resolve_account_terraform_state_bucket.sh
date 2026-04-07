@@ -23,6 +23,17 @@ bucket_contains_state() {
   aws s3api head-object --bucket "$bucket_name" --key "$state_key" >/dev/null 2>&1
 }
 
+bucket_matches_account_state() {
+  local bucket_name="$1"
+
+  if ! bucket_contains_state "$bucket_name"; then
+    return 1
+  fi
+
+  aws s3 cp "s3://${bucket_name}/${state_key}" - 2>/dev/null |
+    grep -Eq '"address":"aws_iam_role\.auto_ops"|"address":"aws_iam_openid_connect_provider\.github"|"address":"aws_ecr_repository\.recordprocessor_repository"'
+}
+
 candidate_buckets=()
 
 if [ -n "$state_bucket_environment" ]; then
@@ -32,7 +43,7 @@ fi
 candidate_buckets+=("immunisation-terraform-state-files")
 
 for candidate_bucket in "${candidate_buckets[@]}"; do
-  if bucket_contains_state "$candidate_bucket"; then
+  if bucket_matches_account_state "$candidate_bucket"; then
     printf '%s\n' "$candidate_bucket"
     exit 0
   fi
@@ -47,13 +58,13 @@ mapfile -t buckets < <(
 matching_buckets=()
 
 for bucket in "${buckets[@]}"; do
-  if bucket_contains_state "$bucket"; then
+  if bucket_matches_account_state "$bucket"; then
     matching_buckets+=("$bucket")
   fi
 done
 
 if [ "${#matching_buckets[@]}" -ne 1 ]; then
-  echo "Expected exactly 1 terraform state bucket containing ${state_key}, found ${#matching_buckets[@]}." >&2
+  echo "Expected exactly 1 terraform state bucket containing account state for ${state_key}, found ${#matching_buckets[@]}." >&2
   echo "Set repo/environment variable ACCOUNT_TERRAFORM_STATE_BUCKET to remove ambiguity." >&2
   if [ "${#matching_buckets[@]}" -gt 0 ]; then
     printf '%s\n' "${matching_buckets[@]}" >&2
