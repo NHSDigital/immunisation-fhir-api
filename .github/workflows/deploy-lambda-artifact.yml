@@ -16,7 +16,7 @@ on:
         required: true
         type: string
       build_image:
-        description: Force a fresh build and publish
+        description: Force a fresh build and publish.
         required: false
         type: boolean
         default: false
