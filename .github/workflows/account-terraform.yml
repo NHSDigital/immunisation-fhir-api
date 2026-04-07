@@ -75,7 +75,12 @@ jobs:
         env:
           CONFIGURED_ACCOUNT_TERRAFORM_STATE_BUCKET: ${{ vars.ACCOUNT_TERRAFORM_STATE_BUCKET }}
         run: |
-          echo "bucket_name=$(bash ./utilities/scripts/resolve_account_terraform_state_bucket.sh)" >> "$GITHUB_OUTPUT"
+          bucket_name="$(bash ./utilities/scripts/resolve_account_terraform_state_bucket.sh)"
+          if [ -z "$bucket_name" ]; then
+            echo "Resolved empty account terraform state bucket." >&2
+            exit 1
+          fi
+          echo "bucket_name=$bucket_name" >> "$GITHUB_OUTPUT"
 
       - name: Terraform Init (account)
         working-directory: infrastructure/account
@@ -133,7 +138,12 @@ jobs:
         env:
           CONFIGURED_ACCOUNT_TERRAFORM_STATE_BUCKET: ${{ vars.ACCOUNT_TERRAFORM_STATE_BUCKET }}
         run: |
-          echo "bucket_name=$(bash ./utilities/scripts/resolve_account_terraform_state_bucket.sh)" >> "$GITHUB_OUTPUT"
+          bucket_name="$(bash ./utilities/scripts/resolve_account_terraform_state_bucket.sh)"
+          if [ -z "$bucket_name" ]; then
+            echo "Resolved empty account terraform state bucket." >&2
+            exit 1
+          fi
+          echo "bucket_name=$bucket_name" >> "$GITHUB_OUTPUT"
 
       - name: Retrieve Account Terraform Plan
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
