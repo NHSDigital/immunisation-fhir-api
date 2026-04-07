@@ -1,0 +1,4 @@
+❌ Step failed! **Json bus ack will only contain file metadata and correct failure record entries** 
+ Error: 1 validation error for BatchReport
+summary -> ingestionTime -> end
+  ingestionTime.end must be greater than start (type=value_error)
