@@ -21,6 +21,7 @@ jobs:
       base_sha: ${{ github.event.before }}
       head_sha: ${{ github.sha }}
       environment: dev
+      state_bucket_environment: internal-dev
       artifact_name: dev-account-tfplan
 
   deploy-internal-dev-backend:

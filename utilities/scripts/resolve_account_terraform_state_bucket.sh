@@ -3,9 +3,15 @@
 set -o nounset errexit pipefail
 
 configured_bucket="$(printf '%s' "${CONFIGURED_ACCOUNT_TERRAFORM_STATE_BUCKET:-}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+state_bucket_environment="$(printf '%s' "${ACCOUNT_TERRAFORM_STATE_ENVIRONMENT:-}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
 
 if [ -n "$configured_bucket" ]; then
   printf '%s\n' "$configured_bucket"
+  exit 0
+fi
+
+if [ -n "$state_bucket_environment" ]; then
+  printf 'immunisation-%s-terraform-state-files\n' "$state_bucket_environment"
   exit 0
 fi
 

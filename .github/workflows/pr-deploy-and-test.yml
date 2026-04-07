@@ -20,6 +20,7 @@ jobs:
       base_sha: ${{ github.event.pull_request.base.sha }}
       head_sha: ${{ github.event.pull_request.head.sha }}
       environment: dev
+      state_bucket_environment: internal-dev
       artifact_name: pr-dev-account-tfplan
 
   deploy-pr-backend:
