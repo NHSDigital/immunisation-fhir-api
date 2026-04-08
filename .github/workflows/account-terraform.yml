@@ -58,28 +58,19 @@ jobs:
             base_sha=$(git rev-parse HEAD~1)
           fi
 
-          if [[ ! "$base_sha" =~ ^[0-9a-f]{40}$ ]]; then
-            echo "Invalid base SHA: $base_sha" >&2
-            exit 1
-          fi
-
-          if [[ ! "$head_sha" =~ ^[0-9a-f]{40}$ ]]; then
-            echo "Invalid head SHA: $head_sha" >&2
-            exit 1
-          fi
+          for sha_name in base_sha head_sha; do
+            if [[ ! "${!sha_name}" =~ ^[0-9a-f]{40}$ ]]; then
+              echo "Invalid $sha_name: ${!sha_name}" >&2
+              exit 1
+            fi
+          done
 
           account_changed_files=$(git diff --name-only "$base_sha" "$head_sha" -- infrastructure/account)
           if [ -n "$account_changed_files" ]; then
             echo "changes detected in files:"
             printf '%s\n' "$account_changed_files"
-            echo "account_infra_changed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "account_infra_changed=false" >> "$GITHUB_OUTPUT"
           fi
-
-      - name: Skip account terraform
-        if: ${{ steps.diff.outputs.account_infra_changed != 'true' }}
-        run: echo "No account-level infrastructure changes detected."
+          echo "account_infra_changed=$( [ -n "$account_changed_files" ] && echo true || echo false )" >> "$GITHUB_OUTPUT"
 
       - name: Connect to AWS
         if: ${{ steps.diff.outputs.account_infra_changed == 'true' }}

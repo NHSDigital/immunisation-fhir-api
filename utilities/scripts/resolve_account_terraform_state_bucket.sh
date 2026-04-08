@@ -1,16 +1,9 @@
 #!/bin/bash
 
-set -o nounset errexit pipefail
+set -euo pipefail
 
-trim() {
-  local value="${1-}"
-  value="${value#"${value%%[![:space:]]*}"}"
-  value="${value%"${value##*[![:space:]]}"}"
-  printf '%s' "$value"
-}
-
-configured_bucket="$(trim "${CONFIGURED_ACCOUNT_TERRAFORM_STATE_BUCKET:-}")"
-state_bucket_environment="$(trim "${ACCOUNT_TERRAFORM_STATE_ENVIRONMENT:-}")"
+read -r configured_bucket <<< "${CONFIGURED_ACCOUNT_TERRAFORM_STATE_BUCKET:-}"
+read -r state_bucket_environment <<< "${ACCOUNT_TERRAFORM_STATE_ENVIRONMENT:-}"
 
 [ -n "$configured_bucket" ] && printf '%s\n' "$configured_bucket" && exit 0
 
