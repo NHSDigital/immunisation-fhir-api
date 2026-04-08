@@ -9,24 +9,18 @@ resource "aws_ecr_repository" "ackbackend_repository" {
 resource "aws_ecr_lifecycle_policy" "ackbackend_repository_lifecycle_policy" {
   repository = aws_ecr_repository.ackbackend_repository.name
 
-  policy = <<EOF
-{
-  "rules": [
-    {
-      "rulePriority": 1,
-      "description": "Keep last 10 images",
-      "selection": {
-        "tagStatus": "any",
-        "countType": "imageCountMoreThan",
-        "countNumber": 10
-      },
-      "action": {
-        "type": "expire"
+  policy = jsonencode({
+    rules = [{
+      rulePriority = 1
+      description  = "Keep last 10 images"
+      selection = {
+        tagStatus   = "any"
+        countType   = "imageCountMoreThan"
+        countNumber = 10
       }
-    }
-  ]
-}
-EOF
+      action = { type = "expire" }
+    }]
+  })
 }
 
 resource "aws_ecr_repository_policy" "ackbackend_repository_lambda_image_retrieval_policy" {
