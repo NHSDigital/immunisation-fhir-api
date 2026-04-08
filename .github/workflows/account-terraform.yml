@@ -32,6 +32,10 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.environment }}
+    env:
+      ACCOUNT_TERRAFORM_BASE_SHA: ${{ inputs.base_sha }}
+      ACCOUNT_TERRAFORM_HEAD_SHA: ${{ inputs.head_sha }}
+      ACCOUNT_TERRAFORM_ENVIRONMENT: ${{ inputs.environment }}
     outputs:
       account_infra_changed: ${{ steps.diff.outputs.account_infra_changed }}
     steps:
@@ -43,12 +47,12 @@ jobs:
       - name: Detect account terraform changes
         id: diff
         run: |
-          base_sha="${{ inputs.base_sha }}"
+          base_sha="$ACCOUNT_TERRAFORM_BASE_SHA"
           if [ -z "$base_sha" ] || [ "$base_sha" = "0000000000000000000000000000000000000000" ]; then
             base_sha=$(git rev-parse HEAD~1)
           fi
 
-          changed_files=$(git diff --name-only "$base_sha" "${{ inputs.head_sha }}")
+          changed_files=$(git diff --name-only "$base_sha" "$ACCOUNT_TERRAFORM_HEAD_SHA")
           account_changed_files=$(echo "$changed_files" | grep '^infrastructure/account/' || true)
           if [ -n "$account_changed_files" ]; then
             echo "changes detected in files: $account_changed_files"
@@ -92,14 +96,14 @@ jobs:
       - name: Terraform Init (account)
         if: ${{ steps.diff.outputs.account_infra_changed == 'true' }}
         working-directory: infrastructure/account
-        run: make init ENVIRONMENT=${{ inputs.environment }} BUCKET_NAME=${{ steps.account-state-bucket.outputs.bucket_name }}
+        run: make init ENVIRONMENT="$ACCOUNT_TERRAFORM_ENVIRONMENT" BUCKET_NAME="${{ steps.account-state-bucket.outputs.bucket_name }}"
 
       - name: Terraform Plan (account)
         # Ignore cancellations to prevent Terraform from being killed while it holds a state lock
         # A stuck process can still be killed with the force-cancel API operation
         if: ${{ steps.diff.outputs.account_infra_changed == 'true' && !failure() }}
         working-directory: infrastructure/account
-        run: make plan-ci ENVIRONMENT=${{ inputs.environment }}
+        run: make plan-ci ENVIRONMENT="$ACCOUNT_TERRAFORM_ENVIRONMENT"
 
       - name: Save Account Terraform Plan
         if: ${{ steps.diff.outputs.account_infra_changed == 'true' }}
@@ -117,6 +121,8 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.environment }}
+    env:
+      ACCOUNT_TERRAFORM_ENVIRONMENT: ${{ inputs.environment }}
     steps:
       - name: Checkout
         uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
@@ -154,11 +160,11 @@ jobs:
 
       - name: Terraform Init (account)
         working-directory: infrastructure/account
-        run: make init ENVIRONMENT=${{ inputs.environment }} BUCKET_NAME=${{ steps.account-state-bucket.outputs.bucket_name }}
+        run: make init ENVIRONMENT="$ACCOUNT_TERRAFORM_ENVIRONMENT" BUCKET_NAME="${{ steps.account-state-bucket.outputs.bucket_name }}"
 
       - name: Terraform Apply (account)
         # Ignore cancellations to prevent Terraform from being killed while it holds a state lock
         # A stuck process can still be killed with the force-cancel API operation
         if: ${{ !failure() }}
         working-directory: infrastructure/account
-        run: make apply-ci ENVIRONMENT=${{ inputs.environment }}
+        run: make apply-ci ENVIRONMENT="$ACCOUNT_TERRAFORM_ENVIRONMENT"
