@@ -48,11 +48,23 @@ jobs:
         id: diff
         run: |
           base_sha="$ACCOUNT_TERRAFORM_BASE_SHA"
+          head_sha="$ACCOUNT_TERRAFORM_HEAD_SHA"
+
           if [ -z "$base_sha" ] || [ "$base_sha" = "0000000000000000000000000000000000000000" ]; then
             base_sha=$(git rev-parse HEAD~1)
           fi
 
-          changed_files=$(git diff --name-only "$base_sha" "$ACCOUNT_TERRAFORM_HEAD_SHA")
+          if ! printf '%s' "$base_sha" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "Invalid base SHA: $base_sha" >&2
+            exit 1
+          fi
+
+          if ! printf '%s' "$head_sha" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "Invalid head SHA: $head_sha" >&2
+            exit 1
+          fi
+
+          changed_files=$(git diff --name-only "$base_sha" "$head_sha")
           account_changed_files=$(echo "$changed_files" | grep '^infrastructure/account/' || true)
           if [ -n "$account_changed_files" ]; then
             echo "changes detected in files: $account_changed_files"
@@ -96,7 +108,9 @@ jobs:
       - name: Terraform Init (account)
         if: ${{ steps.diff.outputs.account_infra_changed == 'true' }}
         working-directory: infrastructure/account
-        run: make init ENVIRONMENT="$ACCOUNT_TERRAFORM_ENVIRONMENT" BUCKET_NAME="${{ steps.account-state-bucket.outputs.bucket_name }}"
+        env:
+          ACCOUNT_TERRAFORM_BUCKET_NAME: ${{ steps.account-state-bucket.outputs.bucket_name }}
+        run: make init ENVIRONMENT="$ACCOUNT_TERRAFORM_ENVIRONMENT" BUCKET_NAME="$ACCOUNT_TERRAFORM_BUCKET_NAME"
 
       - name: Terraform Plan (account)
         # Ignore cancellations to prevent Terraform from being killed while it holds a state lock
@@ -160,7 +174,9 @@ jobs:
 
       - name: Terraform Init (account)
         working-directory: infrastructure/account
-        run: make init ENVIRONMENT="$ACCOUNT_TERRAFORM_ENVIRONMENT" BUCKET_NAME="${{ steps.account-state-bucket.outputs.bucket_name }}"
+        env:
+          ACCOUNT_TERRAFORM_BUCKET_NAME: ${{ steps.account-state-bucket.outputs.bucket_name }}
+        run: make init ENVIRONMENT="$ACCOUNT_TERRAFORM_ENVIRONMENT" BUCKET_NAME="$ACCOUNT_TERRAFORM_BUCKET_NAME"
 
       - name: Terraform Apply (account)
         # Ignore cancellations to prevent Terraform from being killed while it holds a state lock
