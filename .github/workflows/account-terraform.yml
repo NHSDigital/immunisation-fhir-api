@@ -49,7 +49,9 @@ jobs:
           fi
 
           changed_files=$(git diff --name-only "$base_sha" "${{ inputs.head_sha }}")
-          if echo "$changed_files" | grep -q '^infrastructure/account/'; then
+          account_changed_files=$(echo "$changed_files" | grep '^infrastructure/account/' || true)
+          if [ -n "$account_changed_files" ]; then
+            echo "changes detected in files: $account_changed_files"
             echo "account_infra_changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "account_infra_changed=false" >> "$GITHUB_OUTPUT"
