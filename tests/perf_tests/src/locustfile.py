@@ -11,7 +11,9 @@ import boto3
 import gevent.lock
 import pandas as pd
 from botocore.config import Config
-from locust import HttpUser, constant_throughput, events, task
+from locust import constant_throughput, events, task
+from locust.contrib.fasthttp import FastHttpUser
+from locust.runners import WorkerRunner
 
 from common.api_clients.authentication import AppRestrictedAuth
 
@@ -29,7 +31,7 @@ if not APIGEE_ENVIRONMENT:
 
 _BOTO_CONFIG = Config(
     max_pool_connections=50,  # default is 10; needs to exceed max concurrent Locust users
-    retries={"mode": "standard", "max_attempts": 3},
+    retries={"mode": "standard", "max_attempts": 1},
 )
 _secrets_client = boto3.client(
     "secretsmanager",
@@ -38,6 +40,7 @@ _secrets_client = boto3.client(
 )
 
 PERF_CREATE_TASK_RPS_PER_USER = float(os.getenv("PERF_CREATE_RPS_PER_USER", "1"))
+PERF_SEARCH_RPS_PER_USER = float(os.getenv("PERF_SEARCH_RPS_PER_USER", "1"))
 
 IMMUNIZATION_TARGETS = [
     "3IN1",
@@ -112,7 +115,13 @@ _shared_token_manager = LocustTokenManager(
 
 @events.init.add_listener
 def _pre_warm_auth(environment, **kwargs):
-    """Fetch token once before users spawn so all users start with a cached token."""
+    """Fetch token once before users spawn so all users start with a cached token.
+    Only runs on master/standalone — workers fetch lazily on first request,
+    staggered by the on_start jitter, avoiding simultaneous Secrets Manager calls.
+    """
+    if isinstance(environment.runner, WorkerRunner):
+        return
+
     try:
         token = _shared_token_manager.get_access_token()
         print(f"[perf] Auth pre-warm complete. Token length: {len(token)}")
@@ -126,16 +135,14 @@ def _pre_warm_auth(environment, **kwargs):
                 "\n[perf] FATAL: AWS credentials expired or inaccessible.\n"
                 f"  Error: {exc}\n\n"
                 "  Fix: run one of the following, then retry 'make test':\n"
-                "    aws sso login --sso-session akshay-sso\n"
                 "    aws sso login --profile <your-profile-name>\n",
                 file=sys.stderr,
             )
             sys.exit(1)
-        # Non-credential error — re-raise so it's not silently swallowed
         raise
 
 
-class BaseImmunizationUser(HttpUser):
+class BaseImmunizationUser(FastHttpUser):
     abstract = True
 
     # token_manager = LocustTokenManager(
@@ -164,7 +171,7 @@ class BaseImmunizationUser(HttpUser):
 
     def _build_create_payload(self):
         immunization_target = random.choice(IMMUNIZATION_TARGETS)
-        patient = load_patient_by_id(random.choice(VALID_PATIENT_IDS))
+        patient = load_patient_by_id("Valid_NHS")
         immunization = create_immunization_object(patient, immunization_target)
         return json.loads(immunization.json(exclude_none=True))
 
@@ -183,7 +190,7 @@ class BaseImmunizationUser(HttpUser):
 
 
 class SearchUser(BaseImmunizationUser):
-    wait_time = constant_throughput(1)
+    wait_time = constant_throughput(PERF_SEARCH_RPS_PER_USER)
 
     @task
     def search_single_vacc_type(self):
