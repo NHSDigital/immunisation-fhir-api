@@ -3,7 +3,10 @@
 set -o nounset errexit pipefail
 
 trim() {
-  printf '%s' "$1" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
+  local value="${1-}"
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  printf '%s' "$value"
 }
 
 configured_bucket="$(trim "${CONFIGURED_ACCOUNT_TERRAFORM_STATE_BUCKET:-}")"

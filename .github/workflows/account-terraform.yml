@@ -50,24 +50,24 @@ jobs:
           base_sha="$ACCOUNT_TERRAFORM_BASE_SHA"
           head_sha="$ACCOUNT_TERRAFORM_HEAD_SHA"
 
-          if [ -z "$base_sha" ] || [ "$base_sha" = "0000000000000000000000000000000000000000" ]; then
+          if [[ -z "$base_sha" || "$base_sha" == "0000000000000000000000000000000000000000" ]]; then
             base_sha=$(git rev-parse HEAD~1)
           fi
 
-          if ! printf '%s' "$base_sha" | grep -Eq '^[0-9a-f]{40}$'; then
+          if [[ ! "$base_sha" =~ ^[0-9a-f]{40}$ ]]; then
             echo "Invalid base SHA: $base_sha" >&2
             exit 1
           fi
 
-          if ! printf '%s' "$head_sha" | grep -Eq '^[0-9a-f]{40}$'; then
+          if [[ ! "$head_sha" =~ ^[0-9a-f]{40}$ ]]; then
             echo "Invalid head SHA: $head_sha" >&2
             exit 1
           fi
 
-          changed_files=$(git diff --name-only "$base_sha" "$head_sha")
-          account_changed_files=$(echo "$changed_files" | grep '^infrastructure/account/' || true)
+          account_changed_files=$(git diff --name-only "$base_sha" "$head_sha" -- infrastructure/account)
           if [ -n "$account_changed_files" ]; then
-            echo "changes detected in files: $account_changed_files"
+            echo "changes detected in files:"
+            printf '%s\n' "$account_changed_files"
             echo "account_infra_changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "account_infra_changed=false" >> "$GITHUB_OUTPUT"
