@@ -251,6 +251,7 @@ jobs:
           context: ${{ env.DOCKER_CONTEXT_PATH }}
           file: ${{ env.DOCKERFILE_PATH }}
           push: true
+          provenance: false
           tags: |
             ${{ steps.build-check.outputs.image_uri_git }}
             ${{ steps.build-check.outputs.image_uri_rel }}

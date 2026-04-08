@@ -126,7 +126,7 @@ def process_rows(
     total_rows_processed_count: int = 0,
 ) -> tuple[int, Exception | None]:
     """
-    Processes each row in the csv_reader starting from start_row
+    Processes each row in the csv_reader starting from start_row.
     """
     row_count = 0
     start_row = total_rows_processed_count
