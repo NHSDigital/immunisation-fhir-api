@@ -44,6 +44,7 @@
     "supplier": "EMIS",
     "permissions": [
       "3IN1.CRUDS",
+      "COVID.CRUDS",
       "FLU.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
@@ -60,6 +61,7 @@
     "supplier": "TPP",
     "permissions": [
       "3IN1.CRUDS",
+      "COVID.CRUDS",
       "FLU.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
@@ -76,6 +78,7 @@
     "supplier": "MEDICUS",
     "permissions": [
       "3IN1.CRUDS",
+      "COVID.CRUDS",
       "FLU.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
