@@ -24,6 +24,10 @@ concurrency:
   group: account-terraform-${{ github.repository }}-${{ inputs.environment }}
   cancel-in-progress: false
 
+env:
+  CONFIGURED_ACCOUNT_TERRAFORM_STATE_BUCKET: ${{ vars.ACCOUNT_TERRAFORM_STATE_BUCKET || (inputs.environment == 'dev' && 'immunisation-terraform-state-files' || '') }}
+  ACCOUNT_TERRAFORM_STATE_ENVIRONMENT: ${{ inputs.state_bucket_environment }}
+
 jobs:
   account-terraform-plan:
     permissions:
@@ -93,17 +97,7 @@ jobs:
       - name: Resolve account terraform state bucket
         id: account-state-bucket
         if: ${{ steps.diff.outputs.account_infra_changed == 'true' }}
-        env:
-          CONFIGURED_ACCOUNT_TERRAFORM_STATE_BUCKET: ${{ vars.ACCOUNT_TERRAFORM_STATE_BUCKET || (inputs.environment == 'dev' && 'immunisation-terraform-state-files' || '') }}
-          ACCOUNT_TERRAFORM_STATE_ENVIRONMENT: ${{ inputs.state_bucket_environment }}
-        run: |
-          bucket_name="$(bash ./utilities/scripts/resolve_account_terraform_state_bucket.sh)"
-          if [ -z "$bucket_name" ]; then
-            echo "Resolved empty account terraform state bucket." >&2
-            exit 1
-          fi
-          echo "Resolved account terraform state bucket: $bucket_name"
-          echo "bucket_name=$bucket_name" >> "$GITHUB_OUTPUT"
+        run: echo "bucket_name=$(bash ./utilities/scripts/resolve_account_terraform_state_bucket.sh)" >> "$GITHUB_OUTPUT"
 
       - name: Terraform Init (account)
         if: ${{ steps.diff.outputs.account_infra_changed == 'true' }}
@@ -154,17 +148,7 @@ jobs:
 
       - name: Resolve account terraform state bucket
         id: account-state-bucket
-        env:
-          CONFIGURED_ACCOUNT_TERRAFORM_STATE_BUCKET: ${{ vars.ACCOUNT_TERRAFORM_STATE_BUCKET || (inputs.environment == 'dev' && 'immunisation-terraform-state-files' || '') }}
-          ACCOUNT_TERRAFORM_STATE_ENVIRONMENT: ${{ inputs.state_bucket_environment }}
-        run: |
-          bucket_name="$(bash ./utilities/scripts/resolve_account_terraform_state_bucket.sh)"
-          if [ -z "$bucket_name" ]; then
-            echo "Resolved empty account terraform state bucket." >&2
-            exit 1
-          fi
-          echo "Resolved account terraform state bucket: $bucket_name"
-          echo "bucket_name=$bucket_name" >> "$GITHUB_OUTPUT"
+        run: echo "bucket_name=$(bash ./utilities/scripts/resolve_account_terraform_state_bucket.sh)" >> "$GITHUB_OUTPUT"
 
       - name: Retrieve Account Terraform Plan
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
