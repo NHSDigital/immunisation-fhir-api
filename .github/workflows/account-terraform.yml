@@ -111,12 +111,23 @@ jobs:
           name: ${{ inputs.artifact_name }}
           path: infrastructure/account/tfplan
 
+  account-terraform-approval:
+    permissions: {}
+    needs: [account-terraform-plan]
+    if: ${{ !cancelled() && needs.account-terraform-plan.result == 'success' && needs.account-terraform-plan.outputs.account_infra_changed == 'true' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: account-apply-${{ inputs.environment }}
+    steps:
+      - name: Await manual approval
+        run: echo "Manual approval granted"
+
   account-terraform-apply:
     permissions:
       id-token: write
       contents: read
-    needs: [account-terraform-plan]
-    if: ${{ !cancelled() && needs.account-terraform-plan.result == 'success' && needs.account-terraform-plan.outputs.account_infra_changed == 'true' }}
+    needs: [account-terraform-plan, account-terraform-approval]
+    if: ${{ !cancelled() && needs.account-terraform-plan.result == 'success' && needs.account-terraform-plan.outputs.account_infra_changed == 'true' && needs.account-terraform-approval.result == 'success' }}
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.environment }}
