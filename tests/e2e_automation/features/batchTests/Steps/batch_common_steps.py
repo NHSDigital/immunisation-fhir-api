@@ -553,7 +553,10 @@ def mns_event_will_be_triggered_for_batch_record(context, action, valid_rows):
     null_nhs_rows = [row for row in valid_rows if _is_null_nhs_row(row)]
     positive_rows = [row for row in valid_rows if not _is_null_nhs_row(row)]
 
-    row_lookup = {str(row.NHS_NUMBER): row for row in positive_rows}
+    row_lookup = {}
+    for row in positive_rows:
+        nhs = str(row.NHS_NUMBER)
+        row_lookup.setdefault(nhs, []).append(row)
 
     messages = read_messages_for_batch(
         context,
@@ -568,10 +571,15 @@ def mns_event_will_be_triggered_for_batch_record(context, action, valid_rows):
 
     for msg in messages:
         nhs = msg.subject
+        imms_id = msg.dataref.split("/")[-1]
 
         assert nhs in row_lookup, f"Received message for NHS {nhs} but it does not exist in valid_rows"
 
-        row = row_lookup[nhs]
+        matching_rows = [r for r in row_lookup[nhs] if r.IMMS_ID_CLEAN == imms_id]
+
+        assert matching_rows, f"Message NHS {nhs} with IMMS_ID {imms_id} does not match any row"
+
+        row = matching_rows[0]
 
         context.nhs_number = row.NHS_NUMBER
         context.gp_code = get_gp_code_by_nhs_number(row.NHS_NUMBER)
