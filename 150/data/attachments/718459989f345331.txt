@@ -1,0 +1,67 @@
+✅ Pipe-delimited file saved to: /home/runner/work/immunisation-fhir-api/immunisation-fhir-api/tests/e2e_automation/batch_files_directory/HIB_Vaccinations_v5_YGJ_20260409T09404700.csv
+Batch file created: HIB_Vaccinations_v5_YGJ_20260409T09404700.csv
+Upload successful: HIB_Vaccinations_v5_YGJ_20260409T09404700.csv → immunisation-batch-internal-qa-data-sources
+Batch file uploaded to S3: HIB_Vaccinations_v5_YGJ_20260409T09404700.csv
+Waiting for file in archive: s3://immunisation-batch-internal-qa-data-sources/archive/HIB_Vaccinations_v5_YGJ_20260409T09404700.csv
+Still waiting... (0s)
+Still waiting... (5s)
+Still waiting... (10s)
+Still waiting... (15s)
+Still waiting... (20s)
+Still waiting... (25s)
+Still waiting... (30s)
+File found in archive: archive/HIB_Vaccinations_v5_YGJ_20260409T09404700.csv
+Waiting for ACK files starting with 'ack/HIB_Vaccinations_v5_YGJ_20260409T09404700' in bucket: immunisation-batch-internal-qa-data-destinations
+[MODE] Expecting ONLY CSV ACK file
+[FOUND] .csv file located: ack/HIB_Vaccinations_v5_YGJ_20260409T09404700_InfAck_20260409T09404800.csv
+[COMPLETE] All expected ACK files received
+Waiting for ACK files starting with 'forwardedFile/HIB_Vaccinations_v5_YGJ_20260409T09404700' in bucket: immunisation-batch-internal-qa-data-destinations
+[MODE] Expecting BOTH CSV and JSON ACK files
+[FOUND] .csv file located: forwardedFile/HIB_Vaccinations_v5_YGJ_20260409T09404700_BusAck_20260409T09404800.csv
+[FOUND] .json file located: forwardedFile/HIB_Vaccinations_v5_YGJ_20260409T09404700_BusAck_20260409T09404800.json
+[COMPLETE] All expected ACK files received
+No rows found in BUS ACK file for successful records
+Attempt 1: Found 1 items
+
+Found Audit detail for filename=HIB_Vaccinations_v5_YGJ_20260409T09404700.csv
+
+
+ Imms Event response is {'Items': [{'PatientPK': 'Patient#9734700421', 'Resource': '{"resourceType": "Immunization", "status": "completed", "protocolApplied": [{"targetDisease": [{"coding": [{"system": "http://snomed.info/sct", "code": "709410003", "display": "Haemophilus influenzae type b infection"}]}], "doseNumberPositiveInt": 1}], "reasonCode": [{"coding": [{"system": "http://snomed.info/sct", "code": "443684005"}]}], "recorded": "2026-04-09", "identifier": [{"value": "invalid_unique_id_uri--20260409T094046", "system": "invalid_uri"}], "patient": {"reference": "#Patient1"}, "contained": [{"id": "Patient1", "resourceType": "Patient", "birthDate": "1980-12-07", "gender": "female", "address": [{"postalCode": "W2 1NY"}], "identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9734700421"}], "name": [{"family": "SUCH", "given": ["MILLIE"]}]}, {"resourceType": "Practitioner", "id": "Practitioner1", "name": [{"family": "Tests", "given": ["Automation"]}]}], "vaccineCode": {"coding": [{"system": "http://snomed.info/sct", "code": "9903711000001109", "display": "Menitorix powder and solvent for solution for injection 0.5ml vials (GlaxoSmithKline)"}]}, "manufacturer": {"display": "GlaxoSmithKline UK Ltd"}, "expirationDate": "2026-04-09", "lotNumber": "330088", "extension": [{"url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure", "valueCodeableConcept": {"coding": [{"system": "http://snomed.info/sct", "code": "712833000", "display": "Haemophilus influenzae type B Meningitis C (HibMenC) vaccination codes"}]}}], "occurrenceDateTime": "2026-04-09T09:39:56+00:00", "primarySource": true, "site": {"coding": [{"system": "http://snomed.info/sct", "code": "368208006", "display": "Left upper arm structure"}]}, "route": {"coding": [{"system": "http://snomed.info/sct", "code": "34206005", "display": "Subcutaneous route (qualifier value)"}]}, "doseQuantity": {"value": 0.5, "unit": "millilitre", "system": "http://snomed.info/sct", "code": "ml"}, "performer": [{"actor": {"type": "Organization", "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "X99999"}}}, {"actor": {"reference": "#Practitioner1"}}], "location": {"identifier": {"value": "X99999", "system": "https://fhir.nhs.uk/Id/ods-organization-code"}}, "id": "ceda0816-2c5c-47d3-81f8-2c54026232ef"}', 'Version': Decimal('1'), 'PatientSK': 'HIB#ceda0816-2c5c-47d3-81f8-2c54026232ef', 'Operation': 'CREATE', 'IdentifierPK': 'invalid_uri#invalid_unique_id_uri--20260409T094046', 'PK': 'Immunization#ceda0816-2c5c-47d3-81f8-2c54026232ef', 'SupplierSystem': 'EMIS'}], 'Count': 1, 'ScannedCount': 1, 'ResponseMetadata': {'RequestId': 'R8A0CK3GLR9CCRBQT377P723DFVV4KQNSO5AEMVJF66Q9ASUAAJG', 'HTTPStatusCode': 200, 'HTTPHeaders': {'server': 'Server', 'date': 'Thu, 09 Apr 2026 09:41:25 GMT', 'content-type': 'application/x-amz-json-1.0', 'content-length': '2910', 'connection': 'keep-alive', 'x-amzn-requestid': 'R8A0CK3GLR9CCRBQT377P723DFVV4KQNSO5AEMVJF66Q9ASUAAJG', 'x-amz-crc32': '2862351900'}, 'RetryAttempts': 0}} 
+
+
+ Imms Event response is {'Items': [{'Version': Decimal('1'), 'Operation': 'CREATE', 'Resource': '{"resourceType": "Immunization", "status": "completed", "protocolApplied": [{"targetDisease": [{"coding": [{"system": "http://snomed.info/sct", "code": "709410003", "display": "Haemophilus influenzae type b infection"}]}], "doseNumberPositiveInt": 1}], "reasonCode": [{"coding": [{"system": "http://snomed.info/sct", "code": "443684005"}]}], "recorded": "2026-04-09", "identifier": [{"value": "invalid_site_Code_uri--20260409T094046", "system": "https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk"}], "patient": {"reference": "#Patient1"}, "contained": [{"id": "Patient1", "resourceType": "Patient", "birthDate": "1947-02-05", "gender": "male", "address": [{"postalCode": "LS23 6DH"}], "identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9734076388"}], "name": [{"family": "POWERS", "given": ["SIMON"]}]}, {"resourceType": "Practitioner", "id": "Practitioner1", "name": [{"family": "Tests", "given": ["Automation"]}]}], "vaccineCode": {"coding": [{"system": "http://snomed.info/sct", "code": "9903711000001109", "display": "Menitorix powder and solvent for solution for injection 0.5ml vials (GlaxoSmithKline)"}]}, "manufacturer": {"display": "GlaxoSmithKline UK Ltd"}, "expirationDate": "2026-04-09", "lotNumber": "422015", "extension": [{"url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure", "valueCodeableConcept": {"coding": [{"system": "http://snomed.info/sct", "code": "712833000", "display": "Haemophilus influenzae type B Meningitis C (HibMenC) vaccination codes"}]}}], "occurrenceDateTime": "2026-04-09T09:39:57+00:00", "primarySource": true, "site": {"coding": [{"system": "http://snomed.info/sct", "code": "368208006", "display": "Left upper arm structure"}]}, "route": {"coding": [{"system": "http://snomed.info/sct", "code": "34206005", "display": "Subcutaneous route (qualifier value)"}]}, "doseQuantity": {"value": 0.5, "unit": "millilitre", "system": "http://snomed.info/sct", "code": "ml"}, "performer": [{"actor": {"type": "Organization", "identifier": {"system": "invalid_uri", "value": "X99999"}}}, {"actor": {"reference": "#Practitioner1"}}], "location": {"identifier": {"value": "X99999", "system": "https://fhir.nhs.uk/Id/ods-organization-code"}}, "id": "bd684f72-6e97-4323-84d6-19ce9f128ba7"}', 'PK': 'Immunization#bd684f72-6e97-4323-84d6-19ce9f128ba7', 'PatientPK': 'Patient#9734076388', 'PatientSK': 'HIB#bd684f72-6e97-4323-84d6-19ce9f128ba7', 'IdentifierPK': 'https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk#invalid_site_Code_uri--20260409T094046', 'SupplierSystem': 'EMIS'}], 'Count': 1, 'ScannedCount': 1, 'ResponseMetadata': {'RequestId': 'RJUL94PR7JNDCA4NC27EUD16B3VV4KQNSO5AEMVJF66Q9ASUAAJG', 'HTTPStatusCode': 200, 'HTTPHeaders': {'server': 'Server', 'date': 'Thu, 09 Apr 2026 09:41:25 GMT', 'content-type': 'application/x-amz-json-1.0', 'content-length': '2982', 'connection': 'keep-alive', 'x-amzn-requestid': 'RJUL94PR7JNDCA4NC27EUD16B3VV4KQNSO5AEMVJF66Q9ASUAAJG', 'x-amz-crc32': '3965043011'}, 'RetryAttempts': 0}} 
+
+
+ Imms Event response is {'Items': [{'SupplierSystem': 'EMIS', 'IdentifierPK': 'https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk#invalid_location_Code_uri-20260409T094046', 'Operation': 'CREATE', 'PatientSK': 'HIB#72d53513-b39f-46ea-b561-4b047fa28693', 'Resource': '{"resourceType": "Immunization", "status": "completed", "protocolApplied": [{"targetDisease": [{"coding": [{"system": "http://snomed.info/sct", "code": "709410003", "display": "Haemophilus influenzae type b infection"}]}], "doseNumberPositiveInt": 1}], "reasonCode": [{"coding": [{"system": "http://snomed.info/sct", "code": "443684005"}]}], "recorded": "2026-04-09", "identifier": [{"value": "invalid_location_Code_uri-20260409T094046", "system": "https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk"}], "patient": {"reference": "#Patient1"}, "contained": [{"id": "Patient1", "resourceType": "Patient", "birthDate": "1967-09-03", "gender": "male", "address": [{"postalCode": "M21 8TG"}], "identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9729850348"}], "name": [{"family": "FLYNN", "given": ["GUY"]}]}, {"resourceType": "Practitioner", "id": "Practitioner1", "name": [{"family": "Tests", "given": ["Automation"]}]}], "vaccineCode": {"coding": [{"system": "http://snomed.info/sct", "code": "9903711000001109", "display": "Menitorix powder and solvent for solution for injection 0.5ml vials (GlaxoSmithKline)"}]}, "manufacturer": {"display": "GlaxoSmithKline UK Ltd"}, "expirationDate": "2026-04-09", "lotNumber": "310825", "extension": [{"url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure", "valueCodeableConcept": {"coding": [{"system": "http://snomed.info/sct", "code": "712833000", "display": "Haemophilus influenzae type B Meningitis C (HibMenC) vaccination codes"}]}}], "occurrenceDateTime": "2026-04-09T09:39:57+00:00", "primarySource": true, "site": {"coding": [{"system": "http://snomed.info/sct", "code": "368209003", "display": "Right upper arm structure"}]}, "route": {"coding": [{"system": "http://snomed.info/sct", "code": "34206005", "display": "Subcutaneous route (qualifier value)"}]}, "doseQuantity": {"value": 0.5, "unit": "millilitre", "system": "http://snomed.info/sct", "code": "ml"}, "performer": [{"actor": {"type": "Organization", "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "X99999"}}}, {"actor": {"reference": "#Practitioner1"}}], "location": {"identifier": {"value": "X99999", "system": "invalid_uri"}}, "id": "72d53513-b39f-46ea-b561-4b047fa28693"}', 'PK': 'Immunization#72d53513-b39f-46ea-b561-4b047fa28693', 'Version': Decimal('1'), 'PatientPK': 'Patient#9729850348'}], 'Count': 1, 'ScannedCount': 1, 'ResponseMetadata': {'RequestId': 'VIAMUM0O128TMH3G0CHNKHI6CJVV4KQNSO5AEMVJF66Q9ASUAAJG', 'HTTPStatusCode': 200, 'HTTPHeaders': {'server': 'Server', 'date': 'Thu, 09 Apr 2026 09:41:25 GMT', 'content-type': 'application/x-amz-json-1.0', 'content-length': '2985', 'connection': 'keep-alive', 'x-amzn-requestid': 'VIAMUM0O128TMH3G0CHNKHI6CJVV4KQNSO5AEMVJF66Q9ASUAAJG', 'x-amz-crc32': '2228970861'}, 'RetryAttempts': 0}} 
+
+Attempt 1: Found 1 items
+
+Found Immunization Delta items for ImmsID=72d53513-b39f-46ea-b561-4b047fa28693
+
+Attempt 1: Found 1 items
+
+Found Immunization Delta items for ImmsID=bd684f72-6e97-4323-84d6-19ce9f128ba7
+
+Attempt 1: Found 1 items
+
+Found Immunization Delta items for ImmsID=ceda0816-2c5c-47d3-81f8-2c54026232ef
+
+Expecting 3 messages for 3 NHS numbers
+Polling SQS (notification)...
+Matched: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/72d53513-b39f-46ea-b561-4b047fa28693
+Polling SQS (notification)...
+Matched: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/ceda0816-2c5c-47d3-81f8-2c54026232ef
+Polling SQS (notification)...
+Matched: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/bd684f72-6e97-4323-84d6-19ce9f128ba7
+Read 3 CREATE message(s) from SQS
+Validating message for NHS 9729850348, IMMS ID 72d53513-b39f-46ea-b561-4b047fa28693
+Validating message for NHS 9734700421, IMMS ID ceda0816-2c5c-47d3-81f8-2c54026232ef
+Validating message for NHS 9734076388, IMMS ID bd684f72-6e97-4323-84d6-19ce9f128ba7
+No NullNHS rows — skipping negative MNS check.
+Sending DELETE request to: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/ceda0816-2c5c-47d3-81f8-2c54026232ef
+Deleted ceda0816-2c5c-47d3-81f8-2c54026232ef successfully.
+Sending DELETE request to: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/bd684f72-6e97-4323-84d6-19ce9f128ba7
+Deleted bd684f72-6e97-4323-84d6-19ce9f128ba7 successfully.
+Sending DELETE request to: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/72d53513-b39f-46ea-b561-4b047fa28693
+Deleted 72d53513-b39f-46ea-b561-4b047fa28693 successfully.
+Batch cleanup finished.

@@ -1,0 +1,1 @@
+✅ Step Passed: **batch file is created for below data where recorded field has invalid date
