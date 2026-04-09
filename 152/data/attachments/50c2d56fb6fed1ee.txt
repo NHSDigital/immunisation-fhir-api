@@ -1,0 +1,43 @@
+✅ Pipe-delimited file saved to: /home/runner/work/immunisation-fhir-api/immunisation-fhir-api/tests/e2e_automation/batch_files_directory/BCG_Vaccinations_v5_YGA_20260409T16040900.csv
+Batch file created: BCG_Vaccinations_v5_YGA_20260409T16040900.csv
+Upload successful: BCG_Vaccinations_v5_YGA_20260409T16040900.csv → immunisation-batch-internal-qa-data-sources
+Batch file uploaded to S3: BCG_Vaccinations_v5_YGA_20260409T16040900.csv
+Waiting for file in archive: s3://immunisation-batch-internal-qa-data-sources/archive/BCG_Vaccinations_v5_YGA_20260409T16040900.csv
+Still waiting... (0s)
+Still waiting... (5s)
+Still waiting... (10s)
+Still waiting... (15s)
+Still waiting... (20s)
+Still waiting... (25s)
+Still waiting... (30s)
+Still waiting... (35s)
+File found in archive: archive/BCG_Vaccinations_v5_YGA_20260409T16040900.csv
+Waiting for ACK files starting with 'ack/BCG_Vaccinations_v5_YGA_20260409T16040900' in bucket: immunisation-batch-internal-qa-data-destinations
+[MODE] Expecting ONLY CSV ACK file
+[FOUND] .csv file located: ack/BCG_Vaccinations_v5_YGA_20260409T16040900_InfAck_20260409T16041100.csv
+[COMPLETE] All expected ACK files received
+Waiting for ACK files starting with 'forwardedFile/BCG_Vaccinations_v5_YGA_20260409T16040900' in bucket: immunisation-batch-internal-qa-data-destinations
+[MODE] Expecting BOTH CSV and JSON ACK files
+[FOUND] .csv file located: forwardedFile/BCG_Vaccinations_v5_YGA_20260409T16040900_BusAck_20260409T16041100.csv
+[FOUND] .json file located: forwardedFile/BCG_Vaccinations_v5_YGA_20260409T16040900_BusAck_20260409T16041100.json
+[COMPLETE] All expected ACK files received
+No rows found in BUS ACK file for successful records
+Attempt 1: Found 1 items
+
+Found Audit detail for filename=BCG_Vaccinations_v5_YGA_20260409T16040900.csv
+
+
+ Imms Event response is {'Items': [{'Version': Decimal('1'), 'IdentifierPK': 'https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk#empty_performer_forename-20260409T160409', 'Operation': 'CREATE', 'PK': 'Immunization#bcf69293-cdbb-404a-965e-a672413b5e59', 'PatientSK': 'BCG#bcf69293-cdbb-404a-965e-a672413b5e59', 'Resource': '{"resourceType": "Immunization", "status": "completed", "protocolApplied": [{"targetDisease": [{"coding": [{"system": "http://snomed.info/sct", "code": "56717001", "display": "Tuberculosis"}]}], "doseNumberPositiveInt": 1}], "reasonCode": [{"coding": [{"system": "http://snomed.info/sct", "code": "443684005"}]}], "recorded": "2026-04-09", "identifier": [{"value": "empty_performer_forename-20260409T160409", "system": "https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk"}], "patient": {"reference": "#Patient1"}, "contained": [{"id": "Patient1", "resourceType": "Patient", "birthDate": "1925-12-14", "gender": "male", "address": [{"postalCode": "LS8 1AQ"}], "identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9736694623"}], "name": [{"family": "WALKER", "given": ["DEREK"]}]}, {"resourceType": "Practitioner", "id": "Practitioner1", "name": [{"family": "Tests"}]}], "vaccineCode": {"coding": [{"system": "http://snomed.info/sct", "code": "37240111000001101", "display": "BCG Vaccine AJV powder for suspension for injection 1ml vials (AJ Vaccines)"}]}, "manufacturer": {"display": "AJ Vaccines"}, "expirationDate": "2026-04-09", "lotNumber": "828512", "extension": [{"url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure", "valueCodeableConcept": {"coding": [{"system": "http://snomed.info/sct", "code": "429069001", "display": "Requires Bacillus Calmette-Guerin vaccination"}]}}], "occurrenceDateTime": "2026-04-09T16:03:19+00:00", "primarySource": true, "site": {"coding": [{"system": "http://snomed.info/sct", "code": "368208006", "display": "Left upper arm structure"}]}, "route": {"coding": [{"system": "http://snomed.info/sct", "code": "34206005", "display": "Subcutaneous route (qualifier value)"}]}, "doseQuantity": {"value": 0.5, "unit": "millilitre", "system": "http://snomed.info/sct", "code": "ml"}, "performer": [{"actor": {"type": "Organization", "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "X99999"}}}, {"actor": {"reference": "#Practitioner1"}}], "location": {"identifier": {"value": "X99999", "system": "https://fhir.nhs.uk/Id/ods-organization-code"}}, "id": "bcf69293-cdbb-404a-965e-a672413b5e59"}', 'PatientPK': 'Patient#9736694623', 'SupplierSystem': 'TPP'}], 'Count': 1, 'ScannedCount': 1, 'ResponseMetadata': {'RequestId': '1PGLRHQEHAQCLGE53JEB0IHS1JVV4KQNSO5AEMVJF66Q9ASUAAJG', 'HTTPStatusCode': 200, 'HTTPHeaders': {'server': 'Server', 'date': 'Thu, 09 Apr 2026 16:04:54 GMT', 'content-type': 'application/x-amz-json-1.0', 'content-length': '2915', 'connection': 'keep-alive', 'x-amzn-requestid': '1PGLRHQEHAQCLGE53JEB0IHS1JVV4KQNSO5AEMVJF66Q9ASUAAJG', 'x-amz-crc32': '834882243'}, 'RetryAttempts': 0}} 
+
+
+ Imms Event response is {'Items': [{'Version': Decimal('1'), 'PatientSK': 'BCG#51e6cc81-402b-4c61-bfed-41a5a47193fd', 'PK': 'Immunization#51e6cc81-402b-4c61-bfed-41a5a47193fd', 'SupplierSystem': 'TPP', 'Resource': '{"resourceType": "Immunization", "status": "completed", "protocolApplied": [{"targetDisease": [{"coding": [{"system": "http://snomed.info/sct", "code": "56717001", "display": "Tuberculosis"}]}], "doseNumberPositiveInt": 1}], "reasonCode": [{"coding": [{"system": "http://snomed.info/sct", "code": "443684005"}]}], "recorded": "2026-04-09", "identifier": [{"value": "empty_performer_Surname-20260409T160409", "system": "https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk"}], "patient": {"reference": "#Patient1"}, "contained": [{"id": "Patient1", "resourceType": "Patient", "birthDate": "1946-04-08", "gender": "female", "address": [{"postalCode": "LS7 2SD"}], "identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9736135497"}], "name": [{"family": "GROOM", "given": ["DEBBIE"]}]}, {"resourceType": "Practitioner", "id": "Practitioner1", "name": [{"given": ["Automation"]}]}], "vaccineCode": {"coding": [{"system": "http://snomed.info/sct", "code": "9316511000001100", "display": "BCG vaccine powder and solvent for suspension for injection vials 10 vial (Pfizer Ltd)"}]}, "manufacturer": {"display": "Pfizer Ltd"}, "expirationDate": "2026-04-09", "lotNumber": "279968", "extension": [{"url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure", "valueCodeableConcept": {"coding": [{"system": "http://snomed.info/sct", "code": "429069001", "display": "Requires Bacillus Calmette-Guerin vaccination"}]}}], "occurrenceDateTime": "2026-04-09T16:03:19+00:00", "primarySource": true, "site": {"coding": [{"system": "http://snomed.info/sct", "code": "368209003", "display": "Right upper arm structure"}]}, "route": {"coding": [{"system": "http://snomed.info/sct", "code": "34206005", "display": "Subcutaneous route (qualifier value)"}]}, "doseQuantity": {"value": 0.5, "unit": "millilitre", "system": "http://snomed.info/sct", "code": "ml"}, "performer": [{"actor": {"type": "Organization", "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "X99999"}}}, {"actor": {"reference": "#Practitioner1"}}], "location": {"identifier": {"value": "X99999", "system": "https://fhir.nhs.uk/Id/ods-organization-code"}}, "id": "51e6cc81-402b-4c61-bfed-41a5a47193fd"}', 'IdentifierPK': 'https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk#empty_performer_Surname-20260409T160409', 'Operation': 'CREATE', 'PatientPK': 'Patient#9736135497'}], 'Count': 1, 'ScannedCount': 1, 'ResponseMetadata': {'RequestId': 'U2NIJM4FM9NHHPMPRCIDRLULDRVV4KQNSO5AEMVJF66Q9ASUAAJG', 'HTTPStatusCode': 200, 'HTTPHeaders': {'server': 'Server', 'date': 'Thu, 09 Apr 2026 16:04:55 GMT', 'content-type': 'application/x-amz-json-1.0', 'content-length': '2931', 'connection': 'keep-alive', 'x-amzn-requestid': 'U2NIJM4FM9NHHPMPRCIDRLULDRVV4KQNSO5AEMVJF66Q9ASUAAJG', 'x-amz-crc32': '3297338203'}, 'RetryAttempts': 0}} 
+
+Attempt 1: Found 1 items
+
+Found Immunization Delta items for ImmsID=51e6cc81-402b-4c61-bfed-41a5a47193fd
+
+Attempt 1: Found 1 items
+
+Found Immunization Delta items for ImmsID=bcf69293-cdbb-404a-965e-a672413b5e59
+
+MNS event validation is skipped since mns_validation_required is set to false
