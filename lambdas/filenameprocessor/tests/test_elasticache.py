@@ -4,29 +4,28 @@ import json
 from unittest import TestCase
 from unittest.mock import Mock, patch
 
-from boto3 import client as boto3_client
-from moto import mock_s3
+from moto import mock_aws
 
 from utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
 from utils_for_tests.utils_for_filenameprocessor_tests import (
     GenericSetUp,
     GenericTearDown,
+    create_boto3_clients,
     create_mock_hget,
 )
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from common.clients import REGION_NAME
     from elasticache import (
         get_supplier_permissions_from_cache,
         get_supplier_system_from_cache,
         get_valid_vaccine_types_from_cache,
     )
 
-s3_client = boto3_client("s3", region_name=REGION_NAME)
+s3_client = None
 
 
-@mock_s3
+@mock_aws
 @patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
 @patch("elasticache.get_redis_client")
 class TestElasticache(TestCase):
@@ -34,6 +33,8 @@ class TestElasticache(TestCase):
 
     def setUp(self):
         """Set up the S3 buckets"""
+        global s3_client
+        (s3_client,) = create_boto3_clients("s3")
         GenericSetUp(s3_client)
 
     def tearDown(self):

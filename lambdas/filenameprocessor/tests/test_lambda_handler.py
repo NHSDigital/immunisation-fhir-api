@@ -9,8 +9,7 @@ from unittest import TestCase
 from unittest.mock import ANY, Mock, patch
 
 import fakeredis
-from boto3 import client as boto3_client
-from moto import mock_dynamodb, mock_firehose, mock_s3, mock_sqs
+from moto import mock_aws
 
 from utils_for_tests.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
@@ -22,6 +21,7 @@ from utils_for_tests.utils_for_filenameprocessor_tests import (
     GenericSetUp,
     GenericTearDown,
     assert_audit_table_entry,
+    create_boto3_clients,
     create_mock_hget,
 )
 from utils_for_tests.values_for_tests import (
@@ -34,15 +34,14 @@ from utils_for_tests.values_for_tests import (
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from common.clients import REGION_NAME
     from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys, FileStatus
     from constants import EXTENDED_ATTRIBUTES_VACC_TYPE
     from file_name_processor import handle_record, lambda_handler
 
-s3_client = boto3_client("s3", region_name=REGION_NAME)
-sqs_client = boto3_client("sqs", region_name=REGION_NAME)
-firehose_client = boto3_client("firehose", region_name=REGION_NAME)
-dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
+s3_client = None
+sqs_client = None
+firehose_client = None
+dynamodb_client = None
 
 # NOTE: The default throughout these tests is to use permissions config which allows all suppliers full permissions
 # for all vaccine types. This default is overridden for some specific tests.
@@ -52,10 +51,7 @@ all_permissions_in_this_test_file = [f"{vaccine_type}.CRUDS" for vaccine_type in
 
 
 @patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
-@mock_s3
-@mock_sqs
-@mock_firehose
-@mock_dynamodb
+@mock_aws
 class TestLambdaHandlerDataSource(TestCase):
     """Tests for lambda_handler when a data sources (vaccine data) file is received."""
 
@@ -87,6 +83,10 @@ class TestLambdaHandlerDataSource(TestCase):
             super().run(result)
 
     def setUp(self):
+        global s3_client, sqs_client, firehose_client, dynamodb_client
+        s3_client, sqs_client, firehose_client, dynamodb_client = create_boto3_clients(
+            "s3", "sqs", "firehose", "dynamodb"
+        )
         GenericSetUp(s3_client, firehose_client, sqs_client, dynamodb_client)
         self.logger_patcher = patch("file_name_processor.logger")
         self.mock_logger = self.logger_patcher.start()
@@ -483,7 +483,9 @@ class TestLambdaHandlerDataSource(TestCase):
         s3_client.put_object(Bucket=BucketNames.SOURCE, Key=bad_ext_key, Body=MOCK_EXTENDED_ATTRIBUTES_FILE_CONTENT)
         with patch("file_name_processor.uuid4", return_value="EA_bad_ext_id"):
             lambda_handler(self.make_event([self.make_record(bad_ext_key)]), None)
-        item = self.get_audit_table_items()[-1]
+        item = next(
+            item for item in self.get_audit_table_items() if item[AuditTableKeys.MESSAGE_ID]["S"] == "EA_bad_ext_id"
+        )
         self.assertEqual(item[AuditTableKeys.STATUS]["S"], "Failed")
         s3_client.get_object(Bucket=BucketNames.SOURCE, Key=f"extended-attributes-archive/{bad_ext_key}")
         """
@@ -673,14 +675,15 @@ class TestLambdaHandlerDataSource(TestCase):
 
 
 @patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
-@mock_s3
-@mock_dynamodb
-@mock_sqs
-@mock_firehose
+@mock_aws
 class TestUnexpectedBucket(TestCase):
     """Tests for lambda_handler when an unexpected bucket name is used"""
 
     def setUp(self):
+        global s3_client, sqs_client, firehose_client, dynamodb_client
+        s3_client, sqs_client, firehose_client, dynamodb_client = create_boto3_clients(
+            "s3", "sqs", "firehose", "dynamodb"
+        )
         GenericSetUp(s3_client, firehose_client, sqs_client, dynamodb_client)
 
     def tearDown(self):

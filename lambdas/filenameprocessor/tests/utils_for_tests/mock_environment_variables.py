@@ -35,6 +35,11 @@ class Sqs:
 # NOTE: FILE_NAME_GSI and CONFIG_BUCKET_NAME environment variables are set in the terraform,
 # but not used in the src code and so are not set here.
 MOCK_ENVIRONMENT_DICT = {
+    "AWS_ACCESS_KEY_ID": "testing",
+    "AWS_SECRET_ACCESS_KEY": "testing",
+    "AWS_SESSION_TOKEN": "testing",
+    "AWS_REGION": REGION_NAME,
+    "AWS_DEFAULT_REGION": REGION_NAME,
     "SOURCE_BUCKET_NAME": BucketNames.SOURCE,
     "ACK_BUCKET_NAME": BucketNames.DESTINATION,
     "DPS_BUCKET_NAME": BucketNames.DPS_DESTINATION,
