@@ -553,10 +553,7 @@ def mns_event_will_be_triggered_for_batch_record(context, action, valid_rows):
     null_nhs_rows = [row for row in valid_rows if _is_null_nhs_row(row)]
     positive_rows = [row for row in valid_rows if not _is_null_nhs_row(row)]
 
-    row_lookup = {}
-    for row in positive_rows:
-        nhs = str(row.NHS_NUMBER)
-        row_lookup.setdefault(nhs, []).append(row)
+  row_lookup = {(str(row.NHS_NUMBER), row.IMMS_ID_CLEAN): row for row in positive_rows}
 
     messages = read_messages_for_batch(
         context,
