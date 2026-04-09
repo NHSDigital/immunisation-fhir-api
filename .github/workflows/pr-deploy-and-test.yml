@@ -14,17 +14,8 @@ jobs:
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-  account-terraform:
-    uses: ./.github/workflows/account-terraform.yml
-    with:
-      base_sha: ${{ github.event.pull_request.base.sha }}
-      head_sha: ${{ github.event.pull_request.head.sha }}
-      environment: dev
-      state_bucket_environment: internal-dev
-      artifact_name: pr-dev-account-tfplan
-
   deploy-pr-backend:
-    needs: [run-quality-checks, account-terraform]
+    needs: [run-quality-checks]
     if: ${{ always() && !failure() && !cancelled() }}
     uses: ./.github/workflows/deploy-backend.yml
     with:
