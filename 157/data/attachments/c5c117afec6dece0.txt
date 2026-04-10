@@ -1,0 +1,22 @@
+
+ Search GET Request - 
+ patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number|9001066569&-immunization.target=RSV&-date.from=2025-05-01&-date.to=2025-05-32&_include=Immunization:patient
+
+ Search GET Response - 
+ {'resourceType': 'OperationOutcome', 'id': '53865397-bbd6-4eb7-853b-f953d965e943', 'meta': {'profile': ['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']}, 'issue': [{'severity': 'error', 'code': 'invalid', 'details': {'coding': [{'system': 'https://fhir.nhs.uk/Codesystem/http-error-codes', 'code': 'INVALID'}]}, 'diagnostics': 'Search parameter -date.to must be in format: YYYY-MM-DD'}]}
+400
+400
+
+ Error Response - 
+ resourceType='OperationOutcome' id='53865397-bbd6-4eb7-853b-f953d965e943' meta=Meta(profile=['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']) issue=[Issue(severity='error', code='invalid', details=Details(coding=[Coding(system='https://fhir.nhs.uk/Codesystem/http-error-codes', code='INVALID')]), diagnostics='Search parameter -date.to must be in format: YYYY-MM-DD')]
+
+ Search Post Request - 
+ patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number|9001066569&-immunization.target=RSV&-date.from=2025-05-01&-date.to=2025-05-32&_include=Immunization:patient
+
+ Search POST Response - 
+ {'resourceType': 'OperationOutcome', 'id': '9a7dc986-68af-4df4-8e8d-3c075aa34d12', 'meta': {'profile': ['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']}, 'issue': [{'severity': 'error', 'code': 'invalid', 'details': {'coding': [{'system': 'https://fhir.nhs.uk/Codesystem/http-error-codes', 'code': 'INVALID'}]}, 'diagnostics': 'Search parameter -date.to must be in format: YYYY-MM-DD'}]}
+400
+400
+
+ Error Response - 
+ resourceType='OperationOutcome' id='9a7dc986-68af-4df4-8e8d-3c075aa34d12' meta=Meta(profile=['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']) issue=[Issue(severity='error', code='invalid', details=Details(coding=[Coding(system='https://fhir.nhs.uk/Codesystem/http-error-codes', code='INVALID')]), diagnostics='Search parameter -date.to must be in format: YYYY-MM-DD')]
