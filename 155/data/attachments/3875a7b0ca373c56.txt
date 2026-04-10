@@ -1,0 +1,1 @@
+✅ Step Passed: **MNS event will not be triggered for the event
