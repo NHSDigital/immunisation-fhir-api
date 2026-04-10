@@ -67,6 +67,8 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      attestations: write
+      artifact-metadata: write
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment:
@@ -147,6 +149,12 @@ jobs:
           name: ${{ env.ACCOUNT_TERRAFORM_ARTIFACT_NAME }}
           path: infrastructure/account/tfplan
 
+      - name: Attest Account Terraform Plan
+        if: ${{ steps.diff.outputs.account_infra_changed == 'true' }}
+        uses: actions/attest@v4
+        with:
+          subject-path: infrastructure/account/tfplan
+
   account-terraform-approval:
     permissions: {}
     needs: [account-terraform-plan]
@@ -162,6 +170,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      attestations: read
     needs: [account-terraform-plan, account-terraform-approval]
     if: ${{ !cancelled() && needs.account-terraform-plan.result == 'success' && needs.account-terraform-plan.outputs.account_infra_changed == 'true' && needs.account-terraform-approval.result == 'success' }}
     runs-on: ubuntu-latest
@@ -196,6 +205,14 @@ jobs:
         with:
           name: ${{ env.ACCOUNT_TERRAFORM_ARTIFACT_NAME }}
           path: infrastructure/account
+
+      - name: Verify Account Terraform Plan Attestation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh attestation verify infrastructure/account/tfplan \
+            --repo "$GITHUB_REPOSITORY" \
+            --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/account-terraform.yml"
 
       - name: Terraform Init (account)
         working-directory: infrastructure/account
