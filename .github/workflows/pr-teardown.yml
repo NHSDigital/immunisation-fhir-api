@@ -129,5 +129,6 @@ jobs:
               --output json
           }
 
-          cleanup_repo_by_prefix "imms-recordprocessor-repo"
-          cleanup_repo_by_prefix "imms-ackbackend-repo"
+          for repository_name in imms-recordprocessor-repo imms-ackbackend-repo; do
+            cleanup_repo_by_prefix "${repository_name}"
+          done

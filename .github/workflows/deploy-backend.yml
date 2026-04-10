@@ -45,12 +45,6 @@ on:
         required: true
         type: string
     outputs:
-      recordprocessor_image_version:
-        description: Selected immutable image URI used for recordprocessor deployment
-        value: ${{ jobs.terraform-plan.outputs.recordprocessor_image_uri }}
-      ack_backend_image_version:
-        description: Selected immutable image URI used for ack backend deployment
-        value: ${{ jobs.terraform-plan.outputs.ack_backend_image_uri }}
       image_uris_json:
         description: JSON map of lambda_name -> immutable image URI used for deployment
         value: ${{ jobs.terraform-plan.outputs.image_uris_json }}
@@ -165,8 +159,6 @@ jobs:
     if: ${{ !cancelled() }}
     outputs:
       image_uris_json: ${{ steps.lambda-images.outputs.image_uris_json }}
-      recordprocessor_image_uri: ${{ steps.lambda-images.outputs.recordprocessor_image_uri }}
-      ack_backend_image_uri: ${{ steps.lambda-images.outputs.ack_backend_image_uri }}
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.environment }}
@@ -212,18 +204,10 @@ jobs:
           )"
 
           echo "image_uris_json=${image_uris_json}" >> "$GITHUB_OUTPUT"
-
-          for lambda_name in recordprocessor ack-backend; do
-            image_uri="$(jq -er --arg lambda_name "${lambda_name}" '.[$lambda_name]' <<< "${image_uris_json}")"
-            echo "${lambda_name//-/_}_image_uri=${image_uri}" >> "$GITHUB_OUTPUT"
-          done
-
-          while IFS=$'\t' read -r lambda_name image_uri; do
-            lambda_env_key="${lambda_name//-/_}"
-            echo "TF_VAR_${lambda_env_key}_image_uri=${image_uri}" >> "$GITHUB_ENV"
-          done < <(
-            jq -er 'to_entries[] | [.key, .value] | @tsv' <<< "${image_uris_json}"
-          )
+          jq -er '
+            to_entries[]
+            | "TF_VAR_\(.key | gsub("-"; "_"))_image_uri=\(.value)"
+          ' <<< "${image_uris_json}" >> "$GITHUB_ENV"
 
       - name: Terraform Init
         working-directory: infrastructure/instance
@@ -276,12 +260,10 @@ jobs:
             exit 1
           fi
 
-          while IFS=$'\t' read -r lambda_name image_uri; do
-            lambda_env_key="${lambda_name//-/_}"
-            echo "TF_VAR_${lambda_env_key}_image_uri=${image_uri}" >> "$GITHUB_ENV"
-          done < <(
-            jq -er 'to_entries[] | [.key, .value] | @tsv' <<< "${IMAGE_URIS_JSON}"
-          )
+          jq -er '
+            to_entries[]
+            | "TF_VAR_\(.key | gsub("-"; "_"))_image_uri=\(.value)"
+          ' <<< "${IMAGE_URIS_JSON}" >> "$GITHUB_ENV"
 
       - name: Retrieve Terraform Plan
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
