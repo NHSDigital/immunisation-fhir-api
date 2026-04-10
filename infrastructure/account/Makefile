@@ -41,7 +41,7 @@ apply: workspace
 	$(tf_cmd) apply $(tf_vars) -auto-approve
 
 apply-ci: workspace
-	$(tf_cmd) apply $(tf_vars) -input=false tfplan
+	$(tf_cmd) apply -input=false tfplan
 
 clean:
 	rm -rf build .terraform upload-key
