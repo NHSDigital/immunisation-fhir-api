@@ -306,7 +306,7 @@ jobs:
 
       - name: Add link to Allure report
         if: github.event_name == 'workflow_dispatch'
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const url = `https://${context.repo.owner}.github.io/${context.repo.repo}/${context.runNumber}/`;
