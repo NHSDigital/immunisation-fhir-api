@@ -10,18 +10,18 @@ on:
         required: false
         type: boolean
         default: false
-      recordprocessor_image_version:
-        required: false
-        type: string
-        default: ""
       build_ack_backend_image:
         required: false
         type: boolean
         default: false
-      ack_backend_image_version:
+      lambda_image_overrides:
+        description: >
+          JSON map of lambda_name -> immutable image selector for reuse mode.
+          Supports tags, sha256 digests, or full image URIs. Empty object means
+          no explicit override.
         required: false
         type: string
-        default: ""
+        default: "{}"
       diff_base_sha:
         required: false
         type: string
@@ -46,11 +46,14 @@ on:
         type: string
     outputs:
       recordprocessor_image_version:
-        description: Selected immutable image selector used for recordprocessor deployment
-        value: ${{ jobs.deploy-recordprocessor-image.outputs.image_uri }}
+        description: Selected immutable image URI used for recordprocessor deployment
+        value: ${{ jobs.terraform-plan.outputs.recordprocessor_image_uri }}
       ack_backend_image_version:
-        description: Selected immutable image selector used for ack backend deployment
-        value: ${{ jobs.deploy-ack-backend-image.outputs.image_uri }}
+        description: Selected immutable image URI used for ack backend deployment
+        value: ${{ jobs.terraform-plan.outputs.ack_backend_image_uri }}
+      image_uris_json:
+        description: JSON map of lambda_name -> immutable image URI used for deployment
+        value: ${{ jobs.terraform-plan.outputs.image_uris_json }}
   workflow_dispatch:
     inputs:
       apigee_environment:
@@ -79,21 +82,18 @@ on:
         required: true
         type: boolean
         default: true
-      recordprocessor_image_version:
-        description: Existing immutable recordprocessor image selector (tag, digest, or image URI) for reuse mode
-        required: false
-        type: string
-        default: ""
       build_ack_backend_image:
         description: Build and publish a new ack backend image
         required: true
         type: boolean
         default: true
-      ack_backend_image_version:
-        description: Existing immutable ack backend image selector (tag, digest, or image URI) for reuse mode
+      lambda_image_overrides:
+        description: >
+          JSON map of lambda_name -> immutable image selector for reuse mode.
+          e.g. {"recordprocessor":"internal-dev-git-abc123","ack-backend":"123456789012.dkr.ecr.eu-west-2.amazonaws.com/imms-ackbackend-repo@sha256:..."}
         required: false
         type: string
-        default: ""
+        default: "{}"
       diff_base_sha:
         description: Base commit SHA for diff checks
         required: false
@@ -121,47 +121,38 @@ env: # Sonarcloud - do not allow direct usage of untrusted data
 run-name: Deploy Backend - ${{ inputs.environment }} ${{ inputs.sub_environment }}
 
 jobs:
-  deploy-recordprocessor-image:
-    name: Deploy recordprocessor image
+  deploy-lambda-images:
+    name: Deploy ${{ matrix.lambda_name }} image
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - lambda_name: recordprocessor
+            ecr_repository: imms-recordprocessor-repo
+            dockerfile_path: lambdas/recordprocessor/Dockerfile
+            lambda_paths: |
+              lambdas/recordprocessor/
+          - lambda_name: ack-backend
+            ecr_repository: imms-ackbackend-repo
+            dockerfile_path: lambdas/ack_backend/Dockerfile
+            lambda_paths: |
+              lambdas/ack_backend/
     uses: ./.github/workflows/deploy-lambda-artifact.yml
     with:
-      lambda_name: recordprocessor
+      lambda_name: ${{ matrix.lambda_name }}
       environment: ${{ inputs.environment }}
       sub_environment: ${{ inputs.sub_environment }}
-      build_image: ${{ inputs.build_recordprocessor_image }}
-      image_version: ${{ inputs.recordprocessor_image_version }}
+      build_image: ${{ matrix.lambda_name == 'recordprocessor' && inputs.build_recordprocessor_image || matrix.lambda_name == 'ack-backend' && inputs.build_ack_backend_image || false }}
+      image_version: ${{ fromJson(inputs.lambda_image_overrides)[matrix.lambda_name] || '' }}
       run_diff_check: ${{ inputs.run_diff_check }}
       diff_base_sha: ${{ inputs.diff_base_sha }}
       diff_head_sha: ${{ inputs.diff_head_sha }}
-      lambda_paths: |
-        lambdas/recordprocessor/
+      lambda_paths: ${{ matrix.lambda_paths }}
       shared_paths: |
         lambdas/shared/src/common/
       docker_context_path: lambdas
-      dockerfile_path: lambdas/recordprocessor/Dockerfile
-      ecr_repository: imms-recordprocessor-repo
-      image_tag_prefix: ${{ inputs.sub_environment }}-
-      allow_implicit_tag_prefix_reuse: ${{ inputs.sub_environment == 'internal-dev' || startsWith(inputs.sub_environment, 'pr-') }}
-
-  deploy-ack-backend-image:
-    name: Deploy ack backend image
-    uses: ./.github/workflows/deploy-lambda-artifact.yml
-    with:
-      lambda_name: ack-backend
-      environment: ${{ inputs.environment }}
-      sub_environment: ${{ inputs.sub_environment }}
-      build_image: ${{ inputs.build_ack_backend_image }}
-      image_version: ${{ inputs.ack_backend_image_version }}
-      run_diff_check: ${{ inputs.run_diff_check }}
-      diff_base_sha: ${{ inputs.diff_base_sha }}
-      diff_head_sha: ${{ inputs.diff_head_sha }}
-      lambda_paths: |
-        lambdas/ack_backend/
-      shared_paths: |
-        lambdas/shared/src/common/
-      docker_context_path: lambdas
-      dockerfile_path: lambdas/ack_backend/Dockerfile
-      ecr_repository: imms-ackbackend-repo
+      dockerfile_path: ${{ matrix.dockerfile_path }}
+      ecr_repository: ${{ matrix.ecr_repository }}
       image_tag_prefix: ${{ inputs.sub_environment }}-
       allow_implicit_tag_prefix_reuse: ${{ inputs.sub_environment == 'internal-dev' || startsWith(inputs.sub_environment, 'pr-') }}
 
@@ -170,16 +161,13 @@ jobs:
       id-token: write
       contents: read
     needs:
-      - deploy-recordprocessor-image
-      - deploy-ack-backend-image
-    if: ${{ !cancelled() && needs.deploy-recordprocessor-image.result == 'success' && needs.deploy-ack-backend-image.result == 'success' }}
+      - deploy-lambda-images
+    if: ${{ !cancelled() }}
     outputs:
-      recordprocessor_image_uri: ${{ needs.deploy-recordprocessor-image.outputs.image_uri }}
-      ack_backend_image_uri: ${{ needs.deploy-ack-backend-image.outputs.image_uri }}
+      image_uris_json: ${{ steps.lambda-images.outputs.image_uris_json }}
+      recordprocessor_image_uri: ${{ steps.lambda-images.outputs.recordprocessor_image_uri }}
+      ack_backend_image_uri: ${{ steps.lambda-images.outputs.ack_backend_image_uri }}
     runs-on: ubuntu-latest
-    env:
-      TF_VAR_recordprocessor_image_uri: ${{ needs.deploy-recordprocessor-image.outputs.image_uri }}
-      TF_VAR_ack_backend_image_uri: ${{ needs.deploy-ack-backend-image.outputs.image_uri }}
     environment:
       name: ${{ inputs.environment }}
     steps:
@@ -196,6 +184,46 @@ jobs:
       - uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85
         with:
           terraform_version: "1.12.2"
+
+      - name: Download lambda deployment manifests
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          pattern: deploy-manifest-*-${{ inputs.environment }}-${{ inputs.sub_environment }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/lambda-manifests
+          merge-multiple: true
+
+      - name: Assemble lambda image map and export Terraform vars
+        id: lambda-images
+        run: |
+          set -euo pipefail
+
+          manifest_dir="${RUNNER_TEMP}/lambda-manifests"
+          shopt -s nullglob
+          manifest_files=("${manifest_dir}"/*.json)
+
+          if [ "${#manifest_files[@]}" -eq 0 ]; then
+            echo "No lambda deployment manifests found."
+            exit 1
+          fi
+
+          image_uris_json="$(
+            jq -cs 'map(select(.lambda_name != null and .image_uri != null) | {(.lambda_name): .image_uri}) | add' \
+              "${manifest_files[@]}"
+          )"
+
+          echo "image_uris_json=${image_uris_json}" >> "$GITHUB_OUTPUT"
+
+          for lambda_name in recordprocessor ack-backend; do
+            image_uri="$(jq -er --arg lambda_name "${lambda_name}" '.[$lambda_name]' <<< "${image_uris_json}")"
+            echo "${lambda_name//-/_}_image_uri=${image_uri}" >> "$GITHUB_OUTPUT"
+          done
+
+          while IFS=$'\t' read -r lambda_name image_uri; do
+            lambda_env_key="${lambda_name//-/_}"
+            echo "TF_VAR_${lambda_env_key}_image_uri=${image_uri}" >> "$GITHUB_ENV"
+          done < <(
+            jq -er 'to_entries[] | [.key, .value] | @tsv' <<< "${image_uris_json}"
+          )
 
       - name: Terraform Init
         working-directory: infrastructure/instance
@@ -219,11 +247,8 @@ jobs:
       id-token: write
       contents: read
     needs: terraform-plan
-    if: ${{ !cancelled() && needs.terraform-plan.result == 'success' }}
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
-    env:
-      TF_VAR_recordprocessor_image_uri: ${{ needs.terraform-plan.outputs.recordprocessor_image_uri }}
-      TF_VAR_ack_backend_image_uri: ${{ needs.terraform-plan.outputs.ack_backend_image_uri }}
     environment:
       name: ${{ inputs.environment }}
     steps:
@@ -239,6 +264,24 @@ jobs:
       - uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85
         with:
           terraform_version: "1.12.2"
+
+      - name: Restore lambda image Terraform vars
+        env:
+          IMAGE_URIS_JSON: ${{ needs.terraform-plan.outputs.image_uris_json }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${IMAGE_URIS_JSON}" ] || [ "${IMAGE_URIS_JSON}" = "null" ]; then
+            echo "terraform-plan did not emit image_uris_json."
+            exit 1
+          fi
+
+          while IFS=$'\t' read -r lambda_name image_uri; do
+            lambda_env_key="${lambda_name//-/_}"
+            echo "TF_VAR_${lambda_env_key}_image_uri=${image_uri}" >> "$GITHUB_ENV"
+          done < <(
+            jq -er 'to_entries[] | [.key, .value] | @tsv' <<< "${IMAGE_URIS_JSON}"
+          )
 
       - name: Retrieve Terraform Plan
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c

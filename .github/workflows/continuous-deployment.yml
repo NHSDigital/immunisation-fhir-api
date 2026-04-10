@@ -87,8 +87,7 @@ jobs:
     uses: ./.github/workflows/deploy-backend.yml
     with:
       apigee_environment: ${{ matrix.sub_environment_name }}
-      recordprocessor_image_version: ${{ needs.deploy-internal-dev-backend.outputs.recordprocessor_image_version }}
-      ack_backend_image_version: ${{ needs.deploy-internal-dev-backend.outputs.ack_backend_image_version }}
+      lambda_image_overrides: ${{ needs.deploy-internal-dev-backend.outputs.image_uris_json }}
       diff_base_sha: ${{ github.event.before }}
       diff_head_sha: ${{ github.sha }}
       run_diff_check: false
