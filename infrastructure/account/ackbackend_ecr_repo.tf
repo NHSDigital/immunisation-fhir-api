@@ -37,10 +37,7 @@ resource "aws_ecr_repository_policy" "ackbackend_repository_lambda_image_retriev
         }
         Action = [
           "ecr:BatchGetImage",
-          "ecr:DeleteRepositoryPolicy",
-          "ecr:GetDownloadUrlForLayer",
-          "ecr:GetRepositoryPolicy",
-          "ecr:SetRepositoryPolicy"
+          "ecr:GetDownloadUrlForLayer"
         ]
         Condition = {
           StringLike = {

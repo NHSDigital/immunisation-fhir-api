@@ -6,14 +6,13 @@ on:
       apigee_environment:
         required: true
         type: string
-      build_recordprocessor_image:
+      lambda_build_flags:
+        description: >
+          JSON map of lambda_name -> force-build flag.
+          e.g. {"recordprocessor":true,"ack-backend":false}
         required: false
-        type: boolean
-        default: false
-      build_ack_backend_image:
-        required: false
-        type: boolean
-        default: false
+        type: string
+        default: "{}"
       lambda_image_overrides:
         description: >
           JSON map of lambda_name -> immutable image selector for reuse mode.
@@ -71,16 +70,13 @@ on:
           - dev
           - preprod
           - prod
-      build_recordprocessor_image:
-        description: Build and publish a new recordprocessor image
-        required: true
-        type: boolean
-        default: true
-      build_ack_backend_image:
-        description: Build and publish a new ack backend image
-        required: true
-        type: boolean
-        default: true
+      lambda_build_flags:
+        description: >
+          JSON map of lambda_name -> force-build flag.
+          e.g. {"recordprocessor":true,"ack-backend":false}
+        required: false
+        type: string
+        default: "{}"
       lambda_image_overrides:
         description: >
           JSON map of lambda_name -> immutable image selector for reuse mode.
@@ -118,6 +114,7 @@ jobs:
   deploy-lambda-images:
     name: Deploy ${{ matrix.lambda_name }} image
     strategy:
+      # Surface every lambda image failure from the matrix in a single run.
       fail-fast: false
       matrix:
         include:
@@ -136,7 +133,7 @@ jobs:
       lambda_name: ${{ matrix.lambda_name }}
       environment: ${{ inputs.environment }}
       sub_environment: ${{ inputs.sub_environment }}
-      build_image: ${{ matrix.lambda_name == 'recordprocessor' && inputs.build_recordprocessor_image || matrix.lambda_name == 'ack-backend' && inputs.build_ack_backend_image || false }}
+      build_image: ${{ fromJson(inputs.lambda_build_flags)[matrix.lambda_name] || false }}
       image_version: ${{ fromJson(inputs.lambda_image_overrides)[matrix.lambda_name] || '' }}
       run_diff_check: ${{ inputs.run_diff_check }}
       diff_base_sha: ${{ inputs.diff_base_sha }}
@@ -156,7 +153,7 @@ jobs:
       contents: read
     needs:
       - deploy-lambda-images
-    if: ${{ !cancelled() }}
+    if: ${{ !cancelled() && needs.deploy-lambda-images.result == 'success' }}
     outputs:
       image_uris_json: ${{ steps.lambda-images.outputs.image_uris_json }}
     runs-on: ubuntu-latest
@@ -231,7 +228,7 @@ jobs:
       id-token: write
       contents: read
     needs: terraform-plan
-    if: ${{ !cancelled() }}
+    if: ${{ !cancelled() && needs.terraform-plan.result == 'success' }}
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.environment }}
