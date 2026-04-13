@@ -119,11 +119,13 @@ jobs:
       matrix:
         include:
           - lambda_name: recordprocessor
+            tf_var_suffix: recordprocessor
             ecr_repository: imms-recordprocessor-repo
             dockerfile_path: lambdas/recordprocessor/Dockerfile
             lambda_paths: |
               lambdas/recordprocessor/
           - lambda_name: ack-backend
+            tf_var_suffix: ack_backend
             ecr_repository: imms-ackbackend-repo
             dockerfile_path: lambdas/ack_backend/Dockerfile
             lambda_paths: |
@@ -131,6 +133,7 @@ jobs:
     uses: ./.github/workflows/deploy-lambda-artifact.yml
     with:
       lambda_name: ${{ matrix.lambda_name }}
+      tf_var_suffix: ${{ matrix.tf_var_suffix }}
       environment: ${{ inputs.environment }}
       sub_environment: ${{ inputs.sub_environment }}
       build_image: ${{ fromJson(inputs.lambda_build_flags)[matrix.lambda_name] || false }}
@@ -156,6 +159,7 @@ jobs:
     if: ${{ !cancelled() && needs.deploy-lambda-images.result == 'success' }}
     outputs:
       image_uris_json: ${{ steps.lambda-images.outputs.image_uris_json }}
+      terraform_image_uris_json: ${{ steps.lambda-images.outputs.terraform_image_uris_json }}
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.environment }}
@@ -195,16 +199,36 @@ jobs:
             exit 1
           fi
 
+          jq -e -s '
+            all(
+              .[];
+              .lambda_name != null
+              and .lambda_name != ""
+              and .tf_var_suffix != null
+              and .tf_var_suffix != ""
+              and .image_uri != null
+              and .image_uri != ""
+            )
+            and ((map(.lambda_name) | unique | length) == length)
+            and ((map(.tf_var_suffix) | unique | length) == length)
+          ' "${manifest_files[@]}" > /dev/null
+
           image_uris_json="$(
             jq -cs 'map(select(.lambda_name != null and .image_uri != null) | {(.lambda_name): .image_uri}) | add' \
               "${manifest_files[@]}"
           )"
 
+          terraform_image_uris_json="$(
+            jq -cs 'map(select(.tf_var_suffix != null and .tf_var_suffix != "" and .image_uri != null) | {(.tf_var_suffix): .image_uri}) | add' \
+              "${manifest_files[@]}"
+          )"
+
           echo "image_uris_json=${image_uris_json}" >> "$GITHUB_OUTPUT"
+          echo "terraform_image_uris_json=${terraform_image_uris_json}" >> "$GITHUB_OUTPUT"
           jq -er '
             to_entries[]
-            | "TF_VAR_\(.key | gsub("-"; "_"))_image_uri=\(.value)"
-          ' <<< "${image_uris_json}" >> "$GITHUB_ENV"
+            | "TF_VAR_\(.key)_image_uri=\(.value)"
+          ' <<< "${terraform_image_uris_json}" >> "$GITHUB_ENV"
 
       - name: Terraform Init
         working-directory: infrastructure/instance
@@ -248,19 +272,19 @@ jobs:
 
       - name: Restore lambda image Terraform vars
         env:
-          IMAGE_URIS_JSON: ${{ needs.terraform-plan.outputs.image_uris_json }}
+          TERRAFORM_IMAGE_URIS_JSON: ${{ needs.terraform-plan.outputs.terraform_image_uris_json }}
         run: |
           set -euo pipefail
 
-          if [ -z "${IMAGE_URIS_JSON}" ] || [ "${IMAGE_URIS_JSON}" = "null" ]; then
-            echo "terraform-plan did not emit image_uris_json."
+          if [ -z "${TERRAFORM_IMAGE_URIS_JSON}" ] || [ "${TERRAFORM_IMAGE_URIS_JSON}" = "null" ]; then
+            echo "terraform-plan did not emit terraform_image_uris_json."
             exit 1
           fi
 
           jq -er '
             to_entries[]
-            | "TF_VAR_\(.key | gsub("-"; "_"))_image_uri=\(.value)"
-          ' <<< "${IMAGE_URIS_JSON}" >> "$GITHUB_ENV"
+            | "TF_VAR_\(.key)_image_uri=\(.value)"
+          ' <<< "${TERRAFORM_IMAGE_URIS_JSON}" >> "$GITHUB_ENV"
 
       - name: Retrieve Terraform Plan
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c

@@ -7,6 +7,10 @@ on:
         description: Logical lambda identifier for logging and artifacts
         required: true
         type: string
+      tf_var_suffix:
+        description: Terraform variable suffix used to export TF_VAR_<suffix>_image_uri
+        required: true
+        type: string
       environment:
         description: GitHub environment containing AWS account variables
         required: true
@@ -106,6 +110,7 @@ jobs:
       DOCKERFILE_PATH: ${{ inputs.dockerfile_path }}
       TAG_PREFIX: ${{ inputs.image_tag_prefix }}
       LAMBDA_NAME: ${{ inputs.lambda_name }}
+      TF_VAR_SUFFIX: ${{ inputs.tf_var_suffix }}
       ENVIRONMENT: ${{ inputs.environment }}
       SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
       BUILD_IMAGE: ${{ inputs.build_image }}
@@ -358,6 +363,7 @@ jobs:
 
           jq -n \
             --arg lambda_name "${LAMBDA_NAME}" \
+            --arg tf_var_suffix "${TF_VAR_SUFFIX}" \
             --arg environment "${ENVIRONMENT}" \
             --arg sub_environment "${SUB_ENVIRONMENT}" \
             --arg deployment_mode "${DEPLOYMENT_MODE}" \
@@ -375,6 +381,7 @@ jobs:
             --arg build_timestamp "${build_timestamp}" \
             '{
               lambda_name: $lambda_name,
+              tf_var_suffix: $tf_var_suffix,
               environment: $environment,
               sub_environment: $sub_environment,
               deployment_mode: $deployment_mode,
