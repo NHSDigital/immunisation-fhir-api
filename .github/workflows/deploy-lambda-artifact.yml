@@ -123,7 +123,7 @@ jobs:
           fetch-depth: 0
 
       - name: Connect to AWS
-        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37
         with:
           aws-region: eu-west-2
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
@@ -230,7 +230,7 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr
         if: ${{ steps.decide.outputs.deployment_mode == 'build' && !steps.build-check.outputs.existing_image_digest }}
-        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076
+        uses: aws-actions/amazon-ecr-login@f2e9fc6c2b355c1890b65e6f6f0e2ac3e6e22f78
 
       - name: Set up Docker Buildx
         if: ${{ steps.decide.outputs.deployment_mode == 'build' && !steps.build-check.outputs.existing_image_digest }}
