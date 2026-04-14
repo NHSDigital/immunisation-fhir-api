@@ -21,7 +21,7 @@ jobs:
     with:
       apigee_environment: internal-dev
       build_recordprocessor_image: ${{ github.event.action == 'opened' || github.event.action == 'reopened' }}
-      diff_base_sha: ${{ github.event.before }}
+      diff_base_sha: ${{ github.event.action == 'synchronize' && github.event.before || github.event.pull_request.base.sha }}
       diff_head_sha: ${{ github.event.pull_request.head.sha }}
       run_diff_check: ${{ github.event.action == 'synchronize' }}
       create_mns_subscription: true
