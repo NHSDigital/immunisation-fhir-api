@@ -5,8 +5,7 @@ import unittest
 from copy import deepcopy
 from unittest.mock import Mock, call, patch
 
-import boto3
-from moto import mock_dynamodb, mock_firehose, mock_s3
+from moto import mock_aws
 
 from utils_for_recordprocessor_tests.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
@@ -16,9 +15,9 @@ from utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
     GenericSetUp,
     GenericTearDown,
     add_entry_to_table,
+    create_boto3_clients,
 )
 from utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
-    REGION_NAME,
     MockFileDetails,
     ValidMockFileContent,
 )
@@ -27,20 +26,20 @@ with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from batch_processor import process_csv_to_fhir
     from common.models.batch_constants import AUDIT_TABLE_NAME, FileStatus
 
-dynamodb_client = boto3.client("dynamodb", region_name=REGION_NAME)
-s3_client = boto3.client("s3", region_name=REGION_NAME)
-firehose_client = boto3.client("firehose", region_name=REGION_NAME)
+dynamodb_client = None
+s3_client = None
+firehose_client = None
 test_file = MockFileDetails.rsv_emis
 
 
-@mock_s3
-@mock_firehose
-@mock_dynamodb
+@mock_aws
 @patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
 class TestProcessCsvToFhir(unittest.TestCase):
     """Tests for process_csv_to_fhir function"""
 
     def setUp(self) -> None:
+        global dynamodb_client, s3_client, firehose_client
+        dynamodb_client, s3_client, firehose_client = create_boto3_clients("dynamodb", "s3", "firehose")
         GenericSetUp(
             s3_client=s3_client,
             firehose_client=firehose_client,

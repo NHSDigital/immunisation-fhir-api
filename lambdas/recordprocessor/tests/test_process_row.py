@@ -5,8 +5,7 @@ from copy import deepcopy
 from decimal import Decimal
 from unittest.mock import patch
 
-from boto3 import client as boto3_client
-from moto import mock_s3
+from moto import mock_aws
 
 from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
@@ -14,6 +13,7 @@ from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
 from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
     GenericSetUp,
     GenericTearDown,
+    create_boto3_clients,
 )
 from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
     MockFieldDictionaries,
@@ -21,10 +21,9 @@ from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests impo
 )
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
-    from common.clients import REGION_NAME
     from process_row import process_row
 
-s3_client = boto3_client("s3", region_name=REGION_NAME)
+s3_client = None
 ROW_DETAILS = MockFieldDictionaries.all_fields
 Allowed_Operations = {"CREATE", "UPDATE", "DELETE"}
 expected_successful_result = {
@@ -144,12 +143,14 @@ expected_successful_result = {
 }
 
 
-@mock_s3
+@mock_aws
 @patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
 class TestProcessRow(unittest.TestCase):
     """Tests for process_row"""
 
     def setUp(self) -> None:
+        global s3_client
+        (s3_client,) = create_boto3_clients("s3")
         GenericSetUp(s3_client)
 
     def tearDown(self) -> None:
