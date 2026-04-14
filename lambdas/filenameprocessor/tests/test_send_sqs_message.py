@@ -5,33 +5,37 @@ from json import loads as json_loads
 from unittest import TestCase
 from unittest.mock import patch
 
-from boto3 import client as boto3_client
-from moto import mock_sqs
+from moto import mock_aws
 
 from utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, Sqs
+from utils_for_tests.utils_for_filenameprocessor_tests import create_boto3_clients, reset_common_clients
 from utils_for_tests.values_for_tests import MockFileDetails
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from common.clients import REGION_NAME
     from models.errors import UnhandledSqsError
     from send_sqs_message import make_and_send_sqs_message, send_to_supplier_queue
 
-sqs_client = boto3_client("sqs", region_name=REGION_NAME)
+sqs_client = None
 
 FLU_EMIS_FILE_DETAILS = MockFileDetails.emis_flu
 RSV_RAVS_FILE_DETAILS = MockFileDetails.ravs_rsv_1
 
 NON_EXISTENT_QUEUE_ERROR_MESSAGE = (
-    "An unexpected error occurred whilst sending to SQS: An error occurred (AWS.SimpleQueueService.NonExistent"
-    + "Queue) when calling the SendMessage operation: The specified queue does not exist for this wsdl version."
+    "An unexpected error occurred whilst sending to SQS: An error occurred "
+    "(AWS.SimpleQueueService.NonExistentQueue) when calling the SendMessage operation"
 )
 
 
-@mock_sqs
+@mock_aws
 @patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
 class TestSendSQSMessage(TestCase):
     """Tests for send_sqs_message functions"""
+
+    def setUp(self):
+        global sqs_client
+        reset_common_clients()
+        (sqs_client,) = create_boto3_clients("sqs")
 
     def test_send_to_supplier_queue_success(self):
         """Test send_to_supplier_queue function for a successful message send"""
@@ -75,7 +79,7 @@ class TestSendSQSMessage(TestCase):
                 vaccine_type=FLU_EMIS_FILE_DETAILS.vaccine_type,
                 supplier=FLU_EMIS_FILE_DETAILS.supplier,
             )
-        self.assertEqual(NON_EXISTENT_QUEUE_ERROR_MESSAGE, str(context.exception))
+        self.assertIn(NON_EXISTENT_QUEUE_ERROR_MESSAGE, str(context.exception))
 
     def test_make_and_send_sqs_message_success(self):
         """Test make_and_send_sqs_message function for a successful message send"""
