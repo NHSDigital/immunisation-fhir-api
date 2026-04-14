@@ -25,7 +25,7 @@ provider "aws" {
 
 
 module "mesh" {
-  source = "git::https://github.com/nhsdigital/terraform-aws-mesh-client.git//module?ref=v2.1.6"
+  source = "git::https://github.com/nhsdigital/terraform-aws-mesh-client.git//module?ref=v2.1.8"
 
   name_prefix = "imms-${var.aws_environment}"
   account_id  = var.imms_account_id

@@ -214,6 +214,7 @@
         "iam:DeleteGroupPolicy",
         "iam:ListMFADeviceTags",
         "elasticache:*",
+        "shield:*",
         "iam:DeletePolicyVersion",
         "chatbot:*"
       ],

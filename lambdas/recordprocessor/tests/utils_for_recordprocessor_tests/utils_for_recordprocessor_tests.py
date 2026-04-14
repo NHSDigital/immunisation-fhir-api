@@ -21,10 +21,33 @@ from utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from csv import DictReader
 
-    from common.clients import REGION_NAME
+    import common.clients as common_clients
     from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys
 
-dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
+REGION_NAME = common_clients.REGION_NAME
+
+COMMON_CLIENT_CACHE_NAMES = (
+    "global_s3_client",
+    "global_sqs_client",
+    "global_firehose_client",
+    "global_secrets_manager_client",
+    "global_dynamodb_client",
+    "global_dynamodb_resource",
+    "global_kinesis_client",
+)
+
+
+def reset_common_clients() -> None:
+    for client_cache_name in COMMON_CLIENT_CACHE_NAMES:
+        setattr(common_clients, client_cache_name, None)
+
+
+def create_boto3_clients(*service_names: str):
+    return tuple(boto3_client(service_name, region_name=REGION_NAME) for service_name in service_names)
+
+
+def get_dynamodb_client():
+    return boto3_client("dynamodb", region_name=REGION_NAME)
 
 
 def convert_string_to_dict_reader(data_string: str):
@@ -48,6 +71,8 @@ class GenericSetUp:
         kinesis_client=None,
         dynamo_db_client=None,
     ):
+        reset_common_clients()
+
         if s3_client:
             for bucket_name in [
                 BucketNames.SOURCE,
@@ -93,7 +118,7 @@ class GenericTearDown:
         dynamo_db_client=None,
     ):
         if s3_client:
-            for bucket_name in [BucketNames.SOURCE, BucketNames.DESTINATION]:
+            for bucket_name in [BucketNames.SOURCE, BucketNames.DESTINATION, BucketNames.MOCK_FIREHOSE]:
                 for obj in s3_client.list_objects_v2(Bucket=bucket_name).get("Contents", []):
                     s3_client.delete_object(Bucket=bucket_name, Key=obj["Key"])
                 s3_client.delete_bucket(Bucket=bucket_name)
@@ -110,11 +135,13 @@ class GenericTearDown:
         if dynamo_db_client:
             dynamo_db_client.delete_table(TableName=AUDIT_TABLE_NAME)
 
+        reset_common_clients()
+
 
 def add_entry_to_table(file_details: MockFileDetails, file_status: str) -> None:
     """Add an entry to the audit table"""
     audit_table_entry = {**file_details.audit_table_entry, "status": {"S": file_status}}
-    dynamodb_client.put_item(TableName=AUDIT_TABLE_NAME, Item=audit_table_entry)
+    get_dynamodb_client().put_item(TableName=AUDIT_TABLE_NAME, Item=audit_table_entry)
 
 
 def deserialize_dynamodb_types(dynamodb_table_entry_with_types):
@@ -127,10 +154,14 @@ def deserialize_dynamodb_types(dynamodb_table_entry_with_types):
 
 def assert_audit_table_entry(file_details: FileDetails, expected_status: str, row_count: int | None = None) -> None:
     """Assert that the file details are in the audit table"""
-    table_entry = dynamodb_client.get_item(
-        TableName=AUDIT_TABLE_NAME,
-        Key={AuditTableKeys.MESSAGE_ID: {"S": file_details.message_id}},
-    ).get("Item")
+    table_entry = (
+        get_dynamodb_client()
+        .get_item(
+            TableName=AUDIT_TABLE_NAME,
+            Key={AuditTableKeys.MESSAGE_ID: {"S": file_details.message_id}},
+        )
+        .get("Item")
+    )
     expected_result = {**file_details.audit_table_entry, "status": {"S": expected_status}}
 
     if row_count is not None:

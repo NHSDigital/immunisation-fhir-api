@@ -1,8 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from boto3 import client as boto3_client
-from moto import mock_kinesis
+from moto import mock_aws
 
 from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
@@ -10,20 +9,20 @@ from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
 from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
     GenericSetUp,
     GenericTearDown,
-)
-from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
-    REGION_NAME,
+    create_boto3_clients,
 )
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from send_to_kinesis import send_to_kinesis
 
-kinesis_client = boto3_client("kinesis", region_name=REGION_NAME)
+kinesis_client = None
 
 
-@mock_kinesis
+@mock_aws
 class TestSendToKinesis(unittest.TestCase):
     def setUp(self) -> None:
+        global kinesis_client
+        (kinesis_client,) = create_boto3_clients("kinesis")
         GenericSetUp(None, None, kinesis_client)
 
     def tearDown(self) -> None:

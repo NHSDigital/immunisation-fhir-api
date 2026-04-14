@@ -5,8 +5,7 @@ import unittest
 from io import StringIO
 from unittest.mock import patch
 
-import boto3
-from moto import mock_s3
+from moto import mock_aws
 
 from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
@@ -15,9 +14,9 @@ from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
 from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
     GenericSetUp,
     GenericTearDown,
+    create_boto3_clients,
 )
 from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
-    REGION_NAME,
     MockFileDetails,
     ValidMockFileContent,
 )
@@ -29,16 +28,18 @@ with patch("os.environ", MOCK_ENVIRONMENT_DICT):
         get_environment,
     )
 
-s3_client = boto3.client("s3", region_name=REGION_NAME)
+s3_client = None
 test_file = MockFileDetails.rsv_emis
 
 
 @patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
-@mock_s3
+@mock_aws
 class TestUtilsForRecordprocessor(unittest.TestCase):
     """Tests for utils_for_recordprocessor"""
 
     def setUp(self) -> None:
+        global s3_client
+        (s3_client,) = create_boto3_clients("s3")
         GenericSetUp(s3_client)
 
     def tearDown(self) -> None:
