@@ -1,81 +1,5 @@
-# Define the directory containing the Docker image and calculate its SHA-256 hash for triggering redeployments
 locals {
-  ack_lambda_dir     = abspath("${path.root}/../../lambdas/ack_backend")
-  ack_lambda_files   = fileset(local.ack_lambda_dir, "**")
-  ack_lambda_dir_sha = sha1(join("", [for f in local.ack_lambda_files : filesha1("${local.ack_lambda_dir}/${f}")]))
-  ack_lambda_name    = "${local.short_prefix}-ack-lambda"
-}
-
-
-resource "aws_ecr_repository" "ack_lambda_repository" {
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-  name         = "${local.short_prefix}-ack-repo"
-  force_delete = local.is_temp
-}
-
-# Module for building and pushing Docker image to ECR
-module "ack_processor_docker_image" {
-  source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version          = "8.7.0"
-  docker_file_path = "./ack_backend/Dockerfile"
-  create_ecr_repo  = false
-  ecr_repo         = aws_ecr_repository.ack_lambda_repository.name
-  ecr_repo_lifecycle_policy = jsonencode({
-    "rules" : [
-      {
-        "rulePriority" : 1,
-        "description" : "Keep only the last 2 images",
-        "selection" : {
-          "tagStatus" : "any",
-          "countType" : "imageCountMoreThan",
-          "countNumber" : 2
-        },
-        "action" : {
-          "type" : "expire"
-        }
-      }
-    ]
-  })
-
-  platform      = "linux/amd64"
-  use_image_tag = false
-  source_path   = abspath("${path.root}/../../lambdas")
-  triggers = {
-    dir_sha        = local.ack_lambda_dir_sha
-    shared_dir_sha = local.shared_dir_sha
-  }
-}
-
-# Define the lambdaECRImageRetreival policy
-resource "aws_ecr_repository_policy" "ack_lambda_ECRImageRetreival_policy" {
-  repository = aws_ecr_repository.ack_lambda_repository.name
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        "Sid" : "LambdaECRImageRetrievalPolicy",
-        "Effect" : "Allow",
-        "Principal" : {
-          "Service" : "lambda.amazonaws.com"
-        },
-        "Action" : [
-          "ecr:BatchGetImage",
-          "ecr:DeleteRepositoryPolicy",
-          "ecr:GetDownloadUrlForLayer",
-          "ecr:GetRepositoryPolicy",
-          "ecr:SetRepositoryPolicy"
-        ],
-        "Condition" : {
-          "StringLike" : {
-            "aws:sourceArn" : "arn:aws:lambda:${var.aws_region}:${var.immunisation_account_id}:function:${local.ack_lambda_name}"
-          }
-        }
-      }
-    ]
-  })
+  ack_lambda_name = "${local.short_prefix}-ack-lambda"
 }
 
 # IAM Role for Lambda
@@ -201,7 +125,7 @@ resource "aws_lambda_function" "ack_processor_lambda" {
   function_name = local.ack_lambda_name
   role          = aws_iam_role.ack_lambda_exec_role.arn
   package_type  = "Image"
-  image_uri     = module.ack_processor_docker_image.image_uri
+  image_uri     = var.ack_backend_image_uri
   architectures = ["x86_64"]
   timeout       = 900
   memory_size   = 2048
