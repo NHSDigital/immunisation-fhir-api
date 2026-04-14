@@ -134,3 +134,29 @@
 #   id = "imms-prod-supplier-config"
 #   to = aws_s3_bucket_policy.batch_config_bucket_policy[0]
 # }
+
+# TODO - delete after ack backend ECR ownership migration has been applied in all environments
+
+removed {
+  from = aws_ecr_repository.ack_lambda_repository
+
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = aws_ecr_repository_policy.ack_lambda_ECRImageRetreival_policy
+
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = module.ack_processor_docker_image
+
+  lifecycle {
+    destroy = false
+  }
+}
