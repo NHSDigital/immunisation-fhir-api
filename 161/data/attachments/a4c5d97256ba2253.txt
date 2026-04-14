@@ -1,0 +1,1 @@
+✅ Step Passed: **Send a search request with 'POST' method using mixed valid and invalid target-disease codes for Immunization event created with target-disease system 'http://snomed.info/sct' and invalid target-disease code '99999'

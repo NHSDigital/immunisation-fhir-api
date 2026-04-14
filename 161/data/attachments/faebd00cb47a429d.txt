@@ -1,0 +1,1 @@
+✅ Step Passed: **Valid json payload is created where patient date is greater then vaccination occurrence date
