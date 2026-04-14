@@ -110,6 +110,17 @@ variable "recordprocessor_image_uri" {
   }
 }
 
+variable "ack_backend_image_uri" {
+  description = "Immutable URI of the ack backend Lambda container image in ECR. Must be supplied by CI/CD."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = trimspace(var.ack_backend_image_uri) != ""
+    error_message = "ack_backend_image_uri must be provided."
+  }
+}
+
 locals {
   prefix              = "${var.project_name}-${var.service}-${var.sub_environment}"
   short_prefix        = "${var.project_short_name}-${var.sub_environment}"
