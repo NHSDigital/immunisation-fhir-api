@@ -1,0 +1,2 @@
+❌ Step failed! **The imms event table will be populated with the correct data for 'created' event** 
+ Error: An error occurred (ExpiredTokenException) when calling the GetItem operation: The security token included in the request is expired

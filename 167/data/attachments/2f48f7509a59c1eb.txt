@@ -1,0 +1,2 @@
+❌ Step failed! **Valid vaccination record is created with Patient 'Random' and vaccine_type 'COVID'** 
+ Error: An error occurred (ExpiredToken) when calling the ReceiveMessage operation: The security token included in the request is expired
