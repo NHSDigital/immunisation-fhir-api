@@ -14,22 +14,48 @@ from utils_for_tests.values_for_tests import FileDetails
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from common.clients import REGION_NAME
+    import common.clients as common_clients
     from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys
     from common.models.constants import RedisHashKeys
     from constants import ODS_CODE_TO_SUPPLIER_SYSTEM_HASH_KEY
 
 MOCK_ODS_CODE_TO_SUPPLIER = {"YGM41": "EMIS", "X8E5B": "RAVS"}
+REGION_NAME = common_clients.REGION_NAME
 
-dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
+COMMON_CLIENT_CACHE_NAMES = (
+    "global_s3_client",
+    "global_sqs_client",
+    "global_firehose_client",
+    "global_secrets_manager_client",
+    "global_dynamodb_client",
+    "global_dynamodb_resource",
+    "global_kinesis_client",
+)
+
+
+def reset_common_clients() -> None:
+    for client_cache_name in COMMON_CLIENT_CACHE_NAMES:
+        setattr(common_clients, client_cache_name, None)
+
+
+def create_boto3_clients(*service_names: str):
+    return tuple(boto3_client(service_name, region_name=REGION_NAME) for service_name in service_names)
+
+
+def get_dynamodb_client():
+    return boto3_client("dynamodb", region_name=REGION_NAME)
 
 
 def assert_audit_table_entry(file_details: FileDetails, expected_status: str) -> None:
     """Assert that the file details are in the audit table"""
-    table_entry = dynamodb_client.get_item(
-        TableName=AUDIT_TABLE_NAME,
-        Key={AuditTableKeys.MESSAGE_ID: {"S": file_details.message_id}},
-    ).get("Item")
+    table_entry = (
+        get_dynamodb_client()
+        .get_item(
+            TableName=AUDIT_TABLE_NAME,
+            Key={AuditTableKeys.MESSAGE_ID: {"S": file_details.message_id}},
+        )
+        .get("Item")
+    )
     assert table_entry == {
         **file_details.audit_table_entry,
         "status": {"S": expected_status},
@@ -67,6 +93,8 @@ class GenericSetUp:
         sqs_client=None,
         dynamodb_client=None,
     ):
+        reset_common_clients()
+
         if s3_client:
             for bucket_name in [
                 BucketNames.SOURCE,
@@ -133,3 +161,5 @@ class GenericTearDown:
 
         if dynamodb_client:
             dynamodb_client.delete_table(TableName=AUDIT_TABLE_NAME)
+
+        reset_common_clients()

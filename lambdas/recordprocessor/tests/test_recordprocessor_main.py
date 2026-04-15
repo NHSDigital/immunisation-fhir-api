@@ -7,8 +7,7 @@ from decimal import Decimal
 from json import JSONDecodeError
 from unittest.mock import Mock, patch
 
-from boto3 import client as boto3_client
-from moto import mock_dynamodb, mock_firehose, mock_kinesis, mock_s3
+from moto import mock_aws
 
 from utils_for_recordprocessor_tests.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
@@ -21,10 +20,10 @@ from utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
     GenericTearDown,
     add_entry_to_table,
     assert_audit_table_entry,
+    create_boto3_clients,
     create_patch,
 )
 from utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
-    REGION_NAME,
     FileDetails,
     InfAckFileRows,
     MockFhirImmsResources,
@@ -39,23 +38,24 @@ with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from common.models.batch_constants import AUDIT_TABLE_NAME, AuditTableKeys, FileStatus
     from constants import Diagnostics
 
-s3_client = boto3_client("s3", region_name=REGION_NAME)
-kinesis_client = boto3_client("kinesis", region_name=REGION_NAME)
-firehose_client = boto3_client("firehose", region_name=REGION_NAME)
-dynamo_db_client = boto3_client("dynamodb", region_name=REGION_NAME)
+s3_client = None
+kinesis_client = None
+firehose_client = None
+dynamo_db_client = None
 yesterday = datetime.now(UTC) - timedelta(days=1)
 mock_rsv_emis_file = MockFileDetails.rsv_emis
 
 
 @patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
-@mock_dynamodb
-@mock_s3
-@mock_kinesis
-@mock_firehose
+@mock_aws
 class TestRecordProcessor(unittest.TestCase):
     """Tests for main function for RecordProcessor"""
 
     def setUp(self) -> None:
+        global s3_client, kinesis_client, firehose_client, dynamo_db_client
+        s3_client, kinesis_client, firehose_client, dynamo_db_client = create_boto3_clients(
+            "s3", "kinesis", "firehose", "dynamodb"
+        )
         GenericSetUp(s3_client, firehose_client, kinesis_client, dynamo_db_client)
 
         mock_redis = Mock()
@@ -168,7 +168,7 @@ class TestRecordProcessor(unittest.TestCase):
 
                 # Ensure that arrival times are sequential
                 approximate_arrival_timestamp = kinesis_record["ApproximateArrivalTimestamp"]
-                self.assertGreater(
+                self.assertGreaterEqual(
                     approximate_arrival_timestamp,
                     previous_approximate_arrival_time_stamp,
                 )

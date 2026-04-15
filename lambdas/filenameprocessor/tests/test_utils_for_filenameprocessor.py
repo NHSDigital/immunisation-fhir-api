@@ -4,8 +4,7 @@ from datetime import UTC, datetime, timedelta
 from unittest import TestCase
 from unittest.mock import patch
 
-from boto3 import client as boto3_client
-from moto import mock_s3
+from moto import mock_aws
 
 from utils_for_tests.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
@@ -13,23 +12,25 @@ from utils_for_tests.mock_environment_variables import (
 from utils_for_tests.utils_for_filenameprocessor_tests import (
     GenericSetUp,
     GenericTearDown,
+    create_boto3_clients,
 )
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from common.clients import REGION_NAME
     from constants import AUDIT_TABLE_TTL_DAYS
     from utils_for_filenameprocessor import get_creation_and_expiry_times
 
-s3_client = boto3_client("s3", region_name=REGION_NAME)
+s3_client = None
 
 
-@mock_s3
+@mock_aws
 class TestUtilsForFilenameprocessor(TestCase):
     """Tests for utils_for_filenameprocessor functions"""
 
     def setUp(self):
         """Set up the s3 buckets"""
+        global s3_client
+        (s3_client,) = create_boto3_clients("s3")
         GenericSetUp(s3_client)
 
     def tearDown(self):

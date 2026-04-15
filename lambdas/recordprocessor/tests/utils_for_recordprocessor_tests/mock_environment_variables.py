@@ -32,6 +32,11 @@ class Sqs:
 
 
 MOCK_ENVIRONMENT_DICT = {
+    "AWS_ACCESS_KEY_ID": "testing",
+    "AWS_SECRET_ACCESS_KEY": "testing",
+    "AWS_SESSION_TOKEN": "testing",
+    "AWS_REGION": REGION_NAME,
+    "AWS_DEFAULT_REGION": REGION_NAME,
     "ENVIRONMENT": "internal-dev",
     "LOCAL_ACCOUNT_ID": "123456789012",
     "SOURCE_BUCKET_NAME": BucketNames.SOURCE,
