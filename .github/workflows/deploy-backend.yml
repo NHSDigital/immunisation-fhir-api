@@ -120,7 +120,7 @@ jobs:
         include:
           - lambda_name: backend
             tf_var_suffix: backend
-            ecr_repository: imms-fhir-api-operation-lambda-repo
+            ecr_repository: imms-backend-repo
             dockerfile_path: lambdas/backend/Dockerfile
             lambda_paths: lambdas/backend/
           - lambda_name: batch_processor_filter
@@ -130,12 +130,12 @@ jobs:
             lambda_paths: lambdas/batch_processor_filter/
           - lambda_name: delta_backend
             tf_var_suffix: delta_backend
-            ecr_repository: imms-fhir-api-delta-lambda-repo
+            ecr_repository: imms-delta-backend-repo
             dockerfile_path: lambdas/delta_backend/Dockerfile
             lambda_paths: lambdas/delta_backend/
           - lambda_name: filenameprocessor
             tf_var_suffix: filenameprocessor
-            ecr_repository: imms-filenameproc-repo
+            ecr_repository: imms-filenameprocessor-repo
             dockerfile_path: lambdas/filenameprocessor/Dockerfile
             lambda_paths: lambdas/filenameprocessor/
           - lambda_name: id_sync
@@ -155,7 +155,7 @@ jobs:
             lambda_paths: lambdas/mns_publisher/
           - lambda_name: recordforwarder
             tf_var_suffix: recordforwarder
-            ecr_repository: imms-forwarding-repo
+            ecr_repository: imms-recordforwarder-repo
             dockerfile_path: lambdas/recordforwarder/Dockerfile
             lambda_paths: lambdas/recordforwarder/
           - lambda_name: redis_sync

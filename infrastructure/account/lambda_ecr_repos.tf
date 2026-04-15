@@ -25,7 +25,7 @@ locals {
 locals {
   lambda_ecr_repositories = {
     operation = {
-      name = "imms-fhir-api-operation-lambda-repo"
+      name = "imms-backend-repo"
       lambda_source_names = [
         "*_get_status",
         "*_not_found",
@@ -41,11 +41,11 @@ locals {
       lambda_source_names = ["*-batch-processor-filter-lambda"]
     }
     delta = {
-      name                = "imms-fhir-api-delta-lambda-repo"
+      name                = "imms-delta-backend-repo"
       lambda_source_names = ["*-delta-lambda"]
     }
     filenameprocessor = {
-      name                = "imms-filenameproc-repo"
+      name                = "imms-filenameprocessor-repo"
       lambda_source_names = ["*-filenameproc-lambda"]
     }
     id_sync = {
@@ -65,7 +65,7 @@ locals {
       lambda_source_names = ["*-ack-lambda"]
     }
     recordforwarder = {
-      name                = "imms-forwarding-repo"
+      name                = "imms-recordforwarder-repo"
       lambda_source_names = ["*-forwarding-lambda"]
     }
     recordprocessor = {

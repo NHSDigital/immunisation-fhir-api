@@ -21,15 +21,15 @@ jobs:
       BACKEND_ENVIRONMENT: dev
       BACKEND_SUB_ENVIRONMENT: pr-${{ github.event_name == 'pull_request' && github.event.pull_request.number || inputs.pr_number }}
       LAMBDA_IMAGE_BINDINGS: |
-        backend_image_uri:imms-fhir-api-operation-lambda-repo
+        backend_image_uri:imms-backend-repo
         batch_processor_filter_image_uri:imms-batch-processor-filter-repo
-        delta_backend_image_uri:imms-fhir-api-delta-lambda-repo
-        filenameprocessor_image_uri:imms-filenameproc-repo
+        delta_backend_image_uri:imms-delta-backend-repo
+        filenameprocessor_image_uri:imms-filenameprocessor-repo
         id_sync_image_uri:imms-id-sync-repo
         mesh_processor_image_uri:imms-mesh-processor-repo
         mns_publisher_image_uri:imms-mns-publisher-repo
         recordprocessor_image_uri:imms-recordprocessor-repo
-        recordforwarder_image_uri:imms-forwarding-repo
+        recordforwarder_image_uri:imms-recordforwarder-repo
         ack_backend_image_uri:imms-ackbackend-repo
         redis_sync_image_uri:imms-redis-sync-repo
     permissions:
