@@ -1,12 +1,12 @@
 [
   {
     "supplier": "DPSFULL",
-    "permissions": ["COVID19.CRUDS", "FLU.CRUDS", "MMR.CRUDS", "RSV.CRUDS"],
+    "permissions": ["COVID.CRUDS", "FLU.CRUDS", "MMR.CRUDS", "RSV.CRUDS"],
     "ods_codes": ["DPSFULL"]
   },
   {
     "supplier": "DPSREDUCED",
-    "permissions": ["COVID19.CRUDS", "FLU.CRUDS", "MMR.CRUDS", "RSV.CRUDS"],
+    "permissions": ["COVID.CRUDS", "FLU.CRUDS", "MMR.CRUDS", "RSV.CRUDS"],
     "ods_codes": ["DPSREDUCED"]
   },
   {
@@ -37,7 +37,7 @@
   },
   {
     "supplier": "EVA",
-    "permissions": ["COVID19.CUD"],
+    "permissions": ["COVID.CUD"],
     "ods_codes": ["8HA94"]
   },
   {

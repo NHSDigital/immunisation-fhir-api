@@ -11,7 +11,7 @@ class DefaultValues:
     fixed_datetime_str = fixed_datetime.strftime("%Y-%m-%d %H:%M:%S")
 
     message_id = "test_file_id"
-    row_id = "test_file_id#1"
+    row_id = "test_file_id^1"
     local_id = "test_system_uri^testabc"
     imms_id = "test_imms_id"
     operation_requested = "CREATE"
@@ -106,6 +106,12 @@ class MessageDetails:
         self.archive_ack_file_key = (
             f"forwardedFile/{vaccine_type}_Vaccinations_v5_{ods_code}_20210730T12000000_BusAck_20211120T12000000.csv"
         )
+        self.temp_json_ack_file_key = (
+            f"TempAck/{vaccine_type}_Vaccinations_v5_{ods_code}_20210730T12000000_BusAck_20211120T12000000.json"
+        )
+        self.archive_json_ack_file_key = (
+            f"forwardedFile/{vaccine_type}_Vaccinations_v5_{ods_code}_20210730T12000000_BusAck_20211120T12000000.json"
+        )
         self.vaccine_type = vaccine_type
         self.ods_code = ods_code
         self.supplier = supplier
@@ -134,7 +140,19 @@ class MessageDetails:
 
         self.success_message = {**self.base_message, "imms_id": imms_id}
 
-        self.failure_message = {**self.base_message, "diagnostics": DiagnosticsDictionaries.NO_PERMISSIONS}
+        self.failure_message = {
+            **self.base_message,
+            "diagnostics": DiagnosticsDictionaries.NO_PERMISSIONS,
+        }
+
+        self.eof_message = {
+            "created_at_formatted_string": self.created_at_formatted_string,
+            "file_key": self.file_key,
+            "message": "EOF",
+            "row_id": self.row_id,
+            "supplier": self.supplier,
+            "vax_type": self.vaccine_type,
+        }
 
 
 class MockMessageDetails:
@@ -233,7 +251,7 @@ class ValidValues:
     )
 
     upload_ack_file_expected_log = {
-        "function_name": "ack_processor_upload_ack_file",
+        "function_name": "ack_processor_complete_batch_file_process",
         "date_time": fixed_datetime.strftime("%Y-%m-%d %H:%M:%S"),
         "status": "success",
         "supplier": MOCK_MESSAGE_DETAILS.supplier,
@@ -241,9 +259,53 @@ class ValidValues:
         "vaccine_type": MOCK_MESSAGE_DETAILS.vaccine_type,
         "message_id": MOCK_MESSAGE_DETAILS.row_id,
         "row_count": 99,
+        "success_count": 97,
+        "failure_count": 2,
         "statusCode": 200,
         "message": "Record processing complete",
     }
+
+    json_ack_initial_content = {
+        "system": "Immunisation FHIR API Batch Report",
+        "version": 1,
+        "generatedDate": "",
+        "filename": "RSV_Vaccinations_v5_X26_20210730T12000000",
+        "provider": "RAVS",
+        "messageHeaderId": "test_file_id",
+        "summary": {"ingestionTime": {"start": 3456}},
+        "failures": [],
+    }
+
+    json_ack_complete_content = {
+        "system": "Immunisation FHIR API Batch Report",
+        "version": 1,
+        "generatedDate": "2026-02-09T17:26:00.000Z",
+        "filename": "RSV_Vaccinations_v5_X26_20210730T12000000",
+        "provider": "RAVS",
+        "messageHeaderId": "test_file_id",
+        "summary": {"totalRecords": 10, "succeeded": 9, "failed": 1, "ingestionTime": {"start": 3456, "end": 7890}},
+        "failures": [
+            {
+                "rowId": 1,
+                "responseCode": "30002",
+                "responseDisplay": "Business Level Response Value - Processing Error",
+                "severity": "Fatal",
+                "localId": "test_system_uri^testabc",
+                "operationOutcome": "DIAGNOSTICS",
+            }
+        ],
+    }
+
+    json_ack_data_failure_dict = (
+        {
+            "rowId": DefaultValues.row_id,
+            "responseCode": "30002",
+            "responseDisplay": "Business Level Response Value - Processing Error",
+            "severity": "Fatal",
+            "localId": DefaultValues.local_id,
+            "operationOutcome": "DIAGNOSTICS",
+        },
+    )
 
 
 class InvalidValues:
@@ -260,7 +322,7 @@ class InvalidValues:
         "supplier": "unknown",
         "file_key": "file_key_missing",
         "vaccine_type": "unknown",
-        "message_id": "unknown",
+        "message_id": "test^1",
         "operation_requested": "unknown",
         "time_taken": "1000.0ms",
         "local_id": "unknown",

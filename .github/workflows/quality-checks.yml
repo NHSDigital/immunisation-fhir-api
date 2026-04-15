@@ -1,59 +1,92 @@
 name: Quality Checks
 
 on:
-  push:
-    branches:
-      - master
-  pull_request:
-    types: [labeled, opened, synchronize, reopened, unlabeled]
+  workflow_call:
+    secrets:
+      SONAR_TOKEN:
+        required: true
 
 env:
   SHARED_PATH: ${{ github.workspace }}/lambdas/shared
   LAMBDA_PATH: ${{ github.workspace }}/lambdas
 
 jobs:
-  lint:
-    name: Lint specification and Python projects
+  lint-specification:
+    name: Lint specification
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
+
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
+        with:
+          node-version: "23.11.0"
+          cache: "npm"
+
+      - name: Install linting dependencies
+        run: make install
+
+      - name: Lint
+        run: make lint
+
+      - name: Check formatting
+        run: make format-check
+
+  lint-python:
+    name: Lint Python projects
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
 
       - name: Install poetry
         run: pip install poetry==2.1.4
 
-      # Base linting requires 3.8 due to APIM package dependencies. See root README for details under linting.
-      # Consider upgrading this and poetry deps if we move away from Azure DevOps to using the Proxygen tool.
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
-          python-version: 3.8
-          cache: 'poetry'
-
-      - uses: actions/setup-node@v5
-        with:
-          node-version: '23.11.0'
-          cache: 'npm'
+          python-version: 3.11
+          cache: "poetry"
 
       - name: Install linting dependencies
-        run: make install-node && poetry install --no-root
+        run: poetry install --no-root
+        working-directory: quality_checks
 
       - name: Lint
-        run: make lint
+        run: poetry run make lint
+        working-directory: quality_checks
+
+      - name: Check formatting
+        run: poetry run make format-check
+        working-directory: quality_checks
+
+  lint-terraform:
+    name: Lint Terraform projects
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
+
+      - uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85
+        with:
+          terraform_version: "1.12.2"
+
+      - name: Check formatting
+        run: terraform fmt -check -recursive
 
   testcoverage_and_sonarcloud:
     name: Test Coverage and SonarCloud
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
 
       - name: Install poetry
         run: pip install poetry==2.1.4
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
           python-version: 3.11
-          cache: 'poetry'
+          cache: "poetry"
 
       - name: Set up AWS credentials
         env:
@@ -63,108 +96,133 @@ jobs:
           aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
           aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
 
-      - name: Run unittest with filenameprocessor-coverage
-        working-directory: filenameprocessor
-        id: filenameprocessor
-        continue-on-error: true
-        run: |
-          poetry install
-          poetry run coverage run -m unittest discover || echo "filenameprocessor tests failed" >> ../failed_tests.txt
-          poetry run coverage xml -o ../filenameprocessor-coverage.xml
-
-      - name: Run unittest with batchprocessorfilter-coverage
-        working-directory: batch_processor_filter
-        id: batchprocessorfilter
-        env:
-          PYTHONPATH: ${{ github.workspace }}/batch_processor_filter/src:${{ github.workspace }}/batch_processor_filter/tests
-        continue-on-error: true
-        run: |
-          poetry install
-          poetry run coverage run -m unittest discover || echo "batchprocessorfilter tests failed" >> ../failed_tests.txt
-          poetry run coverage xml -o ../batchprocessorfilter-coverage.xml
-
-      - name: Run unittest with recordprocessor-coverage
-        working-directory: recordprocessor
-        id: recordprocessor
-        env:
-          PYTHONPATH: ${{ github.workspace }}/recordprocessor/src:${{ github.workspace }}/recordprocessor/tests
-        continue-on-error: true
-        run: |
-          poetry install
-          poetry run coverage run -m unittest discover || echo "recordprocessor tests failed" >> ../failed_tests.txt
-          poetry run coverage xml -o ../recordprocessor-coverage.xml
-
-        # This step is redundant - all of these tests will be run in the backend step below
-      - name: Run unittest with recordforwarder-coverage
-        working-directory: backend
-        id: recordforwarder
-        env:
-          PYTHONPATH: ${{ github.workspace }}/backend/src:${{ github.workspace }}/backend/tests
-        continue-on-error: true
-        run: |
-          poetry install
-          poetry run coverage run -m unittest discover -p "*batch*.py" || echo "recordforwarder tests failed" >> ../failed_tests.txt
-          poetry run coverage xml -o ../recordforwarder-coverage.xml
-
-      - name: Run unittest with coverage-delta
-        working-directory: delta_backend
-        id: delta
-        env:
-            PYTHONPATH: delta_backend/src:delta_backend/tests
-        continue-on-error: true
-        run: |
-          poetry install
-          poetry run coverage run -m unittest discover || echo "delta tests failed" >> ../failed_tests.txt
-          poetry run coverage xml -o ../delta-coverage.xml
-
       - name: Run unittest with coverage-fhir-api
-        working-directory: backend
+        working-directory: lambdas/backend
         env:
-          PYTHONPATH: ${{ github.workspace }}/backend/src:${{ github.workspace }}/backend/tests
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/backend/src:${{ env.LAMBDA_PATH }}/backend/tests:${{ env.SHARED_PATH }}/src:${{ env.SHARED_PATH }}/tests
         id: fhirapi
         continue-on-error: true
         run: |
           poetry install
-          poetry run coverage run -m unittest discover || echo "fhir-api tests failed" >> ../failed_tests.txt
-          poetry run coverage xml -o ../backend-coverage.xml
-
-      - name: Run unittest with coverage-mesh-processor
-        working-directory: mesh_processor
-        id: meshprocessor
-        continue-on-error: true
-        run: |
-          poetry install
-          poetry run coverage run -m unittest discover || echo "mesh_processor tests failed" >> ../failed_tests.txt
-          poetry run coverage xml -o ../mesh_processor-coverage.xml
+          poetry run coverage run --source=src -m unittest discover || echo "fhir-api tests failed" >> ../../failed_tests.txt
+          poetry run coverage xml -o ../../backend-coverage.xml
 
       - name: Run unittest with coverage-ack-lambda
         working-directory: lambdas/ack_backend
         id: acklambda
         env:
-          PYTHONPATH: ${{ env.LAMBDA_PATH }}/ack_backend/src:${{ github.workspace }}/ack_backend/tests
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/ack_backend/src:${{ env.LAMBDA_PATH }}/ack_backend/tests:${{ env.SHARED_PATH }}/src
         continue-on-error: true
         run: |
-            poetry install
-            poetry run coverage run --source=src -m unittest discover || echo "ack-lambda tests failed" >> ../../failed_tests.txt
-            poetry run coverage xml -o ../../ack-lambda-coverage.xml
+          poetry install
+          poetry run coverage run --source=src -m unittest discover || echo "ack-lambda tests failed" >> ../../failed_tests.txt
+          poetry run coverage xml -o ../../ack-lambda-coverage.xml
+
+      - name: Run unittest with batchprocessorfilter-coverage
+        working-directory: lambdas/batch_processor_filter
+        id: batchprocessorfilter
+        env:
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/batch_processor_filter/src:${{ env.LAMBDA_PATH }}/batch_processor_filter/tests:${{ env.SHARED_PATH }}/src
+        continue-on-error: true
+        run: |
+          poetry install
+          poetry run coverage run --source=src -m unittest discover || echo "batchprocessorfilter tests failed" >> ../../failed_tests.txt
+          poetry run coverage xml -o ../../batchprocessorfilter-coverage.xml
+
+      - name: Run unittest with coverage-delta
+        working-directory: lambdas/delta_backend
+        id: delta
+        env:
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/delta_backend/src:${{ env.LAMBDA_PATH }}/delta_backend/tests:${{ env.SHARED_PATH }}/src
+        continue-on-error: true
+        run: |
+          poetry install
+          poetry run coverage run --source=src -m unittest discover || echo "delta tests failed" >> ../../failed_tests.txt
+          poetry run coverage xml -o ../../delta-coverage.xml
+
+      - name: Run unittest with filenameprocessor-coverage
+        working-directory: lambdas/filenameprocessor
+        id: filenameprocessor
+        env:
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/filenameprocessor/src:${{ env.LAMBDA_PATH }}/filenameprocessor/tests:${{ env.SHARED_PATH }}/src
+        continue-on-error: true
+        run: |
+          poetry install
+          poetry run coverage run --source=src -m unittest discover || echo "filenameprocessor tests failed" >> ../../failed_tests.txt
+          poetry run coverage xml -o ../../filenameprocessor-coverage.xml
+
+      - name: Run unittest with id_sync
+        working-directory: lambdas/id_sync
+        id: id_sync
+        env:
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/id_sync/src:${{ env.LAMBDA_PATH }}/id_sync/tests:${{ env.SHARED_PATH }}/src
+        continue-on-error: true
+        run: |
+          poetry install
+          poetry run coverage run --rcfile=.coveragerc --source=src -m unittest discover || echo "id_sync tests failed" >> ../../failed_tests.txt
+          poetry run coverage xml -o ../../id_sync-coverage.xml
+
+      - name: Run unittest with coverage-mesh-processor
+        working-directory: lambdas/mesh_processor
+        id: meshprocessor
+        env:
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/mesh_processor/src:${{ env.LAMBDA_PATH }}/mesh_processor/tests:${{ env.SHARED_PATH }}/src
+        continue-on-error: true
+        run: |
+          poetry install
+          poetry run coverage run --source=src -m unittest discover || echo "mesh_processor tests failed" >> ../../failed_tests.txt
+          poetry run coverage xml -o ../../mesh_processor-coverage.xml
+
+      - name: Run unittest with mns_publisher
+        working-directory: lambdas/mns_publisher
+        id: mnspublisher
+        env:
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/mns_publisher/src:${{ env.LAMBDA_PATH }}/mns_publisher/tests:${{ env.SHARED_PATH }}/src
+        continue-on-error: true
+        run: |
+          poetry install
+          poetry run coverage run --source=src -m unittest discover || echo "mns_publisher tests failed" >> ../../failed_tests.txt
+          poetry run coverage xml -o ../../mns_publisher-coverage.xml
 
       - name: Run unittest with coverage-mns-subscription
         working-directory: lambdas/mns_subscription
         id: mns_subscription
         env:
-          PYTHONPATH: ${{ env.LAMBDA_PATH }}/mns_subscription/src:${{ env.SHARED_PATH }}/src
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/mns_subscription/src:${{ env.LAMBDA_PATH }}/mns_subscription/tests:${{ env.SHARED_PATH }}/src
         continue-on-error: true
         run: |
           poetry install
-          poetry run coverage run -m unittest discover || echo "mns_subscription tests failed" >> ../../failed_tests.txt
+          poetry run coverage run --source=src -m unittest discover || echo "mns_subscription tests failed" >> ../../failed_tests.txt
           poetry run coverage report -m
           poetry run coverage xml -o ../../mns_subscription-coverage.xml
+
+      - name: Run unittest with recordforwarder-coverage
+        working-directory: lambdas/recordforwarder
+        id: recordforwarder
+        env:
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/recordforwarder/src:${{ env.LAMBDA_PATH }}/recordforwarder/tests:${{ env.SHARED_PATH }}/src:${{ env.SHARED_PATH }}/tests
+        continue-on-error: true
+        run: |
+          poetry install
+          poetry run coverage run --source=src -m unittest discover || echo "recordforwarder tests failed" >> ../../failed_tests.txt
+          poetry run coverage xml -o ../../recordforwarder-coverage.xml
+
+      - name: Run unittest with recordprocessor-coverage
+        working-directory: lambdas/recordprocessor
+        id: recordprocessor
+        env:
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/recordprocessor/src:${{ env.LAMBDA_PATH }}/recordprocessor/tests:${{ env.SHARED_PATH }}/src
+        continue-on-error: true
+        run: |
+          poetry install
+          poetry run coverage run --source=src -m unittest discover || echo "recordprocessor tests failed" >> ../../failed_tests.txt
+          poetry run coverage xml -o ../../recordprocessor-coverage.xml
 
       - name: Run unittest with redis_sync
         working-directory: lambdas/redis_sync
         id: redis_sync
         env:
-          PYTHONPATH: ${{ env.LAMBDA_PATH }}/redis_sync/src:${{ env.SHARED_PATH }}/src
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/redis_sync/src:${{ env.LAMBDA_PATH }}/redis_sync/tests:${{ env.SHARED_PATH }}/src
         continue-on-error: true
         run: |
           poetry install
@@ -181,17 +239,6 @@ jobs:
           poetry install
           poetry run coverage run --rcfile=.coveragerc --source=src -m unittest discover -s tests -p "test_*.py" -v || echo "shared tests failed" >> ../../failed_tests.txt
           poetry run coverage xml -o ../../shared-coverage.xml
-
-      - name: Run unittest with id_sync
-        working-directory: lambdas/id_sync
-        id: id_sync
-        env:
-          PYTHONPATH: ${{ env.LAMBDA_PATH }}/id_sync/src:${{ env.SHARED_PATH }}/src
-        continue-on-error: true
-        run: |
-          poetry install
-          poetry run coverage run --rcfile=.coveragerc --source=src -m unittest discover || echo "id_sync tests failed" >> ../../failed_tests.txt
-          poetry run coverage xml -o ../../id_sync-coverage.xml
 
       - name: Run Test Failure Summary
         id: check_failure
@@ -210,7 +257,7 @@ jobs:
           fi
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602
+        uses: SonarSource/sonarqube-scan-action@299e4b793aaa83bf2aba7c9c14bedbb485688ec4
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
+          GITHUB_TOKEN: ${{ github.token }} # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

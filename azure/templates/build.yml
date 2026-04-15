@@ -4,7 +4,7 @@ steps:
       npm run publish 2> /dev/null
       cp build/immunisation-fhir-api.json sandbox/
 
-        cd sandbox
+      cd sandbox
       docker build -t sandbox .
     displayName: Build sandbox image
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)"

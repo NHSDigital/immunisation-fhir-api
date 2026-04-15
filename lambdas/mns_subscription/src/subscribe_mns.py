@@ -1,9 +1,13 @@
 import logging
-from mns_setup import get_mns_service
+import os
+
+from common.api_clients.mns_setup import get_mns_service
+
+apigee_env = os.getenv("APIGEE_ENVIRONMENT", "int")
 
 
 def run_subscription():
-    mns = get_mns_service()
+    mns = get_mns_service(mns_env=apigee_env)
     return mns.check_subscription()
 
 

@@ -22,10 +22,10 @@
 ## Configuration
 
 - **Environment Variables:**
-  - `CONFIG_BUCKET_NAME`: Name of the S3 bucket to monitor.
-  - `AWS_REGION`: AWS region for S3 and Redis.
-  - `REDIS_HOST`: Redis endpoint.
-  - `REDIS_PORT`: Redis port (default: 6379).
+    - `CONFIG_BUCKET_NAME`: Name of the S3 bucket to monitor.
+    - `AWS_REGION`: AWS region for S3 and Redis.
+    - `REDIS_HOST`: Redis endpoint.
+    - `REDIS_PORT`: Redis port (default: 6379).
 
 ## Usage
 

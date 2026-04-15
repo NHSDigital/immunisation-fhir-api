@@ -1,11 +1,13 @@
+from common.clients import logger
 from constants import RedisCacheKey
 from transform_configs import (
-    transform_vaccine_map, transform_supplier_permissions, transform_validation_rules
+    transform_supplier_permissions,
+    transform_vaccine_map,
 )
-from common.clients import logger
-'''
+
+"""
 Transform config file to format required in REDIS cache.
-'''
+"""
 
 
 def transform_map(data, file_type) -> dict:
@@ -15,8 +17,6 @@ def transform_map(data, file_type) -> dict:
         return transform_supplier_permissions(data)
     if file_type == RedisCacheKey.DISEASE_MAPPING_FILE_KEY:
         return transform_vaccine_map(data)
-    if file_type == RedisCacheKey.VALIDATION_RULES_FILE_KEY:
-        return transform_validation_rules(data)
 
     logger.info("No specific transformation defined for file type: %s", file_type)
     return data  # Default case, return data as is if no transformation is defined

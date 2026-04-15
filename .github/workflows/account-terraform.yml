@@ -1,0 +1,228 @@
+name: Apply Account Terraform
+
+on:
+  workflow_call:
+    inputs:
+      base_sha:
+        required: true
+        type: string
+      head_sha:
+        required: true
+        type: string
+      environment:
+        required: true
+        type: string
+      state_bucket_environment:
+        required: false
+        type: string
+        default: ""
+      artifact_name:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Select AWS account environment
+        required: true
+        type: choice
+        options:
+          - dev
+          - preprod
+          - prod
+      state_bucket_environment:
+        description: Override state bucket environment
+        required: false
+        type: string
+        default: ""
+      base_sha:
+        description: Base commit SHA for diff checks. Leave blank to use previous commit.
+        required: false
+        type: string
+        default: ""
+      head_sha:
+        description: Head commit SHA for diff checks. Leave blank to use current commit.
+        required: false
+        type: string
+        default: ""
+      artifact_name:
+        description: Optional Terraform plan artifact name
+        required: false
+        type: string
+        default: ""
+
+run-name: Apply Account Terraform - ${{ inputs.environment }}
+
+concurrency:
+  group: account-terraform-${{ github.repository }}-${{ inputs.environment }}
+  cancel-in-progress: false
+
+env:
+  CONFIGURED_ACCOUNT_TERRAFORM_STATE_BUCKET: ${{ vars.ACCOUNT_TERRAFORM_STATE_BUCKET || (inputs.environment == 'dev' && 'immunisation-terraform-state-files' || '') }}
+  ACCOUNT_TERRAFORM_STATE_ENVIRONMENT: ${{ inputs.state_bucket_environment }}
+  ACCOUNT_TERRAFORM_ARTIFACT_NAME: ${{ inputs.artifact_name || format('{0}-account-tfplan-{1}', inputs.environment, github.run_attempt) }}
+  ACCOUNT_TERRAFORM_VERSION: "1.12.2"
+
+jobs:
+  account-terraform-plan:
+    permissions:
+      id-token: write
+      contents: read
+      attestations: write
+      artifact-metadata: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: ${{ inputs.environment }}
+    env:
+      ACCOUNT_TERRAFORM_BASE_SHA: ${{ inputs.base_sha }}
+      ACCOUNT_TERRAFORM_HEAD_SHA: ${{ inputs.head_sha || github.sha }}
+      ACCOUNT_TERRAFORM_ENVIRONMENT: ${{ inputs.environment }}
+    outputs:
+      account_infra_changed: ${{ steps.diff.outputs.account_infra_changed }}
+      plan_sha: ${{ env.ACCOUNT_TERRAFORM_HEAD_SHA }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
+        with:
+          fetch-depth: 0
+
+      - name: Detect account terraform changes
+        id: diff
+        run: |
+          base_sha="$ACCOUNT_TERRAFORM_BASE_SHA"
+          head_sha="$ACCOUNT_TERRAFORM_HEAD_SHA"
+
+          if [[ -z "$base_sha" || "$base_sha" == "0000000000000000000000000000000000000000" ]]; then
+            base_sha=$(git rev-parse HEAD~1)
+          fi
+
+          for sha_name in base_sha head_sha; do
+            if [[ ! "${!sha_name}" =~ ^[0-9a-f]{40}$ ]]; then
+              echo "Invalid $sha_name: ${!sha_name}" >&2
+              exit 1
+            fi
+          done
+
+          account_changed_files=$(git diff --name-only "$base_sha" "$head_sha" -- infrastructure/account)
+          if [ -n "$account_changed_files" ]; then
+            echo "changes detected in files:"
+            printf '%s\n' "$account_changed_files"
+          fi
+          echo "account_infra_changed=$( [ -n "$account_changed_files" ] && echo true || echo false )" >> "$GITHUB_OUTPUT"
+
+      - name: Connect to AWS
+        if: ${{ steps.diff.outputs.account_infra_changed == 'true' }}
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37
+        with:
+          aws-region: eu-west-2
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
+          role-session-name: ${{ format('github-actions-{0}-{1}-{2}', github.run_id, github.run_attempt, github.job) }}
+
+      - uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85
+        if: ${{ steps.diff.outputs.account_infra_changed == 'true' }}
+        with:
+          terraform_version: ${{ env.ACCOUNT_TERRAFORM_VERSION }}
+
+      - name: Resolve account terraform state bucket
+        id: account-state-bucket
+        if: ${{ steps.diff.outputs.account_infra_changed == 'true' }}
+        run: echo "bucket_name=$(bash ./utilities/scripts/resolve_account_terraform_state_bucket.sh)" >> "$GITHUB_OUTPUT"
+
+      - name: Terraform Init (account)
+        if: ${{ steps.diff.outputs.account_infra_changed == 'true' }}
+        working-directory: infrastructure/account
+        env:
+          ACCOUNT_TERRAFORM_BUCKET_NAME: ${{ steps.account-state-bucket.outputs.bucket_name }}
+        run: make init ENVIRONMENT="$ACCOUNT_TERRAFORM_ENVIRONMENT" BUCKET_NAME="$ACCOUNT_TERRAFORM_BUCKET_NAME"
+
+      - name: Terraform Plan (account)
+        # Ignore cancellations to prevent Terraform from being killed while it holds a state lock
+        # A stuck process can still be killed with the force-cancel API operation
+        if: ${{ steps.diff.outputs.account_infra_changed == 'true' && !failure() }}
+        working-directory: infrastructure/account
+        run: make plan-ci ENVIRONMENT="$ACCOUNT_TERRAFORM_ENVIRONMENT"
+
+      - name: Save Account Terraform Plan
+        if: ${{ steps.diff.outputs.account_infra_changed == 'true' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: ${{ env.ACCOUNT_TERRAFORM_ARTIFACT_NAME }}
+          path: infrastructure/account/tfplan
+
+      - name: Attest Account Terraform Plan
+        if: ${{ steps.diff.outputs.account_infra_changed == 'true' }}
+        uses: actions/attest@v4
+        with:
+          subject-path: infrastructure/account/tfplan
+
+  account-terraform-approval:
+    permissions: {}
+    needs: [account-terraform-plan]
+    if: ${{ !cancelled() && needs.account-terraform-plan.result == 'success' && needs.account-terraform-plan.outputs.account_infra_changed == 'true' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: account-apply-${{ inputs.environment }}
+    steps:
+      - name: Await manual approval
+        run: echo "Manual approval granted"
+
+  account-terraform-apply:
+    permissions:
+      id-token: write
+      contents: read
+      attestations: read
+    needs: [account-terraform-plan, account-terraform-approval]
+    if: ${{ !cancelled() && needs.account-terraform-plan.result == 'success' && needs.account-terraform-plan.outputs.account_infra_changed == 'true' && needs.account-terraform-approval.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: ${{ inputs.environment }}
+    env:
+      ACCOUNT_TERRAFORM_ENVIRONMENT: ${{ inputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
+        with:
+          ref: ${{ needs.account-terraform-plan.outputs.plan_sha }}
+
+      - name: Connect to AWS
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37
+        with:
+          aws-region: eu-west-2
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
+          role-session-name: ${{ format('github-actions-{0}-{1}-{2}', github.run_id, github.run_attempt, github.job) }}
+
+      - uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85
+        with:
+          terraform_version: ${{ env.ACCOUNT_TERRAFORM_VERSION }}
+
+      - name: Resolve account terraform state bucket
+        id: account-state-bucket
+        run: echo "bucket_name=$(bash ./utilities/scripts/resolve_account_terraform_state_bucket.sh)" >> "$GITHUB_OUTPUT"
+
+      - name: Retrieve Account Terraform Plan
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: ${{ env.ACCOUNT_TERRAFORM_ARTIFACT_NAME }}
+          path: infrastructure/account
+
+      - name: Verify Account Terraform Plan Attestation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh attestation verify infrastructure/account/tfplan \
+            --repo "$GITHUB_REPOSITORY" \
+            --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/account-terraform.yml"
+
+      - name: Terraform Init (account)
+        working-directory: infrastructure/account
+        env:
+          ACCOUNT_TERRAFORM_BUCKET_NAME: ${{ steps.account-state-bucket.outputs.bucket_name }}
+        run: make init ENVIRONMENT="$ACCOUNT_TERRAFORM_ENVIRONMENT" BUCKET_NAME="$ACCOUNT_TERRAFORM_BUCKET_NAME"
+
+      - name: Terraform Apply (account)
+        # Ignore cancellations to prevent Terraform from being killed while it holds a state lock
+        # A stuck process can still be killed with the force-cancel API operation
+        if: ${{ !failure() }}
+        working-directory: infrastructure/account
+        run: make apply-ci ENVIRONMENT="$ACCOUNT_TERRAFORM_ENVIRONMENT"

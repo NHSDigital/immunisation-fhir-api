@@ -90,7 +90,7 @@ properties:
                 properties:
                   system:
                     type: string
-                    default: 'http://snomed.info/sct'
+                    default: "http://snomed.info/sct"
                   code:
                     type: string
                     default: snomed
@@ -108,7 +108,7 @@ properties:
       properties:
         system:
           type: string
-          default: 'http://snomed.info/sct'
+          default: "http://snomed.info/sct"
         code:
           type: string
           default: snomed
@@ -132,7 +132,7 @@ properties:
         properties:
           system:
             type: string
-            default: 'http://snomed.info/sct'
+            default: "http://snomed.info/sct"
           code:
             type: string
             default: snomed
@@ -152,7 +152,7 @@ properties:
         properties:
           system:
             type: string
-            default: 'http://snomed.info/sct'
+            default: "http://snomed.info/sct"
           code:
             type: string
             default: snomed
@@ -243,7 +243,7 @@ properties:
               default: LA
             system:
               type: string
-              default: 'http://snomed.info/sct'
+              default: "http://snomed.info/sct"
             display:
               type: string
               default: left arm

@@ -1,0 +1,116 @@
+name: Continuous Deployment Pipeline
+
+on:
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }} #hardcoded group name causes the pipeline to get stuck
+  cancel-in-progress: false
+
+jobs:
+  run-quality-checks:
+    uses: ./.github/workflows/quality-checks.yml
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  deploy-internal-dev-backend:
+    needs: [run-quality-checks]
+    uses: ./.github/workflows/deploy-backend.yml
+    with:
+      apigee_environment: internal-dev
+      diff_base_sha: ${{ github.event.before }}
+      diff_head_sha: ${{ github.sha }}
+      run_diff_check: true
+      create_mns_subscription: true
+      environment: dev
+      sub_environment: internal-dev
+
+  run-internal-dev-sandbox-tests:
+    # Technically the first step is not a pre-requisite - sandbox backend deployment is handled by APIM
+    # Stipulating this condition simply makes it more likely the environment will be ready when tests are invoked
+    needs: [deploy-internal-dev-backend]
+    uses: ./.github/workflows/run-e2e-automation-tests.yml
+    with:
+      apigee_environment: internal-dev-sandbox
+      environment: dev
+      sub_environment: internal-dev-sandbox
+      service_under_test: all
+      suite_to_run: sandbox
+    secrets:
+      APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
+      APIGEE_BASIC_AUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}
+      APIGEE_OTP_KEY: ${{ secrets.APIGEE_OTP_KEY }}
+      CIS2_E2E_USERNAME: ${{ secrets.CIS2_E2E_USERNAME }}
+      STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}
+
+  run-sandbox-tests:
+    needs: [run-internal-dev-sandbox-tests]
+    uses: ./.github/workflows/run-e2e-automation-tests.yml
+    with:
+      apigee_environment: sandbox
+      environment: dev
+      sub_environment: sandbox
+      service_under_test: all
+      suite_to_run: sandbox
+    secrets:
+      APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
+      APIGEE_BASIC_AUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}
+      APIGEE_OTP_KEY: ${{ secrets.APIGEE_OTP_KEY }}
+      CIS2_E2E_USERNAME: ${{ secrets.CIS2_E2E_USERNAME }}
+      STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}
+
+  run-internal-dev-tests:
+    needs: [deploy-internal-dev-backend]
+    uses: ./.github/workflows/run-e2e-automation-tests.yml
+    with:
+      apigee_environment: internal-dev
+      environment: dev
+      sub_environment: internal-dev
+      service_under_test: all
+      suite_to_run: smoke
+    secrets:
+      APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
+      APIGEE_BASIC_AUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}
+      APIGEE_OTP_KEY: ${{ secrets.APIGEE_OTP_KEY }}
+      CIS2_E2E_USERNAME: ${{ secrets.CIS2_E2E_USERNAME }}
+      STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}
+
+  deploy-higher-dev-envs:
+    needs: [run-internal-dev-tests, deploy-internal-dev-backend]
+    strategy:
+      matrix:
+        sub_environment_name: [ref, internal-qa]
+    uses: ./.github/workflows/deploy-backend.yml
+    with:
+      apigee_environment: ${{ matrix.sub_environment_name }}
+      lambda_image_overrides: ${{ needs.deploy-internal-dev-backend.outputs.image_uris_json }}
+      run_diff_check: false
+      create_mns_subscription: true
+      environment: dev
+      sub_environment: ${{ matrix.sub_environment_name }}
+
+  run-higher-dev-env-tests:
+    needs: [deploy-higher-dev-envs]
+    strategy:
+      matrix:
+        sub_environment_name: [ref, internal-qa]
+        include:
+          - sub_environment_name: ref
+            required_test_suite: proxy_smoke
+          - sub_environment_name: internal-qa
+            required_test_suite: smoke
+    uses: ./.github/workflows/run-e2e-automation-tests.yml
+    with:
+      apigee_environment: ${{ matrix.sub_environment_name }}
+      environment: dev
+      sub_environment: ${{ matrix.sub_environment_name }}
+      service_under_test: all
+      suite_to_run: ${{ matrix.required_test_suite }}
+    secrets:
+      APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
+      APIGEE_BASIC_AUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}
+      APIGEE_OTP_KEY: ${{ secrets.APIGEE_OTP_KEY }}
+      CIS2_E2E_USERNAME: ${{ secrets.CIS2_E2E_USERNAME }}
+      STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}

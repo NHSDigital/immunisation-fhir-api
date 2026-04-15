@@ -12,12 +12,13 @@ newman/
 **/*.iml
 
 __pycache__/
+.pytest_cache/
 .venv/
 .env
 .envrc
 smoketest-report.xml
 lambda_typescript/**/*.js
-terraform/zips
+instance/zips
 .dir-locals.el
 *.pyc
 .python-version
@@ -28,5 +29,9 @@ openapi.json
 **/.vscode/**/*
 !**/.vscode/settings.json.default
 
-devtools/volume/
 **/.coverage
+**/test-results.xml
+allure-results/
+allure-report/
+**/debugLog.log
+batch_files_directory/

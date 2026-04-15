@@ -7,6 +7,7 @@
 ## Purpose
 
 This shared library promotes:
+
 - **Code Reusability:** Common functionality used across multiple Lambda functions
 - **Consistency:** Standardized patterns for AWS service interactions
 - **Maintainability:** Centralized location for shared utilities and configurations
@@ -188,6 +189,7 @@ Common environment variables used by shared components:
 ## Dependencies
 
 See `requirements.txt` for Python package dependencies:
+
 - `boto3` - AWS SDK
 - `botocore` - AWS core library
 - Additional utilities as needed

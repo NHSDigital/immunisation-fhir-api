@@ -1,0 +1,444 @@
+name: Deploy Lambda Artifact
+
+on:
+  workflow_call:
+    inputs:
+      lambda_name:
+        description: Logical lambda identifier for logging and artifacts
+        required: true
+        type: string
+      tf_var_suffix:
+        description: Terraform variable suffix used to export TF_VAR_<suffix>_image_uri
+        required: true
+        type: string
+      environment:
+        description: GitHub environment containing AWS account variables
+        required: true
+        type: string
+      sub_environment:
+        description: Deployment sub-environment (for tag prefixing and diff context)
+        required: true
+        type: string
+      build_image:
+        description: Force a fresh build and publish.
+        required: false
+        type: boolean
+        default: false
+      image_version:
+        description: Existing immutable image selector (tag, sha256 digest, or full image@sha256 URI)
+        required: false
+        type: string
+        default: ""
+      run_diff_check:
+        description: Enable commit range diff checks to determine build/reuse path
+        required: false
+        type: boolean
+        default: false
+      diff_base_sha:
+        description: Base commit SHA for diff checks
+        required: false
+        type: string
+        default: ""
+      diff_head_sha:
+        description: Head commit SHA for diff checks
+        required: false
+        type: string
+        default: ""
+      lambda_paths:
+        description: Newline-separated lambda paths to diff
+        required: true
+        type: string
+      shared_paths:
+        description: Newline-separated shared paths to diff
+        required: false
+        type: string
+        default: ""
+      docker_context_path:
+        description: Docker build context path
+        required: true
+        type: string
+      dockerfile_path:
+        description: Dockerfile path relative to repository root
+        required: true
+        type: string
+      ecr_repository:
+        description: Target ECR repository name
+        required: true
+        type: string
+      image_tag_prefix:
+        description: Optional prefix for generated tags (for example pr-123-)
+        required: false
+        type: string
+        default: ""
+      allow_implicit_tag_prefix_reuse:
+        description: Allow resolving latest tag by image_tag_prefix when image_version is not provided
+        required: false
+        type: boolean
+        default: false
+    outputs:
+      deployment_mode:
+        description: Deployment path selected by contract
+        value: ${{ jobs.deploy-image.outputs.deployment_mode }}
+      image_version:
+        description: Selected image selector (generated tag for build mode, supplied selector for reuse mode)
+        value: ${{ jobs.deploy-image.outputs.image_version }}
+      image_digest:
+        description: Resolved immutable image digest
+        value: ${{ jobs.deploy-image.outputs.image_digest }}
+      image_uri:
+        description: Resolved immutable ECR URI (repository@sha256:...)
+        value: ${{ jobs.deploy-image.outputs.image_uri }}
+
+jobs:
+  deploy-image:
+    name: Build or reuse image
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+    permissions:
+      id-token: write
+      contents: read
+    outputs:
+      deployment_mode: ${{ steps.decide.outputs.deployment_mode }}
+      image_version: ${{ steps.manifest.outputs.image_version }}
+      image_digest: ${{ steps.manifest.outputs.image_digest }}
+      image_uri: ${{ steps.manifest.outputs.image_uri }}
+    env:
+      AWS_REGION: eu-west-2
+      ECR_REPOSITORY: ${{ inputs.ecr_repository }}
+      DOCKER_CONTEXT_PATH: ${{ inputs.docker_context_path }}
+      DOCKERFILE_PATH: ${{ inputs.dockerfile_path }}
+      TAG_PREFIX: ${{ inputs.image_tag_prefix }}
+      LAMBDA_NAME: ${{ inputs.lambda_name }}
+      TF_VAR_SUFFIX: ${{ inputs.tf_var_suffix }}
+      ENVIRONMENT: ${{ inputs.environment }}
+      SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
+      BUILD_IMAGE: ${{ inputs.build_image }}
+      RUN_DIFF_CHECK: ${{ inputs.run_diff_check }}
+      DIFF_BASE_SHA: ${{ inputs.diff_base_sha }}
+      DIFF_HEAD_SHA: ${{ inputs.diff_head_sha }}
+      IMAGE_VERSION: ${{ inputs.image_version }}
+      ALLOW_IMPLICIT_TAG_PREFIX_REUSE: ${{ inputs.allow_implicit_tag_prefix_reuse }}
+      LAMBDA_PATHS: ${{ inputs.lambda_paths }}
+      SHARED_PATHS: ${{ inputs.shared_paths }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
+        with:
+          fetch-depth: 0
+
+      - name: Connect to AWS
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37
+        with:
+          aws-region: eu-west-2
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
+          role-session-name: github-actions
+
+      - name: Select build or reuse path
+        id: decide
+        run: |
+          set -euo pipefail
+
+          deployment_mode="reuse"
+          paths=()
+
+          while IFS= read -r path_value; do
+            trimmed="$(echo "${path_value}" | xargs)"
+            if [ -n "${trimmed}" ]; then
+              paths+=("${trimmed}")
+            fi
+          done <<< "${LAMBDA_PATHS}"
+
+          while IFS= read -r path_value; do
+            trimmed="$(echo "${path_value}" | xargs)"
+            if [ -n "${trimmed}" ]; then
+              paths+=("${trimmed}")
+            fi
+          done <<< "${SHARED_PATHS}"
+
+          if [ "${BUILD_IMAGE}" = "true" ]; then
+            deployment_mode="build"
+          elif [ -n "${IMAGE_VERSION}" ]; then
+            deployment_mode="reuse"
+          elif [ "${RUN_DIFF_CHECK}" = "true" ]; then
+            if [ -z "${DIFF_BASE_SHA}" ] || [ -z "${DIFF_HEAD_SHA}" ]; then
+              deployment_mode="build"
+            elif [ "${#paths[@]}" -eq 0 ]; then
+              deployment_mode="build"
+            else
+              if ! git rev-parse --verify "${DIFF_BASE_SHA}^{commit}" >/dev/null 2>&1 || ! git rev-parse --verify "${DIFF_HEAD_SHA}^{commit}" >/dev/null 2>&1; then
+                deployment_mode="build"
+              elif ! git diff --quiet "${DIFF_BASE_SHA}" "${DIFF_HEAD_SHA}" -- "${paths[@]}"; then
+                deployment_mode="build"
+              elif [ -z "${IMAGE_VERSION}" ] && [ "${ALLOW_IMPLICIT_TAG_PREFIX_REUSE}" = "true" ]; then
+                reusable_tag="$(
+                  aws ecr describe-images \
+                    --repository-name "${ECR_REPOSITORY}" \
+                    --region "${AWS_REGION}" \
+                    --filter tagStatus=TAGGED \
+                    --query 'reverse(sort_by(imageDetails,&imagePushedAt))[].imageTags[]' \
+                    --output text 2>/dev/null \
+                  | tr '\t' '\n' \
+                  | grep "^${TAG_PREFIX}" \
+                  | head -n1 || true
+                )"
+
+                # If there is nothing reusable yet, bootstrap by building once.
+                if [ -z "${reusable_tag}" ]; then
+                  deployment_mode="build"
+                fi
+              fi
+            fi
+          elif [ -z "${IMAGE_VERSION}" ]; then
+            deployment_mode="build"
+          fi
+
+          echo "deployment_mode=${deployment_mode}" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare build metadata
+        id: build-check
+        if: ${{ steps.decide.outputs.deployment_mode == 'build' }}
+        run: |
+          set -euo pipefail
+
+          SHORT_SHA="$(echo "${GITHUB_SHA}" | cut -c1-12)"
+          RELEASE_STAMP="$(date -u '+%Y.%m.%d').${GITHUB_RUN_NUMBER}"
+          GIT_TAG="${TAG_PREFIX}git-${SHORT_SHA}"
+          REL_TAG="${TAG_PREFIX}rel-${RELEASE_STAMP}"
+
+          REPOSITORY_URI="$(
+            aws ecr describe-repositories \
+              --repository-names "${ECR_REPOSITORY}" \
+              --region "${AWS_REGION}" \
+              --query 'repositories[0].repositoryUri' \
+              --output text
+          )"
+
+          EXISTING_IMAGE_DIGEST="$(
+            aws ecr describe-images \
+              --repository-name "${ECR_REPOSITORY}" \
+              --region "${AWS_REGION}" \
+              --image-ids imageTag="${GIT_TAG}" \
+              --query 'imageDetails[0].imageDigest' \
+              --output text 2>/dev/null || true
+          )"
+
+          if [ "${EXISTING_IMAGE_DIGEST}" = "None" ]; then
+            EXISTING_IMAGE_DIGEST=""
+          fi
+
+          echo "git_tag=${GIT_TAG}" >> "$GITHUB_OUTPUT"
+          echo "release_tag=${REL_TAG}" >> "$GITHUB_OUTPUT"
+          echo "repository_uri=${REPOSITORY_URI}" >> "$GITHUB_OUTPUT"
+          echo "existing_image_digest=${EXISTING_IMAGE_DIGEST}" >> "$GITHUB_OUTPUT"
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        if: ${{ steps.decide.outputs.deployment_mode == 'build' && !steps.build-check.outputs.existing_image_digest }}
+        uses: aws-actions/amazon-ecr-login@f2e9fc6c2b355c1890b65e6f6f0e2ac3e6e22f78
+
+      - name: Set up Docker Buildx
+        if: ${{ steps.decide.outputs.deployment_mode == 'build' && !steps.build-check.outputs.existing_image_digest }}
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+
+      - name: Build and publish image with layer caching
+        id: build-image
+        if: ${{ steps.decide.outputs.deployment_mode == 'build' && !steps.build-check.outputs.existing_image_digest }}
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        with:
+          context: ${{ env.DOCKER_CONTEXT_PATH }}
+          file: ${{ env.DOCKERFILE_PATH }}
+          platforms: linux/amd64
+          push: true
+          provenance: false
+          tags: |
+            ${{ steps.build-check.outputs.repository_uri }}:${{ steps.build-check.outputs.git_tag }}
+            ${{ steps.build-check.outputs.repository_uri }}:${{ steps.build-check.outputs.release_tag }}
+          cache-from: type=gha,scope=${{ env.ECR_REPOSITORY }}
+          cache-to: type=gha,mode=max,scope=${{ env.ECR_REPOSITORY }}
+
+      - name: Emit build digest manifest
+        id: build
+        if: ${{ steps.decide.outputs.deployment_mode == 'build' }}
+        env:
+          REPOSITORY_URI: ${{ steps.build-check.outputs.repository_uri }}
+          GIT_TAG: ${{ steps.build-check.outputs.git_tag }}
+          REL_TAG: ${{ steps.build-check.outputs.release_tag }}
+          EXISTING_IMAGE_DIGEST: ${{ steps.build-check.outputs.existing_image_digest }}
+          BUILT_IMAGE_DIGEST: ${{ steps.build-image.outputs.digest }}
+        run: |
+          set -euo pipefail
+
+          IMAGE_DIGEST="${BUILT_IMAGE_DIGEST:-${EXISTING_IMAGE_DIGEST}}"
+
+          if [ -n "${EXISTING_IMAGE_DIGEST}" ] && [ -z "${BUILT_IMAGE_DIGEST}" ]; then
+            echo "Immutable tag '${GIT_TAG}' already exists. Reusing existing image digest."
+          fi
+
+          if [ -z "${IMAGE_DIGEST}" ]; then
+            echo "Unable to resolve image digest for tag '${GIT_TAG}'."
+            exit 1
+          fi
+
+          IMAGE_URI_PINNED="${REPOSITORY_URI}@${IMAGE_DIGEST}"
+          echo "image_version=${GIT_TAG}" >> "$GITHUB_OUTPUT"
+          echo "image_digest=${IMAGE_DIGEST}" >> "$GITHUB_OUTPUT"
+          echo "image_uri=${IMAGE_URI_PINNED}" >> "$GITHUB_OUTPUT"
+          echo "release_tag=${REL_TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve immutable image reference
+        id: resolve
+        if: ${{ steps.decide.outputs.deployment_mode == 'reuse' }}
+        run: |
+          set -euo pipefail
+
+          REPOSITORY_URI="$(
+            aws ecr describe-repositories \
+              --repository-names "${ECR_REPOSITORY}" \
+              --region "${AWS_REGION}" \
+              --query 'repositories[0].repositoryUri' \
+              --output text
+          )"
+
+          requested_version="${IMAGE_VERSION}"
+          if [ -z "${requested_version}" ]; then
+            if [ "${ALLOW_IMPLICIT_TAG_PREFIX_REUSE}" != "true" ]; then
+              echo "image_version is required for reuse deployments unless allow_implicit_tag_prefix_reuse is explicitly enabled."
+              exit 1
+            fi
+
+            if [ -z "${TAG_PREFIX}" ]; then
+              echo "image_tag_prefix is required when allow_implicit_tag_prefix_reuse is enabled and image_version is not supplied."
+              exit 1
+            fi
+
+            requested_version="$(
+              aws ecr describe-images \
+                --repository-name "${ECR_REPOSITORY}" \
+                --region "${AWS_REGION}" \
+                --filter tagStatus=TAGGED \
+                --query 'reverse(sort_by(imageDetails,&imagePushedAt))[].imageTags[]' \
+                --output text \
+              | tr '\t' '\n' \
+              | grep "^${TAG_PREFIX}" \
+              | head -n1 || true
+            )"
+
+            if [ -z "${requested_version}" ]; then
+              echo "Unable to resolve an existing image tag for prefix '${TAG_PREFIX}'."
+              echo "Provide image_version or enable build_image to create a fresh image."
+              exit 1
+            fi
+
+            echo "Resolved latest image tag for prefix '${TAG_PREFIX}': ${requested_version}"
+          fi
+
+          image_digest=""
+
+          case "${requested_version}" in
+            *@sha256:*)
+              image_digest="${requested_version##*@}"
+              ;;
+            sha256:*)
+              image_digest="${requested_version}"
+              ;;
+            *)
+              image_digest="$(
+                aws ecr describe-images \
+                  --repository-name "${ECR_REPOSITORY}" \
+                  --region "${AWS_REGION}" \
+                  --image-ids imageTag="${requested_version}" \
+                  --query 'imageDetails[0].imageDigest' \
+                  --output text
+              )"
+              ;;
+          esac
+
+          if [ -z "${image_digest}" ] || [ "${image_digest}" = "None" ]; then
+            echo "Unable to resolve image digest for image version '${requested_version}'."
+            exit 1
+          fi
+
+          image_uri="${REPOSITORY_URI}@${image_digest}"
+
+          echo "image_version=${requested_version}" >> "$GITHUB_OUTPUT"
+          echo "image_digest=${image_digest}" >> "$GITHUB_OUTPUT"
+          echo "image_uri=${image_uri}" >> "$GITHUB_OUTPUT"
+
+      - name: Build deployment manifest
+        id: manifest
+        env:
+          DEPLOYMENT_MODE: ${{ steps.decide.outputs.deployment_mode }}
+          BUILD_IMAGE_VERSION: ${{ steps.build.outputs.image_version }}
+          BUILD_IMAGE_DIGEST: ${{ steps.build.outputs.image_digest }}
+          BUILD_IMAGE_URI: ${{ steps.build.outputs.image_uri }}
+          BUILD_RELEASE_TAG: ${{ steps.build.outputs.release_tag }}
+          REUSE_IMAGE_VERSION: ${{ steps.resolve.outputs.image_version }}
+          REUSE_IMAGE_DIGEST: ${{ steps.resolve.outputs.image_digest }}
+          REUSE_IMAGE_URI: ${{ steps.resolve.outputs.image_uri }}
+        run: |
+          set -euo pipefail
+
+          image_version="${REUSE_IMAGE_VERSION}"
+          image_digest="${REUSE_IMAGE_DIGEST}"
+          image_uri="${REUSE_IMAGE_URI}"
+          release_tag=""
+
+          if [ "${DEPLOYMENT_MODE}" = "build" ]; then
+            image_version="${BUILD_IMAGE_VERSION}"
+            image_digest="${BUILD_IMAGE_DIGEST}"
+            image_uri="${BUILD_IMAGE_URI}"
+            release_tag="${BUILD_RELEASE_TAG}"
+          fi
+
+          manifest_file="${RUNNER_TEMP}/${LAMBDA_NAME}-manifest.json"
+          build_timestamp="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+
+          jq -n \
+            --arg lambda_name "${LAMBDA_NAME}" \
+            --arg tf_var_suffix "${TF_VAR_SUFFIX}" \
+            --arg environment "${ENVIRONMENT}" \
+            --arg sub_environment "${SUB_ENVIRONMENT}" \
+            --arg deployment_mode "${DEPLOYMENT_MODE}" \
+            --arg image_version "${image_version}" \
+            --arg release_tag "${release_tag}" \
+            --arg repository "${ECR_REPOSITORY}" \
+            --arg image_digest "${image_digest}" \
+            --arg image_uri "${image_uri}" \
+            --arg source_sha "${GITHUB_SHA}" \
+            --arg git_ref "${GITHUB_REF}" \
+            --arg workflow_ref "${GITHUB_WORKFLOW_REF}" \
+            --arg run_id "${GITHUB_RUN_ID}" \
+            --arg run_attempt "${GITHUB_RUN_ATTEMPT}" \
+            --arg actor "${GITHUB_ACTOR}" \
+            --arg build_timestamp "${build_timestamp}" \
+            '{
+              lambda_name: $lambda_name,
+              tf_var_suffix: $tf_var_suffix,
+              environment: $environment,
+              sub_environment: $sub_environment,
+              deployment_mode: $deployment_mode,
+              image_version: $image_version,
+              release_tag: $release_tag,
+              repository: $repository,
+              image_digest: $image_digest,
+              image_uri: $image_uri,
+              source_sha: $source_sha,
+              git_ref: $git_ref,
+              workflow_ref: $workflow_ref,
+              run_id: $run_id,
+              run_attempt: $run_attempt,
+              actor: $actor,
+              build_timestamp: $build_timestamp
+            }' > "${manifest_file}"
+
+          echo "image_version=${image_version}" >> "$GITHUB_OUTPUT"
+          echo "image_digest=${image_digest}" >> "$GITHUB_OUTPUT"
+          echo "image_uri=${image_uri}" >> "$GITHUB_OUTPUT"
+          echo "manifest_file=${manifest_file}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload deployment manifest
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: deploy-manifest-${{ inputs.lambda_name }}-${{ inputs.environment }}-${{ inputs.sub_environment }}-${{ github.run_attempt }}
+          path: ${{ steps.manifest.outputs.manifest_file }}

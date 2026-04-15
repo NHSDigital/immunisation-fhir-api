@@ -1,9 +1,10 @@
-
-import unittest
 import json
+import unittest
 from unittest.mock import patch
+
 from transform_configs import (
-    transform_vaccine_map, transform_supplier_permissions, transform_validation_rules
+    transform_supplier_permissions,
+    transform_vaccine_map,
 )
 
 
@@ -45,15 +46,23 @@ class TestTransformConfigs(unittest.TestCase):
         result = transform_supplier_permissions(self.supplier_data)
         self.assertEqual(result["ods_code_to_supplier"], expected)
 
-    def test_validation_rules(self):
-        # validation schema is simple json returned as is to key "validation_rules"
-        sample_schema = {"type": "object", "properties": {"name": {"type": "string"}}}
-        result = transform_validation_rules(sample_schema)
-        self.assertEqual(result, {"validation_rules": sample_schema})
+    def test_target_disease_list_and_target_disease_to_vaccs(self):
+        result = transform_vaccine_map(self.sample_map)
+        self.assertIn("codes", result["target_disease_list"])
+        codes = result["target_disease_list"]["codes"]
+        self.assertIsInstance(codes, list)
+        self.assertIn("14189004", codes)
+        self.assertIn("840539006", codes)
+        to_vaccs = result["target_disease_to_vaccs"]
+        self.assertEqual(sorted(to_vaccs["14189004"]), ["MMR", "MMRV"])
+        self.assertEqual(to_vaccs["840539006"], ["COVID"])
 
     def test_empty_input(self):
         result = transform_supplier_permissions([])
-        self.assertEqual(result, {
-            "supplier_permissions": {},
-            "ods_code_to_supplier": {},
-        })
+        self.assertEqual(
+            result,
+            {
+                "supplier_permissions": {},
+                "ods_code_to_supplier": {},
+            },
+        )

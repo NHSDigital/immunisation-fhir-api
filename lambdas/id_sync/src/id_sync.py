@@ -1,20 +1,20 @@
 """
-- Parses the incoming AWS event into `AwsLambdaEvent` and iterate its `records`.
-- Delegate each record to `process_record` and collect `nhs_number` from each result.
-- If any record has status == "error" raise `IdSyncException` with aggregated nhs_numbers.
-- Any unexpected error is wrapped into `IdSyncException(message="Error processing id_sync event")`.
+- Parses the incoming AWS event into `AwsLambdaEvent` and iterates its `records`.
+- Delegates each record to `process_record` with per-record exception isolation.
+- Returns {"batchItemFailures": [...]} for any failed records so SQS only re-drives the failing messages.
+- A handler-level exception (bad event schema etc.) re-raises to trigger full batch retry.
 """
 
-from typing import Any, Dict
+from typing import Any
+
 from common.aws_lambda_event import AwsLambdaEvent
-from common.clients import logger, STREAM_NAME
+from common.clients import STREAM_NAME, logger
 from common.log_decorator import logging_decorator
-from exceptions.id_sync_exception import IdSyncException
 from record_processor import process_record
 
 
 @logging_decorator(prefix="id_sync", stream_name=STREAM_NAME)
-def handler(event_data: Dict[str, Any], _context) -> Dict[str, Any]:
+def handler(event_data: dict[str, Any], _context) -> dict[str, Any]:
     try:
         event = AwsLambdaEvent(event_data)
         records = event.records
@@ -24,37 +24,32 @@ def handler(event_data: Dict[str, Any], _context) -> Dict[str, Any]:
 
         logger.info("id_sync processing event with %d records", len(records))
 
-        results = []
-        nhs_numbers = []
-        error_count = 0
+        batch_item_failures = []
 
         for record in records:
-            result = process_record(record)
-            results.append(result)
+            try:
+                result = process_record(record)
+                if result.get("status") == "error":
+                    message_id = record.get("messageId")
+                    logger.error(
+                        "id_sync record processing failed for messageId: %s — %s",
+                        message_id,
+                        result.get("message"),
+                    )
+                    batch_item_failures.append({"itemIdentifier": message_id})
+            except Exception:
+                message_id = record.get("messageId")
+                logger.exception("Unexpected error processing messageId: %s", message_id)
+                batch_item_failures.append({"itemIdentifier": message_id})
 
-            if "nhs_number" in result:
-                nhs_numbers.append(result["nhs_number"])
+        if batch_item_failures:
+            logger.error("id_sync completed with %d/%d failures", len(batch_item_failures), len(records))
+            return {"batchItemFailures": batch_item_failures}
 
-            if result.get("status") == "error":
-                error_count += 1
-
-        if error_count > 0:
-            raise IdSyncException(message=f"Processed {len(records)} records with {error_count} errors",
-                                  nhs_numbers=nhs_numbers)
-
-        response = {
-            "status": "success",
-            "message": f"Successfully processed {len(records)} records",
-            "nhs_numbers": nhs_numbers
-            }
-
+        response = {"status": "success", "message": f"Successfully processed {len(records)} records"}
         logger.info("id_sync handler completed: %s", response)
         return response
 
-    except IdSyncException as e:
-        logger.exception(f"id_sync error: {e.message}")
-        raise
     except Exception:
-        msg = "Error processing id_sync event"
-        logger.exception(msg)
-        raise IdSyncException(message=msg)
+        logger.exception("Unexpected error processing id_sync event")
+        raise

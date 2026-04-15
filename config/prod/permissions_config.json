@@ -2,9 +2,11 @@
   {
     "supplier": "DPSFULL",
     "permissions": [
+      "COVID.CRUDS",
       "FLU.CRUDS",
       "HPV.CRUDS",
       "MMR.CRUDS",
+      "PERTUSSIS.CRUDS",
       "RSV.CRUDS"
     ],
     "ods_codes": ["DPSFULL"]
@@ -12,26 +14,29 @@
   {
     "supplier": "DPSREDUCED",
     "permissions": [
+      "COVID.CRUDS",
       "FLU.CRUDS",
       "HPV.CRUDS",
       "MMR.CRUDS",
+      "PERTUSSIS.CRUDS",
       "RSV.CRUDS"
     ],
     "ods_codes": ["DPSREDUCED"]
   },
   {
     "supplier": "RAVS",
-    "permissions": [
-      "MMR.CRUDS",
-      "RSV.RS"
-    ],
+    "permissions": ["MMR.CRUDS", "RSV.CRUDS", "PNEUMOCOCCAL.CRUDS"],
     "ods_codes": ["X26", "X8E5B"]
   },
   {
     "supplier": "MAVIS",
     "permissions": [
+      "3IN1.CRUDS",
       "FLU.CRUDS",
-      "HPV.CUD"
+      "HPV.CRUDS",
+      "MENACWY.CRUDS",
+      "MMR.CRUDS",
+      "MMRV.CRUDS"
     ],
     "ods_codes": ["V0V8L"]
   },
@@ -39,10 +44,16 @@
     "supplier": "EMIS",
     "permissions": [
       "3IN1.CRUDS",
+      "COVID.CRUDS",
+      "FLU.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
       "MMR.CRUDS",
-      "RSV.CRUDS"
+      "MMRV.CRUDS",
+      "PERTUSSIS.CRUDS",
+      "PNEUMOCOCCAL.CRUDS",
+      "RSV.CRUDS",
+      "SHINGLES.CRUDS"
     ],
     "ods_codes": ["YGM41", "YGJ"]
   },
@@ -50,10 +61,16 @@
     "supplier": "TPP",
     "permissions": [
       "3IN1.CRUDS",
+      "COVID.CRUDS",
+      "FLU.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
       "MMR.CRUDS",
-      "RSV.CRUDS"
+      "MMRV.CRUDS",
+      "PERTUSSIS.CRUDS",
+      "PNEUMOCOCCAL.CRUDS",
+      "RSV.CRUDS",
+      "SHINGLES.CRUDS"
     ],
     "ods_codes": ["YGA"]
   },
@@ -61,10 +78,16 @@
     "supplier": "MEDICUS",
     "permissions": [
       "3IN1.CRUDS",
+      "COVID.CRUDS",
+      "FLU.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
       "MMR.CRUDS",
-      "RSV.CRUDS"
+      "MMRV.CRUDS",
+      "PERTUSSIS.CRUDS",
+      "PNEUMOCOCCAL.CRUDS",
+      "RSV.CRUDS",
+      "SHINGLES.CRUDS"
     ],
     "ods_codes": ["YGMYW"]
   },

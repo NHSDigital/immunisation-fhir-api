@@ -23,10 +23,10 @@ jobs:
     permissions:
       id-token: write
       contents: read
-  
+
     steps:
       - name: Connect to AWS
-        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37
         with:
           aws-region: eu-west-2
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
@@ -36,30 +36,41 @@ jobs:
         run: aws sts get-caller-identity
 
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
-        
-      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
+
+      - uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85
         with:
           terraform_version: "1.12.2"
 
       - name: Terraform Init and extract MNS SQS QUEUE ARN
-        working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
+        working-directory: infrastructure/instance
         run: |
           make init apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
           make workspace apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
           echo "ID_SYNC_QUEUE_ARN=$(make -s output name=id_sync_queue_arn)" >> $GITHUB_ENV
+          # Destroy still evaluates variable validation, so provide a non-empty fallback when output is unavailable.
+          resolve_or_placeholder() {
+            local uri="$(make -s output "name=$1" 2>/dev/null || true)"
+            echo "${uri:-placeholder.dkr.ecr.eu-west-2.amazonaws.com/$2@sha256:0000000000000000000000000000000000000000000000000000000000000000}"
+          }
+          echo "TF_VAR_recordprocessor_image_uri=$(resolve_or_placeholder recordprocessor_image_uri imms-recordprocessor-repo)" >> $GITHUB_ENV
+          echo "TF_VAR_ack_backend_image_uri=$(resolve_or_placeholder ack_backend_image_uri imms-ackbackend-repo)" >> $GITHUB_ENV
 
       - name: Install poetry
         run: pip install poetry==2.1.4
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6.2.0
         with:
           python-version: 3.11
-          cache: 'poetry'
+          cache: "poetry"
+          cache-dependency-path: |
+            lambdas/mns_subscription/poetry.lock
+            lambdas/shared/poetry.lock
 
       - name: Unsubscribe MNS
-        working-directory: './lambdas/mns_subscription'
+        working-directory: "./lambdas/mns_subscription"
         env:
+          APIGEE_ENVIRONMENT: int
           SQS_ARN: ${{ env.ID_SYNC_QUEUE_ARN }}
         run: |
           poetry install --no-root
@@ -68,6 +79,56 @@ jobs:
           make unsubscribe
 
       - name: Terraform Destroy
-        working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
+        working-directory: infrastructure/instance
         run: |
           make destroy apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
+
+      - name: Cleanup PR ECR images by prefix
+        env:
+          AWS_REGION: eu-west-2
+          IMAGE_TAG_PREFIX: ${{ env.BACKEND_SUB_ENVIRONMENT }}-
+        run: |
+          set -euo pipefail
+
+          cleanup_repo_by_prefix() {
+            local repository_name="$1"
+            local image_tags
+            local image_ids_args=""
+
+            if ! aws ecr describe-repositories \
+              --repository-names "${repository_name}" \
+              --region "${AWS_REGION}" \
+              >/dev/null 2>&1; then
+              echo "Repository '${repository_name}' does not exist. Skipping."
+              return
+            fi
+
+            image_tags=$(
+              aws ecr list-images \
+                --repository-name "${repository_name}" \
+                --region "${AWS_REGION}" \
+                --filter tagStatus=TAGGED \
+                --query "imageIds[?starts_with(imageTag, \`${IMAGE_TAG_PREFIX}\`)].imageTag" \
+                --output text
+            )
+
+            if [ -z "${image_tags}" ] || [ "${image_tags}" = "None" ]; then
+              echo "No images found in '${repository_name}' for prefix '${IMAGE_TAG_PREFIX}'."
+              return
+            fi
+
+            for image_tag in ${image_tags}; do
+              echo "Queueing image tag '${image_tag}' from '${repository_name}' for deletion..."
+              image_ids_args="${image_ids_args} imageTag=${image_tag}"
+            done
+
+            aws ecr batch-delete-image \
+              --repository-name "${repository_name}" \
+              --region "${AWS_REGION}" \
+              --image-ids ${image_ids_args} \
+              --output json
+          }
+
+          for repository_name in imms-recordprocessor-repo imms-ackbackend-repo; do
+            cleanup_repo_by_prefix "${repository_name}"
+          done

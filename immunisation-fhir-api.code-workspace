@@ -1,44 +1,47 @@
 {
-	"folders": [
-		{
-			"path": "."
-		},
-		{
-			"path": "backend"
-		},
-		{
-			"path": "filenameprocessor"
-		},
-		{
-			"path": "recordprocessor"
-		},
-		{
-			"path": "delta_backend"
-		},
-		{
-			"path": "mesh_processor"
-		},
-		{
-			"path": "e2e"
-		},
-		{
-			"path": "e2e_batch"
-		},
-		{
-			"path": "lambdas/ack_backend"
-		},
+    "folders": [
         {
-            "path": "lambdas/redis_sync"
+            "path": ".",
         },
-		{
-			"path": "lambdas/id_sync"
+        {
+            "path": "lambdas/backend",
         },
-		{
-            "path": "lambdas/mns_subscription"
-		},
-		{
-			"path": "lambdas/shared"
-		}
-	],
-	"settings": {}
+        {
+            "path": "lambdas/ack_backend",
+        },
+        {
+            "path": "lambdas/batch_processor_filter",
+        },
+        {
+            "path": "lambdas/delta_backend",
+        },
+        {
+            "path": "lambdas/filenameprocessor",
+        },
+        {
+            "path": "lambdas/id_sync",
+        },
+        {
+            "path": "lambdas/mesh_processor",
+        },
+        {
+            "path": "lambdas/mns_subscription",
+        },
+        {
+            "path": "lambdas/recordforwarder",
+        },
+        {
+            "path": "lambdas/recordprocessor",
+        },
+        {
+            "path": "lambdas/redis_sync",
+        },
+        {
+            "path": "lambdas/shared",
+        },
+        {
+            "path": "tests/e2e_automation",
+        },
+    ],
+    "settings": {},
 }

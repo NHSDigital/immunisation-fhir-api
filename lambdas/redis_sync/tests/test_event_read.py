@@ -1,5 +1,6 @@
 import unittest
 from unittest.mock import Mock
+
 from event_read import read_event
 
 

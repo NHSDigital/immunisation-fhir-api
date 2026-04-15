@@ -1,5 +1,5 @@
 {
-  "COVID19": [
+  "COVID": [
     {
       "code": "840539006",
       "term": "Disease caused by severe acute respiratory syndrome coronavirus 2"
@@ -67,7 +67,7 @@
       "term": "Herpes zoster"
     }
   ],
-  "PCV13": [
+  "PNEUMOCOCCAL": [
     {
       "code": "16814004",
       "term": "Pneumococcal infectious disease"

@@ -2,12 +2,11 @@
   {
     "supplier": "DPSFULL",
     "permissions": [
-      "3IN1.CRUDS",
-      "COVID19.CRUDS",
+      "COVID.CRUDS",
       "FLU.CRUDS",
       "HPV.CRUDS",
-      "MENACWY.CRUDS",
       "MMR.CRUDS",
+      "PERTUSSIS.CRUDS",
       "RSV.CRUDS"
     ],
     "ods_codes": ["DPSFULL"]
@@ -15,12 +14,11 @@
   {
     "supplier": "DPSREDUCED",
     "permissions": [
-      "3IN1.CRUDS",
-      "COVID19.CRUDS",
+      "COVID.CRUDS",
       "FLU.CRUDS",
       "HPV.CRUDS",
-      "MENACWY.CRUDS",
       "MMR.CRUDS",
+      "PERTUSSIS.CRUDS",
       "RSV.CRUDS"
     ],
     "ods_codes": ["DPSREDUCED"]
@@ -32,24 +30,50 @@
       "FLU.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
-      "MMR.CRUDS"
+      "MMR.CRUDS",
+      "MMRV.CRUDS"
     ],
     "ods_codes": ["V0V8L"]
   },
   {
     "supplier": "RAVS",
-    "permissions": ["MMR.CRUDS", "RSV.CRUDS"],
+    "permissions": [
+      "3IN1.CRUDS",
+      "COVID.CRUDS",
+      "FLU.CRUDS",
+      "HPV.CRUDS",
+      "MENACWY.CRUDS",
+      "MMR.CRUDS",
+      "MMRV.CRUDS",
+      "PERTUSSIS.CRUDS",
+      "PNEUMOCOCCAL.CRUDS",
+      "RSV.CRUDS",
+      "SHINGLES.CRUDS"
+    ],
     "ods_codes": ["X26", "X8E5B"]
   },
   {
     "supplier": "EMIS",
     "permissions": [
       "3IN1.CRUDS",
-      "COVID19.CRUDS",
+      "4IN1.CRUDS",
+      "6IN1.CRUDS",
+      "BCG.CRUDS",
+      "COVID.CRUDS",
+      "FLU.CRUDS",
+      "HEPB.CRUDS",
+      "HIB.CRUDS",
+      "HIBMENC.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
+      "MENB.CRUDS",
       "MMR.CRUDS",
-      "RSV.CRUDS"
+      "MMRV.CRUDS",
+      "PERTUSSIS.CRUDS",
+      "PNEUMOCOCCAL.CRUDS",
+      "ROTAVIRUS.CRUDS",
+      "RSV.CRUDS",
+      "SHINGLES.CRUDS"
     ],
     "ods_codes": ["YGM41", "YGJ"]
   },
@@ -57,10 +81,24 @@
     "supplier": "TPP",
     "permissions": [
       "3IN1.CRUDS",
+      "4IN1.CRUDS",
+      "6IN1.CRUDS",
+      "BCG.CRUDS",
+      "COVID.CRUDS",
+      "FLU.CRUDS",
+      "HEPB.CRUDS",
+      "HIB.CRUDS",
+      "HIBMENC.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
+      "MENB.CRUDS",
       "MMR.CRUDS",
-      "RSV.CRUDS"
+      "MMRV.CRUDS",
+      "PERTUSSIS.CRUDS",
+      "PNEUMOCOCCAL.CRUDS",
+      "ROTAVIRUS.CRUDS",
+      "RSV.CRUDS",
+      "SHINGLES.CRUDS"
     ],
     "ods_codes": ["YGA"]
   },
@@ -68,42 +106,77 @@
     "supplier": "MEDICUS",
     "permissions": [
       "3IN1.CRUDS",
+      "4IN1.CRUDS",
+      "6IN1.CRUDS",
+      "BCG.CRUDS",
+      "COVID.CRUDS",
+      "FLU.CRUDS",
+      "HEPB.CRUDS",
+      "HIB.CRUDS",
+      "HIBMENC.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
+      "MENB.CRUDS",
       "MMR.CRUDS",
-      "RSV.CRUDS"
+      "MMRV.CRUDS",
+      "PERTUSSIS.CRUDS",
+      "PNEUMOCOCCAL.CRUDS",
+      "ROTAVIRUS.CRUDS",
+      "RSV.CRUDS",
+      "SHINGLES.CRUDS"
     ],
     "ods_codes": ["YGMYW"]
   },
   {
     "supplier": "OXDH",
-    "permissions": [
-      "COVID19.CRUDS",
-      "FLU.CRUDS"
-    ]
+    "permissions": ["COVID.CRUDS", "FLU.CRUDS"]
   },
   {
     "supplier": "Test_App",
     "permissions": [
       "3IN1.CRUDS",
-      "COVID19.CRUDS",
+      "4IN1.CRUDS",
+      "6IN1.CRUDS",
+      "BCG.CRUDS",
+      "COVID.CRUDS",
       "FLU.CRUDS",
+      "HEPB.CRUDS",
+      "HIB.CRUDS",
+      "HIBMENC.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
+      "MENB.CRUDS",
       "MMR.CRUDS",
-      "RSV.CRUDS"
+      "MMRV.CRUDS",
+      "PERTUSSIS.CRUDS",
+      "PNEUMOCOCCAL.CRUDS",
+      "ROTAVIRUS.CRUDS",
+      "RSV.CRUDS",
+      "SHINGLES.CRUDS"
     ]
   },
   {
     "supplier": "Postman_Auth",
     "permissions": [
       "3IN1.CRUDS",
-      "COVID19.CRUDS",
+      "4IN1.CRUDS",
+      "6IN1.CRUDS",
+      "BCG.CRUDS",
+      "COVID.CRUDS",
       "FLU.CRUDS",
+      "HEPB.CRUDS",
+      "HIB.CRUDS",
+      "HIBMENC.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
+      "MENB.CRUDS",
       "MMR.CRUDS",
-      "RSV.CRUDS"
+      "MMRV.CRUDS",
+      "PERTUSSIS.CRUDS",
+      "PNEUMOCOCCAL.CRUDS",
+      "ROTAVIRUS.CRUDS",
+      "RSV.CRUDS",
+      "SHINGLES.CRUDS"
     ]
   },
   {
@@ -152,10 +225,12 @@
   },
   {
     "supplier": "EVA",
+    "permissions": ["COVID.CUD"],
     "ods_codes": ["8HA94"]
   },
   {
     "supplier": "SONAR",
+    "permissions": ["FLU.CD"],
     "ods_codes": ["8HK48"]
   }
 ]

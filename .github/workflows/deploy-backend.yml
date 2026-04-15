@@ -6,6 +6,33 @@ on:
       apigee_environment:
         required: true
         type: string
+      lambda_build_flags:
+        description: >
+          JSON map of lambda_name -> force-build flag.
+          e.g. {"recordprocessor":true,"ack-backend":false}
+        required: false
+        type: string
+        default: "{}"
+      lambda_image_overrides:
+        description: >
+          JSON map of lambda_name -> immutable image selector for reuse mode.
+          Supports tags, sha256 digests, or full image URIs. Empty object means
+          no explicit override.
+        required: false
+        type: string
+        default: "{}"
+      diff_base_sha:
+        required: false
+        type: string
+        default: ""
+      diff_head_sha:
+        required: false
+        type: string
+        default: ""
+      run_diff_check:
+        required: false
+        type: boolean
+        default: false
       create_mns_subscription:
         required: false
         type: boolean
@@ -16,6 +43,10 @@ on:
       sub_environment:
         required: true
         type: string
+    outputs:
+      image_uris_json:
+        description: JSON map of lambda_name -> immutable image URI used for deployment
+        value: ${{ jobs.terraform-plan.outputs.image_uris_json }}
   workflow_dispatch:
     inputs:
       apigee_environment:
@@ -23,126 +54,275 @@ on:
         description: Select the Apigee proxy environment
         options:
           - internal-dev
+          - internal-qa
           - int
           - ref
           - prod
       create_mns_subscription:
-        description: Create an MNS Subscription. Only available in dev
+        description: Create an MNS Subscription programatically. Only available in AWS dev
         required: false
         type: boolean
         default: true
       environment:
-        type: string
-        description: Select the backend environment
+        type: choice
+        description: Select the AWS backend environment
         options:
           - dev
           - preprod
           - prod
+      lambda_build_flags:
+        description: >
+          JSON map of lambda_name -> force-build flag.
+          e.g. {"recordprocessor":true,"ack-backend":false}
+        required: false
+        type: string
+        default: "{}"
+      lambda_image_overrides:
+        description: >
+          JSON map of lambda_name -> immutable image selector for reuse mode.
+          e.g. {"recordprocessor":"internal-dev-git-abc123","ack-backend":"123456789012.dkr.ecr.eu-west-2.amazonaws.com/imms-ackbackend-repo@sha256:..."}
+        required: false
+        type: string
+        default: "{}"
+      diff_base_sha:
+        description: Base commit SHA for diff checks
+        required: false
+        type: string
+        default: ""
+      diff_head_sha:
+        description: Head commit SHA for diff checks
+        required: false
+        type: string
+        default: ""
+      run_diff_check:
+        description: Enable diff checks to auto-build on code changes
+        required: true
+        type: boolean
+        default: false
       sub_environment:
         type: string
         description: Set the sub environment name e.g. pr-xxx, or green/blue in higher environments
 
+env: # Sonarcloud - do not allow direct usage of untrusted data
+  APIGEE_ENVIRONMENT: ${{ inputs.apigee_environment }}
+  ENVIRONMENT: ${{ inputs.environment }}
+  SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
+
+run-name: Deploy Backend - ${{ inputs.environment }} ${{ inputs.sub_environment }}
+
 jobs:
+  deploy-lambda-images:
+    name: Deploy ${{ matrix.lambda_name }} image
+    strategy:
+      # Surface every lambda image failure from the matrix in a single run.
+      fail-fast: false
+      matrix:
+        include:
+          - lambda_name: recordprocessor
+            tf_var_suffix: recordprocessor
+            ecr_repository: imms-recordprocessor-repo
+            dockerfile_path: lambdas/recordprocessor/Dockerfile
+            lambda_paths: |
+              lambdas/recordprocessor/
+          - lambda_name: ack-backend
+            tf_var_suffix: ack_backend
+            ecr_repository: imms-ackbackend-repo
+            dockerfile_path: lambdas/ack_backend/Dockerfile
+            lambda_paths: |
+              lambdas/ack_backend/
+    uses: ./.github/workflows/deploy-lambda-artifact.yml
+    with:
+      lambda_name: ${{ matrix.lambda_name }}
+      tf_var_suffix: ${{ matrix.tf_var_suffix }}
+      environment: ${{ inputs.environment }}
+      sub_environment: ${{ inputs.sub_environment }}
+      build_image: ${{ fromJson(inputs.lambda_build_flags)[matrix.lambda_name] || false }}
+      image_version: ${{ fromJson(inputs.lambda_image_overrides)[matrix.lambda_name] || '' }}
+      run_diff_check: ${{ inputs.run_diff_check }}
+      diff_base_sha: ${{ inputs.diff_base_sha }}
+      diff_head_sha: ${{ inputs.diff_head_sha }}
+      lambda_paths: ${{ matrix.lambda_paths }}
+      shared_paths: |
+        lambdas/shared/src/common/
+      docker_context_path: lambdas
+      dockerfile_path: ${{ matrix.dockerfile_path }}
+      ecr_repository: ${{ matrix.ecr_repository }}
+      image_tag_prefix: ${{ inputs.sub_environment }}-
+      allow_implicit_tag_prefix_reuse: ${{ inputs.sub_environment == 'internal-dev' || startsWith(inputs.sub_environment, 'pr-') }}
+
   terraform-plan:
-    runs-on: ubuntu-latest
-    environment:
-      name: ${{ inputs.environment }}
-    env: # Sonarcloud - do not allow direct usage of untrusted data
-      APIGEE_ENVIRONMENT: ${{ inputs.apigee_environment }}
-      BACKEND_ENVIRONMENT: ${{ inputs.environment }}
-      BACKEND_SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
     permissions:
       id-token: write
       contents: read
+    needs:
+      - deploy-lambda-images
+    if: ${{ !cancelled() && needs.deploy-lambda-images.result == 'success' }}
+    outputs:
+      image_uris_json: ${{ steps.lambda-images.outputs.image_uris_json }}
+      terraform_image_uris_json: ${{ steps.lambda-images.outputs.terraform_image_uris_json }}
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
+
       - name: Connect to AWS
-        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37
         with:
           aws-region: eu-west-2
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
           role-session-name: github-actions
 
-      - name: Whoami
-        run: aws sts get-caller-identity
-
-      - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
-
-      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
+      - uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85
         with:
           terraform_version: "1.12.2"
 
+      - name: Download lambda deployment manifests
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          pattern: deploy-manifest-*-${{ inputs.environment }}-${{ inputs.sub_environment }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/lambda-manifests
+          merge-multiple: true
+
+      - name: Assemble lambda image map and export Terraform vars
+        id: lambda-images
+        run: |
+          set -euo pipefail
+
+          manifest_dir="${RUNNER_TEMP}/lambda-manifests"
+          shopt -s nullglob
+          manifest_files=("${manifest_dir}"/*.json)
+
+          if [ "${#manifest_files[@]}" -eq 0 ]; then
+            echo "No lambda deployment manifests found."
+            exit 1
+          fi
+
+          jq -e -s '
+            all(
+              .[];
+              .lambda_name != null
+              and .lambda_name != ""
+              and .tf_var_suffix != null
+              and .tf_var_suffix != ""
+              and .image_uri != null
+              and .image_uri != ""
+            )
+            and ((map(.lambda_name) | unique | length) == length)
+            and ((map(.tf_var_suffix) | unique | length) == length)
+          ' "${manifest_files[@]}" > /dev/null
+
+          image_uris_json="$(
+            jq -cs 'map(select(.lambda_name != null and .image_uri != null) | {(.lambda_name): .image_uri}) | add' \
+              "${manifest_files[@]}"
+          )"
+
+          terraform_image_uris_json="$(
+            jq -cs 'map(select(.tf_var_suffix != null and .tf_var_suffix != "" and .image_uri != null) | {(.tf_var_suffix): .image_uri}) | add' \
+              "${manifest_files[@]}"
+          )"
+
+          echo "image_uris_json=${image_uris_json}" >> "$GITHUB_OUTPUT"
+          echo "terraform_image_uris_json=${terraform_image_uris_json}" >> "$GITHUB_OUTPUT"
+          jq -er '
+            to_entries[]
+            | "TF_VAR_\(.key)_image_uri=\(.value)"
+          ' <<< "${terraform_image_uris_json}" >> "$GITHUB_ENV"
+
       - name: Terraform Init
-        working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
-        run: make init apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
+        working-directory: infrastructure/instance
+        run: make init
 
       - name: Terraform Plan
-        working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
-        run: make plan-ci apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
+        # Ignore cancellations to prevent Terraform from being killed while it holds a state lock
+        # A stuck process can still be killed with the force-cancel API operation
+        if: ${{ !failure() }}
+        working-directory: infrastructure/instance
+        run: make plan-ci
 
       - name: Save Terraform Plan
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: tfplan
-          path: ${{ vars.TERRAFORM_DIR_PATH }}/tfplan
+          name: ${{ env.ENVIRONMENT }}-${{ env.SUB_ENVIRONMENT }}-tfplan
+          path: infrastructure/instance/tfplan
 
   terraform-apply:
-    needs: terraform-plan
-    runs-on: ubuntu-latest
-    environment:
-      name: ${{ inputs.environment }}
-    env: # Sonarcloud - do not allow direct usage of untrusted data
-      APIGEE_ENVIRONMENT: ${{ inputs.apigee_environment }}
-      BACKEND_ENVIRONMENT: ${{ inputs.environment }}
-      BACKEND_SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
     permissions:
       id-token: write
       contents: read
+    needs: terraform-plan
+    if: ${{ !cancelled() && needs.terraform-plan.result == 'success' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
 
-      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a
+      - uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37
         with:
           aws-region: eu-west-2
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
           role-session-name: github-actions
 
-      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
+      - uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85
         with:
           terraform_version: "1.12.2"
 
+      - name: Restore lambda image Terraform vars
+        env:
+          TERRAFORM_IMAGE_URIS_JSON: ${{ needs.terraform-plan.outputs.terraform_image_uris_json }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${TERRAFORM_IMAGE_URIS_JSON}" ] || [ "${TERRAFORM_IMAGE_URIS_JSON}" = "null" ]; then
+            echo "terraform-plan did not emit terraform_image_uris_json."
+            exit 1
+          fi
+
+          jq -er '
+            to_entries[]
+            | "TF_VAR_\(.key)_image_uri=\(.value)"
+          ' <<< "${TERRAFORM_IMAGE_URIS_JSON}" >> "$GITHUB_ENV"
+
       - name: Retrieve Terraform Plan
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
-          name: tfplan
-          path: ${{ vars.TERRAFORM_DIR_PATH }}
+          name: ${{ env.ENVIRONMENT }}-${{ env.SUB_ENVIRONMENT }}-tfplan
+          path: infrastructure/instance
 
       - name: Terraform Init
-        working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
-        run: make init apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
+        working-directory: infrastructure/instance
+        run: make init
 
       - name: Terraform Apply
-        working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
+        # Ignore cancellations to prevent Terraform from being killed while it holds a state lock
+        # A stuck process can still be killed with the force-cancel API operation
+        if: ${{ !failure() }}
+        working-directory: infrastructure/instance
         run: |
-          make apply-ci apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
+          make apply-ci
           echo "ID_SYNC_QUEUE_ARN=$(make -s output name=id_sync_queue_arn)" >> $GITHUB_ENV
 
       - name: Install poetry
         if: ${{ inputs.environment == 'dev' && inputs.create_mns_subscription }}
         run: pip install poetry==2.1.4
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6.2.0
         if: ${{ inputs.environment == 'dev' && inputs.create_mns_subscription }}
         with:
           python-version: 3.11
-          cache: 'poetry'
+          cache: "poetry"
+          cache-dependency-path: |
+            lambdas/mns_subscription/poetry.lock
+            lambdas/shared/poetry.lock
 
       - name: Create MNS Subscription
         if: ${{ inputs.environment == 'dev' && inputs.create_mns_subscription }}
-        working-directory: './lambdas/mns_subscription'
+        working-directory: "./lambdas/mns_subscription"
         env:
-          APIGEE_ENVIRONMENT: ${{ inputs.apigee_environment }}
+          APIGEE_ENVIRONMENT: int
           SQS_ARN: ${{ env.ID_SYNC_QUEUE_ARN }}
         run: |
           poetry install --no-root
