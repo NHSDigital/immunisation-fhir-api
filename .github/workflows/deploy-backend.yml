@@ -9,7 +9,7 @@ on:
       lambda_build_flags:
         description: >
           JSON map of lambda_name -> force-build flag.
-          e.g. {"recordprocessor":true,"ack-backend":false}
+          e.g. {"backend":true,"recordprocessor":true,"ack-backend":false}
         required: false
         type: string
         default: "{}"
@@ -73,14 +73,14 @@ on:
       lambda_build_flags:
         description: >
           JSON map of lambda_name -> force-build flag.
-          e.g. {"recordprocessor":true,"ack-backend":false}
+          e.g. {"backend":true,"recordprocessor":true,"ack-backend":false}
         required: false
         type: string
         default: "{}"
       lambda_image_overrides:
         description: >
           JSON map of lambda_name -> immutable image selector for reuse mode.
-          e.g. {"recordprocessor":"internal-dev-git-abc123","ack-backend":"123456789012.dkr.ecr.eu-west-2.amazonaws.com/imms-ackbackend-repo@sha256:..."}
+          e.g. {"backend":"internal-dev-git-abc123","ack-backend":"123456789012.dkr.ecr.eu-west-2.amazonaws.com/imms-ackbackend-repo@sha256:..."}
         required: false
         type: string
         default: "{}"
@@ -118,18 +118,61 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - lambda_name: backend
+            tf_var_suffix: backend
+            ecr_repository: imms-fhir-api-operation-lambda-repo
+            dockerfile_path: lambdas/backend/Dockerfile
+            lambda_paths: lambdas/backend/
+          - lambda_name: batch_processor_filter
+            tf_var_suffix: batch_processor_filter
+            ecr_repository: imms-batch-processor-filter-repo
+            dockerfile_path: lambdas/batch_processor_filter/Dockerfile
+            lambda_paths: lambdas/batch_processor_filter/
+          - lambda_name: delta_backend
+            tf_var_suffix: delta_backend
+            ecr_repository: imms-fhir-api-delta-lambda-repo
+            dockerfile_path: lambdas/delta_backend/Dockerfile
+            lambda_paths: lambdas/delta_backend/
+          - lambda_name: filenameprocessor
+            tf_var_suffix: filenameprocessor
+            ecr_repository: imms-filenameproc-repo
+            dockerfile_path: lambdas/filenameprocessor/Dockerfile
+            lambda_paths: lambdas/filenameprocessor/
+          - lambda_name: id_sync
+            tf_var_suffix: id_sync
+            ecr_repository: imms-id-sync-repo
+            dockerfile_path: lambdas/id_sync/Dockerfile
+            lambda_paths: lambdas/id_sync/
+          - lambda_name: mesh_processor
+            tf_var_suffix: mesh_processor
+            ecr_repository: imms-mesh-processor-repo
+            dockerfile_path: lambdas/mesh_processor/Dockerfile
+            lambda_paths: lambdas/mesh_processor/
+          - lambda_name: mns_publisher
+            tf_var_suffix: mns_publisher
+            ecr_repository: imms-mns-publisher-repo
+            dockerfile_path: lambdas/mns_publisher/Dockerfile
+            lambda_paths: lambdas/mns_publisher/
+          - lambda_name: recordforwarder
+            tf_var_suffix: recordforwarder
+            ecr_repository: imms-forwarding-repo
+            dockerfile_path: lambdas/recordforwarder/Dockerfile
+            lambda_paths: lambdas/recordforwarder/
+          - lambda_name: redis_sync
+            tf_var_suffix: redis_sync
+            ecr_repository: imms-redis-sync-repo
+            dockerfile_path: lambdas/redis_sync/Dockerfile
+            lambda_paths: lambdas/redis_sync/
           - lambda_name: recordprocessor
             tf_var_suffix: recordprocessor
             ecr_repository: imms-recordprocessor-repo
             dockerfile_path: lambdas/recordprocessor/Dockerfile
-            lambda_paths: |
-              lambdas/recordprocessor/
+            lambda_paths: lambdas/recordprocessor/
           - lambda_name: ack-backend
             tf_var_suffix: ack_backend
             ecr_repository: imms-ackbackend-repo
             dockerfile_path: lambdas/ack_backend/Dockerfile
-            lambda_paths: |
-              lambdas/ack_backend/
+            lambda_paths: lambdas/ack_backend/
     uses: ./.github/workflows/deploy-lambda-artifact.yml
     with:
       lambda_name: ${{ matrix.lambda_name }}
@@ -142,8 +185,7 @@ jobs:
       diff_base_sha: ${{ inputs.diff_base_sha }}
       diff_head_sha: ${{ inputs.diff_head_sha }}
       lambda_paths: ${{ matrix.lambda_paths }}
-      shared_paths: |
-        lambdas/shared/src/common/
+      shared_paths: lambdas/shared/src/common/
       docker_context_path: lambdas
       dockerfile_path: ${{ matrix.dockerfile_path }}
       ecr_repository: ${{ matrix.ecr_repository }}

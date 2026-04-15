@@ -1,9 +1,5 @@
-# Define the directory containing the Docker image and calculate its SHA-256 hash for triggering redeployments
 locals {
-  mesh_processor_lambda_dir     = abspath("${path.root}/../../lambdas/mesh_processor")
-  mesh_processor_lambda_files   = fileset(local.mesh_processor_lambda_dir, "**")
-  mesh_processor_lambda_dir_sha = sha1(join("", [for f in local.mesh_processor_lambda_files : filesha1("${local.mesh_processor_lambda_dir}/${f}")]))
-  mesh_processor_lambda_name    = "${local.short_prefix}-mesh-processor-lambda"
+  mesh_processor_lambda_name = "${local.short_prefix}-mesh-processor-lambda"
   # This should match the prefix used in the global Terraform
   mesh_module_prefix = "imms-${var.environment}-mesh"
 }
@@ -18,84 +14,6 @@ data "aws_kms_key" "mesh" {
   count = var.create_mesh_processor ? 1 : 0
 
   key_id = "alias/${local.mesh_module_prefix}"
-}
-
-resource "aws_ecr_repository" "mesh_file_converter_lambda_repository" {
-  count = var.create_mesh_processor ? 1 : 0
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-  name         = "${local.short_prefix}-mesh-processor-repo"
-  force_delete = local.is_temp
-}
-
-# Module for building and pushing Docker image to ECR
-module "mesh_processor_docker_image" {
-  count = var.create_mesh_processor ? 1 : 0
-
-  source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version          = "8.7.0"
-  docker_file_path = "./mesh_processor/Dockerfile"
-
-  create_ecr_repo = false
-  ecr_repo        = aws_ecr_repository.mesh_file_converter_lambda_repository[0].name
-  ecr_repo_lifecycle_policy = jsonencode({
-    "rules" : [
-      {
-        "rulePriority" : 1,
-        "description" : "Keep only the last 2 images",
-        "selection" : {
-          "tagStatus" : "any",
-          "countType" : "imageCountMoreThan",
-          "countNumber" : 2
-        },
-        "action" : {
-          "type" : "expire"
-        }
-      }
-    ]
-  })
-
-  platform      = "linux/amd64"
-  use_image_tag = false
-  source_path   = abspath("${path.root}/../../lambdas")
-  triggers = {
-    dir_sha        = local.mesh_processor_lambda_dir_sha
-    shared_dir_sha = local.shared_dir_sha
-  }
-}
-
-# Define the lambdaECRImageRetreival policy
-resource "aws_ecr_repository_policy" "mesh_processor_lambda_ECRImageRetreival_policy" {
-  count = var.create_mesh_processor ? 1 : 0
-
-  repository = aws_ecr_repository.mesh_file_converter_lambda_repository[0].name
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        "Sid" : "LambdaECRImageRetrievalPolicy",
-        "Effect" : "Allow",
-        "Principal" : {
-          "Service" : "lambda.amazonaws.com"
-        },
-        "Action" : [
-          "ecr:BatchGetImage",
-          "ecr:DeleteRepositoryPolicy",
-          "ecr:GetDownloadUrlForLayer",
-          "ecr:GetRepositoryPolicy",
-          "ecr:SetRepositoryPolicy"
-        ],
-        "Condition" : {
-          "StringLike" : {
-            "aws:sourceArn" : "arn:aws:lambda:${var.aws_region}:${var.immunisation_account_id}:function:${local.mesh_processor_lambda_name}"
-          }
-        }
-      }
-    ]
-  })
 }
 
 # IAM Role for Lambda
@@ -213,7 +131,7 @@ resource "aws_lambda_function" "mesh_file_converter_lambda" {
   function_name = local.mesh_processor_lambda_name
   role          = aws_iam_role.mesh_processor_lambda_exec_role[0].arn
   package_type  = "Image"
-  image_uri     = module.mesh_processor_docker_image[0].image_uri
+  image_uri     = var.mesh_processor_image_uri
   architectures = ["x86_64"]
   timeout       = 900
   memory_size   = 1024

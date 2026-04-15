@@ -160,3 +160,149 @@ removed {
     destroy = false
   }
 }
+
+# TODO - delete after shared Lambda ECR ownership migration has been applied in all environments
+
+removed {
+  from = aws_ecr_repository.operation_lambda_repository
+
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = aws_ecr_repository_policy.operation_lambda_ECRImageRetreival_policy
+
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = aws_ecr_repository.batch_processor_filter_lambda_repository
+
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = aws_ecr_repository_policy.batch_processor_filter_lambda_ECRImageRetreival_policy
+
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = aws_ecr_repository.delta_lambda_repository
+
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = aws_ecr_repository_policy.delta_lambda_ECRImageRetreival_policy
+
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = aws_ecr_repository.file_name_processor_lambda_repository
+
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = aws_ecr_repository_policy.filenameprocessor_lambda_ECRImageRetreival_policy
+
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = aws_ecr_repository.id_sync_lambda_repository
+
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = aws_ecr_repository_policy.id_sync_lambda_ECRImageRetreival_policy
+
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = aws_ecr_repository.forwarder_lambda_repository
+
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = aws_ecr_repository_policy.forwarder_lambda_ECRImageRetreival_policy
+
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = aws_ecr_repository.redis_sync_lambda_repository
+
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = aws_ecr_repository_policy.redis_sync_lambda_ECRImageRetreival_policy
+
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = aws_ecr_repository.mesh_file_converter_lambda_repository[0]
+
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = aws_ecr_repository_policy.mesh_processor_lambda_ECRImageRetreival_policy[0]
+
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = module.mns_publisher.aws_ecr_repository.mns_publisher_lambda_repository
+
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = module.mns_publisher.aws_ecr_repository_policy.mns_publisher_lambda_ecr_image_retrieval_policy
+
+  lifecycle {
+    destroy = false
+  }
+}
