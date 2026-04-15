@@ -18,9 +18,7 @@ class Converter:
         self.conversion_layout = ConversionLayout(self.extractor)
 
     def run_conversion(self):
-        conversions = self.conversion_layout.get_conversion_layout()
-
-        for conversion in conversions:
+        for conversion in self.conversion_layout.get_conversion_layout():
             self._convert_data(conversion)
 
         self.error_records.extend(self.extractor.get_error_records())
@@ -30,18 +28,19 @@ class Converter:
         return self.converted
 
     def _convert_data(self, conversion: ConversionField):
+        flat_field = conversion.field_name_flat
+
         try:
-            flat_field = conversion.field_name_flat
             if flat_field == "ACTION_FLAG":
                 self.converted[flat_field] = self.action_flag
-            else:
-                converted = conversion.expression_rule()
-                if converted is not None:
-                    self.converted[flat_field] = converted
-        except Exception as e:
+                return
+
+            if (converted := conversion.expression_rule()) is not None:
+                self.converted[flat_field] = converted
+        except Exception as error:
             self._log_error(
                 flat_field,
-                f"Conversion error [{e.__class__.__name__}]: {e}",
+                f"Conversion error [{error.__class__.__name__}]: {error}",
                 code=exception_messages.PARSING_ERROR,
             )
             self.converted[flat_field] = ""

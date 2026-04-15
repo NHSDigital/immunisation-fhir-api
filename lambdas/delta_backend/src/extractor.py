@@ -173,13 +173,11 @@ class Extractor:
         return site_code, site_code_type_uri
 
     def _log_error(self, field_name, field_value, e, code=exception_messages.RECORD_CHECK_FAILED):
-        if isinstance(e, Exception):
-            message = exception_messages.MESSAGES[exception_messages.UNEXPECTED_EXCEPTION] % (
-                e.__class__.__name__,
-                str(e),
-            )
-        else:
-            message = str(e)
+        message = (
+            exception_messages.MESSAGES[exception_messages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, str(e))
+            if isinstance(e, Exception)
+            else str(e)
+        )
 
         self.error_records.append(
             {
