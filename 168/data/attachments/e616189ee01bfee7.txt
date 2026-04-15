@@ -1,0 +1,2 @@
+❌ Step failed! **MNS event will be triggered with correct data for created event** 
+ Error: Expected a CREATE message but queue returned empty

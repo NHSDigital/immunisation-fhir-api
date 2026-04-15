@@ -1,0 +1,2 @@
+❌ Step failed! **Valid vaccination record is created for '9461267665' and Disease Type 'FLU' with recorded date as '2023-01-01'** 
+ Error: An error occurred (ExpiredToken) when calling the ReceiveMessage operation: The security token included in the request is expired

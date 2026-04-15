@@ -1,0 +1,2 @@
+❌ Step failed! **I have created a valid vaccination record** 
+ Error: An error occurred (ExpiredToken) when calling the ReceiveMessage operation: The security token included in the request is expired

@@ -1,0 +1,2 @@
+❌ Step failed! **The terms are mapped to correct instance of coding.display fields in imms delta table** 
+ Error: An error occurred (ExpiredTokenException) when calling the Query operation: The security token included in the request is expired
