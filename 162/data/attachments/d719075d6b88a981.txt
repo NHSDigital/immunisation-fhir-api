@@ -1,0 +1,11 @@
+
+ Search GET Request - 
+ {'patient.identifier': 'https://fhir.nhs.uk/Id/nhs-number|9000000009', 'target-disease': 'http://snomed.info/sct|14189004'}
+
+ Search GET Response - 
+ {'resourceType': 'OperationOutcome', 'id': '4c15f227-513f-4595-8532-69e7ddd4dcc8', 'meta': {'profile': ['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']}, 'issue': [{'severity': 'error', 'code': 'forbidden', 'details': {'coding': [{'system': 'https://fhir.nhs.uk/Codesystem/http-error-codes', 'code': 'FORBIDDEN'}]}, 'diagnostics': 'Unauthorized request for vaccine type'}]}
+403
+403
+
+ Error Response - 
+ resourceType='OperationOutcome' id='4c15f227-513f-4595-8532-69e7ddd4dcc8' meta=Meta(profile=['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']) issue=[Issue(severity='error', code='forbidden', details=Details(coding=[Coding(system='https://fhir.nhs.uk/Codesystem/http-error-codes', code='FORBIDDEN')]), diagnostics='Unauthorized request for vaccine type')]

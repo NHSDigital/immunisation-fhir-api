@@ -1,0 +1,22 @@
+
+ Search GET Request - 
+ {'patient.identifier': 'https://fhir.nhs.uk/Id/nhs-number|9000000009', 'target-disease': 'invalid-no-pipe,wrong_system|123'}
+
+ Search GET Response - 
+ {'resourceType': 'OperationOutcome', 'id': 'dee0efb9-10d1-42e9-acbb-10c1f20ae2d9', 'meta': {'profile': ['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']}, 'issue': [{'severity': 'error', 'code': 'invalid', 'details': {'coding': [{'system': 'https://fhir.nhs.uk/Codesystem/http-error-codes', 'code': 'INVALID'}]}, 'diagnostics': 'Search parameter target-disease must be one or more valid SNOMED codes from the supported target disease list.'}]}
+400
+400
+
+ Error Response (invalid target-disease codes) - 
+ {'resourceType': 'OperationOutcome', 'id': 'dee0efb9-10d1-42e9-acbb-10c1f20ae2d9', 'meta': {'profile': ['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']}, 'issue': [{'severity': 'error', 'code': 'invalid', 'details': {'coding': [{'system': 'https://fhir.nhs.uk/Codesystem/http-error-codes', 'code': 'INVALID'}]}, 'diagnostics': 'Search parameter target-disease must be one or more valid SNOMED codes from the supported target disease list.'}]}
+
+ Search Post Request - 
+ {'patient.identifier': 'https://fhir.nhs.uk/Id/nhs-number|9000000009', 'target-disease': 'invalid-no-pipe,wrong_system|123'}
+
+ Search POST Response - 
+ {'resourceType': 'OperationOutcome', 'id': '94784ca7-f70c-4ecb-af8d-e5f6b5af04b8', 'meta': {'profile': ['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']}, 'issue': [{'severity': 'error', 'code': 'invalid', 'details': {'coding': [{'system': 'https://fhir.nhs.uk/Codesystem/http-error-codes', 'code': 'INVALID'}]}, 'diagnostics': 'Search parameter target-disease must be one or more valid SNOMED codes from the supported target disease list.'}]}
+400
+400
+
+ Error Response (invalid target-disease codes) - 
+ {'resourceType': 'OperationOutcome', 'id': '94784ca7-f70c-4ecb-af8d-e5f6b5af04b8', 'meta': {'profile': ['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']}, 'issue': [{'severity': 'error', 'code': 'invalid', 'details': {'coding': [{'system': 'https://fhir.nhs.uk/Codesystem/http-error-codes', 'code': 'INVALID'}]}, 'diagnostics': 'Search parameter target-disease must be one or more valid SNOMED codes from the supported target disease list.'}]}
