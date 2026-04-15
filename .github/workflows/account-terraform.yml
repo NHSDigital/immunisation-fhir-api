@@ -112,7 +112,7 @@ jobs:
 
       - name: Connect to AWS
         if: ${{ steps.diff.outputs.account_infra_changed == 'true' }}
-        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37
         with:
           aws-region: eu-west-2
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
@@ -144,7 +144,7 @@ jobs:
 
       - name: Save Account Terraform Plan
         if: ${{ steps.diff.outputs.account_infra_changed == 'true' }}
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: ${{ env.ACCOUNT_TERRAFORM_ARTIFACT_NAME }}
           path: infrastructure/account/tfplan
@@ -186,7 +186,7 @@ jobs:
           ref: ${{ needs.account-terraform-plan.outputs.plan_sha }}
 
       - name: Connect to AWS
-        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37
         with:
           aws-region: eu-west-2
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
