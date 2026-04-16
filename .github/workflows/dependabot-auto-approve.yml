@@ -1,7 +1,8 @@
 name: Dependabot Auto-Approve
 
 on:
-  pull_request_target
+  pull_request_target:
+    types: [opened, reopened, synchronize]
 
 permissions:
   pull-requests: write
@@ -16,9 +17,7 @@ jobs:
         uses: dependabot/fetch-metadata@v2
 
       - name: Auto-approve minor and patch updates
-        if: |
-          steps.metadata.outputs.update-type == 'version-update:semver-minor' ||
-          steps.metadata.outputs.update-type == 'version-update:semver-patch'
+        if: contains(fromJSON('["version-update:semver-minor", "version-update:semver-patch"]'), steps.metadata.outputs.update-type)
         uses: hmarr/auto-approve-action@v4
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ github.token }}
