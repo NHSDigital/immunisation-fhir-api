@@ -1,0 +1,22 @@
+
+ Search GET Request - 
+ patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number|9461267665&-immunization.target=COVID&-date.from=2025-13-01&-date.to=2025-12-01&_include=abc
+
+ Search GET Response - 
+ {'resourceType': 'OperationOutcome', 'id': 'eda4a5f8-c69a-4ad3-87a7-3333cca310fd', 'meta': {'profile': ['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']}, 'issue': [{'severity': 'error', 'code': 'invalid', 'details': {'coding': [{'system': 'https://fhir.nhs.uk/Codesystem/http-error-codes', 'code': 'INVALID'}]}, 'diagnostics': "Search parameter -date.from must be in format: YYYY-MM-DD; Search parameter _include may only be 'Immunization:patient' if provided."}]}
+400
+400
+
+ Error Response - 
+ resourceType='OperationOutcome' id='eda4a5f8-c69a-4ad3-87a7-3333cca310fd' meta=Meta(profile=['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']) issue=[Issue(severity='error', code='invalid', details=Details(coding=[Coding(system='https://fhir.nhs.uk/Codesystem/http-error-codes', code='INVALID')]), diagnostics="Search parameter -date.from must be in format: YYYY-MM-DD; Search parameter _include may only be 'Immunization:patient' if provided.")]
+
+ Search Post Request - 
+ patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number|9461267665&-immunization.target=COVID&-date.from=2025-13-01&-date.to=2025-12-01&_include=abc
+
+ Search POST Response - 
+ {'resourceType': 'OperationOutcome', 'id': '2c4a89cb-259b-4538-b85c-55f918bd2d93', 'meta': {'profile': ['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']}, 'issue': [{'severity': 'error', 'code': 'invalid', 'details': {'coding': [{'system': 'https://fhir.nhs.uk/Codesystem/http-error-codes', 'code': 'INVALID'}]}, 'diagnostics': "Search parameter -date.from must be in format: YYYY-MM-DD; Search parameter _include may only be 'Immunization:patient' if provided."}]}
+400
+400
+
+ Error Response - 
+ resourceType='OperationOutcome' id='2c4a89cb-259b-4538-b85c-55f918bd2d93' meta=Meta(profile=['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']) issue=[Issue(severity='error', code='invalid', details=Details(coding=[Coding(system='https://fhir.nhs.uk/Codesystem/http-error-codes', code='INVALID')]), diagnostics="Search parameter -date.from must be in format: YYYY-MM-DD; Search parameter _include may only be 'Immunization:patient' if provided.")]
