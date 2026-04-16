@@ -672,8 +672,16 @@ DOSE_QUANTITY_MAP = [
 ]
 
 REASON_CODE_MAP = [
-    {"system": "http://snomed.info/sct", "code": "443684005", "display": "Disease outbreak (event)"},
-    {"system": "http://snomed.info/sct", "code": "310578008", "display": "Routine immunization schedule"},
+    {
+        "system": "http://snomed.info/sct",
+        "code": "443684005",
+        "display": "Disease outbreak (event)",
+    },
+    {
+        "system": "http://snomed.info/sct",
+        "code": "310578008",
+        "display": "Routine immunization schedule",
+    },
 ]
 
 PROTOCOL_DISEASE_MAP = {
@@ -686,9 +694,19 @@ PROTOCOL_DISEASE_MAP = {
     ],
     "FLU": [{"system": "http://snomed.info/sct", "code": "6142004", "display": "Influenza"}],
     "RSV": [
-        {"system": "http://snomed.info/sct", "code": "55735004", "display": "Respiratory syncytial virus infection"}
+        {
+            "system": "http://snomed.info/sct",
+            "code": "55735004",
+            "display": "Respiratory syncytial virus infection",
+        }
     ],
-    "HPV": [{"system": "http://snomed.info/sct", "code": "240532009", "display": "Human papilloma virus infection"}],
+    "HPV": [
+        {
+            "system": "http://snomed.info/sct",
+            "code": "240532009",
+            "display": "Human papilloma virus infection",
+        }
+    ],
     "MMR": [
         {"system": "http://snomed.info/sct", "code": "14189004", "display": "Measles"},
         {"system": "http://snomed.info/sct", "code": "36989005", "display": "Mumps"},
@@ -698,15 +716,33 @@ PROTOCOL_DISEASE_MAP = {
         {"system": "http://snomed.info/sct", "code": "14189004", "display": "Measles"},
         {"system": "http://snomed.info/sct", "code": "36989005", "display": "Mumps"},
         {"system": "http://snomed.info/sct", "code": "36653000", "display": "Rubella"},
-        {"system": "http://snomed.info/sct", "code": "38907003", "display": "Varicella"},
+        {
+            "system": "http://snomed.info/sct",
+            "code": "38907003",
+            "display": "Varicella",
+        },
     ],
     "PERTUSSIS": [{"system": "http://snomed.info/sct", "code": "27836007", "display": "Pertussis"}],
-    "SHINGLES": [{"system": "http://snomed.info/sct", "code": "4740000", "display": "Herpes zoster"}],
+    "SHINGLES": [
+        {
+            "system": "http://snomed.info/sct",
+            "code": "4740000",
+            "display": "Herpes zoster",
+        }
+    ],
     "PNEUMOCOCCAL": [
-        {"system": "http://snomed.info/sct", "code": "16814004", "display": "Pneumococcal infectious disease"}
+        {
+            "system": "http://snomed.info/sct",
+            "code": "16814004",
+            "display": "Pneumococcal infectious disease",
+        }
     ],
     "3IN1": [
-        {"system": "http://snomed.info/sct", "code": "398102009", "display": "Acute poliomyelitis"},
+        {
+            "system": "http://snomed.info/sct",
+            "code": "398102009",
+            "display": "Acute poliomyelitis",
+        },
         {
             "system": "http://snomed.info/sct",
             "code": "397430003",
@@ -714,33 +750,79 @@ PROTOCOL_DISEASE_MAP = {
         },
         {"system": "http://snomed.info/sct", "code": "76902006", "display": "Tetanus"},
     ],
-    "MENACWY": [{"system": "http://snomed.info/sct", "code": "23511006", "display": "Meningococcal infectious disease"}],
+    "MENACWY": [
+        {
+            "system": "http://snomed.info/sct",
+            "code": "23511006",
+            "display": "Meningococcal infectious disease",
+        }
+    ],
     "4IN1": [
-        {"system": "http://snomed.info/sct", "code": "398102009", "display": "Acute poliomyelitis"},
+        {
+            "system": "http://snomed.info/sct",
+            "code": "398102009",
+            "display": "Acute poliomyelitis",
+        },
         {
             "system": "http://snomed.info/sct",
             "code": "397430003",
             "display": "Diphtheria caused by Corynebacterium diphtheriae",
         },
-        {"system": "http://snomed.info/sct", "code": "27836007", "display": "Pertussis"},
+        {
+            "system": "http://snomed.info/sct",
+            "code": "27836007",
+            "display": "Pertussis",
+        },
         {"system": "http://snomed.info/sct", "code": "76902006", "display": "Tetanus"},
     ],
     "6IN1": [
-        {"system": "http://snomed.info/sct", "code": "398102009", "display": "Acute poliomyelitis"},
+        {
+            "system": "http://snomed.info/sct",
+            "code": "398102009",
+            "display": "Acute poliomyelitis",
+        },
         {
             "system": "http://snomed.info/sct",
             "code": "397430003",
             "display": "Diphtheria caused by Corynebacterium diphtheriae",
         },
-        {"system": "http://snomed.info/sct", "code": "709410003", "display": "Haemophilus influenzae type b infection"},
-        {"system": "http://snomed.info/sct", "code": "27836007", "display": "Pertussis"},
+        {
+            "system": "http://snomed.info/sct",
+            "code": "709410003",
+            "display": "Haemophilus influenzae type b infection",
+        },
+        {
+            "system": "http://snomed.info/sct",
+            "code": "27836007",
+            "display": "Pertussis",
+        },
         {"system": "http://snomed.info/sct", "code": "76902006", "display": "Tetanus"},
-        {"system": "http://snomed.info/sct", "code": "66071002", "display": "Type B viral hepatitis"},
+        {
+            "system": "http://snomed.info/sct",
+            "code": "66071002",
+            "display": "Type B viral hepatitis",
+        },
     ],
-    "BCG": [{"system": "http://snomed.info/sct", "code": "56717001", "display": "Tuberculosis"}],
-    "HEPB": [{"system": "http://snomed.info/sct", "code": "66071002", "display": "Type B viral hepatitis"}],
+    "BCG": [
+        {
+            "system": "http://snomed.info/sct",
+            "code": "56717001",
+            "display": "Tuberculosis",
+        }
+    ],
+    "HEPB": [
+        {
+            "system": "http://snomed.info/sct",
+            "code": "66071002",
+            "display": "Type B viral hepatitis",
+        }
+    ],
     "HIB": [
-        {"system": "http://snomed.info/sct", "code": "709410003", "display": "Haemophilus influenzae type b infection"}
+        {
+            "system": "http://snomed.info/sct",
+            "code": "709410003",
+            "display": "Haemophilus influenzae type b infection",
+        }
     ],
     "MENB": [
         {
@@ -749,5 +831,11 @@ PROTOCOL_DISEASE_MAP = {
             "display": "Meningococcal infectious disease caused by Neisseria meningitidis serogroup B",
         }
     ],
-    "ROTAVIRUS": [{"system": "http://snomed.info/sct", "code": "186150001", "display": "Enteritis caused by rotavirus"}],
+    "ROTAVIRUS": [
+        {
+            "system": "http://snomed.info/sct",
+            "code": "186150001",
+            "display": "Enteritis caused by rotavirus",
+        }
+    ],
 }
