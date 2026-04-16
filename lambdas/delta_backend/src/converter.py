@@ -1,14 +1,19 @@
 # Main validation engine
+from typing import Any
+
 import exception_messages
 from conversion_layout import ConversionField, ConversionLayout
 from extractor import Extractor
 from mappings import ActionFlag
 
+ConversionErrorRecord = dict[str, Any]
+ConvertedRecord = dict[str, Any]
+
 
 class Converter:
-    def __init__(self, fhir_data, action_flag=ActionFlag.UPDATE):
-        self.converted = {}
-        self.error_records = []
+    def __init__(self, fhir_data: str | dict[str, Any], action_flag: str = ActionFlag.UPDATE) -> None:
+        self.converted: ConvertedRecord = {}
+        self.error_records: list[ConversionErrorRecord] = []
         self.action_flag = action_flag
 
         if not fhir_data:
@@ -17,7 +22,7 @@ class Converter:
         self.extractor = Extractor(fhir_data)
         self.conversion_layout = ConversionLayout(self.extractor)
 
-    def run_conversion(self):
+    def run_conversion(self) -> ConvertedRecord:
         for conversion in self.conversion_layout.get_conversion_layout():
             self._convert_data(conversion)
 
@@ -27,7 +32,7 @@ class Converter:
         self.converted["CONVERSION_ERRORS"] = self.error_records
         return self.converted
 
-    def _convert_data(self, conversion: ConversionField):
+    def _convert_data(self, conversion: ConversionField) -> None:
         flat_field = conversion.field_name_flat
 
         try:
@@ -45,7 +50,7 @@ class Converter:
             )
             self.converted[flat_field] = ""
 
-    def _log_error(self, field_name, e, code):
+    def _log_error(self, field_name: str, e: Exception | str, code: str) -> None:
         self.error_records.append(
             {
                 "code": code,
@@ -55,5 +60,5 @@ class Converter:
             }
         )
 
-    def get_error_records(self):
+    def get_error_records(self) -> list[ConversionErrorRecord]:
         return self.error_records
