@@ -20,18 +20,18 @@ jobs:
       APIGEE_ENVIRONMENT: internal-dev
       BACKEND_ENVIRONMENT: dev
       BACKEND_SUB_ENVIRONMENT: pr-${{ github.event_name == 'pull_request' && github.event.pull_request.number || inputs.pr_number }}
-      LAMBDA_IMAGE_BINDINGS: |
-        backend_image_uri:imms-backend-repo
-        batch_processor_filter_image_uri:imms-batch-processor-filter-repo
-        delta_backend_image_uri:imms-delta-backend-repo
-        filenameprocessor_image_uri:imms-filenameprocessor-repo
-        id_sync_image_uri:imms-id-sync-repo
-        mesh_processor_image_uri:imms-mesh-processor-repo
-        mns_publisher_image_uri:imms-mns-publisher-repo
-        recordprocessor_image_uri:imms-recordprocessor-repo
-        recordforwarder_image_uri:imms-recordforwarder-repo
-        ack_backend_image_uri:imms-ackbackend-repo
-        redis_sync_image_uri:imms-redis-sync-repo
+      LAMBDA_IMAGE_REPOSITORIES: |
+        backend:imms-backend-repo
+        batch_processor_filter:imms-batch-processor-filter-repo
+        delta_backend:imms-delta-backend-repo
+        filenameprocessor:imms-filenameprocessor-repo
+        id_sync:imms-id-sync-repo
+        mesh_processor:imms-mesh-processor-repo
+        mns_publisher:imms-mns-publisher-repo
+        recordprocessor:imms-recordprocessor-repo
+        recordforwarder:imms-recordforwarder-repo
+        ack_backend:imms-ackbackend-repo
+        redis_sync:imms-redis-sync-repo
     permissions:
       id-token: write
       contents: read
@@ -65,10 +65,10 @@ jobs:
             local uri="$(make -s output "name=$1" 2>/dev/null || true)"
             echo "${uri:-placeholder.dkr.ecr.eu-west-2.amazonaws.com/$2@sha256:0000000000000000000000000000000000000000000000000000000000000000}"
           }
-          while IFS=: read -r output_name repository_name; do
-            [ -n "${output_name}" ] || continue
-            echo "TF_VAR_${output_name}=$(resolve_or_placeholder "${output_name}" "${repository_name}")" >> $GITHUB_ENV
-          done <<< "${LAMBDA_IMAGE_BINDINGS}"
+          while IFS=: read -r lambda_name repository_name; do
+            [ -n "${lambda_name}" ] || continue
+            echo "TF_VAR_${lambda_name}_image_uri=$(resolve_or_placeholder "${lambda_name}_image_uri" "${repository_name}")" >> $GITHUB_ENV
+          done <<< "${LAMBDA_IMAGE_REPOSITORIES}"
 
       - name: Install poetry
         run: pip install poetry==2.1.4
@@ -143,7 +143,8 @@ jobs:
               --output json
           }
 
-          while IFS=: read -r _ repository_name; do
+          while IFS=: read -r lambda_name repository_name; do
+            [ -n "${lambda_name}" ] || continue
             [ -n "${repository_name}" ] || continue
             cleanup_repo_by_prefix "${repository_name}"
-          done <<< "${LAMBDA_IMAGE_BINDINGS}"
+          done <<< "${LAMBDA_IMAGE_REPOSITORIES}"
