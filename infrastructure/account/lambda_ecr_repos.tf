@@ -1,28 +1,6 @@
 locals {
   lambda_source_arn_prefix = "arn:aws:lambda:${var.aws_region}:${var.imms_account_id}:function:imms-"
-  lambda_image_retrieval_actions = [
-    "ecr:BatchGetImage",
-    "ecr:GetDownloadUrlForLayer"
-  ]
-  recordprocessor_lifecycle_policy = jsonencode({
-    rules = [
-      {
-        rulePriority = 1
-        description  = "Keep last 10 images."
-        selection = {
-          tagStatus   = "any"
-          countType   = "imageCountMoreThan"
-          countNumber = 10
-        }
-        action = {
-          type = "expire"
-        }
-      }
-    ]
-  })
-}
 
-locals {
   lambda_ecr_repositories = {
     operation = {
       name = "imms-backend-repo"
@@ -69,8 +47,23 @@ locals {
       lambda_source_names = ["*-forwarding-lambda"]
     }
     recordprocessor = {
-      name             = "imms-recordprocessor-repo"
-      lifecycle_policy = local.recordprocessor_lifecycle_policy
+      name = "imms-recordprocessor-repo"
+      lifecycle_policy = jsonencode({
+        rules = [
+          {
+            rulePriority = 1
+            description  = "Keep last 10 images."
+            selection = {
+              tagStatus   = "any"
+              countType   = "imageCountMoreThan"
+              countNumber = 10
+            }
+            action = {
+              type = "expire"
+            }
+          }
+        ]
+      })
     }
     redis_sync = {
       name                = "imms-redis-sync-repo"
@@ -106,7 +99,10 @@ resource "aws_ecr_repository_policy" "lambda_repository_image_retrieval_policy" 
         Principal = {
           Service = "lambda.amazonaws.com"
         }
-        Action = local.lambda_image_retrieval_actions
+        Action = [
+          "ecr:BatchGetImage",
+          "ecr:GetDownloadUrlForLayer"
+        ]
         Condition = {
           StringLike = {
             "aws:sourceArn" = formatlist("${local.lambda_source_arn_prefix}%s", each.value.lambda_source_names)

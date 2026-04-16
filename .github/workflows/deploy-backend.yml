@@ -119,53 +119,42 @@ jobs:
       matrix:
         include:
           - lambda_name: backend
-            tf_var_suffix: backend
             ecr_repository: imms-backend-repo
             lambda_dir: backend
           - lambda_name: batch_processor_filter
-            tf_var_suffix: batch_processor_filter
             ecr_repository: imms-batch-processor-filter-repo
             lambda_dir: batch_processor_filter
           - lambda_name: delta_backend
-            tf_var_suffix: delta_backend
             ecr_repository: imms-delta-backend-repo
             lambda_dir: delta_backend
           - lambda_name: filenameprocessor
-            tf_var_suffix: filenameprocessor
             ecr_repository: imms-filenameprocessor-repo
             lambda_dir: filenameprocessor
           - lambda_name: id_sync
-            tf_var_suffix: id_sync
             ecr_repository: imms-id-sync-repo
             lambda_dir: id_sync
           - lambda_name: mesh_processor
-            tf_var_suffix: mesh_processor
             ecr_repository: imms-mesh-processor-repo
             lambda_dir: mesh_processor
           - lambda_name: mns_publisher
-            tf_var_suffix: mns_publisher
             ecr_repository: imms-mns-publisher-repo
             lambda_dir: mns_publisher
           - lambda_name: recordforwarder
-            tf_var_suffix: recordforwarder
             ecr_repository: imms-recordforwarder-repo
             lambda_dir: recordforwarder
           - lambda_name: redis_sync
-            tf_var_suffix: redis_sync
             ecr_repository: imms-redis-sync-repo
             lambda_dir: redis_sync
           - lambda_name: recordprocessor
-            tf_var_suffix: recordprocessor
             ecr_repository: imms-recordprocessor-repo
             lambda_dir: recordprocessor
           - lambda_name: ack-backend
-            tf_var_suffix: ack_backend
             ecr_repository: imms-ackbackend-repo
             lambda_dir: ack_backend
     uses: ./.github/workflows/deploy-lambda-artifact.yml
     with:
       lambda_name: ${{ matrix.lambda_name }}
-      tf_var_suffix: ${{ matrix.tf_var_suffix }}
+      tf_var_suffix: ${{ matrix.lambda_dir }}
       environment: ${{ inputs.environment }}
       sub_environment: ${{ inputs.sub_environment }}
       build_image: ${{ fromJson(inputs.lambda_build_flags)[matrix.lambda_name] || false }}
