@@ -19,7 +19,7 @@ module "docker_image" {
   version = "8.7.0"
 
   create_ecr_repo  = false
-  ecr_repo         = "${local.prefix}-operation-lambda-repo"
+  ecr_repo         = aws_ecr_repository.operation_lambda_repository.name
   docker_file_path = "./backend/Dockerfile"
   ecr_repo_lifecycle_policy = jsonencode({
     "rules" : [

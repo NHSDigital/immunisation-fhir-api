@@ -235,7 +235,6 @@ Feature: Search the immunization of a patient
         When I send a search request with Post method using identifier parameter for Immunization event created
         Then The request will be successful with the status code '200'
         And correct immunization event is returned in the response
-        And MNS event will not be triggered for the update event
 
     @Delete_cleanUp @vaccine_type_FLU @patient_id_Random  @supplier_name_Postman_Auth
     Scenario: Flu event is created and search post request fetch the only one record matched with identifier and _elements

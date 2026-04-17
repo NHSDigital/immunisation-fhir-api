@@ -7,8 +7,6 @@ from common.models.errors import UnhandledAuditTableError
 ITEM_EXISTS_CONDITION_EXPRESSION = f"attribute_exists({AuditTableKeys.MESSAGE_ID})"
 NOTHING_TO_UPDATE_ERROR_MESSAGE = "Improper usage: you must provide at least one attribute to update"
 
-dynamodb_client = get_dynamodb_client()
-
 
 def create_audit_table_item(
     message_id: str,
@@ -37,7 +35,7 @@ def create_audit_table_item(
         }
 
     try:
-        dynamodb_client.put_item(TableName=AUDIT_TABLE_NAME, Item=audit_item)
+        get_dynamodb_client().put_item(TableName=AUDIT_TABLE_NAME, Item=audit_item)
     except Exception as error:
         logger.error(error)
         raise UnhandledAuditTableError(error) from error
@@ -61,7 +59,7 @@ def update_audit_table_item(
 
     update_expression, expression_attr_names, expression_attr_values = _build_ddb_update_parameters(attrs_to_update)
     try:
-        dynamodb_client.update_item(
+        get_dynamodb_client().update_item(
             TableName=AUDIT_TABLE_NAME,
             Key={AuditTableKeys.MESSAGE_ID: {audit_table_key_data_types_map[AuditTableKeys.MESSAGE_ID]: message_id}},
             UpdateExpression=update_expression,
@@ -114,7 +112,7 @@ def _build_audit_table_update_log_message(file_key: str, message_id: str, attrs_
 def get_ingestion_start_time_by_message_id(event_message_id: str) -> int:
     """Retrieves ingestion start time by unique event message ID"""
     # Required by JSON ack file
-    audit_record = dynamodb_client.get_item(
+    audit_record = get_dynamodb_client().get_item(
         TableName=AUDIT_TABLE_NAME, Key={AuditTableKeys.MESSAGE_ID: {"S": event_message_id}}
     )
 
@@ -132,7 +130,7 @@ def get_ingestion_start_time_by_message_id(event_message_id: str) -> int:
 
 def get_record_count_and_failures_by_message_id(event_message_id: str) -> tuple[int, int]:
     """Retrieves total record count and total failures by unique event message ID"""
-    audit_record = dynamodb_client.get_item(
+    audit_record = get_dynamodb_client().get_item(
         TableName=AUDIT_TABLE_NAME, Key={AuditTableKeys.MESSAGE_ID: {"S": event_message_id}}
     )
 
@@ -152,7 +150,7 @@ def increment_records_failed_count(message_id: str) -> None:
 
     try:
         # Use SET with if_not_exists to safely increment the counter attribute
-        dynamodb_client.update_item(
+        get_dynamodb_client().update_item(
             TableName=AUDIT_TABLE_NAME,
             Key={AuditTableKeys.MESSAGE_ID: {"S": message_id}},
             UpdateExpression="SET #attribute = if_not_exists(#attribute, :initial) + :increment",

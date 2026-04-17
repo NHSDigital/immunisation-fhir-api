@@ -18,4 +18,4 @@ class MnsEvent(BaseModel):
     time: str
     subject: str
     dataref: str
-    filtering: Filtering
+    filtering: Filtering | None = None

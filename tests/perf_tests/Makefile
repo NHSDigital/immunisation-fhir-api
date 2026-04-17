@@ -6,6 +6,9 @@ RESULTS_PREFIX ?= $(RESULTS_DIR)/$(PERF_LOAD_PROFILE)
 test:
 	$(LOCUST)
 
+test-read-only:
+	$(LOCUST) SearchUser
+
 baseline:
 	mkdir -p $(RESULTS_DIR)
 	PERF_LOAD_PROFILE=baseline $(LOCUST) CreateUser --headless --only-summary --csv $(RESULTS_PREFIX)
@@ -18,4 +21,4 @@ ramp:
 	mkdir -p $(RESULTS_DIR)
 	PERF_LOAD_PROFILE=ramp $(LOCUST) CreateUser --headless --only-summary --csv $(RESULTS_PREFIX)
 
-.PHONY: test baseline spike ramp
+.PHONY: test test-read-only baseline spike ramp

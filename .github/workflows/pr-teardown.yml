@@ -26,7 +26,7 @@ jobs:
 
     steps:
       - name: Connect to AWS
-        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37
         with:
           aws-region: eu-west-2
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
@@ -48,6 +48,13 @@ jobs:
           make init apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
           make workspace apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
           echo "ID_SYNC_QUEUE_ARN=$(make -s output name=id_sync_queue_arn)" >> $GITHUB_ENV
+          # Destroy still evaluates variable validation, so provide a non-empty fallback when output is unavailable.
+          resolve_or_placeholder() {
+            local uri="$(make -s output "name=$1" 2>/dev/null || true)"
+            echo "${uri:-placeholder.dkr.ecr.eu-west-2.amazonaws.com/$2@sha256:0000000000000000000000000000000000000000000000000000000000000000}"
+          }
+          echo "TF_VAR_recordprocessor_image_uri=$(resolve_or_placeholder recordprocessor_image_uri imms-recordprocessor-repo)" >> $GITHUB_ENV
+          echo "TF_VAR_ack_backend_image_uri=$(resolve_or_placeholder ack_backend_image_uri imms-ackbackend-repo)" >> $GITHUB_ENV
 
       - name: Install poetry
         run: pip install poetry==2.1.4
@@ -75,3 +82,53 @@ jobs:
         working-directory: infrastructure/instance
         run: |
           make destroy apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
+
+      - name: Cleanup PR ECR images by prefix
+        env:
+          AWS_REGION: eu-west-2
+          IMAGE_TAG_PREFIX: ${{ env.BACKEND_SUB_ENVIRONMENT }}-
+        run: |
+          set -euo pipefail
+
+          cleanup_repo_by_prefix() {
+            local repository_name="$1"
+            local image_tags
+            local image_ids_args=""
+
+            if ! aws ecr describe-repositories \
+              --repository-names "${repository_name}" \
+              --region "${AWS_REGION}" \
+              >/dev/null 2>&1; then
+              echo "Repository '${repository_name}' does not exist. Skipping."
+              return
+            fi
+
+            image_tags=$(
+              aws ecr list-images \
+                --repository-name "${repository_name}" \
+                --region "${AWS_REGION}" \
+                --filter tagStatus=TAGGED \
+                --query "imageIds[?starts_with(imageTag, \`${IMAGE_TAG_PREFIX}\`)].imageTag" \
+                --output text
+            )
+
+            if [ -z "${image_tags}" ] || [ "${image_tags}" = "None" ]; then
+              echo "No images found in '${repository_name}' for prefix '${IMAGE_TAG_PREFIX}'."
+              return
+            fi
+
+            for image_tag in ${image_tags}; do
+              echo "Queueing image tag '${image_tag}' from '${repository_name}' for deletion..."
+              image_ids_args="${image_ids_args} imageTag=${image_tag}"
+            done
+
+            aws ecr batch-delete-image \
+              --repository-name "${repository_name}" \
+              --region "${AWS_REGION}" \
+              --image-ids ${image_ids_args} \
+              --output json
+          }
+
+          for repository_name in imms-recordprocessor-repo imms-ackbackend-repo; do
+            cleanup_repo_by_prefix "${repository_name}"
+          done

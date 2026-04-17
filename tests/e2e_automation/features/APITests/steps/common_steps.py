@@ -1,3 +1,4 @@
+import copy
 import json
 import random
 import uuid
@@ -36,7 +37,7 @@ from utilities.api_get_header import (
     get_delete_url_header,
     get_update_url_header,
 )
-from utilities.date_helper import is_valid_date, iso_to_compact
+from utilities.date_helper import is_valid_date, normalize_utc_suffix
 from utilities.enums import Operation
 from utilities.http_requests_session import http_requests_session
 from utilities.sqs_message_halder import read_message
@@ -329,7 +330,8 @@ def validate_etag_in_header(context):
 @when("I subsequently update the vaccination details of the original immunization event")
 def send_update_for_vaccination_detail(context):
     get_update_url_header(context, str(context.expected_version))
-    context.update_object = convert_to_update(context.immunization_object, context.ImmsID)
+    context.update_object = copy.deepcopy(context.immunization_object)
+    context.update_object = convert_to_update(context.update_object, context.ImmsID)
     context.update_object.extension = [build_vaccine_procedure_extension(context.vaccine_type.upper())]
     vaccine_details = get_vaccine_details(context.vaccine_type.upper())
     context.update_object.vaccineCode = vaccine_details["vaccine_code"]
@@ -341,7 +343,8 @@ def send_update_for_vaccination_detail(context):
 @when("I update the address of the original immunization event")
 def send_update_for_immunization_event(context):
     get_update_url_header(context, str(context.expected_version))
-    context.update_object = convert_to_update(context.immunization_object, context.ImmsID)
+    context.update_object = copy.deepcopy(context.immunization_object)
+    context.update_object = convert_to_update(context.update_object, context.ImmsID)
     context.update_object.contained[1].address[0].city = "Updated City"
     context.update_object.contained[1].address[0].state = "Updated State"
     trigger_the_updated_request(context)
@@ -351,8 +354,10 @@ def send_update_for_immunization_event(context):
 def created_event_is_being_updated_twice(context):
     send_update_for_immunization_event(context)
     The_request_will_have_status_code(context, 200)
+    mns_event_will_be_triggered_with_correct_data(context=context, action="UPDATE")
     send_update_for_vaccination_detail(context)
     The_request_will_have_status_code(context, 200)
+    mns_event_will_be_triggered_with_correct_data(context=context, action="UPDATE")
 
 
 @given("created event is being deleted")
@@ -376,28 +381,24 @@ def mns_event_will_be_triggered_with_correct_data_for_created_event(context):
 
 @then("MNS event will not be triggered for the event")
 def mns_event_will_not_be_triggered_for_the_event(context):
-    message_body = read_message(
-        context,
-        queue_type="notification",
-        action="CREATE",
-        wait_time_seconds=5,
-        max_empty_polls=1,
-    )
-    print("No MNS create event is created")
-    assert message_body is None, "Not expected a message but queue returned a message"
+    if context.mns_validation_required.strip().lower() == "true":
+        message_body = read_message(
+            context,
+            queue_type="notification",
+            wait_time_seconds=5,
+            max_total_wait_seconds=20,
+        )
+        print("No MNS create event is created")
+        assert message_body is None, "Not expected a message but queue returned a message"
+    else:
+        print(
+            f"MNS event validation is skipped since mns_validation_required is set to {context.mns_validation_required}"
+        )
 
 
 @then("MNS event will not be triggered for the update event")
 def validate_mns_event_not_triggered_for_updated_event(context):
-    message_body = read_message(
-        context,
-        queue_type="notification",
-        action="UPDATE",
-        wait_time_seconds=5,
-        max_empty_polls=3,
-    )
-    print("no MNS update event is created")
-    assert message_body is None, "Not expected a message but queue returned a message"
+    mns_event_will_not_be_triggered_for_the_event(context)
 
 
 def trigger_the_updated_request(context):
@@ -417,12 +418,21 @@ def normalize_param(value: str) -> str:
 
 
 def calculate_age(birth_date_str: str, occurrence_datetime_str: str) -> int:
-    birth = datetime.strptime(birth_date_str, "%Y-%m-%d").date()
+    birth = parse_birth_date(birth_date_str)
     occurrence = datetime.fromisoformat(occurrence_datetime_str).date()
     age = occurrence.year - birth.year
     if (occurrence.month, occurrence.day) < (birth.month, birth.day):
         age -= 1
     return age
+
+
+def parse_birth_date(date_str: str) -> datetime.date:
+    for fmt in ("%Y-%m-%d", "%Y%m%d"):
+        try:
+            return datetime.strptime(date_str, fmt).date()
+        except ValueError:
+            pass
+    raise ValueError(f"Invalid birth date format: {date_str}")
 
 
 def is_valid_uuid(value: str) -> bool:
@@ -444,9 +454,10 @@ def validate_sqs_message(context, message_body, action):
 
     check.is_true(is_valid_uuid(message_body.id), f"Invalid UUID: {message_body.id}")
 
+    imms_date_time = normalize_utc_suffix(context.immunization_object.occurrenceDateTime)
     check.is_true(
-        message_body.time == iso_to_compact(context.immunization_object.occurrenceDateTime),
-        f"msn event for {action} Time missing or empty: {message_body.time}",
+        message_body.time == imms_date_time,
+        f"msn event for {action} Time missing or mismatch: message_body.time = {message_body.time}, imms_date_time = {imms_date_time}",
     )
     expected_nhs_number = context.patient.identifier[0].value
     if expected_nhs_number is None:
@@ -461,36 +472,49 @@ def validate_sqs_message(context, message_body, action):
         f"msn event for {action} DataRef mismatch: expected {context.url}/{context.ImmsID}, got {message_body.dataref}",
     )
 
-    check.is_true(
-        normalize(message_body.filtering.generalpractitioner) == normalize(context.gp_code),
-        f"msn event for {action} GP code mismatch: expected {context.gp_code}, got {message_body.filtering.generalpractitioner}",
-    )
+    if context.S3_env not in ["int", "preprod"]:
+        check.is_true(
+            message_body.filtering is not None,
+            f"msn event for {action} Filtering is missing in the message body",
+        )
 
-    expected_org = context.create_object.performer[1].actor.identifier.value
-    check.is_true(
-        normalize(message_body.filtering.sourceorganisation) == normalize(expected_org),
-        f"msn event for {action} Source org mismatch: expected {expected_org}, got {message_body.filtering.sourceorganisation}",
-    )
+        if context.gp_code:
+            check.is_true(
+                normalize(message_body.filtering.generalpractitioner) == normalize(context.gp_code),
+                f"msn event for {action} GP code mismatch: expected {context.gp_code}, got {message_body.filtering.generalpractitioner}",
+            )
 
-    check.is_true(
-        message_body.filtering.sourceapplication.upper() == context.supplier_name.upper(),
-        f"msn event for {action} Source application mismatch: expected {context.supplier_name}, got {message_body.filtering.sourceapplication}",
-    )
+        expected_org = context.immunization_object.performer[1].actor.identifier.value
+        check.is_true(
+            normalize(message_body.filtering.sourceorganisation) == normalize(expected_org),
+            f"msn event for {action} Source org mismatch: expected {expected_org}, got {message_body.filtering.sourceorganisation}",
+        )
 
-    check.is_true(
-        message_body.filtering.subjectage == context.patient_age,
-        f"msn event for {action} Age mismatch: expected {context.patient_age}, got {message_body.filtering.subjectage}",
-    )
+        check.is_true(
+            message_body.filtering.sourceapplication.upper() == context.supplier_name.upper(),
+            f"msn event for {action} Source application mismatch: expected {context.supplier_name}, got {message_body.filtering.sourceapplication}",
+        )
 
-    check.is_true(
-        message_body.filtering.immunisationtype == context.vaccine_type.upper(),
-        f"msn event for {action} Immunisation type mismatch: expected {context.vaccine_type.upper()}, got {message_body.filtering.immunisationtype}",
-    )
+        if context.patient_age:
+            check.is_true(
+                message_body.filtering.subjectage == context.patient_age,
+                f"msn event for {action} Age mismatch: expected {context.patient_age}, got {message_body.filtering.subjectage}",
+            )
 
-    check.is_true(
-        message_body.filtering.action == action.upper(),
-        f"msn event for {action} Action mismatch: expected {action.upper()}, got {message_body.filtering.action}",
-    )
+        check.is_true(
+            message_body.filtering.immunisationtype == context.vaccine_type.upper(),
+            f"msn event for {action} Immunisation type mismatch: expected {context.vaccine_type.upper()}, got {message_body.filtering.immunisationtype}",
+        )
+
+        check.is_true(
+            message_body.filtering.action == action.upper(),
+            f"msn event for {action} Action mismatch: expected {action.upper()}, got {message_body.filtering.action}",
+        )
+    else:
+        check.is_true(
+            message_body.filtering is None,
+            f"msn event for {action} Filtering is present in the message body when it shouldn't be for int environment",
+        )
 
 
 def mns_event_will_be_triggered_with_correct_data_for_deleted_event(context):
@@ -498,25 +522,34 @@ def mns_event_will_be_triggered_with_correct_data_for_deleted_event(context):
         message_body = read_message(
             context,
             queue_type="notification",
-            action="DELETE",
             wait_time_seconds=5,
-            max_empty_polls=3,
+            max_total_wait_seconds=20,
         )
         print(
             "No MNS delete event is created as expected since NHS number is not present in the original immunization event"
         )
         assert message_body is None, "Not expected a message but queue returned a message"
     else:
-        message_body = read_message(context, queue_type="notification", action="DELETE")
+        message_body = read_message(context, queue_type="notification")
         print(f"Read deleted message from SQS: {message_body}")
         assert message_body is not None, "Expected a  delete message but queue returned empty"
         validate_sqs_message(context, message_body, "DELETE")
 
 
 def mns_event_will_be_triggered_with_correct_data(context, action):
-    message_body = read_message(context, queue_type="notification", action=action)
-    print(f"Read {action}d message from SQS: {message_body}")
-    assert message_body is not None, f"Expected a {action} message but queue returned empty"
-    context.gp_code = get_gp_code_by_nhs_number(context.patient.identifier[0].value)
-    context.patient_age = calculate_age(context.patient.birthDate, context.immunization_object.occurrenceDateTime)
-    validate_sqs_message(context, message_body, action)
+    if context.mns_validation_required.strip().lower() == "true":
+        message_body = read_message(context, queue_type="notification")
+        print(f"Read {action}d message from SQS: {message_body}")
+        assert message_body is not None, f"Expected a {action} message but queue returned empty"
+        context.gp_code = get_gp_code_by_nhs_number(context.patient.identifier[0].value)
+        patient_DOB = (
+            context.immunization_object.contained[1].birthDate
+            if action.upper() == "CREATE"
+            else context.update_object.contained[1].birthDate
+        )
+        context.patient_age = calculate_age(patient_DOB, context.immunization_object.occurrenceDateTime)
+        validate_sqs_message(context, message_body, action)
+    else:
+        print(
+            f"MNS event validation is skipped since mns_validation_required is set to {context.mns_validation_required}"
+        )

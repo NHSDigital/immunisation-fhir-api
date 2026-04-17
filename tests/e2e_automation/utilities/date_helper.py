@@ -24,6 +24,11 @@ def iso_to_compact(dt_str):
     return dt.strftime("%Y%m%dT%H%M%S00")
 
 
+def normalize_utc_suffix(timestamp: str) -> str:
+    dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+    return dt.replace(microsecond=0).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
 def is_valid_date(date_str: str) -> bool:
     try:
         datetime.strptime(date_str, "%Y-%m-%d")

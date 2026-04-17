@@ -9,6 +9,8 @@ To run them, ensure you have the
 
 env vars set, and call `make test`.
 
+For read-only search load, use `make test-read-only` (runs the `SearchUser` Locust profile).
+
 For MNS-with-mocked-PDS capacity work, use the `CreateUser` profile so downstream publishing and PDS lookup activity is exercised.
 
 Available load profiles:

@@ -10,7 +10,9 @@ Feature: Create the immunization event for a patient through batch file and upda
             | InvalidInPDS | InvalidInPDS_NhsNumber |
             | SFlag        | SFlag_NhsNumber        |
             | Mod11_NHS    | Mod11_NhSNumber        |
-            | OldNHSNo     | OldNHSNo               |
+            | NullNHS      | NullNHS_NhsNumber      |
+            | OldNHSNo     | OldNHS_NhsNumber       |
+            | NO_GP_NHS    | NO_GP_NhsNumber        |
         When batch file is uploaded in s3 bucket
         Then file will be moved to destination bucket and inf ack file will be created
         And inf ack file has success status for processed batch file
@@ -21,6 +23,7 @@ Feature: Create the immunization event for a patient through batch file and upda
         And The imms event table will be populated with the correct data for 'updated' event for records in batch file
         And The delta table will be populated with the correct data for all created records in batch file
         And The delta table will be populated with the correct data for all updated records in batch file
+        And MNS event will be triggered with correct data for both events where NHS is not null
 
     @Delete_cleanUp @vaccine_type_ROTAVIRUS @patient_id_Random @supplier_name_EMIS
     Scenario: Verify that the API vaccination record will be successful updated by batch file upload
@@ -36,6 +39,7 @@ Feature: Create the immunization event for a patient through batch file and upda
         And Audit table will have correct status, queue name and record count for the processed batch file
         And The imms event table will be populated with the correct data for 'updated' event for records in batch file
         And The delta table will be populated with the correct data for all updated records in batch file
+        And MNS event will be triggered with correct data for all 'UPDATE' events where NHS is not null
 
     @Delete_cleanUp @vaccine_type_6IN1 @patient_id_Random @supplier_name_TPP
     Scenario: Verify that the batch vaccination record will be successful updated by API request
@@ -51,8 +55,10 @@ Feature: Create the immunization event for a patient through batch file and upda
         And Audit table will have correct status, queue name and record count for the processed batch file
         And The imms event table will be populated with the correct data for 'created' event for records in batch file
         And The delta table will be populated with the correct data for all created records in batch file
+        And MNS event will be triggered with correct data for all 'CREATE' events where NHS is not null
         When Send a update for Immunization event created with vaccination detail being updated through API request
         Then Api request will be successful and tables will be updated correctly
+        And Api updated event will trigger MNS event with correct data
 
     @smoke
     @Delete_cleanUp @vaccine_type_RSV @patient_id_Random @supplier_name_RAVS

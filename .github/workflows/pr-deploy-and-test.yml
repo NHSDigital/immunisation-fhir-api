@@ -16,9 +16,17 @@ jobs:
 
   deploy-pr-backend:
     needs: [run-quality-checks]
+    if: ${{ always() && !failure() && !cancelled() }}
     uses: ./.github/workflows/deploy-backend.yml
     with:
       apigee_environment: internal-dev
+      lambda_build_flags: >-
+        ${{ (github.event.action == 'opened' || github.event.action == 'reopened')
+            && '{"recordprocessor":true,"ack-backend":true}'
+            || '{}' }}
+      diff_base_sha: ${{ github.event.action == 'synchronize' && github.event.before || github.event.pull_request.base.sha }}
+      diff_head_sha: ${{ github.event.pull_request.head.sha }}
+      run_diff_check: ${{ github.event.action == 'synchronize' }}
       create_mns_subscription: true
       environment: dev
       sub_environment: pr-${{github.event.pull_request.number}}

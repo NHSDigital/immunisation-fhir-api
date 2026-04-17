@@ -139,6 +139,28 @@ variable "dynamodb_point_in_time_recovery_enabled" {
   default     = false
 }
 
+variable "recordprocessor_image_uri" {
+  description = "Immutable URI of the recordprocessor (batch processor) container image in ECR. Must be supplied by CI/CD."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = trimspace(var.recordprocessor_image_uri) != ""
+    error_message = "recordprocessor_image_uri must be provided."
+  }
+}
+
+variable "ack_backend_image_uri" {
+  description = "Immutable URI of the ack backend Lambda container image in ECR. Must be supplied by CI/CD."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = trimspace(var.ack_backend_image_uri) != ""
+    error_message = "ack_backend_image_uri must be provided."
+  }
+}
+
 locals {
   prefix              = "${var.project_name}-${var.service}-${var.sub_environment}"
   short_prefix        = "${var.project_short_name}-${var.sub_environment}"

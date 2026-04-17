@@ -49,3 +49,4 @@ class ScenarioContext:
         self.delta_cache = None
         self.aws_account_id = None
         self.gp_code = None
+        self.mns_validation_required = False

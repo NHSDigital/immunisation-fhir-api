@@ -8,7 +8,12 @@ from src.objectModels.batch.batch_data_object import BatchVaccinationRecord
 from src.objectModels.patient_loader import load_patient_by_id
 from utilities.date_helper import generate_date
 from utilities.enums import GenderCode
-from utilities.vaccination_constants import ROUTE_MAP, SITE_MAP, VACCINATION_PROCEDURE_MAP, VACCINE_CODE_MAP
+from utilities.vaccination_constants import (
+    ROUTE_MAP,
+    SITE_MAP,
+    VACCINATION_PROCEDURE_MAP,
+    VACCINE_CODE_MAP,
+)
 
 
 def build_procedure_code(vaccine_type: str) -> dict[str, str]:
@@ -45,21 +50,33 @@ def get_batch_date(date_str: str = "current_occurrence") -> str:
 
 
 def get_performing_professional(forename: str = "Automation", surname: str = "Tests") -> dict[str, str]:
-    return {"performing_professional_forename": forename, "performing_professional_surname": surname}
+    return {
+        "performing_professional_forename": forename,
+        "performing_professional_surname": surname,
+    }
 
 
 def build_site_of_vaccination() -> dict[str, str]:
     selected = random.choice(SITE_MAP)
-    return {"site_of_vaccination_code": selected["code"], "site_of_vaccination_term": selected["display"]}
+    return {
+        "site_of_vaccination_code": selected["code"],
+        "site_of_vaccination_term": selected["display"],
+    }
 
 
 def build_route_of_vaccination() -> dict[str, str]:
     selected = random.choice(ROUTE_MAP)
-    return {"route_of_vaccination_code": selected["code"], "route_of_vaccination_term": selected["display"]}
+    return {
+        "route_of_vaccination_code": selected["code"],
+        "route_of_vaccination_term": selected["display"],
+    }
 
 
 def build_dose_details(
-    dose_sequence: str = "1", dose_amount: str = "0.5", dose_unit_code: str = "ml", dose_unit_term: str = "millilitre"
+    dose_sequence: str = "1",
+    dose_amount: str = "0.5",
+    dose_unit_code: str = "ml",
+    dose_unit_term: str = "millilitre",
 ) -> dict[str, str]:
     return {
         "dose_sequence": dose_sequence,
@@ -71,7 +88,10 @@ def build_dose_details(
 
 def build_unique_reference(unique_id: str | None = None) -> dict[str, str]:
     uid = unique_id or str(uuid.uuid4())
-    return {"unique_id": uid, "unique_id_uri": "https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk"}
+    return {
+        "unique_id": uid,
+        "unique_id_uri": "https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk",
+    }
 
 
 def get_patient_details(context) -> dict[str, str]:
@@ -79,7 +99,7 @@ def get_patient_details(context) -> dict[str, str]:
     return {
         "first_name": patient.name[0].given[0],
         "last_name": patient.name[0].family,
-        "nhs_number": patient.identifier[0].value,
+        "nhs_number": (patient.identifier[0].value if patient.identifier[0].value is not None else ""),
         "gender": GenderCode[patient.gender].value,
         "birth_date": patient.birthDate.replace("-", ""),
         "postal_code": patient.address[0].postalCode,
