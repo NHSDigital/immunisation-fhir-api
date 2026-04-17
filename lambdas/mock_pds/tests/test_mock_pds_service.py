@@ -49,6 +49,47 @@ class TestMockPdsService(unittest.TestCase):
 
         self.assertEqual(response["statusCode"], 405)
 
+    def test_returns_400_when_patient_id_missing(self):
+        response = self.service.handle({"rawPath": "/Patient/", "requestContext": {"http": {"method": "GET"}}})
+
+        self.assertEqual(response["statusCode"], 400)
+        self.assertEqual(json.loads(response["body"]), {"code": 400, "message": "Patient id is required"})
+
+    def test_returns_400_when_path_has_no_patient_segment(self):
+        response = self.service.handle({"rawPath": "/metadata", "requestContext": {"http": {"method": "GET"}}})
+
+        self.assertEqual(response["statusCode"], 400)
+
+    def test_accepts_http_method_from_api_gateway_rest_shape(self):
+        event = {"path": "/Patient/9481152782", "httpMethod": "GET"}
+        response = self.service.handle(event)
+
+        self.assertEqual(response["statusCode"], 200)
+
+    def test_defaults_to_get_when_method_absent(self):
+        event = {"rawPath": "/Patient/9481152782"}
+        response = self.service.handle(event)
+
+        self.assertEqual(response["statusCode"], 200)
+
+    def test_extracts_patient_from_path_when_raw_path_missing(self):
+        event = {"path": "/Patient/9912003888", "httpMethod": "GET"}
+        response = self.service.handle(event)
+
+        self.assertEqual(json.loads(response["body"])["id"], "9912003888")
+
+    def test_extracts_patient_from_request_context_http_path(self):
+        event = {"requestContext": {"http": {"method": "GET", "path": "/Patient/1111111111"}}}
+        response = self.service.handle(event)
+
+        self.assertEqual(json.loads(response["body"])["id"], "1111111111")
+
+    def test_build_patient_handles_short_nhs_number(self):
+        body = self.service._build_patient("12")
+
+        self.assertEqual(body["id"], "12")
+        self.assertEqual(body["birthDate"][:5], "1985-")
+
 
 class TestLambdaHandler(unittest.TestCase):
     def tearDown(self):

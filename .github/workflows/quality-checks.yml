@@ -184,6 +184,17 @@ jobs:
           poetry run coverage run --source=src -m unittest discover || echo "mns_publisher tests failed" >> ../../failed_tests.txt
           poetry run coverage xml -o ../../mns_publisher-coverage.xml
 
+      - name: Run unittest with coverage-mock-pds
+        working-directory: lambdas/mock_pds
+        id: mock_pds
+        env:
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/mock_pds/src:${{ env.LAMBDA_PATH }}/mock_pds/tests
+        continue-on-error: true
+        run: |
+          poetry install
+          poetry run coverage run --source=src -m unittest discover -s tests -v || echo "mock_pds tests failed" >> ../../failed_tests.txt
+          poetry run coverage xml -o ../../mock_pds-coverage.xml
+
       - name: Run unittest with coverage-mns-subscription
         working-directory: lambdas/mns_subscription
         id: mns_subscription

@@ -101,3 +101,14 @@ class TestGetPdsPatientDetails(unittest.TestCase):
         )
 
         self.mock_pds_service_instance.get_patient_details.assert_called_once_with(self.test_patient_id)
+
+    @patch.dict("os.environ", {"PDS_ENV": "ref", "PDS_BASE_URL": "  "}, clear=False)
+    def test_whitespace_only_base_url_uses_authenticator(self):
+        pds_get_patient_details(self.test_patient_id)
+
+        self.mock_auth_class.assert_called_once()
+        self.mock_pds_service_class.assert_called_once_with(
+            self.mock_auth_instance,
+            "ref",
+            base_url=None,
+        )
