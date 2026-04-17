@@ -290,6 +290,7 @@ resource "aws_lambda_function" "id_sync_lambda" {
     variables = {
       IEDS_TABLE_NAME      = aws_dynamodb_table.events-dynamodb-table.name
       PDS_ENV              = var.pds_environment
+      PDS_BASE_URL         = local.mock_pds_base_url
       SPLUNK_FIREHOSE_NAME = module.splunk.firehose_stream_name
     }
   }

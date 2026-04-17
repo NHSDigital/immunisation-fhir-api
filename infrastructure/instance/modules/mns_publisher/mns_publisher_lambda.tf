@@ -196,6 +196,7 @@ resource "aws_lambda_function" "mns_publisher_lambda" {
       IMMUNIZATION_ENV       = var.resource_scope,
       IMMUNIZATION_BASE_PATH = var.imms_base_path
       PDS_ENV                = var.pds_environment
+      PDS_BASE_URL           = var.pds_base_url
       MNS_ENV                = var.mns_environment
     }
   }

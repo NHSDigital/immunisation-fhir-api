@@ -6,6 +6,7 @@ import boto3
 import responses
 from moto import mock_aws
 
+import common.api_clients.get_pds_details as get_pds_details_module
 from lambda_handler import lambda_handler
 from process_records import extract_trace_ids, process_record, process_records
 from test_utils import generate_private_key_b64, load_sample_sqs_event
@@ -246,6 +247,7 @@ class TestLambdaHandlerIntegration(unittest.TestCase):
     def setUp(self):
         """Set up mocked AWS services and test data."""
         self.sample_sqs_record = load_sample_sqs_event()
+        get_pds_details_module._pds_service = None
         self.secrets_client = boto3.client("secretsmanager", region_name="eu-west-2")
         self.secrets_client.create_secret(
             Name="imms/pds/int/jwt-secrets",
@@ -253,6 +255,9 @@ class TestLambdaHandlerIntegration(unittest.TestCase):
                 {"api_key": "fake-pds-api-key", "kid": "fake-kid-123", "private_key_b64": generate_private_key_b64()}
             ),
         )
+
+    def tearDown(self):
+        get_pds_details_module._pds_service = None
 
     @responses.activate
     @patch("common.api_clients.authentication.AppRestrictedAuth.get_access_token")
@@ -379,3 +384,49 @@ class TestLambdaHandlerIntegration(unittest.TestCase):
         self.assertEqual(mns_payload["filtering"]["subjectage"], 21)
 
         mock_logger.info.assert_any_call("Successfully processed all 1 messages")
+
+    @responses.activate
+    @patch.dict("os.environ", {"PDS_BASE_URL": "https://mock-pds.example/Patient"}, clear=False)
+    @patch("process_records._get_runtime_mns_service")
+    @patch("process_records.logger")
+    def test_successful_notification_creation_with_mock_pds_base_url(self, mock_logger, mock_get_mns):
+        responses.add(
+            responses.GET,
+            "https://mock-pds.example/Patient/9481152782",
+            json={"generalPractitioner": [{"identifier": {"value": "Y12345", "period": {"start": "2024-01-01"}}}]},
+            status=200,
+        )
+
+        mock_mns_service = Mock()
+        mock_get_mns.return_value = mock_mns_service
+
+        sqs_event = {"Records": [self.sample_sqs_record]}
+        result = lambda_handler(sqs_event, Mock())
+
+        self.assertEqual(result, {"batchItemFailures": []})
+        mock_mns_service.publish_notification.assert_called_once()
+        mns_payload = mock_mns_service.publish_notification.call_args.args[0]
+        self.assertEqual(mns_payload["filtering"]["generalpractitioner"], "Y12345")
+        mock_logger.info.assert_any_call("Successfully processed all 1 messages")
+
+    @responses.activate
+    @patch.dict("os.environ", {"PDS_BASE_URL": "https://mock-pds.example/Patient"}, clear=False)
+    @patch("process_records._get_runtime_mns_service")
+    @patch("process_records.logger")
+    def test_mock_pds_rate_limit_results_in_batch_failure(self, mock_logger, mock_get_mns):
+        responses.add(
+            responses.GET,
+            "https://mock-pds.example/Patient/9481152782",
+            json={"code": 429, "message": "Mock PDS rate limit has been exceeded"},
+            status=429,
+        )
+
+        mock_mns_service = Mock()
+        mock_get_mns.return_value = mock_mns_service
+
+        sqs_event = {"Records": [self.sample_sqs_record]}
+        result = lambda_handler(sqs_event, Mock())
+
+        self.assertEqual(len(result["batchItemFailures"]), 1)
+        mock_mns_service.publish_notification.assert_not_called()
+        mock_logger.warning.assert_called_with("Batch completed with 1 failures")

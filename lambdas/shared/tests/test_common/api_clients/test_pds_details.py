@@ -88,3 +88,16 @@ class TestGetPdsPatientDetails(unittest.TestCase):
         self.mock_auth_class.assert_called_once()
         self.mock_pds_service_class.assert_called_once()
         self.assertEqual(self.mock_pds_service_instance.get_patient_details.call_count, 2)
+
+    @patch.dict("os.environ", {"PDS_ENV": "ref", "PDS_BASE_URL": "https://mock-pds.example/Patient"}, clear=False)
+    def test_uses_base_url_override_without_authenticator(self):
+        pds_get_patient_details(self.test_patient_id)
+
+        self.mock_auth_class.assert_not_called()
+        self.mock_pds_service_class.assert_called_once_with(
+            None,
+            "ref",
+            base_url="https://mock-pds.example/Patient",
+        )
+
+        self.mock_pds_service_instance.get_patient_details.assert_called_once_with(self.test_patient_id)

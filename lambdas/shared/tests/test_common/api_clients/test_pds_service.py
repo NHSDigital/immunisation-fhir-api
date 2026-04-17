@@ -77,3 +77,20 @@ class TestPdsService(unittest.TestCase):
         env = "prod"
         service = PdsService(None, env)
         self.assertTrue(env not in service.base_url)
+
+    def test_custom_base_url_override(self):
+        service = PdsService(None, "ref", base_url="https://mock-pds.example/Patient/")
+
+        self.assertEqual(service.base_url, "https://mock-pds.example/Patient")
+
+    @responses.activate
+    def test_get_patient_details_without_authenticator(self):
+        patient_id = "900000009"
+        pds_url = f"https://mock-pds.example/Patient/{patient_id}"
+        responses.add(responses.GET, pds_url, json={"id": patient_id}, status=200)
+        pds_service = PdsService(None, "ref", base_url="https://mock-pds.example/Patient")
+
+        patient = pds_service.get_patient_details(patient_id)
+
+        self.assertEqual(patient, {"id": patient_id})
+        self.assertNotIn("Authorization", responses.calls[0].request.headers)

@@ -79,6 +79,42 @@ variable "mns_environment" {
   default = "int"
 }
 
+variable "mock_pds_enabled" {
+  description = "Enable the ref-only mock PDS endpoint and route PDS consumers to it."
+  type        = bool
+  default     = false
+}
+
+variable "mock_pds_average_rate_limit" {
+  description = "Average mock PDS request rate, in requests per second."
+  type        = number
+  default     = 125
+}
+
+variable "mock_pds_average_window_seconds" {
+  description = "Average mock PDS rate limiting window in seconds."
+  type        = number
+  default     = 60
+}
+
+variable "mock_pds_spike_rate_limit" {
+  description = "Spike mock PDS request rate, in requests per second."
+  type        = number
+  default     = 450
+}
+
+variable "mock_pds_spike_window_seconds" {
+  description = "Spike mock PDS rate limiting window in seconds."
+  type        = number
+  default     = 1
+}
+
+variable "mock_pds_gp_ods_code" {
+  description = "Deterministic GP ODS code returned by the mock PDS service."
+  type        = string
+  default     = "Y12345"
+}
+
 variable "mesh_no_invocation_period_seconds" {
   description = "The maximum duration the MESH Processor Lambda can go without being invoked before the no-invocation alarm is triggered."
   type        = number
