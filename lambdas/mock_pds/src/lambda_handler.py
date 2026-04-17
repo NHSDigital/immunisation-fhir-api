@@ -14,7 +14,6 @@ _mock_pds_service: MockPdsService | None = None
 
 def get_mock_pds_service() -> MockPdsService:
     global _mock_pds_service
-
     if _mock_pds_service is None:
         redis_client = redis.Redis(
             host=os.environ["REDIS_HOST"],
@@ -29,11 +28,7 @@ def get_mock_pds_service() -> MockPdsService:
             spike_limit=int(os.getenv("MOCK_PDS_SPIKE_LIMIT", "450")),
             spike_window_seconds=int(os.getenv("MOCK_PDS_SPIKE_WINDOW_SECONDS", "1")),
         )
-        _mock_pds_service = MockPdsService(
-            rate_limiter=rate_limiter,
-            gp_ods_code=os.getenv("MOCK_PDS_GP_ODS_CODE", "Y12345"),
-        )
-
+        _mock_pds_service = MockPdsService(rate_limiter, os.getenv("MOCK_PDS_GP_ODS_CODE", "Y12345"))
     return _mock_pds_service
 
 

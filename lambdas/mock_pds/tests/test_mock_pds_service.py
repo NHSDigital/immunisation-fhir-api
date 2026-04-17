@@ -7,20 +7,22 @@ from mock_pds_service import RATE_LIMIT_MESSAGE, MockPdsService
 from rate_limiter import FixedWindowRateLimiter, RateLimitDecision
 
 
+def _event(method: str = "GET", nhs_number: str = "9481152782") -> dict:
+    return {"rawPath": f"/Patient/{nhs_number}", "requestContext": {"http": {"method": method}}}
+
+
+def _decision(allowed: bool, count: int) -> RateLimitDecision:
+    return RateLimitDecision(allowed=allowed, window_name="spike", count=count, limit=450, window_seconds=1)
+
+
 class TestMockPdsService(unittest.TestCase):
     def setUp(self):
         self.rate_limiter = Mock(spec=FixedWindowRateLimiter)
-        self.rate_limiter.check.return_value = RateLimitDecision(
-            allowed=True,
-            window_name="spike",
-            count=1,
-            limit=450,
-            window_seconds=1,
-        )
+        self.rate_limiter.check.return_value = _decision(True, 1)
         self.service = MockPdsService(self.rate_limiter, "Y12345")
 
     def test_returns_mock_patient_payload(self):
-        response = self.service.handle({"rawPath": "/Patient/9481152782", "requestContext": {"http": {"method": "GET"}}})
+        response = self.service.handle(_event())
 
         self.assertEqual(response["statusCode"], 200)
         self.assertEqual(response["headers"]["Content-Type"], "application/fhir+json")
@@ -30,23 +32,15 @@ class TestMockPdsService(unittest.TestCase):
         self.assertEqual(body["generalPractitioner"][0]["identifier"]["value"], "Y12345")
 
     def test_returns_429_when_rate_limit_exceeded(self):
-        self.rate_limiter.check.return_value = RateLimitDecision(
-            allowed=False,
-            window_name="spike",
-            count=451,
-            limit=450,
-            window_seconds=1,
-        )
+        self.rate_limiter.check.return_value = _decision(False, 451)
 
-        response = self.service.handle({"rawPath": "/Patient/9481152782", "requestContext": {"http": {"method": "GET"}}})
+        response = self.service.handle(_event())
 
         self.assertEqual(response["statusCode"], 429)
         self.assertEqual(json.loads(response["body"]), {"code": 429, "message": RATE_LIMIT_MESSAGE})
 
     def test_rejects_non_get_requests(self):
-        response = self.service.handle(
-            {"rawPath": "/Patient/9481152782", "requestContext": {"http": {"method": "POST"}}}
-        )
+        response = self.service.handle(_event(method="POST"))
 
         self.assertEqual(response["statusCode"], 405)
 
@@ -72,12 +66,8 @@ class TestLambdaHandler(unittest.TestCase):
         mock_service.handle.return_value = {"statusCode": 200}
 
         with patch("lambda_handler.MockPdsService", return_value=mock_service):
-            first_response = lambda_handler(
-                {"rawPath": "/Patient/123", "requestContext": {"http": {"method": "GET"}}}, None
-            )
-            second_response = lambda_handler(
-                {"rawPath": "/Patient/456", "requestContext": {"http": {"method": "GET"}}}, None
-            )
+            first_response = lambda_handler(_event(nhs_number="123"), None)
+            second_response = lambda_handler(_event(nhs_number="456"), None)
 
         self.assertEqual(first_response, {"statusCode": 200})
         self.assertEqual(second_response, {"statusCode": 200})
@@ -87,6 +77,6 @@ class TestLambdaHandler(unittest.TestCase):
     def test_lambda_handler_returns_500_on_unhandled_error(self, mock_get_service):
         mock_get_service.return_value.handle.side_effect = RuntimeError("boom")
 
-        response = lambda_handler({"rawPath": "/Patient/123", "requestContext": {"http": {"method": "GET"}}}, None)
+        response = lambda_handler(_event(nhs_number="123"), None)
 
         self.assertEqual(response["statusCode"], 500)

@@ -25,31 +25,21 @@ class FixedWindowRateLimiter:
     ):
         self.redis_client = redis_client
         self.key_prefix = key_prefix
-        self.average_limit = average_limit
-        self.average_window_seconds = average_window_seconds
-        self.spike_limit = spike_limit
-        self.spike_window_seconds = spike_window_seconds
+        self._windows = (
+            ("average", average_limit * average_window_seconds, average_window_seconds),
+            ("spike", spike_limit, spike_window_seconds),
+        )
 
     def check(self, scope: str) -> RateLimitDecision:
-        average_decision = self._evaluate_window(
-            scope=scope,
-            window_name="average",
-            limit=self.average_limit * self.average_window_seconds,
-            window_seconds=self.average_window_seconds,
-        )
-        if not average_decision.allowed:
-            return average_decision
-
-        return self._evaluate_window(
-            scope=scope,
-            window_name="spike",
-            limit=self.spike_limit,
-            window_seconds=self.spike_window_seconds,
-        )
+        decision = None
+        for name, limit, seconds in self._windows:
+            decision = self._evaluate_window(scope, name, limit, seconds)
+            if not decision.allowed:
+                break
+        return decision
 
     def _evaluate_window(self, scope: str, window_name: str, limit: int, window_seconds: int) -> RateLimitDecision:
-        current_window = int(time.time() // window_seconds)
-        key = f"{self.key_prefix}:{scope}:{window_name}:{current_window}"
+        key = f"{self.key_prefix}:{scope}:{window_name}:{int(time.time() // window_seconds)}"
         pipeline = self.redis_client.pipeline()
         pipeline.incr(key)
         pipeline.expire(key, window_seconds + 1)
