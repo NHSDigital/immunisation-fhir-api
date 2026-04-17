@@ -22,7 +22,7 @@ jobs:
       apigee_environment: internal-dev
       lambda_build_flags: >-
         ${{ (github.event.action == 'opened' || github.event.action == 'reopened')
-            && '{"recordprocessor":true,"ack-backend":true}'
+            && '{"recordprocessor":true,"ack-backend":true,"mock_pds":true}'
             || '{}' }}
       diff_base_sha: ${{ github.event.action == 'synchronize' && github.event.before || github.event.pull_request.base.sha }}
       diff_head_sha: ${{ github.event.pull_request.head.sha }}

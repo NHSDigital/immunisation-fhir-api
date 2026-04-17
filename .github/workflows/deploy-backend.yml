@@ -9,7 +9,7 @@ on:
       lambda_build_flags:
         description: >
           JSON map of lambda_name -> force-build flag.
-          e.g. {"recordprocessor":true,"ack-backend":false}
+          e.g. {"recordprocessor":true,"ack-backend":false,"mock_pds":false}
         required: false
         type: string
         default: "{}"
@@ -73,14 +73,14 @@ on:
       lambda_build_flags:
         description: >
           JSON map of lambda_name -> force-build flag.
-          e.g. {"recordprocessor":true,"ack-backend":false}
+          e.g. {"recordprocessor":true,"ack-backend":false,"mock_pds":false}
         required: false
         type: string
         default: "{}"
       lambda_image_overrides:
         description: >
           JSON map of lambda_name -> immutable image selector for reuse mode.
-          e.g. {"recordprocessor":"internal-dev-git-abc123","ack-backend":"123456789012.dkr.ecr.eu-west-2.amazonaws.com/imms-ackbackend-repo@sha256:..."}
+          e.g. {"recordprocessor":"internal-dev-git-abc123","ack-backend":"123456789012.dkr.ecr.eu-west-2.amazonaws.com/imms-ackbackend-repo@sha256:...","mock_pds":"123456789012.dkr.ecr.eu-west-2.amazonaws.com/imms-mock-pds-repo@sha256:..."}
         required: false
         type: string
         default: "{}"
@@ -130,6 +130,12 @@ jobs:
             dockerfile_path: lambdas/ack_backend/Dockerfile
             lambda_paths: |
               lambdas/ack_backend/
+          - lambda_name: mock_pds
+            tf_var_suffix: mock_pds
+            ecr_repository: imms-mock-pds-repo
+            dockerfile_path: lambdas/mock_pds/Dockerfile
+            lambda_paths: |
+              lambdas/mock_pds/
     uses: ./.github/workflows/deploy-lambda-artifact.yml
     with:
       lambda_name: ${{ matrix.lambda_name }}

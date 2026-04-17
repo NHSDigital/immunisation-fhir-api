@@ -161,6 +161,17 @@ variable "ack_backend_image_uri" {
   }
 }
 
+variable "mock_pds_image_uri" {
+  description = "Immutable URI of the mock PDS Lambda container image in ECR. Required when mock_pds_enabled is true; supplied by CI/CD."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = !var.mock_pds_enabled || trimspace(var.mock_pds_image_uri) != ""
+    error_message = "mock_pds_image_uri must be provided when mock_pds_enabled is true."
+  }
+}
+
 locals {
   prefix              = "${var.project_name}-${var.service}-${var.sub_environment}"
   short_prefix        = "${var.project_short_name}-${var.sub_environment}"

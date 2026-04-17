@@ -55,6 +55,7 @@ jobs:
           }
           echo "TF_VAR_recordprocessor_image_uri=$(resolve_or_placeholder recordprocessor_image_uri imms-recordprocessor-repo)" >> $GITHUB_ENV
           echo "TF_VAR_ack_backend_image_uri=$(resolve_or_placeholder ack_backend_image_uri imms-ackbackend-repo)" >> $GITHUB_ENV
+          echo "TF_VAR_mock_pds_image_uri=$(resolve_or_placeholder mock_pds_image_uri imms-mock-pds-repo)" >> $GITHUB_ENV
 
       - name: Install poetry
         run: pip install poetry==2.1.4
@@ -129,6 +130,6 @@ jobs:
               --output json
           }
 
-          for repository_name in imms-recordprocessor-repo imms-ackbackend-repo; do
+          for repository_name in imms-recordprocessor-repo imms-ackbackend-repo imms-mock-pds-repo; do
             cleanup_repo_by_prefix "${repository_name}"
           done

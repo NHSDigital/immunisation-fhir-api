@@ -1,84 +1,6 @@
 locals {
-  mock_pds_lambda_dir     = abspath("${path.root}/../../lambdas/mock_pds")
-  mock_pds_lambda_files   = fileset(local.mock_pds_lambda_dir, "**")
-  mock_pds_lambda_dir_sha = sha1(join("", [for f in local.mock_pds_lambda_files : filesha1("${local.mock_pds_lambda_dir}/${f}")]))
-  mock_pds_lambda_name    = "${local.short_prefix}-mock-pds-lambda"
-  mock_pds_base_url       = var.mock_pds_enabled ? "${aws_lambda_function_url.mock_pds_lambda_url[0].function_url}Patient" : ""
-}
-
-resource "aws_ecr_repository" "mock_pds_lambda_repository" {
-  count = var.mock_pds_enabled ? 1 : 0
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-
-  name         = "${local.short_prefix}-mock-pds-repo"
-  force_delete = local.is_temp
-}
-
-module "mock_pds_docker_image" {
-  count = var.mock_pds_enabled ? 1 : 0
-
-  source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version          = "8.7.0"
-  docker_file_path = "./mock_pds/Dockerfile"
-  create_ecr_repo  = false
-  ecr_repo         = aws_ecr_repository.mock_pds_lambda_repository[0].name
-  ecr_repo_lifecycle_policy = jsonencode({
-    "rules" : [
-      {
-        "rulePriority" : 1,
-        "description" : "Keep only the last 2 images",
-        "selection" : {
-          "tagStatus" : "any",
-          "countType" : "imageCountMoreThan",
-          "countNumber" : 2
-        },
-        "action" : {
-          "type" : "expire"
-        }
-      }
-    ]
-  })
-
-  platform      = "linux/amd64"
-  use_image_tag = false
-  source_path   = abspath("${path.root}/../../lambdas")
-  triggers = {
-    dir_sha = local.mock_pds_lambda_dir_sha
-  }
-}
-
-resource "aws_ecr_repository_policy" "mock_pds_lambda_ecr_image_retrieval_policy" {
-  count = var.mock_pds_enabled ? 1 : 0
-
-  repository = aws_ecr_repository.mock_pds_lambda_repository[0].name
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        "Sid" : "LambdaECRImageRetrievalPolicy",
-        "Effect" : "Allow",
-        "Principal" : {
-          "Service" : "lambda.amazonaws.com"
-        },
-        "Action" : [
-          "ecr:BatchGetImage",
-          "ecr:DeleteRepositoryPolicy",
-          "ecr:GetDownloadUrlForLayer",
-          "ecr:GetRepositoryPolicy",
-          "ecr:SetRepositoryPolicy"
-        ],
-        "Condition" : {
-          "StringLike" : {
-            "aws:sourceArn" : "arn:aws:lambda:${var.aws_region}:${var.immunisation_account_id}:function:${local.mock_pds_lambda_name}"
-          }
-        }
-      }
-    ]
-  })
+  mock_pds_lambda_name = "${local.short_prefix}-mock-pds-lambda"
+  mock_pds_base_url    = var.mock_pds_enabled ? "${aws_lambda_function_url.mock_pds_lambda_url[0].function_url}Patient" : ""
 }
 
 resource "aws_iam_role" "mock_pds_lambda_exec_role" {
@@ -174,7 +96,7 @@ resource "aws_lambda_function" "mock_pds_lambda" {
   function_name = local.mock_pds_lambda_name
   role          = aws_iam_role.mock_pds_lambda_exec_role[0].arn
   package_type  = "Image"
-  image_uri     = module.mock_pds_docker_image[0].image_uri
+  image_uri     = var.mock_pds_image_uri
   architectures = ["x86_64"]
   timeout       = 30
 
