@@ -5,7 +5,7 @@ resource "aws_ecr_repository" "mock_pds_repository" {
   image_tag_mutability = "IMMUTABLE"
   name                 = "imms-mock-pds-repo"
 }
-
+# Module for building and pushing Docker image to ECR
 resource "aws_ecr_repository_policy" "mock_pds_repository_lambda_image_retrieval_policy" {
   repository = aws_ecr_repository.mock_pds_repository.name
 
