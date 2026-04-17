@@ -14,7 +14,7 @@ jobs:
       - name: Fetch Dependabot metadata
         id: metadata
         continue-on-error: true
-        uses: dependabot/fetch-metadata@21025c705c08248db411dc16f3619e6b5f9ea21a
+        uses: dependabot/fetch-metadata@ffa630c65fa7e0ecfa0625b5ceda64399aea1b36
 
       - name: Auto-approve minor and patch updates
         if: steps.metadata.outcome == 'success' && contains(fromJSON('["version-update:semver-minor", "version-update:semver-patch"]'), steps.metadata.outputs.update-type)
