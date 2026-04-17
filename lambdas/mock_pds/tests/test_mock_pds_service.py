@@ -1,8 +1,13 @@
+import importlib
 import json
+import os
 import unittest
 from unittest.mock import Mock, patch
 
-from lambda_handler import get_mock_pds_service, lambda_handler
+os.environ.setdefault("REDIS_HOST", "test-redis-host")
+os.environ.setdefault("REDIS_PORT", "6379")
+
+import lambda_handler as lambda_handler_module
 from mock_pds_service import RATE_LIMIT_MESSAGE, MockPdsService
 from rate_limiter import FixedWindowRateLimiter, RateLimitDecision
 
@@ -47,7 +52,7 @@ class TestMockPdsService(unittest.TestCase):
 
 class TestLambdaHandler(unittest.TestCase):
     def tearDown(self):
-        get_mock_pds_service.__globals__["_mock_pds_service"] = None
+        importlib.reload(lambda_handler_module)
 
     @patch.dict(
         "os.environ",
@@ -60,23 +65,25 @@ class TestLambdaHandler(unittest.TestCase):
         },
         clear=False,
     )
-    @patch("lambda_handler.redis.Redis")
-    def test_lambda_handler_uses_cached_service(self, mock_redis):
+    @patch("mock_pds_service.MockPdsService")
+    @patch("redis.Redis")
+    def test_lambda_handler_uses_cached_service(self, mock_redis, mock_pds_cls):
         mock_service = Mock()
         mock_service.handle.return_value = {"statusCode": 200}
+        mock_pds_cls.return_value = mock_service
 
-        with patch("lambda_handler.MockPdsService", return_value=mock_service):
-            first_response = lambda_handler(_event(nhs_number="123"), None)
-            second_response = lambda_handler(_event(nhs_number="456"), None)
+        importlib.reload(lambda_handler_module)
+        first_response = lambda_handler_module.lambda_handler(_event(nhs_number="123"), None)
+        second_response = lambda_handler_module.lambda_handler(_event(nhs_number="456"), None)
 
         self.assertEqual(first_response, {"statusCode": 200})
         self.assertEqual(second_response, {"statusCode": 200})
         mock_redis.assert_called_once_with(host="mock-redis", port=6379, decode_responses=True)
 
-    @patch("lambda_handler.get_mock_pds_service")
-    def test_lambda_handler_returns_500_on_unhandled_error(self, mock_get_service):
-        mock_get_service.return_value.handle.side_effect = RuntimeError("boom")
-
-        response = lambda_handler(_event(nhs_number="123"), None)
+    def test_lambda_handler_returns_500_on_unhandled_error(self):
+        mock_svc = Mock()
+        mock_svc.handle.side_effect = RuntimeError("boom")
+        with patch.object(lambda_handler_module, "_mock_pds_service", mock_svc):
+            response = lambda_handler_module.lambda_handler(_event(nhs_number="123"), None)
 
         self.assertEqual(response["statusCode"], 500)
