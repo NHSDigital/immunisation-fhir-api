@@ -1,0 +1,1 @@
+✅ Step Passed: **The Etag in header will containing the latest event version

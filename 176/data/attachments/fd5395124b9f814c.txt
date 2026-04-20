@@ -1,0 +1,22 @@
+
+ Search GET Request - 
+ patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number|%22%22&-immunization.target=COVID&-date.from=2026-04-20&_include=Immunization:patient
+
+ Search GET Response - 
+ {'resourceType': 'OperationOutcome', 'id': '4e862d70-50da-4567-b5b4-ae9de9e0a3e5', 'meta': {'profile': ['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']}, 'issue': [{'severity': 'error', 'code': 'invalid', 'details': {'coding': [{'system': 'https://fhir.nhs.uk/Codesystem/http-error-codes', 'code': 'INVALID'}]}, 'diagnostics': 'Search parameter patient.identifier must be a valid NHS number.'}]}
+400
+400
+
+ Error Response - 
+ resourceType='OperationOutcome' id='4e862d70-50da-4567-b5b4-ae9de9e0a3e5' meta=Meta(profile=['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']) issue=[Issue(severity='error', code='invalid', details=Details(coding=[Coding(system='https://fhir.nhs.uk/Codesystem/http-error-codes', code='INVALID')]), diagnostics='Search parameter patient.identifier must be a valid NHS number.')]
+
+ Search Post Request - 
+ patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number|%22%22&-immunization.target=COVID&-date.from=2026-04-20&_include=Immunization:patient
+
+ Search POST Response - 
+ {'resourceType': 'OperationOutcome', 'id': '70a3f858-e03e-45ac-ba6b-733f82c617fb', 'meta': {'profile': ['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']}, 'issue': [{'severity': 'error', 'code': 'invalid', 'details': {'coding': [{'system': 'https://fhir.nhs.uk/Codesystem/http-error-codes', 'code': 'INVALID'}]}, 'diagnostics': 'Search parameter patient.identifier must be a valid NHS number.'}]}
+400
+400
+
+ Error Response - 
+ resourceType='OperationOutcome' id='70a3f858-e03e-45ac-ba6b-733f82c617fb' meta=Meta(profile=['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']) issue=[Issue(severity='error', code='invalid', details=Details(coding=[Coding(system='https://fhir.nhs.uk/Codesystem/http-error-codes', code='INVALID')]), diagnostics='Search parameter patient.identifier must be a valid NHS number.')]
