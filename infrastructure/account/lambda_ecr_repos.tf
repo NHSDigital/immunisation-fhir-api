@@ -71,7 +71,7 @@ locals {
     }
   }
 }
-
+#lambda repo
 resource "aws_ecr_repository" "lambda_repository" {
   for_each = local.lambda_ecr_repositories
 
