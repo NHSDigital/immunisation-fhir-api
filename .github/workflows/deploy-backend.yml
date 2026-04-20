@@ -80,7 +80,7 @@ on:
       lambda_image_overrides:
         description: >
           JSON map of lambda_name -> immutable image selector for reuse mode.
-          e.g. {"recordprocessor":"internal-dev-git-abc123","ack-backend":"123456789012.dkr.ecr.eu-west-2.amazonaws.com/imms-ackbackend-repo@sha256:...","mock_pds":"123456789012.dkr.ecr.eu-west-2.amazonaws.com/imms-mock-pds-repo@sha256:..."}
+          e.g. {"recordprocessor":"internal-dev-git-abc123","ack-backend":"123456789012.dkr.ecr.eu-west-2.amazonaws.com/imms-ackbackend-repo@sha256:..."}
         required: false
         type: string
         default: "{}"
