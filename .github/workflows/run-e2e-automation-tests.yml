@@ -22,6 +22,10 @@ on:
         required: false
         type: string
         default: ""
+      require_matching_commit_id:
+        required: false
+        type: boolean
+        default: true
     secrets:
       APIGEE_PASSWORD:
         required: true
@@ -81,6 +85,11 @@ on:
         required: false
         type: string
         default: ""
+      require_matching_commit_id:
+        description: Whether the _status endpoint commitId must match the expected commit SHA.
+        required: false
+        type: boolean
+        default: true
 
 env:
   APIGEE_AUTH_ENV: ${{ inputs.apigee_environment == 'int' && inputs.apigee_environment || 'internal-dev' }}
@@ -91,6 +100,7 @@ env:
   PROXY_NAME: ${{ startsWith(inputs.sub_environment, 'pr-') && format('immunisation-fhir-api-{0}', inputs.sub_environment) || format('immunisation-fhir-api-{0}', inputs.apigee_environment) }}
   STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}
   SOURCE_COMMIT_ID: ${{ inputs.expected_commit_id || github.sha }}
+  REQUIRE_MATCHING_COMMIT_ID: ${{ inputs.require_matching_commit_id }}
   MNS_VALIDATION_REQUIRED: ${{ inputs.mns_validation_required || startsWith(inputs.sub_environment, 'pr-') || inputs.apigee_environment == 'internal-dev' }}
 
 jobs:
@@ -121,11 +131,15 @@ jobs:
 
             if [[ "${response_code}" -eq 200 ]] && [[ "${response_body}" == "OK" ]] && [[ "${status}" == "pass" ]]; then
               echo "Status test successful"
+              if [[ "${REQUIRE_MATCHING_COMMIT_ID}" != "true" ]]; then
+                echo "Skipping commit hash validation for ${APIGEE_ENVIRONMENT}"
+                break
+              fi
               if [[ "${commitId}" == "${SOURCE_COMMIT_ID}" ]]; then
                 echo "Commit hash test successful"
                 break
               else
-                echo "Waiting for ${endpoint} to return the correct commit hash..."
+                echo "Waiting for ${endpoint} to return the correct commit hash... expected ${SOURCE_COMMIT_ID}, got ${commitId}"
               fi
             else
               echo "Waiting for ${endpoint} to return a 200 response with 'OK' body..."
