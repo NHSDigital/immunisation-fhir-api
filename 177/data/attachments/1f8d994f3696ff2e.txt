@@ -1,0 +1,1 @@
+✅ Step Passed: **MNS event will be triggered with correct data for all 'CREATE' events where NHS is not null
