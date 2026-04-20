@@ -6,3 +6,4 @@ mns_environment                   = "dev"
 error_alarm_notifications_enabled = false
 create_mesh_processor             = false
 has_sub_environment_scope         = true
+mock_pds_enabled                  = true
