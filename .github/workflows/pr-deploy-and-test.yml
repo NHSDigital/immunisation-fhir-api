@@ -48,6 +48,7 @@ jobs:
       sub_environment: pr-${{github.event.pull_request.number}}
       service_under_test: all
       suite_to_run: ${{ matrix.required_test_suite }}
+      expected_commit_id: ${{ github.event.pull_request.head.sha }}
     secrets:
       APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
       APIGEE_BASIC_AUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}

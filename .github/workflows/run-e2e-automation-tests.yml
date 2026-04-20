@@ -18,6 +18,10 @@ on:
       suite_to_run:
         required: true
         type: string
+      expected_commit_id:
+        required: false
+        type: string
+        default: ""
     secrets:
       APIGEE_PASSWORD:
         required: true
@@ -72,6 +76,11 @@ on:
         description: Set to true if you want the MNS validation to be performed as part of the tests. please keep in mind it will increase execution time.
         default: false
         type: boolean
+      expected_commit_id:
+        description: Optional commit SHA expected from the deployed _status endpoint.
+        required: false
+        type: string
+        default: ""
 
 env:
   APIGEE_AUTH_ENV: ${{ inputs.apigee_environment == 'int' && inputs.apigee_environment || 'internal-dev' }}
@@ -81,7 +90,7 @@ env:
   SERVICE_BASE_PATH: ${{ startsWith(inputs.sub_environment, 'pr-') && format('immunisation-fhir-api/FHIR/R4-{0}', inputs.sub_environment) || 'immunisation-fhir-api/FHIR/R4' }}
   PROXY_NAME: ${{ startsWith(inputs.sub_environment, 'pr-') && format('immunisation-fhir-api-{0}', inputs.sub_environment) || format('immunisation-fhir-api-{0}', inputs.apigee_environment) }}
   STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}
-  SOURCE_COMMIT_ID: ${{ github.sha }}
+  SOURCE_COMMIT_ID: ${{ inputs.expected_commit_id || github.sha }}
   MNS_VALIDATION_REQUIRED: ${{ inputs.mns_validation_required || startsWith(inputs.sub_environment, 'pr-') || inputs.apigee_environment == 'internal-dev' }}
 
 jobs:
