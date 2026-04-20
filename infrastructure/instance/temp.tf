@@ -276,7 +276,7 @@ removed {
 }
 
 removed {
-  from = aws_ecr_repository.mesh_file_converter_lambda_repository[0]
+  from = aws_ecr_repository.mesh_file_converter_lambda_repository
 
   lifecycle {
     destroy = false
@@ -284,7 +284,7 @@ removed {
 }
 
 removed {
-  from = aws_ecr_repository_policy.mesh_processor_lambda_ECRImageRetreival_policy[0]
+  from = aws_ecr_repository_policy.mesh_processor_lambda_ECRImageRetreival_policy
 
   lifecycle {
     destroy = false
