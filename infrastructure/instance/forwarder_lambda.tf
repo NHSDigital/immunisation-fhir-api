@@ -1,81 +1,5 @@
-# Define the directory containing the Docker image and calculate its SHA-256 hash for triggering redeployments
 locals {
-  forwarder_lambda_dir     = abspath("${path.root}/../../lambdas/recordforwarder")
-  forwarder_lambda_files   = fileset(local.forwarder_lambda_dir, "**")
-  forwarder_lambda_dir_sha = sha1(join("", [for f in local.forwarder_lambda_files : filesha1("${local.forwarder_lambda_dir}/${f}")]))
-  forwarder_lambda_name    = "${local.short_prefix}-forwarding-lambda"
-}
-
-resource "aws_ecr_repository" "forwarder_lambda_repository" {
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-  name         = "${local.short_prefix}-forwarding-repo"
-  force_delete = local.is_temp
-}
-
-# Module for building and pushing Docker image to ECR
-module "forwarding_docker_image" {
-  source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version          = "8.7.0"
-  docker_file_path = "./recordforwarder/Dockerfile"
-
-  create_ecr_repo = false
-  ecr_repo        = aws_ecr_repository.forwarder_lambda_repository.name
-  ecr_repo_lifecycle_policy = jsonencode({
-    rules = [
-      {
-        rulePriority = 1
-        description  = "Keep only the last 2 images"
-        selection = {
-          tagStatus   = "any"
-          countType   = "imageCountMoreThan"
-          countNumber = 2
-        }
-        action = {
-          type = "expire"
-        }
-      }
-    ]
-  })
-
-  platform      = "linux/amd64"
-  use_image_tag = false
-  source_path   = abspath("${path.root}/../../lambdas")
-  triggers = {
-    dir_sha        = local.forwarder_lambda_dir_sha
-    shared_dir_sha = local.shared_dir_sha
-  }
-}
-
-# Define the lambdaECRImageRetreival policy
-resource "aws_ecr_repository_policy" "forwarder_lambda_ECRImageRetreival_policy" {
-  repository = aws_ecr_repository.forwarder_lambda_repository.name
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        "Sid" : "LambdaECRImageRetrievalPolicy",
-        "Effect" : "Allow",
-        "Principal" : {
-          "Service" : "lambda.amazonaws.com"
-        },
-        "Action" : [
-          "ecr:BatchGetImage",
-          "ecr:DeleteRepositoryPolicy",
-          "ecr:GetDownloadUrlForLayer",
-          "ecr:GetRepositoryPolicy",
-          "ecr:SetRepositoryPolicy"
-        ],
-        "Condition" : {
-          "StringLike" : {
-            "aws:sourceArn" : "arn:aws:lambda:${var.aws_region}:${var.immunisation_account_id}:function:${local.forwarder_lambda_name}"
-          }
-        }
-      }
-    ]
-  })
+  forwarder_lambda_name = "${local.short_prefix}-forwarding-lambda"
 }
 
 # IAM Role for Lambda
@@ -209,7 +133,7 @@ resource "aws_lambda_function" "forwarding_lambda" {
   role          = aws_iam_role.forwarding_lambda_exec_role.arn
   package_type  = "Image"
   architectures = ["x86_64"]
-  image_uri     = module.forwarding_docker_image.image_uri
+  image_uri     = var.recordforwarder_image_uri
   timeout       = 900
   memory_size   = 2048
   ephemeral_storage {
