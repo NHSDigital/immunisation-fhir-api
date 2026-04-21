@@ -52,9 +52,9 @@ variable "security_group_id" {
   type = string
 }
 
-variable "shared_dir_sha" {
+variable "image_uri" {
   type        = string
-  description = "The SHA of the shared Lambda code directory. Used for determining if a change occurred there so the Lambda function needs rebuilding."
+  description = "Immutable URI of the MNS publisher Lambda container image in ECR."
 }
 
 variable "splunk_firehose_stream_name" {
