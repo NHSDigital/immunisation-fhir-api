@@ -213,6 +213,16 @@ moved {
 }
 
 moved {
+  from = aws_ecr_repository.mesh_file_converter_lambda_repository
+  to   = aws_ecr_repository.lambda_repository["mesh_processor"]
+}
+
+moved {
+  from = aws_ecr_repository_policy.mesh_processor_lambda_ECRImageRetreival_policy
+  to   = aws_ecr_repository_policy.lambda_repository_image_retrieval_policy["mesh_processor"]
+}
+
+moved {
   from = module.mns_publisher.aws_ecr_repository.mns_publisher_lambda_repository
   to   = aws_ecr_repository.lambda_repository["mns_publisher"]
 }
