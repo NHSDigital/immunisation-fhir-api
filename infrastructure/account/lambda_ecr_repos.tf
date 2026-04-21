@@ -141,3 +141,93 @@ moved {
   from = aws_ecr_lifecycle_policy.recordprocessor_repository_lifecycle_policy
   to   = aws_ecr_lifecycle_policy.lambda_repository_lifecycle_policy["recordprocessor"]
 }
+
+moved {
+  from = aws_ecr_repository.operation_lambda_repository
+  to   = aws_ecr_repository.lambda_repository["operation"]
+}
+
+moved {
+  from = aws_ecr_repository_policy.operation_lambda_ECRImageRetreival_policy
+  to   = aws_ecr_repository_policy.lambda_repository_image_retrieval_policy["operation"]
+}
+
+moved {
+  from = aws_ecr_repository.batch_processor_filter_lambda_repository
+  to   = aws_ecr_repository.lambda_repository["batch_processor_filter"]
+}
+
+moved {
+  from = aws_ecr_repository_policy.batch_processor_filter_lambda_ECRImageRetreival_policy
+  to   = aws_ecr_repository_policy.lambda_repository_image_retrieval_policy["batch_processor_filter"]
+}
+
+moved {
+  from = aws_ecr_repository.delta_lambda_repository
+  to   = aws_ecr_repository.lambda_repository["delta"]
+}
+
+moved {
+  from = aws_ecr_repository_policy.delta_lambda_ECRImageRetreival_policy
+  to   = aws_ecr_repository_policy.lambda_repository_image_retrieval_policy["delta"]
+}
+
+moved {
+  from = aws_ecr_repository.file_name_processor_lambda_repository
+  to   = aws_ecr_repository.lambda_repository["filenameprocessor"]
+}
+
+moved {
+  from = aws_ecr_repository_policy.filenameprocessor_lambda_ECRImageRetreival_policy
+  to   = aws_ecr_repository_policy.lambda_repository_image_retrieval_policy["filenameprocessor"]
+}
+
+moved {
+  from = aws_ecr_repository.id_sync_lambda_repository
+  to   = aws_ecr_repository.lambda_repository["id_sync"]
+}
+
+moved {
+  from = aws_ecr_repository_policy.id_sync_lambda_ECRImageRetreival_policy
+  to   = aws_ecr_repository_policy.lambda_repository_image_retrieval_policy["id_sync"]
+}
+
+moved {
+  from = aws_ecr_repository.forwarder_lambda_repository
+  to   = aws_ecr_repository.lambda_repository["recordforwarder"]
+}
+
+moved {
+  from = aws_ecr_repository_policy.forwarder_lambda_ECRImageRetreival_policy
+  to   = aws_ecr_repository_policy.lambda_repository_image_retrieval_policy["recordforwarder"]
+}
+
+moved {
+  from = aws_ecr_repository.redis_sync_lambda_repository
+  to   = aws_ecr_repository.lambda_repository["redis_sync"]
+}
+
+moved {
+  from = aws_ecr_repository_policy.redis_sync_lambda_ECRImageRetreival_policy
+  to   = aws_ecr_repository_policy.lambda_repository_image_retrieval_policy["redis_sync"]
+}
+
+moved {
+  from = aws_ecr_repository.mesh_file_converter_lambda_repository
+  to   = aws_ecr_repository.lambda_repository["mesh_processor"]
+}
+
+moved {
+  from = aws_ecr_repository_policy.mesh_processor_lambda_ECRImageRetreival_policy
+  to   = aws_ecr_repository_policy.lambda_repository_image_retrieval_policy["mesh_processor"]
+}
+
+moved {
+  from = module.mns_publisher.aws_ecr_repository.mns_publisher_lambda_repository
+  to   = aws_ecr_repository.lambda_repository["mns_publisher"]
+}
+
+moved {
+  from = module.mns_publisher.aws_ecr_repository_policy.mns_publisher_lambda_ecr_image_retrieval_policy
+  to   = aws_ecr_repository_policy.lambda_repository_image_retrieval_policy["mns_publisher"]
+}
