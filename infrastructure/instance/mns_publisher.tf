@@ -21,7 +21,7 @@ module "mns_publisher" {
   private_subnet_ids = local.private_subnet_ids
   security_group_id  = data.aws_security_group.existing_securitygroup.id
 
-  shared_dir_sha              = local.shared_dir_sha
+  image_uri                   = var.mns_publisher_image_uri
   splunk_firehose_stream_name = module.splunk.firehose_stream_name
 
   short_prefix = local.short_prefix

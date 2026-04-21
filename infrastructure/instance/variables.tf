@@ -150,6 +150,17 @@ variable "recordprocessor_image_uri" {
   }
 }
 
+variable "backend_image_uri" {
+  description = "Immutable URI of the backend Lambda container image in ECR. Must be supplied by CI/CD."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = trimspace(var.backend_image_uri) != ""
+    error_message = "backend_image_uri must be provided."
+  }
+}
+
 variable "ack_backend_image_uri" {
   description = "Immutable URI of the ack backend Lambda container image in ECR. Must be supplied by CI/CD."
   type        = string
@@ -163,12 +174,101 @@ variable "ack_backend_image_uri" {
 
 variable "mock_pds_image_uri" {
   description = "Immutable URI of the mock PDS Lambda container image in ECR. Required when mock_pds_enabled is true; supplied by CI/CD."
-  type        = string
-  default     = ""
+
+  type    = string
+  default = ""
 
   validation {
     condition     = !var.mock_pds_enabled || trimspace(var.mock_pds_image_uri) != ""
     error_message = "mock_pds_image_uri must be provided when mock_pds_enabled is true."
+  }
+}
+
+variable "batch_processor_filter_image_uri" {
+  description = "Immutable URI of the batch processor filter Lambda container image in ECR. Must be supplied by CI/CD."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = trimspace(var.batch_processor_filter_image_uri) != ""
+    error_message = "batch_processor_filter_image_uri must be provided."
+  }
+}
+
+variable "delta_backend_image_uri" {
+  description = "Immutable URI of the delta backend Lambda container image in ECR. Must be supplied by CI/CD."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = trimspace(var.delta_backend_image_uri) != ""
+    error_message = "delta_backend_image_uri must be provided."
+  }
+}
+
+variable "filenameprocessor_image_uri" {
+  description = "Immutable URI of the filenameprocessor Lambda container image in ECR. Must be supplied by CI/CD."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = trimspace(var.filenameprocessor_image_uri) != ""
+    error_message = "filenameprocessor_image_uri must be provided."
+  }
+}
+
+variable "id_sync_image_uri" {
+  description = "Immutable URI of the id sync Lambda container image in ECR. Must be supplied by CI/CD."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = trimspace(var.id_sync_image_uri) != ""
+    error_message = "id_sync_image_uri must be provided."
+  }
+}
+
+variable "mesh_processor_image_uri" {
+  description = "Immutable URI of the mesh processor Lambda container image in ECR. Must be supplied by CI/CD."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = trimspace(var.mesh_processor_image_uri) != ""
+    error_message = "mesh_processor_image_uri must be provided."
+  }
+}
+
+variable "mns_publisher_image_uri" {
+  description = "Immutable URI of the MNS publisher Lambda container image in ECR. Must be supplied by CI/CD."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = trimspace(var.mns_publisher_image_uri) != ""
+    error_message = "mns_publisher_image_uri must be provided."
+  }
+}
+
+variable "recordforwarder_image_uri" {
+  description = "Immutable URI of the recordforwarder Lambda container image in ECR. Must be supplied by CI/CD."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = trimspace(var.recordforwarder_image_uri) != ""
+    error_message = "recordforwarder_image_uri must be provided."
+  }
+}
+
+variable "redis_sync_image_uri" {
+  description = "Immutable URI of the redis sync Lambda container image in ECR. Must be supplied by CI/CD."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = trimspace(var.redis_sync_image_uri) != ""
+    error_message = "redis_sync_image_uri must be provided."
   }
 }
 
