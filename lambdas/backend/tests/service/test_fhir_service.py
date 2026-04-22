@@ -36,6 +36,12 @@ from test_common.testing_utils.values_for_tests import ValidValues
 NHS_NUMBER_USED_IN_SAMPLE_DATA = "9000000009"
 
 
+def add_snomed_coding(immunization: dict, field_name: str, code: str, display: str) -> dict:
+    first_coding = deepcopy(immunization[field_name]["coding"][0])
+    immunization[field_name]["coding"].append({"system": first_coding["system"], "code": code, "display": display})
+    return first_coding
+
+
 class TestFhirServiceBase(unittest.TestCase):
     """Base class for all tests to set up common fixtures"""
 
@@ -362,6 +368,27 @@ class TestCreateImmunization(TestFhirServiceBase):
         self.validator.validate.assert_called_once_with(req_imms)
         self.assertEqual(self._MOCK_NEW_UUID, created_id)
 
+    def test_create_immunization_keeps_first_site_and_route_snomed_coding(self):
+        """it should keep the first SNOMED coding for site and route during API create"""
+        self.mock_redis.hget.return_value = "COVID"
+        self.mock_redis_getter.return_value = self.mock_redis
+        self.authoriser.authorise.return_value = True
+        self.imms_repo.check_immunization_identifier_exists.return_value = False
+        self.imms_repo.create_immunization.return_value = self._MOCK_NEW_UUID
+
+        req_imms = create_covid_immunization_dict_no_id(VALID_NHS_NUMBER)
+        first_site_coding = add_snomed_coding(req_imms, "site", "999999999", "Replacement site that should be ignored")
+        first_route_coding = add_snomed_coding(
+            req_imms, "route", "888888888", "Replacement route that should be ignored"
+        )
+
+        created_id = self.pre_validate_fhir_service.create_immunization(req_imms, "Test")
+
+        self.assertEqual(self._MOCK_NEW_UUID, created_id)
+        self.assertEqual(req_imms["site"]["coding"], [first_site_coding])
+        self.assertEqual(req_imms["route"]["coding"], [first_route_coding])
+        self.imms_repo.create_immunization.assert_called_once_with(Immunization.parse_obj(req_imms), "Test")
+
     def test_create_immunization_with_id_throws_error(self):
         """it should throw exception if id present in create Immunization"""
         imms = create_covid_immunization_dict("an-id", "9990548609")
@@ -538,6 +565,39 @@ class TestUpdateImmunization(TestFhirServiceBase):
         self.assertEqual(call_args[2], existing_resource_meta)
         self.assertEqual(call_args[3], "Test")
         self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.UPDATE, {"COVID"})
+
+    def test_update_immunization_keeps_first_site_and_route_snomed_coding(self):
+        """it should keep the first SNOMED coding for site and route during API update"""
+        imms_id = "an-id"
+        original_immunisation = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER)
+        identifier = Identifier(
+            system=original_immunisation["identifier"][0]["system"],
+            value=original_immunisation["identifier"][0]["value"],
+        )
+        updated_immunisation = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER, "2021-02-07T13:28:00+00:00")
+        first_site_coding = add_snomed_coding(
+            updated_immunisation, "site", "999999999", "Replacement site that should be ignored"
+        )
+        first_route_coding = add_snomed_coding(
+            updated_immunisation, "route", "888888888", "Replacement route that should be ignored"
+        )
+        existing_resource_meta = ImmunizationRecordMetadata(
+            identifier=identifier, resource_version=1, is_deleted=False, is_reinstated=False
+        )
+
+        self.imms_repo.get_immunization_resource_and_metadata_by_id.return_value = (
+            original_immunisation,
+            existing_resource_meta,
+        )
+        self.imms_repo.update_immunization.return_value = 2
+        self.authoriser.authorise.return_value = True
+
+        updated_version = self.fhir_service.update_immunization(imms_id, updated_immunisation, "Test", 1)
+
+        self.assertEqual(updated_version, 2)
+        self.assertEqual(updated_immunisation["site"]["coding"], [first_site_coding])
+        self.assertEqual(updated_immunisation["route"]["coding"], [first_route_coding])
+        self.imms_repo.update_immunization.assert_called_once()
 
     def test_update_immunization_raises_validation_exception_when_nhs_number_invalid(self):
         """it should raise a CustomValidationError when the patient's NHS number in the payload is invalid"""

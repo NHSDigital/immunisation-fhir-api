@@ -22,7 +22,7 @@ from fhir.resources.R4B.operationoutcome import OperationOutcome
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
 from common.get_service_url import get_service_url
-from common.models.constants import Constants
+from common.models.constants import Constants, Urls
 from common.models.errors import (
     Code,
     CustomValidationError,
@@ -62,6 +62,7 @@ class FhirService:
     _DATA_MISSING_DATE_TIME_ERROR_MSG = (
         "Data quality issue - immunisation with ID %s was found containing no occurrenceDateTime"
     )
+    _SINGLE_SNOMED_CODEABLE_CONCEPT_FIELDS = ("site", "route")
 
     def __init__(
         self,
@@ -72,6 +73,36 @@ class FhirService:
         self.authoriser = authoriser
         self.immunization_repo = imms_repo
         self.validator = validator
+
+    @staticmethod
+    def _keep_first_snomed_coding(coding: list) -> list:
+        snomed_seen = False
+        filtered_coding = []
+        for coding_entry in coding:
+            is_snomed_coding = isinstance(coding_entry, dict) and coding_entry.get("system") == Urls.SNOMED
+            if is_snomed_coding and snomed_seen:
+                continue
+
+            snomed_seen = snomed_seen or is_snomed_coding
+            filtered_coding.append(coding_entry)
+
+        return filtered_coding
+
+    @classmethod
+    def _normalize_single_snomed_codeable_concepts(cls, immunization: dict) -> None:
+        for field_name in cls._SINGLE_SNOMED_CODEABLE_CONCEPT_FIELDS:
+            field = immunization.get(field_name)
+            coding = field.get("coding") if isinstance(field, dict) else None
+            if isinstance(coding, list):
+                field["coding"] = cls._keep_first_snomed_coding(coding)
+
+    def _validate_immunization(self, immunization: dict) -> None:
+        self._normalize_single_snomed_codeable_concepts(immunization)
+
+        try:
+            self.validator.validate(immunization)
+        except (ValueError, MandatoryError) as error:
+            raise CustomValidationError(message=str(error)) from error
 
     def get_immunization_by_identifier(
         self, identifier: Identifier, supplier_name: str, elements: set[str] | None
@@ -117,10 +148,7 @@ class FhirService:
         if immunization.get("id") is not None:
             raise CustomValidationError("id field must not be present for CREATE operation")
 
-        try:
-            self.validator.validate(immunization)
-        except (ValueError, MandatoryError) as error:
-            raise CustomValidationError(message=str(error)) from error
+        self._validate_immunization(immunization)
 
         vaccination_type = get_vaccine_type(immunization)
 
@@ -139,10 +167,7 @@ class FhirService:
         return self.immunization_repo.create_immunization(immunization_fhir_entity, supplier_system)
 
     def update_immunization(self, imms_id: str, immunization: dict, supplier_system: str, resource_version: int) -> int:
-        try:
-            self.validator.validate(immunization)
-        except (ValueError, MandatoryError) as error:
-            raise CustomValidationError(message=str(error)) from error
+        self._validate_immunization(immunization)
 
         immunization_to_update = Immunization.parse_obj(immunization)
 
