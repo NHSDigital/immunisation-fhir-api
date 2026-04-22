@@ -120,6 +120,25 @@ class TestCreateImmunizationBatchService(TestFhirBatchServiceBase):
         )
         self.mock_repo.create_immunization.assert_not_called()
 
+    def test_create_immunization_duplicate_site_snomed_still_rejected_for_batch(self):
+        """it should keep batch validation unchanged for duplicate site SNOMED codings"""
+
+        imms = create_covid_immunization_dict_no_id()
+        imms["site"]["coding"].append(deepcopy(imms["site"]["coding"][0]))
+        expected_msg = "Validation errors: site.coding[?(@.system=='http://snomed.info/sct')] must be unique"
+
+        with self.assertRaises(CustomValidationError) as error:
+            self.pre_validate_fhir_service.create_immunization(
+                immunization=imms,
+                supplier_system="test_supplier",
+                vax_type="test_vax",
+                table=self.mock_table,
+                imms_pk=None,
+            )
+
+        self.assertEqual(expected_msg, error.exception.message)
+        self.mock_repo.create_immunization.assert_not_called()
+
 
 class TestUpdateImmunizationBatchService(TestFhirBatchServiceBase):
     def setUp(self):
