@@ -287,3 +287,30 @@ class TestSearchImmunizationsByTargetDisease(unittest.TestCase):
         self.assertEqual(len(call_args[1]["invalid_target_diseases"]), 1)
         self.assertIn("invalid-no-pipe", call_args[1]["invalid_target_diseases"][0])
         self.assertIn("Invalid format", call_args[1]["invalid_target_diseases"][0])
+
+    @patch("controller.fhir_controller.MAX_RESPONSE_SIZE_BYTES", 5)
+    def test_search_by_target_disease_returns_400_when_response_too_large(self):
+        """it should return the same narrow-the-search error for oversized target-disease searches"""
+        self.mock_redis.hget.side_effect = self._hget_target_disease_codes_and_mmr
+        self.service.search_immunizations.return_value = Bundle.construct(
+            entry=[BundleEntry.construct(resource=Immunization.construct(**{"id": "imms-1"}))],
+            link=[BundleLink.construct(relation="self", url="search-url")],
+            type="searchset",
+            total=1,
+        )
+        lambda_event = {
+            "headers": {"SupplierSystem": "test"},
+            "multiValueQueryStringParameters": {
+                self.patient_identifier_key: [self.patient_identifier_valid_value],
+                self.target_disease_key: [f"{self.snomed_system}|{self.measles_code}"],
+            },
+        }
+
+        response = self.controller.search_immunizations(lambda_event)
+        response_body = json.loads(response["body"])
+
+        self.assertEqual(response["statusCode"], 400)
+        self.assertEqual(
+            response_body["issue"][0]["diagnostics"],
+            "Search returned too many results. Please narrow down the search",
+        )

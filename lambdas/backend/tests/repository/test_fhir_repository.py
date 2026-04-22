@@ -1,7 +1,7 @@
 import time
 import unittest
 import uuid
-from unittest.mock import ANY, MagicMock, Mock, patch
+from unittest.mock import ANY, MagicMock, Mock, call, patch
 
 import botocore.exceptions
 import simplejson as json
@@ -605,6 +605,54 @@ class TestFindImmunizations(unittest.TestCase):
             FilterExpression=Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated"),
         )
         self.assertEqual(result, [])
+
+    def test_find_immunizations_queries_all_dynamodb_pages(self):
+        """it should continue querying DynamoDB until LastEvaluatedKey is exhausted"""
+        nhs_number = "a-patient-id"
+        imms1 = {"id": 1, "meta": {"versionId": 1}}
+        imms2 = {"id": 2, "meta": {"versionId": 2}}
+        first_page_last_evaluated_key = {"PK": "Immunization#1", "PatientPK": _make_patient_pk(nhs_number)}
+        self.table.query = MagicMock(
+            side_effect=[
+                {
+                    "ResponseMetadata": {"HTTPStatusCode": 200},
+                    "Items": [
+                        {
+                            "Resource": json.dumps(imms1),
+                            "PatientSK": "COVID#some_other_text",
+                            "Version": "1",
+                        }
+                    ],
+                    "LastEvaluatedKey": first_page_last_evaluated_key,
+                },
+                {
+                    "ResponseMetadata": {"HTTPStatusCode": 200},
+                    "Items": [
+                        {
+                            "Resource": json.dumps(imms2),
+                            "PatientSK": "COVID#some_other_text",
+                            "Version": "2",
+                        }
+                    ],
+                },
+            ]
+        )
+
+        results = self.repository.find_immunizations(nhs_number, {"COVID"})
+        expected_query_kwargs = {
+            "IndexName": "PatientGSI",
+            "KeyConditionExpression": Key("PatientPK").eq(_make_patient_pk(nhs_number)),
+            "FilterExpression": Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated"),
+        }
+
+        self.assertEqual(
+            self.table.query.call_args_list,
+            [
+                call(**expected_query_kwargs),
+                call(**{**expected_query_kwargs, "ExclusiveStartKey": first_page_last_evaluated_key}),
+            ],
+        )
+        self.assertListEqual(results, [imms1, imms2])
 
     def test_find_immunizations_returns_resources_including_meta(self):
         """it should map Resource list into a list of Immunizations"""
