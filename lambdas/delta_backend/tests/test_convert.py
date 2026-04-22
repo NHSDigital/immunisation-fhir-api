@@ -89,6 +89,13 @@ class TestConvertToFlatJson(unittest.TestCase):
         """Returns test event data."""
         return ValuesForTests.get_event(event_name, operation, supplier)
 
+    def assert_structured_error_records(self, error_records):
+        self.assertTrue(error_records)
+
+        for error_record in error_records:
+            self.assertEqual(set(error_record), {"code", "field", "value", "message"})
+            self.assertTrue(error_record["message"])
+
     def assert_dynamodb_record(
         self,
         operation_flag,
@@ -139,68 +146,47 @@ class TestConvertToFlatJson(unittest.TestCase):
         json_data = json.dumps(ValuesForTests.json_data)
 
         fhir_converter = Converter(json_data)
-        FlatFile = fhir_converter.run_conversion()
+        result = fhir_converter.run_conversion()
 
-        flatJSON = json.dumps(FlatFile)
         expected_imms_value = deepcopy(ValuesForTests.expected_imms2)  # UPDATE is currently the default action-flag
-        expected_imms = json.dumps(expected_imms_value)
-        self.assertEqual(flatJSON, expected_imms)
+        self.assertEqual(result, expected_imms_value)
+        self.assertFalse(fhir_converter.get_error_records())
 
-        errorRecords = fhir_converter.get_error_records()
-
-        self.assertEqual(len(errorRecords), 0)
-
-    def test_fhir_converter_json_error_scenario_reporting_on(self):
+    def test_fhir_converter_json_error_scenario(self):
         """it should convert fhir json data to flat json - error scenarios"""
-        error_test_cases = [
-            ErrorValuesForTests.missing_json,
-            ErrorValuesForTests.json_dob_error,
-        ]
+        error_test_cases = {
+            "missing_json": ErrorValuesForTests.missing_json,
+            "json_dob_error": ErrorValuesForTests.json_dob_error,
+        }
 
-        for test_case in error_test_cases:
-            json_data = json.dumps(test_case)
+        for test_name, test_case in error_test_cases.items():
+            with self.subTest(test_name=test_name):
+                fhir_converter = Converter(json.dumps(test_case))
+                fhir_converter.run_conversion()
 
-            fhir_converter = Converter(json_data)
-            fhir_converter.run_conversion()
+                self.assert_structured_error_records(fhir_converter.get_error_records())
 
-            errorRecords = fhir_converter.get_error_records()
-
-            # Check if bad data creates error records
-            self.assertTrue(len(errorRecords) > 0)
-
-    def test_fhir_converter_json_error_scenario_reporting_off(self):
-        """it should convert fhir json data to flat json - error scenarios"""
-        error_test_cases = [
-            ErrorValuesForTests.missing_json,
-            ErrorValuesForTests.json_dob_error,
-        ]
-
-        for test_case in error_test_cases:
-            json_data = json.dumps(test_case)
-
-            fhir_converter = Converter(json_data, report_unexpected_exception=False)
-            fhir_converter.run_conversion()
-
-            errorRecords = fhir_converter.get_error_records()
-
-            # Check if bad data creates error records
-            self.assertTrue(len(errorRecords) == 0)
-
-    def test_fhir_converter_json_incorrect_data_scenario_reporting_on(self):
+    def test_fhir_converter_json_incorrect_data_scenario(self):
         """it should convert fhir json data to flat json - error scenarios"""
 
-        with self.assertRaises(ValueError):
-            fhir_converter = Converter(None)
-            errorRecords = fhir_converter.get_error_records()
-            self.assertTrue(len(errorRecords) > 0)
+        with self.assertRaisesRegex(ValueError, "FHIR data is required for initialization."):
+            Converter(None)
 
-    def test_fhir_converter_json_incorrect_data_scenario_reporting_off(self):
-        """it should convert fhir json data to flat json - error scenarios"""
+    def test_handler_persists_structured_conversion_errors(self):
+        event = self.get_event(operation=Operation.UPDATE)
+        event["Records"][0]["dynamodb"]["NewImage"]["Resource"]["S"] = json.dumps(ErrorValuesForTests.json_dob_error)
 
-        with self.assertRaises(ValueError):
-            fhir_converter = Converter(None, report_unexpected_exception=False)
-            errorRecords = fhir_converter.get_error_records()
-            self.assertTrue(len(errorRecords) == 0)
+        response = handler(event, None)
+
+        result = self.table.scan()
+        items = result.get("Items", [])
+        self.assertTrue(response)
+        self.assertEqual(len(items), 1)
+
+        error_records = items[0]["Imms"]["CONVERSION_ERRORS"]
+        self.assert_structured_error_records(error_records)
+        self.assertEqual(error_records[0]["field"], "PERSON_DOB")
+        self.assertEqual(error_records[0]["value"], "196513-28")
 
     def test_handler_imms_convert_to_flat_json(self):
         """Test that the Imms field contains the correct flat JSON data for CREATE, UPDATE, and DELETE operations."""
@@ -235,8 +221,6 @@ class TestConvertToFlatJson(unittest.TestCase):
                     response,
                 )
 
-                result = self.table.scan()
-                items = result.get("Items", [])
                 self.clear_table()
 
     def test_handler_imms_convert_to_flat_json_legacy_patientsk_compatibility(self):

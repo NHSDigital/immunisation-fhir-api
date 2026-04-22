@@ -10,6 +10,10 @@ from service.fhir_batch_service import ImmunizationBatchService
 from test_common.testing_utils.immunization_utils import create_covid_immunization_dict_no_id
 
 
+def duplicate_first_coding(immunization: dict, field_name: str) -> None:
+    immunization[field_name]["coding"].append(deepcopy(immunization[field_name]["coding"][0]))
+
+
 class TestFhirBatchServiceBase(unittest.TestCase):
     """Base class for all tests to set up common fixtures"""
 
@@ -124,7 +128,7 @@ class TestCreateImmunizationBatchService(TestFhirBatchServiceBase):
         """it should keep batch validation unchanged for duplicate site SNOMED codings"""
 
         imms = create_covid_immunization_dict_no_id()
-        imms["site"]["coding"].append(deepcopy(imms["site"]["coding"][0]))
+        duplicate_first_coding(imms, "site")
         expected_msg = "Validation errors: site.coding[?(@.system=='http://snomed.info/sct')] must be unique"
 
         with self.assertRaises(CustomValidationError) as error:
