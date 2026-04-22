@@ -1,0 +1,1 @@
+✅ Step Passed: **Send a search request with 'POST' method with valid NHS Number '9461267665' and Disease Type 'FLU' and Date From '2023-01-01' and Date To '2023-06-04'
