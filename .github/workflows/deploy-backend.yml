@@ -247,6 +247,14 @@ jobs:
         working-directory: infrastructure/instance
         run: make init
 
+      - name: Set Terraform workspace
+        working-directory: infrastructure/instance
+        run: make workspace
+
+      - name: Adopt shared Lambda triggers for blue/green deploys
+        working-directory: infrastructure/instance
+        run: bash ../../utilities/scripts/manage_blue_green_event_source_mappings.sh prepare-state
+
       - name: Terraform Plan
         # Ignore cancellations to prevent Terraform from being killed while it holds a state lock
         # A stuck process can still be killed with the force-cancel API operation
@@ -292,6 +300,15 @@ jobs:
       - name: Terraform Init
         working-directory: infrastructure/instance
         run: make init
+
+      - name: Set Terraform workspace
+        working-directory: infrastructure/instance
+        run: make workspace
+
+      - name: Remove stale Lambda triggers for blue/green deploys
+        if: ${{ !failure() }}
+        working-directory: infrastructure/instance
+        run: bash ../../utilities/scripts/manage_blue_green_event_source_mappings.sh cleanup-stale
 
       - name: Terraform Apply
         # Ignore cancellations to prevent Terraform from being killed while it holds a state lock

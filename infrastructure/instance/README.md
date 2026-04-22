@@ -33,3 +33,9 @@ Note: If you switch environment configuration in .env ensure that you run `make 
 
 If you want to apply Terraform to a workspace created by a PR you can set the above SUB_ENVIRONMENT to the `PR-number` and ENVIRONMENT set to `dev`.
 E.g. `pr-57`. You can use this to test out changes when tests fail in CI.
+
+## Blue/Green Lambda Trigger Handoff
+
+For split sub-environments such as `int-blue`/`int-green` and `prod-blue`/`prod-green`, the deploy workflow now reimports the shared `delta_trigger` and `id_sync_sqs_trigger` resources into the target Terraform workspace before planning. On apply, it also deletes any stale trigger that still points at the target side's old dedicated Lambda function.
+
+This removes the release-time `Disable delta` and `Disable ID sync` steps from the repository-managed deployment flow. The remaining operational follow-up is outside this repository: update the Jira Smart Checklist release templates to remove those manual checklist items once the automated flow has been rolled out.
