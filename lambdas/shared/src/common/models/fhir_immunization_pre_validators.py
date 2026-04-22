@@ -46,6 +46,7 @@ class PreValidators:
             self.pre_validate_patient_identifier_extension,
             self.pre_validate_patient_identifier,
             self.pre_validate_patient_identifier_system,
+            self.pre_validate_patient_identifier_nhs_system,
             self.pre_validate_patient_identifier_value,
             self.pre_validate_patient_name,
             self.pre_validate_patient_name_given,
@@ -283,6 +284,21 @@ class PreValidators:
                 "system"
             ]
             PreValidation.for_string(field_value, field_location)
+        except (KeyError, IndexError):
+            pass
+
+    def pre_validate_patient_identifier_nhs_system(self, values: dict) -> None:
+        """
+        Pre-validate that, if the contained Patient has an identifier system,
+        it uses the NHS number system.
+        """
+        field_location = "contained[?(@.resourceType=='Patient')].identifier[0].system"
+        try:
+            field_value = [x for x in values["contained"] if x.get("resourceType") == "Patient"][0]["identifier"][0][
+                "system"
+            ]
+            if field_value != Urls.NHS_NUMBER:
+                raise ValueError(f"{field_location} must equal '{Urls.NHS_NUMBER}'")
         except (KeyError, IndexError):
             pass
 
