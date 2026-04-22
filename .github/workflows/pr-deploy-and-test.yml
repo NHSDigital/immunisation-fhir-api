@@ -50,7 +50,7 @@ jobs:
       sub_environment: pr-${{github.event.pull_request.number}}
       service_under_test: all
       suite_to_run: ${{ matrix.required_test_suite }}
-      expected_commit_id: ${{ github.event.pull_request.head.sha }}
+      expected_commit_id: ${{ github.sha }}
       require_matching_commit_id: ${{ matrix.require_matching_commit_id }}
     secrets:
       APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
