@@ -3,7 +3,7 @@ import datetime
 import logging
 import os
 import uuid
-from typing import Any, cast
+from typing import Any
 from uuid import uuid4
 
 from fhir.resources.R4B.bundle import (
@@ -113,7 +113,7 @@ class FhirService:
 
         return Immunization.parse_obj(resource), str(immunization_metadata.resource_version)
 
-    def create_immunization(self, immunization: dict, supplier_system: str) -> Id:
+    def create_immunization(self, immunization: dict, supplier_system: str) -> tuple[Id, int]:
         if immunization.get("id") is not None:
             raise CustomValidationError("id field must not be present for CREATE operation")
 
@@ -127,16 +127,32 @@ class FhirService:
         if not self.authoriser.authorise(supplier_system, ApiOperationCode.CREATE, {vaccination_type}):
             raise UnauthorizedVaxError()
 
-        # Set ID for the requested new record
+        identifier = Identifier.parse_obj(immunization["identifier"][0])
+        duplicate_identifier = f"{identifier.system}#{identifier.value}"
+
+        existing_immunization_resource, existing_immunization_meta = (
+            self.immunization_repo.get_immunization_by_identifier(identifier)
+        )
+        if existing_immunization_resource:
+            if not existing_immunization_meta.is_deleted:
+                raise IdentifierDuplicationError(identifier=duplicate_identifier)
+
+            immunization_id = existing_immunization_resource["id"]
+            immunization["id"] = immunization_id
+            immunization_fhir_entity = Immunization.parse_obj(immunization)
+            updated_version = self.immunization_repo.update_immunization(
+                immunization_id,
+                immunization_fhir_entity,
+                existing_immunization_meta,
+                supplier_system,
+            )
+            return immunization_id, updated_version
+
         immunization["id"] = str(uuid.uuid4())
-
         immunization_fhir_entity = Immunization.parse_obj(immunization)
-        identifier = cast(Identifier, immunization_fhir_entity.identifier[0])
 
-        if self.immunization_repo.check_immunization_identifier_exists(identifier.system, identifier.value):
-            raise IdentifierDuplicationError(identifier=f"{identifier.system}#{identifier.value}")
-
-        return self.immunization_repo.create_immunization(immunization_fhir_entity, supplier_system)
+        created_id = self.immunization_repo.create_immunization(immunization_fhir_entity, supplier_system)
+        return created_id, 1
 
     def update_immunization(self, imms_id: str, immunization: dict, supplier_system: str, resource_version: int) -> int:
         try:
