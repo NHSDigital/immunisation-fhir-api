@@ -160,7 +160,7 @@ class FhirController:
         identifier = Identifier.construct(system=identifier_components[0], value=identifier_components[1])
 
         search_bundle = self.fhir_service.get_immunization_by_identifier(identifier, supplier_system, element)
-        prepared_search_bundle = self._prepare_search_bundle(search_bundle)
+        prepared_search_bundle = self._prepare_search_bundle(search_bundle.json())
 
         return create_response(200, prepared_search_bundle)
 
@@ -177,12 +177,7 @@ class FhirController:
             result.invalid_immunization_targets,
         )
 
-        if self._has_too_many_search_results(search_bundle):
-            raise TooManyResultsError("Search returned too many results. Please narrow down the search")
-
-        prepared_search_bundle = self._prepare_search_bundle(search_bundle)
-
-        return create_response(200, prepared_search_bundle)
+        return self._create_search_response(search_bundle)
 
     def _search_immunizations_by_target_disease(self, search_params: dict[str, list[str]], supplier_system: str) -> dict:
         result = validate_and_retrieve_search_params_by_disease(search_params)
@@ -208,7 +203,15 @@ class FhirController:
                 invalid_target_diseases=result.invalid_target_diseases,
             )
 
-        prepared_search_bundle = self._prepare_search_bundle(search_bundle)
+        return self._create_search_response(search_bundle)
+
+    def _create_search_response(self, search_bundle: Bundle) -> dict:
+        search_response_json = search_bundle.json(use_decimal=True)
+
+        if len(search_response_json) > MAX_RESPONSE_SIZE_BYTES:
+            raise TooManyResultsError("Search returned too many results. Please narrow down the search")
+
+        prepared_search_bundle = self._prepare_search_bundle(search_response_json)
         return create_response(200, prepared_search_bundle)
 
     @staticmethod
@@ -220,11 +223,11 @@ class FhirController:
         return False if not re.match(self._IMMUNIZATION_ID_PATTERN, immunization_id) else True
 
     @staticmethod
-    def _prepare_search_bundle(search_response: Bundle) -> dict:
+    def _prepare_search_bundle(search_response_json: str) -> dict:
         """Workaround for fhir.resources dict() or json() removing the empty "entry" list. Team also specified that
         total should be the final key in the object. Should investigate if this can be resolved with later version of
         the library."""
-        search_response_dict = json.loads(search_response.json())
+        search_response_dict = json.loads(search_response_json)
 
         if "entry" not in search_response_dict:
             search_response_dict["entry"] = []
@@ -243,13 +246,6 @@ class FhirController:
             IdentifierSearchParameterName.IDENTIFIER in search_params
             or IdentifierSearchParameterName.ELEMENTS in search_params
         )
-
-    @staticmethod
-    def _has_too_many_search_results(search_response: Bundle) -> bool:
-        """Checks whether the response is too large - 6MB Lambda limit. Note: this condition should never happen as it
-        would require a very large number of vaccs for a single patient. It is also very rudimentary and all it does is
-        ensure we can raise and return a nice looking error. Consider using pagination as a more robust approach."""
-        return len(search_response.json(use_decimal=True)) > MAX_RESPONSE_SIZE_BYTES
 
     @staticmethod
     def _get_search_params_from_request(
