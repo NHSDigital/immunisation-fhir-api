@@ -9,7 +9,7 @@ on:
       lambda_build_flags:
         description: >
           JSON map of lambda_name -> force-build flag.
-          e.g. {"recordprocessor":true,"ack-backend":false}
+          e.g. {"backend":true,"recordprocessor":true,"ack-backend":false}
         required: false
         type: string
         default: "{}"
@@ -73,14 +73,14 @@ on:
       lambda_build_flags:
         description: >
           JSON map of lambda_name -> force-build flag.
-          e.g. {"recordprocessor":true,"ack-backend":false}
+          e.g. {"backend":true,"recordprocessor":true,"ack-backend":false}
         required: false
         type: string
         default: "{}"
       lambda_image_overrides:
         description: >
           JSON map of lambda_name -> immutable image selector for reuse mode.
-          e.g. {"recordprocessor":"internal-dev-git-abc123","ack-backend":"123456789012.dkr.ecr.eu-west-2.amazonaws.com/imms-ackbackend-repo@sha256:..."}
+          e.g. {"backend":"internal-dev-git-abc123","ack-backend":"123456789012.dkr.ecr.eu-west-2.amazonaws.com/imms-ackbackend-repo@sha256:..."}
         required: false
         type: string
         default: "{}"
@@ -118,22 +118,43 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - lambda_name: backend
+            ecr_repository: imms-backend-repo
+            lambda_dir: backend
+          - lambda_name: batch_processor_filter
+            ecr_repository: imms-batch-processor-filter-repo
+            lambda_dir: batch_processor_filter
+          - lambda_name: delta_backend
+            ecr_repository: imms-delta-backend-repo
+            lambda_dir: delta_backend
+          - lambda_name: filenameprocessor
+            ecr_repository: imms-filenameprocessor-repo
+            lambda_dir: filenameprocessor
+          - lambda_name: id_sync
+            ecr_repository: imms-id-sync-repo
+            lambda_dir: id_sync
+          - lambda_name: mesh_processor
+            ecr_repository: imms-mesh-processor-repo
+            lambda_dir: mesh_processor
+          - lambda_name: mns_publisher
+            ecr_repository: imms-mns-publisher-repo
+            lambda_dir: mns_publisher
+          - lambda_name: recordforwarder
+            ecr_repository: imms-recordforwarder-repo
+            lambda_dir: recordforwarder
+          - lambda_name: redis_sync
+            ecr_repository: imms-redis-sync-repo
+            lambda_dir: redis_sync
           - lambda_name: recordprocessor
-            tf_var_suffix: recordprocessor
             ecr_repository: imms-recordprocessor-repo
-            dockerfile_path: lambdas/recordprocessor/Dockerfile
-            lambda_paths: |
-              lambdas/recordprocessor/
+            lambda_dir: recordprocessor
           - lambda_name: ack-backend
-            tf_var_suffix: ack_backend
             ecr_repository: imms-ackbackend-repo
-            dockerfile_path: lambdas/ack_backend/Dockerfile
-            lambda_paths: |
-              lambdas/ack_backend/
+            lambda_dir: ack_backend
     uses: ./.github/workflows/deploy-lambda-artifact.yml
     with:
       lambda_name: ${{ matrix.lambda_name }}
-      tf_var_suffix: ${{ matrix.tf_var_suffix }}
+      tf_var_suffix: ${{ matrix.lambda_dir }}
       environment: ${{ inputs.environment }}
       sub_environment: ${{ inputs.sub_environment }}
       build_image: ${{ fromJson(inputs.lambda_build_flags)[matrix.lambda_name] || false }}
@@ -141,11 +162,10 @@ jobs:
       run_diff_check: ${{ inputs.run_diff_check }}
       diff_base_sha: ${{ inputs.diff_base_sha }}
       diff_head_sha: ${{ inputs.diff_head_sha }}
-      lambda_paths: ${{ matrix.lambda_paths }}
-      shared_paths: |
-        lambdas/shared/src/common/
+      lambda_paths: lambdas/${{ matrix.lambda_dir }}/
+      shared_paths: lambdas/shared/src/common/
       docker_context_path: lambdas
-      dockerfile_path: ${{ matrix.dockerfile_path }}
+      dockerfile_path: lambdas/${{ matrix.lambda_dir }}/Dockerfile
       ecr_repository: ${{ matrix.ecr_repository }}
       image_tag_prefix: ${{ inputs.sub_environment }}-
       allow_implicit_tag_prefix_reuse: ${{ inputs.sub_environment == 'internal-dev' || startsWith(inputs.sub_environment, 'pr-') }}
@@ -159,7 +179,6 @@ jobs:
     if: ${{ !cancelled() && needs.deploy-lambda-images.result == 'success' }}
     outputs:
       image_uris_json: ${{ steps.lambda-images.outputs.image_uris_json }}
-      terraform_image_uris_json: ${{ steps.lambda-images.outputs.terraform_image_uris_json }}
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.environment }}
@@ -218,17 +237,11 @@ jobs:
               "${manifest_files[@]}"
           )"
 
-          terraform_image_uris_json="$(
-            jq -cs 'map(select(.tf_var_suffix != null and .tf_var_suffix != "" and .image_uri != null) | {(.tf_var_suffix): .image_uri}) | add' \
-              "${manifest_files[@]}"
-          )"
-
           echo "image_uris_json=${image_uris_json}" >> "$GITHUB_OUTPUT"
-          echo "terraform_image_uris_json=${terraform_image_uris_json}" >> "$GITHUB_OUTPUT"
           jq -er '
-            to_entries[]
-            | "TF_VAR_\(.key)_image_uri=\(.value)"
-          ' <<< "${terraform_image_uris_json}" >> "$GITHUB_ENV"
+            select(.tf_var_suffix != null and .tf_var_suffix != "" and .image_uri != null)
+            | "TF_VAR_\(.tf_var_suffix)_image_uri=\(.image_uri)"
+          ' "${manifest_files[@]}" >> "$GITHUB_ENV"
 
       - name: Terraform Init
         working-directory: infrastructure/instance
@@ -269,22 +282,6 @@ jobs:
       - uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85
         with:
           terraform_version: "1.12.2"
-
-      - name: Restore lambda image Terraform vars
-        env:
-          TERRAFORM_IMAGE_URIS_JSON: ${{ needs.terraform-plan.outputs.terraform_image_uris_json }}
-        run: |
-          set -euo pipefail
-
-          if [ -z "${TERRAFORM_IMAGE_URIS_JSON}" ] || [ "${TERRAFORM_IMAGE_URIS_JSON}" = "null" ]; then
-            echo "terraform-plan did not emit terraform_image_uris_json."
-            exit 1
-          fi
-
-          jq -er '
-            to_entries[]
-            | "TF_VAR_\(.key)_image_uri=\(.value)"
-          ' <<< "${TERRAFORM_IMAGE_URIS_JSON}" >> "$GITHUB_ENV"
 
       - name: Retrieve Terraform Plan
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c

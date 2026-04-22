@@ -1,79 +1,5 @@
 locals {
-  mns_publisher_lambda_dir     = abspath("${path.root}/../../lambdas/mns_publisher")
-  mns_publisher_lambda_files   = fileset(local.mns_publisher_lambda_dir, "**")
-  mns_publisher_lambda_dir_sha = sha1(join("", [for f in local.mns_publisher_lambda_files : filesha1("${local.mns_publisher_lambda_dir}/${f}")]))
-  mns_publisher_lambda_name    = "${var.short_prefix}-mns-publisher-lambda"
-}
-
-resource "aws_ecr_repository" "mns_publisher_lambda_repository" {
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-  name         = "${var.short_prefix}-mns-publisher-repo"
-  force_delete = var.is_temp
-}
-
-# Module for building and pushing Docker image to ECR
-module "mns_publisher_docker_image" {
-  source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version          = "8.5.0"
-  docker_file_path = "./mns_publisher/Dockerfile"
-
-  create_ecr_repo = false
-  ecr_repo        = aws_ecr_repository.mns_publisher_lambda_repository.name
-  ecr_repo_lifecycle_policy = jsonencode({
-    "rules" : [
-      {
-        "rulePriority" : 1,
-        "description" : "Keep only the last 2 images",
-        "selection" : {
-          "tagStatus" : "any",
-          "countType" : "imageCountMoreThan",
-          "countNumber" : 2
-        },
-        "action" : {
-          "type" : "expire"
-        }
-      }
-    ]
-  })
-
-  platform      = "linux/amd64"
-  use_image_tag = false
-  source_path   = abspath("${path.root}/../../lambdas")
-  triggers = {
-    dir_sha        = local.mns_publisher_lambda_dir_sha
-    shared_dir_sha = var.shared_dir_sha
-  }
-}
-
-resource "aws_ecr_repository_policy" "mns_publisher_lambda_ecr_image_retrieval_policy" {
-  repository = aws_ecr_repository.mns_publisher_lambda_repository.name
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        "Sid" : "LambdaECRImageRetrievalPolicy",
-        "Effect" : "Allow",
-        "Principal" : {
-          "Service" : "lambda.amazonaws.com"
-        },
-        "Action" : [
-          "ecr:BatchGetImage",
-          "ecr:DeleteRepositoryPolicy",
-          "ecr:GetDownloadUrlForLayer",
-          "ecr:GetRepositoryPolicy",
-          "ecr:SetRepositoryPolicy"
-        ],
-        "Condition" : {
-          "StringLike" : {
-            "aws:sourceArn" : "arn:aws:lambda:${var.aws_region}:${var.immunisation_account_id}:function:${local.mns_publisher_lambda_name}"
-          }
-        }
-      }
-    ]
-  })
+  mns_publisher_lambda_name = "${var.short_prefix}-mns-publisher-lambda"
 }
 
 # IAM Role for Lambda
@@ -180,7 +106,7 @@ resource "aws_lambda_function" "mns_publisher_lambda" {
   function_name = local.mns_publisher_lambda_name
   role          = aws_iam_role.mns_publisher_lambda_exec_role.arn
   package_type  = "Image"
-  image_uri     = module.mns_publisher_docker_image.image_uri
+  image_uri     = var.image_uri
   architectures = ["x86_64"]
   timeout       = 300
 

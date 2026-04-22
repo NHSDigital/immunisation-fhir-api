@@ -1,81 +1,6 @@
 locals {
-  delta_lambda_dir  = abspath("${path.root}/../../lambdas/delta_backend")
-  delta_files       = fileset(local.delta_lambda_dir, "**")
-  delta_dir_sha     = sha1(join("", [for f in local.delta_files : filesha1("${local.delta_lambda_dir}/${f}")]))
   delta_lambda_name = "${local.short_prefix}-delta-lambda"
   dlq_name          = "delta-dlq"
-}
-
-resource "aws_ecr_repository" "delta_lambda_repository" {
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-  name         = "${local.prefix}-delta-lambda-repo"
-  force_delete = local.is_temp
-}
-
-module "delta_docker_image" {
-  source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version          = "8.7.0"
-  docker_file_path = "./delta_backend/Dockerfile"
-
-  create_ecr_repo = false
-  ecr_repo        = "${local.prefix}-delta-lambda-repo"
-  ecr_repo_lifecycle_policy = jsonencode({
-    "rules" : [
-      {
-        "rulePriority" : 1,
-        "description" : "Keep only the last 2 images",
-        "selection" : {
-          "tagStatus" : "any",
-          "countType" : "imageCountMoreThan",
-          "countNumber" : 2
-        },
-        "action" : {
-          "type" : "expire"
-        }
-      }
-    ]
-  })
-
-  platform      = "linux/amd64"
-  use_image_tag = false
-  source_path   = abspath("${path.root}/../../lambdas")
-  triggers = {
-    dir_sha        = local.delta_dir_sha
-    shared_dir_sha = local.shared_dir_sha
-  }
-
-}
-
-# Define the lambdaECRImageRetreival policy
-resource "aws_ecr_repository_policy" "delta_lambda_ECRImageRetreival_policy" {
-  repository = aws_ecr_repository.delta_lambda_repository.name
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        "Sid" : "LambdaECRImageRetrievalPolicy",
-        "Effect" : "Allow",
-        "Principal" : {
-          "Service" : "lambda.amazonaws.com"
-        },
-        "Action" : [
-          "ecr:BatchGetImage",
-          "ecr:DeleteRepositoryPolicy",
-          "ecr:GetDownloadUrlForLayer",
-          "ecr:GetRepositoryPolicy",
-          "ecr:SetRepositoryPolicy"
-        ],
-        "Condition" : {
-          "StringLike" : {
-            "aws:sourceArn" : "arn:aws:lambda:${var.aws_region}:${var.immunisation_account_id}:function:${local.delta_lambda_name}"
-          }
-        }
-      }
-    ]
-  })
 }
 
 data "aws_iam_policy_document" "delta_policy_document" {
@@ -126,7 +51,7 @@ resource "aws_lambda_function" "delta_sync_lambda" {
   role          = aws_iam_role.delta_lambda_role.arn
   package_type  = "Image"
   architectures = ["x86_64"]
-  image_uri     = module.delta_docker_image.image_uri
+  image_uri     = var.delta_backend_image_uri
   timeout       = 60
 
   environment {

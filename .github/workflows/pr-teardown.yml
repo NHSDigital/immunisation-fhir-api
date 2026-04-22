@@ -20,6 +20,18 @@ jobs:
       APIGEE_ENVIRONMENT: internal-dev
       BACKEND_ENVIRONMENT: dev
       BACKEND_SUB_ENVIRONMENT: pr-${{ github.event_name == 'pull_request' && github.event.pull_request.number || inputs.pr_number }}
+      LAMBDA_IMAGE_REPOSITORIES: |
+        backend:imms-backend-repo
+        batch_processor_filter:imms-batch-processor-filter-repo
+        delta_backend:imms-delta-backend-repo
+        filenameprocessor:imms-filenameprocessor-repo
+        id_sync:imms-id-sync-repo
+        mesh_processor:imms-mesh-processor-repo
+        mns_publisher:imms-mns-publisher-repo
+        recordprocessor:imms-recordprocessor-repo
+        recordforwarder:imms-recordforwarder-repo
+        ack_backend:imms-ackbackend-repo
+        redis_sync:imms-redis-sync-repo
     permissions:
       id-token: write
       contents: read
@@ -53,8 +65,10 @@ jobs:
             local uri="$(make -s output "name=$1" 2>/dev/null || true)"
             echo "${uri:-placeholder.dkr.ecr.eu-west-2.amazonaws.com/$2@sha256:0000000000000000000000000000000000000000000000000000000000000000}"
           }
-          echo "TF_VAR_recordprocessor_image_uri=$(resolve_or_placeholder recordprocessor_image_uri imms-recordprocessor-repo)" >> $GITHUB_ENV
-          echo "TF_VAR_ack_backend_image_uri=$(resolve_or_placeholder ack_backend_image_uri imms-ackbackend-repo)" >> $GITHUB_ENV
+          while IFS=: read -r lambda_name repository_name; do
+            [ -n "${lambda_name}" ] || continue
+            echo "TF_VAR_${lambda_name}_image_uri=$(resolve_or_placeholder "${lambda_name}_image_uri" "${repository_name}")" >> $GITHUB_ENV
+          done <<< "${LAMBDA_IMAGE_REPOSITORIES}"
 
       - name: Install poetry
         run: pip install poetry==2.1.4
@@ -129,6 +143,8 @@ jobs:
               --output json
           }
 
-          for repository_name in imms-recordprocessor-repo imms-ackbackend-repo; do
+          while IFS=: read -r lambda_name repository_name; do
+            [ -n "${lambda_name}" ] || continue
+            [ -n "${repository_name}" ] || continue
             cleanup_repo_by_prefix "${repository_name}"
-          done
+          done <<< "${LAMBDA_IMAGE_REPOSITORIES}"
