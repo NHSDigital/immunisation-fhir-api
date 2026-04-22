@@ -493,7 +493,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         ValidatorModelTests.test_string_value(
             self,
             field_location="contained[?(@.resourceType=='Patient')].identifier[0].system",
-            valid_strings_to_test=[Urls.NHS_NUMBER, "https://someother.codeableconcept.com/"],
+            valid_strings_to_test=[Urls.NHS_NUMBER],
         )
 
     def test_pre_validate_patient_name(self):
