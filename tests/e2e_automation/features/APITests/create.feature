@@ -75,7 +75,7 @@ Feature: Create the immunization event for a patient
         And MNS event will be triggered with correct data for created event
 
     @Delete_cleanUp @vaccine_type_BCG @patient_id_InvalidInPDS @supplier_name_EMIS
-    Scenario: Verify that VACCINATION_PROCEDURE_TERM, VACCINE_PRODUCT_TERM fields are mapped to first instance of coding.display fields in imms delta table
+    Scenario: Verify that VACCINATION_PROCEDURE_TERM, VACCINE_PRODUCT_TERM , SITE_OF_VACCINATION_TERM, ROUTE_OF_VACCINATION_TERM fields are mapped to first instance of coding.display fields in imms delta table
         Given Valid json payload is created where vaccination terms has multiple instances of coding
         When Trigger the post create request
         Then The request will be successful with the status code '201'
