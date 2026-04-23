@@ -110,9 +110,9 @@ Steps:
 - [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 - [Terraform](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli)
 
-3. Open VS Code and click the bottom-left corner (blue section), then select **"Connect to WSL"** and choose your WSL distro (e.g., `Ubuntu-24.04`).
+3. (Windows Only) Open VS Code and click the bottom-left corner (blue section), then select **"Connect to WSL"** and choose your WSL distro (e.g., `Ubuntu-24.04`).
    Once connected, you should see the path as something similar to: `/mnt/d/Source/immunisation-fhir-api/backend`.
-4. Run the following commands to install dependencies
+4. (Windows only) Run the following commands to install dependencies
 
     ```
     sudo apt update && sudo apt upgrade -y
@@ -135,6 +135,12 @@ Steps:
     ```
     sudo apt-get update && sudo apt-get install direnv
     echo 'eval "$(direnv hook bash)"' >> ~/.bashrc
+    ```
+
+    On macOS, direnv can be installed using brew:
+
+    ```
+    brew install direnv
     ```
 
 7. Install poetry
