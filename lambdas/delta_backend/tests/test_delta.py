@@ -511,9 +511,17 @@ class DeltaHandlerTestCase(unittest.TestCase):
 
     @patch("delta.Converter")
     def test_partial_success_with_errors(self, mock_converter):
+        expected_error_records = [
+            {
+                "code": 10,
+                "field": "PERSON_DOB",
+                "value": "196513-28",
+                "message": "Unexpected exception [ValueError]: Invalid isoformat string: '196513-28'",
+            }
+        ]
         mock_converter_instance = MagicMock()
         mock_converter_instance.run_conversion.return_value = {"ABC": "DEF"}
-        mock_converter_instance.get_error_records.return_value = [{"error": "Invalid field"}]
+        mock_converter_instance.get_error_records.return_value = expected_error_records
         mock_converter.return_value = mock_converter_instance
 
         # Mock DynamoDB put_item success
@@ -533,13 +541,16 @@ class DeltaHandlerTestCase(unittest.TestCase):
         args, kwargs = self.mock_send_log_to_firehose.call_args
         sent_payload = args[1]  # Second positional arg
 
-        # Navigate to the specific message
-        status_desc = sent_payload["operation_outcome"]["statusDesc"]
+        operation_outcome = sent_payload["operation_outcome"]
 
-        # Assert the expected message is present
         self.assertIn(
             "Partial success: successfully synced into delta, but issues found within record",
-            status_desc,
+            operation_outcome["statusDesc"],
+        )
+        self.assertEqual(operation_outcome["diagnostics"], expected_error_records)
+        self.mock_logger.warning.assert_called_once_with(
+            "Partial success: record synced with conversion errors",
+            extra={"conversion_errors": expected_error_records},
         )
 
     def test_send_message_multi_records_diverse(self):
