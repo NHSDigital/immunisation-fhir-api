@@ -375,7 +375,7 @@ class TestCreateImmunization(TestFhirServiceBase):
         self.mock_redis.hget.return_value = "COVID"
         self.mock_redis_getter.return_value = self.mock_redis
         self.authoriser.authorise.return_value = True
-        self.imms_repo.check_immunization_identifier_exists.return_value = False
+        self.imms_repo.get_immunization_by_identifier.return_value = (None, None)
         self.imms_repo.create_immunization.return_value = self._MOCK_NEW_UUID
 
         req_imms = create_covid_immunization_dict_no_id(VALID_NHS_NUMBER)
@@ -384,9 +384,10 @@ class TestCreateImmunization(TestFhirServiceBase):
             req_imms, "route", "888888888", "Replacement route that should be ignored"
         )
 
-        created_id = self.pre_validate_fhir_service.create_immunization(req_imms, "Test")
+        created_id, created_version = self.pre_validate_fhir_service.create_immunization(req_imms, "Test")
 
         self.assertEqual(self._MOCK_NEW_UUID, created_id)
+        self.assertEqual(1, created_version)
         self.assertEqual(req_imms["site"]["coding"], [first_site_coding])
         self.assertEqual(req_imms["route"]["coding"], [first_route_coding])
         self.imms_repo.create_immunization.assert_called_once_with(Immunization.parse_obj(req_imms), "Test")
