@@ -15,7 +15,7 @@
   "license": "MIT",
   "homepage": "https://github.com/NHSDigital/immunisation-fhir-api",
   "devDependencies": {
-    "@redocly/cli": "^2.29.1",
+    "@redocly/cli": "^2.29.2",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
     "prettier": "^3.8.3"
