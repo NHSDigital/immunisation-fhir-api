@@ -13,10 +13,12 @@ from src.dynamoDB.dynamo_db_helper import (
     parse_imms_int_imms_event_response,
     validate_imms_delta_record_with_created_event,
 )
+from src.objectModels.api_data_objects import CodeableConcept, Coding
 from src.objectModels.api_immunization_builder import (
     build_site_route,
     build_vaccine_procedure_code,
     build_vaccine_procedure_extension,
+    create_extension,
     get_vaccine_details,
 )
 from utilities.api_fhir_immunization_helper import (
@@ -119,6 +121,81 @@ def createValidJsonPayloadWithProcedureMultipleCodingsDifferentSystem(context):
     context.immunization_object.vaccineCode.coding[0].system = "http://example.com/different-system"
     context.immunization_object.site.coding[0].system = "http://example.com/different-system"
     context.immunization_object.route.coding[0].system = "http://example.com/different-system"
+
+
+def build_coding(system, code, display, value_string, value_id):
+    return Coding(
+        system=system,
+        code=code,
+        display=display,
+        extension=[
+            create_extension(
+                "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay",
+                stringValue=value_string,
+            ),
+            create_extension(
+                "http://hl7.org/fhir/StructureDefinition/coding-sctdescid",
+                idValue=value_id,
+            ),
+        ],
+    )
+
+
+@given("Valid json payload is created where site and route have multiple SNOMED codings after an invalid system")
+def create_valid_json_payload_with_multiple_site_route_snomed_codings(context):
+    valid_json_payload_is_created(context)
+    context.immunization_object.site = CodeableConcept(
+        coding=[
+            build_coding(
+                "http://snomed.info/test",
+                "368208006",
+                "Right upper arm structure (body structure)",
+                "Test Value string site 111",
+                "5306706018",
+            ),
+            build_coding(
+                "http://snomed.info/sct",
+                "368209003",
+                "Left upper arm structure (body structure)",
+                "Test Value string site 222",
+                "5306706020",
+            ),
+            build_coding(
+                "http://snomed.info/sct",
+                "368208008",
+                "Mid upper arm structure (body structure)",
+                "Test Value string site 333",
+                "5306706030",
+            ),
+        ],
+        text="Test String for site",
+    )
+    context.immunization_object.route = CodeableConcept(
+        coding=[
+            build_coding(
+                "http://snomed.info/test",
+                "78421000",
+                "Intramuscular route (qualifier value)",
+                "Test Value string route 111",
+                "5306706040",
+            ),
+            build_coding(
+                "http://snomed.info/sct",
+                "78421000",
+                "Intramuscular route (qualifier value)",
+                "Test Value string route 222",
+                "5306706050",
+            ),
+            build_coding(
+                "http://snomed.info/sct",
+                "34206005",
+                "Subcutaneous route (qualifier value)",
+                "Test Value string route 333",
+                "5306706060",
+            ),
+        ],
+        text="Test String for route",
+    )
 
 
 @given(
@@ -265,6 +342,37 @@ def validate_procedure_term_correct_coding_in_delta_table(context):
     assert actual_terms["route_term"] == context.create_object.route.coding[1].display, (
         f"Expected route of vaccination term '{context.create_object.route.coding[1].display}', but got '{actual_terms['route_term']}'"
     )
+
+
+@then("The delta table will use the first valid SNOMED site and route coding")
+def validate_delta_table_uses_first_valid_snomed_site_route_coding(context):
+    actual_terms = get_all_term_text(context)
+    expected_site_term = context.create_object.site.coding[1].extension[0].valueString
+    expected_route_term = context.create_object.route.coding[1].extension[0].valueString
+    assert actual_terms["site_term"] == expected_site_term, (
+        f"Expected site of vaccination term '{expected_site_term}', but got '{actual_terms['site_term']}'"
+    )
+    assert actual_terms["route_term"] == expected_route_term, (
+        f"Expected route of vaccination term '{expected_route_term}', but got '{actual_terms['route_term']}'"
+    )
+
+
+@then("The imms event table will preserve every site and route coding from the request")
+def validate_imms_event_table_preserves_all_site_route_codings(context):
+    table_query_response = fetch_immunization_events_detail(context.aws_profile_name, context.ImmsID, context.S3_env)
+    assert "Item" in table_query_response, f"Item not found in response for ImmsID: {context.ImmsID}"
+
+    resource_json_str = table_query_response["Item"].get("Resource")
+    assert resource_json_str, "Resource field missing in item."
+    resource = json.loads(resource_json_str)
+
+    for field_name in ("site", "route"):
+        expected = context.request[field_name]
+        actual = resource[field_name]
+        assert len(actual["coding"]) == 3, (
+            f"Expected {field_name}.coding to contain 3 entries, but got {len(actual['coding'])}"
+        )
+        assert actual == expected, f"Expected {field_name} to match request, but got {actual}"
 
 
 @then("The terms are mapped to correct coding.display fields in imms delta table")
