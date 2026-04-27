@@ -251,10 +251,6 @@ jobs:
         working-directory: infrastructure/instance
         run: make workspace
 
-      - name: Adopt shared Lambda triggers for blue/green deploys
-        working-directory: infrastructure/instance
-        run: bash ../../utilities/scripts/manage_blue_green_event_source_mappings.sh prepare-state
-
       - name: Terraform Plan
         # Ignore cancellations to prevent Terraform from being killed while it holds a state lock
         # A stuck process can still be killed with the force-cancel API operation
@@ -305,11 +301,6 @@ jobs:
         working-directory: infrastructure/instance
         run: make workspace
 
-      - name: Remove stale Lambda triggers for blue/green deploys
-        if: ${{ !failure() }}
-        working-directory: infrastructure/instance
-        run: bash ../../utilities/scripts/manage_blue_green_event_source_mappings.sh cleanup-stale
-
       - name: Terraform Apply
         # Ignore cancellations to prevent Terraform from being killed while it holds a state lock
         # A stuck process can still be killed with the force-cancel API operation
@@ -318,6 +309,14 @@ jobs:
         run: |
           make apply-ci
           echo "ID_SYNC_QUEUE_ARN=$(make -s output name=id_sync_queue_arn)" >> $GITHUB_ENV
+
+      - name: Apply Lambda event source mappings
+        if: ${{ !failure() }}
+        working-directory: infrastructure/event_source_mappings
+        run: |
+          make init
+          make adopt
+          make apply
 
       - name: Install poetry
         if: ${{ inputs.environment == 'dev' && inputs.create_mns_subscription }}

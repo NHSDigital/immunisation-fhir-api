@@ -260,6 +260,22 @@ removed {
 }
 
 removed {
+  from = aws_lambda_event_source_mapping.delta_trigger
+
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = aws_lambda_event_source_mapping.id_sync_sqs_trigger
+
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
   from = aws_ecr_repository.redis_sync_lambda_repository
 
   lifecycle {

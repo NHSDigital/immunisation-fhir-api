@@ -258,20 +258,3 @@ resource "aws_cloudwatch_metric_alarm" "id_sync_error_alarm" {
   alarm_actions       = [data.aws_sns_topic.imms_system_alert_errors.arn]
   treat_missing_data  = "notBreaching"
 }
-
-
-
-# delete config_lambda_notification / new_s3_invoke_permission - not required; duplicate
-
-# NEW
-resource "aws_lambda_event_source_mapping" "id_sync_sqs_trigger" {
-  event_source_arn = aws_sqs_queue.id_sync_queue.arn
-  function_name    = aws_lambda_function.id_sync_lambda.arn
-
-  # Optional: Configure batch size and other settings
-  batch_size                         = 10
-  maximum_batching_window_in_seconds = 5
-
-  # Optional: Configure error handling
-  function_response_types = ["ReportBatchItemFailures"]
-}
