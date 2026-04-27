@@ -6,20 +6,19 @@ environment="${ENVIRONMENT:-${environment:-}}"
 sub_environment="${SUB_ENVIRONMENT:-${sub_environment:-}}"
 resource_scope="${RESOURCE_SCOPE:-${resource_scope:-}}"
 
-if [[ -z "${environment}" ]]; then
-  echo "ENVIRONMENT must be set."
-  exit 1
-fi
+require_value() {
+  local name="$1"
+  local value="$2"
 
-if [[ -z "${sub_environment}" ]]; then
-  echo "SUB_ENVIRONMENT must be set."
-  exit 1
-fi
+  if [[ -z "${value}" ]]; then
+    echo "${name} must be set."
+    exit 1
+  fi
+}
 
-if [[ -z "${resource_scope}" ]]; then
-  echo "RESOURCE_SCOPE must be set."
-  exit 1
-fi
+require_value "ENVIRONMENT" "${environment}"
+require_value "SUB_ENVIRONMENT" "${sub_environment}"
+require_value "RESOURCE_SCOPE" "${resource_scope}"
 
 lookup_mapping_uuid() {
   local event_source_arn="$1"
