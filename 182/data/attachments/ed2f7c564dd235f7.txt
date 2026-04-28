@@ -1,0 +1,1 @@
+✅ Step Passed: **Valid vaccination record is created with Patient 'SFlag' and vaccine_type 'BCG'
