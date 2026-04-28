@@ -92,13 +92,27 @@ class ImmunizationBatchRepository:
         table: any,
         imms_pk: str | None,
     ) -> str:
+        identifier = self._identifier_response(immunization)
+        query_response = _query_identifier(table, identifier, imms_pk)
+        if query_response is not None:
+            deleted_at_required, update_reinstated, is_reinstate = self._get_record_status(query_response)
+            if not deleted_at_required or update_reinstated:
+                raise IdentifierDuplicationError(identifier=identifier)
+
+            return self._update_existing_immunization(
+                immunization,
+                supplier_system,
+                vax_type,
+                table,
+                query_response,
+                deleted_at_required,
+                update_reinstated,
+                is_reinstate,
+            )
+
         new_id = str(uuid.uuid4())
         immunization["id"] = new_id
         attr = RecordAttributes(immunization, vax_type, supplier_system, 0)
-
-        query_response = _query_identifier(table, attr.identifier, imms_pk)
-        if query_response is not None:
-            raise IdentifierDuplicationError(identifier=attr.identifier)
 
         try:
             response = table.put_item(
@@ -140,20 +154,17 @@ class ImmunizationBatchRepository:
         query_response = _query_identifier(table, identifier, imms_pk)
         if query_response is None:
             raise ResourceNotFoundError(resource_type="Immunization", resource_id=identifier)
-        old_id, version = self._get_id_version(query_response)
         deleted_at_required, update_reinstated, is_reinstate = self._get_record_status(query_response)
 
-        immunization["id"] = old_id.split("#")[1]
-        attr = RecordAttributes(immunization, vax_type, supplier_system, version)
-
-        update_exp = self._build_update_expression(is_reinstate=is_reinstate)
-
-        return self._perform_dynamo_update(
-            update_exp,
-            attr,
-            deleted_at_required=deleted_at_required,
-            update_reinstated=update_reinstated,
-            table=table,
+        return self._update_existing_immunization(
+            immunization,
+            supplier_system,
+            vax_type,
+            table,
+            query_response,
+            deleted_at_required,
+            update_reinstated,
+            is_reinstate,
         )
 
     def delete_immunization(
@@ -249,6 +260,30 @@ class ImmunizationBatchRepository:
                 "PatientSK = :patient_sk, #imms_resource = :imms_resource_val, "
                 "Operation = :operation, Version = :version, SupplierSystem = :supplier_system "
             )
+
+    def _update_existing_immunization(
+        self,
+        immunization: any,
+        supplier_system: str,
+        vax_type: str,
+        table: any,
+        query_response: any,
+        deleted_at_required: bool,
+        update_reinstated: bool,
+        is_reinstate: bool,
+    ) -> str:
+        old_id, version = self._get_id_version(query_response)
+        immunization["id"] = old_id.split("#")[1]
+        attr = RecordAttributes(immunization, vax_type, supplier_system, version)
+        update_exp = self._build_update_expression(is_reinstate=is_reinstate)
+
+        return self._perform_dynamo_update(
+            update_exp,
+            attr,
+            deleted_at_required=deleted_at_required,
+            update_reinstated=update_reinstated,
+            table=table,
+        )
 
     def _perform_dynamo_update(
         self,
