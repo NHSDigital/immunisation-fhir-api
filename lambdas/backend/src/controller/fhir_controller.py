@@ -89,12 +89,17 @@ class FhirController:
         except JSONDecodeError as e:
             raise InvalidJsonError(message=str(f"Request's body contains malformed JSON: {e}"))
 
-        created_resource_id = self.fhir_service.create_immunization(immunisation, supplier_system)
+        created_resource_id, created_resource_version = self.fhir_service.create_immunization(
+            immunisation, supplier_system
+        )
 
         return create_response(
             status_code=201,
             body=None,
-            headers={"Location": f"{self._API_SERVICE_URL}/Immunization/{created_resource_id}", "E-Tag": "1"},
+            headers={
+                "Location": f"{self._API_SERVICE_URL}/Immunization/{created_resource_id}",
+                "E-Tag": str(created_resource_version),
+            },
         )
 
     @fhir_api_exception_handler
