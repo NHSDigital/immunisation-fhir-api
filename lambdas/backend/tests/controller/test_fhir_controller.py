@@ -529,7 +529,7 @@ class TestCreateImmunization(unittest.TestCase):
             "headers": {"SupplierSystem": "Test"},
             "body": imms.json(),
         }
-        self.service.create_immunization.return_value = imms_id
+        self.service.create_immunization.return_value = (imms_id, 1)
 
         response = self.controller.create_immunization(aws_event)
 
@@ -538,6 +538,23 @@ class TestCreateImmunization(unittest.TestCase):
         self.assertEqual(response["statusCode"], 201)
         self.assertTrue("body" not in response)
         self.assertTrue(response["headers"]["Location"].endswith(f"Immunization/{imms_id}"))
+        self.assertEqual(response["headers"]["E-Tag"], "1")
+
+    def test_create_immunization_returns_current_version_when_reinstating_deleted_record(self):
+        """it should return the existing resource location and current version for a reinstated create request"""
+        imms_id = str(uuid.uuid4())
+        imms = create_covid_immunization(imms_id)
+        aws_event = {
+            "headers": {"SupplierSystem": "Test"},
+            "body": imms.json(),
+        }
+        self.service.create_immunization.return_value = (imms_id, 3)
+
+        response = self.controller.create_immunization(aws_event)
+
+        self.assertEqual(response["statusCode"], 201)
+        self.assertTrue(response["headers"]["Location"].endswith(f"Immunization/{imms_id}"))
+        self.assertEqual(response["headers"]["E-Tag"], "3")
 
     def test_create_immunization_returns_unauthorised_error_when_supplier_system_header_missing(self):
         """it should return unauthorized error"""

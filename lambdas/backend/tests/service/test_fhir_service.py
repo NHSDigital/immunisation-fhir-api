@@ -349,31 +349,33 @@ class TestCreateImmunization(TestFhirServiceBase):
         self.mock_redis.hget.return_value = "COVID"
         self.mock_redis_getter.return_value = self.mock_redis
         self.authoriser.authorise.return_value = True
-        self.imms_repo.check_immunization_identifier_exists.return_value = False
+        self.imms_repo.get_immunization_by_identifier.return_value = (None, None)
         self.imms_repo.create_immunization.return_value = self._MOCK_NEW_UUID
 
         nhs_number = VALID_NHS_NUMBER
         req_imms = create_covid_immunization_dict_no_id(nhs_number)
 
         # When
-        created_id = self.fhir_service.create_immunization(req_imms, "Test")
+        created_id, created_version = self.fhir_service.create_immunization(req_imms, "Test")
 
         # Then
         self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.CREATE, {"COVID"})
-        self.imms_repo.check_immunization_identifier_exists.assert_called_once_with(
-            "https://supplierABC/identifiers/vacc", "ACME-vacc123456"
-        )
+        self.imms_repo.get_immunization_by_identifier.assert_called_once()
+        create_identifier = self.imms_repo.get_immunization_by_identifier.call_args.args[0]
+        self.assertEqual(create_identifier.system, "https://supplierABC/identifiers/vacc")
+        self.assertEqual(create_identifier.value, "ACME-vacc123456")
         self.imms_repo.create_immunization.assert_called_once_with(Immunization.parse_obj(req_imms), "Test")
 
         self.validator.validate.assert_called_once_with(req_imms)
         self.assertEqual(self._MOCK_NEW_UUID, created_id)
+        self.assertEqual(1, created_version)
 
     def test_create_immunization_keeps_first_site_and_route_snomed_coding(self):
         """it should keep the first SNOMED coding for site and route during API create"""
         self.mock_redis.hget.return_value = "COVID"
         self.mock_redis_getter.return_value = self.mock_redis
         self.authoriser.authorise.return_value = True
-        self.imms_repo.check_immunization_identifier_exists.return_value = False
+        self.imms_repo.get_immunization_by_identifier.return_value = (None, None)
         self.imms_repo.create_immunization.return_value = self._MOCK_NEW_UUID
 
         req_imms = create_covid_immunization_dict_no_id(VALID_NHS_NUMBER)
@@ -382,9 +384,10 @@ class TestCreateImmunization(TestFhirServiceBase):
             req_imms, "route", "888888888", "Replacement route that should be ignored"
         )
 
-        created_id = self.pre_validate_fhir_service.create_immunization(req_imms, "Test")
+        created_id, created_version = self.pre_validate_fhir_service.create_immunization(req_imms, "Test")
 
         self.assertEqual(self._MOCK_NEW_UUID, created_id)
+        self.assertEqual(1, created_version)
         self.assertEqual(req_imms["site"]["coding"], [first_site_coding])
         self.assertEqual(req_imms["route"]["coding"], [first_route_coding])
         self.imms_repo.create_immunization.assert_called_once_with(Immunization.parse_obj(req_imms), "Test")
@@ -495,7 +498,15 @@ class TestCreateImmunization(TestFhirServiceBase):
         self.mock_redis.hget.return_value = "COVID"
         self.mock_redis_getter.return_value = self.mock_redis
         self.authoriser.authorise.return_value = True
-        self.imms_repo.check_immunization_identifier_exists.return_value = True
+        existing_immunisation = create_covid_immunization_dict("existing-id", VALID_NHS_NUMBER)
+        identifier = Identifier(
+            system=existing_immunisation["identifier"][0]["system"],
+            value=existing_immunisation["identifier"][0]["value"],
+        )
+        self.imms_repo.get_immunization_by_identifier.return_value = (
+            existing_immunisation,
+            ImmunizationRecordMetadata(identifier=identifier, resource_version=1, is_deleted=False, is_reinstated=False),
+        )
 
         nhs_number = VALID_NHS_NUMBER
         req_imms = create_covid_immunization_dict_no_id(nhs_number)
@@ -506,15 +517,52 @@ class TestCreateImmunization(TestFhirServiceBase):
 
         # Then
         self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.CREATE, {"COVID"})
-        self.imms_repo.check_immunization_identifier_exists.assert_called_once_with(
-            "https://supplierABC/identifiers/vacc", "ACME-vacc123456"
-        )
+        self.imms_repo.get_immunization_by_identifier.assert_called_once()
+        duplicate_identifier = self.imms_repo.get_immunization_by_identifier.call_args.args[0]
+        self.assertEqual(duplicate_identifier.system, "https://supplierABC/identifiers/vacc")
+        self.assertEqual(duplicate_identifier.value, "ACME-vacc123456")
         self.imms_repo.create_immunization.assert_not_called()
+        self.imms_repo.update_immunization.assert_not_called()
         self.validator.validate.assert_called_once_with(req_imms)
         self.assertEqual(
             "The provided identifier: https://supplierABC/identifiers/vacc#ACME-vacc123456 is duplicated",
             str(error.exception),
         )
+
+    def test_reinstates_deleted_duplicate_identifier_on_create(self):
+        """it should reinstate a deleted record when a create request matches a deleted identifier"""
+        self.mock_redis.hget.return_value = "COVID"
+        self.mock_redis_getter.return_value = self.mock_redis
+        self.authoriser.authorise.return_value = True
+
+        existing_immunisation = create_covid_immunization_dict("existing-id", VALID_NHS_NUMBER)
+        identifier = Identifier(
+            system=existing_immunisation["identifier"][0]["system"],
+            value=existing_immunisation["identifier"][0]["value"],
+        )
+        existing_metadata = ImmunizationRecordMetadata(
+            identifier=identifier,
+            resource_version=2,
+            is_deleted=True,
+            is_reinstated=False,
+        )
+        self.imms_repo.get_immunization_by_identifier.return_value = (existing_immunisation, existing_metadata)
+        self.imms_repo.update_immunization.return_value = 3
+
+        req_imms = create_covid_immunization_dict_no_id(VALID_NHS_NUMBER)
+
+        reinstated_id, reinstated_version = self.fhir_service.create_immunization(req_imms, "Test")
+
+        self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.CREATE, {"COVID"})
+        self.imms_repo.create_immunization.assert_not_called()
+        self.imms_repo.update_immunization.assert_called_once_with(
+            "existing-id",
+            Immunization.parse_obj(req_imms),
+            existing_metadata,
+            "Test",
+        )
+        self.assertEqual("existing-id", reinstated_id)
+        self.assertEqual(3, reinstated_version)
 
 
 class TestUpdateImmunization(TestFhirServiceBase):
