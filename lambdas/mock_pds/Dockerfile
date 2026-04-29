@@ -7,7 +7,10 @@ RUN mkdir -p /home/appuser && \
     echo 'appuser:x:1001:1001::/home/appuser:/sbin/nologin' >> /etc/passwd && \
     echo 'appuser:x:1001:' >> /etc/group && \
     chown -R 1001:1001 /home/appuser && \
-    printf 'poetry==2.1.4 --hash=sha256:0019b64d33fed9184a332f7fad60ca47aace4d6a0e9c635cdea21b76e96f32ce\n' > /tmp/poetry-requirements.txt && \
+        printf '%s %s\n' \
+            'poetry==2.1.4' \
+            '--hash=sha256:0019b64d33fed9184a332f7fad60ca47aace4d6a0e9c635cdea21b76e96f32ce' \
+            > /tmp/poetry-requirements.txt && \
     pip install --only-binary :all: --require-hashes -r /tmp/poetry-requirements.txt && \
     rm -f /tmp/poetry-requirements.txt
 
