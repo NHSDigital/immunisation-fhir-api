@@ -10,7 +10,9 @@ import pytest_check as check
 from pytest_bdd import given, parsers, then, when
 from src.dynamoDB.dynamo_db_helper import (
     fetch_immunization_events_detail,
+    fetch_immunization_int_delta_detail_by_immsID,
     parse_imms_int_imms_event_response,
+    validate_imms_delta_record_with_created_event,
 )
 from src.objectModels.api_immunization_builder import (
     build_site_route,
@@ -38,7 +40,7 @@ from utilities.api_get_header import (
     get_update_url_header,
 )
 from utilities.date_helper import is_valid_date, normalize_utc_suffix
-from utilities.enums import Operation
+from utilities.enums import ActionFlag, Operation
 from utilities.http_requests_session import http_requests_session
 from utilities.sqs_message_halder import read_message
 from utilities.vaccination_constants import ROUTE_MAP, SITE_MAP
@@ -254,7 +256,7 @@ def validateCreateHeader(context):
 
 
 @then(parsers.parse("The imms event table will be populated with the correct data for '{operation}' event"))
-def validate_imms_event_table_by_operation(context, operation: Operation):
+def validate_imms_event_table_by_operation(context, operation: Operation, reinstated=False):
     create_obj = context.create_object
     table_query_response = fetch_immunization_events_detail(context.aws_profile_name, context.ImmsID, context.S3_env)
     assert "Item" in table_query_response, f"Item not found in response for ImmsID: {context.ImmsID}"
@@ -275,7 +277,7 @@ def validate_imms_event_table_by_operation(context, operation: Operation):
     assert int(context.expected_version) == int(context.eTag), (
         f"Expected Version: {context.expected_version}, Found: {context.eTag}"
     )
-
+    actualDeletedAt = "reinstated" if reinstated else None
     fields_to_compare = [
         ("Operation", Operation[operation].value, item.get("Operation")),
         (
@@ -294,6 +296,7 @@ def validate_imms_event_table_by_operation(context, operation: Operation):
             item.get("PatientSK"),
         ),
         ("Version", int(context.expected_version), int(item.get("Version"))),
+        ("DeletedAt", actualDeletedAt, item.get("DeletedAt")),
     ]
 
     for name, expected, actual in fields_to_compare:
@@ -404,6 +407,33 @@ def validate_mns_event_not_triggered_for_updated_event(context):
 @when("Trigger another post create request with same unique_id and unique_id_uri")
 def trigger_post_create_with_same_unique_id(context):
     Trigger_the_post_create_request(context)
+
+
+@then("The delta table will be populated with the correct data for updated event")
+def validate_delta_table_for_updated_event(context):
+    create_obj = context.create_object
+    items = fetch_immunization_int_delta_detail_by_immsID(
+        context.aws_profile_name,
+        context.ImmsID,
+        context.S3_env,
+        context.expected_version,
+    )
+    assert items, f"Items not found in response for ImmsID: {context.ImmsID}"
+    delta_items = [i for i in items if i.get("Operation") == Operation.updated.value]
+    assert delta_items, f"No item found for ImmsID: {context.ImmsID}"
+    latest_delta_record = max(delta_items, key=lambda x: x.get("SequenceNumber", -1))
+    validate_imms_delta_record_with_created_event(
+        context,
+        create_obj,
+        latest_delta_record,
+        Operation.updated.value,
+        ActionFlag.updated.value,
+    )
+
+
+@then("MNS event will be triggered with correct data for Updated event")
+def validate_mns_event_triggered_for_updated_event(context):
+    mns_event_will_be_triggered_with_correct_data(context=context, action="UPDATE")
 
 
 def trigger_the_updated_request(context):
@@ -558,3 +588,10 @@ def mns_event_will_be_triggered_with_correct_data(context, action):
         print(
             f"MNS event validation is skipped since mns_validation_required is set to {context.mns_validation_required}"
         )
+
+
+def trigger_update_request_with_same_unique_id_and_uri_for_deleted_record(context):
+    get_update_url_header(context, str(context.expected_version))
+    context.update_object = copy.deepcopy(context.immunization_object)
+    context.update_object = convert_to_update(context.update_object, context.ImmsID)
+    trigger_the_updated_request(context)

@@ -1,3 +1,4 @@
+import copy
 import logging
 import uuid
 
@@ -7,6 +8,7 @@ from src.dynamoDB.dynamo_db_helper import (
     fetch_immunization_int_delta_detail_by_immsID,
     validate_imms_delta_record_with_created_event,
 )
+from src.objectModels.api_immunization_builder import convert_to_update
 from utilities.api_fhir_immunization_helper import (
     find_entry_by_Imms_id,
     parse_FHIR_immunization_response,
@@ -17,10 +19,20 @@ from utilities.http_requests_session import http_requests_session
 
 from .common_steps import (
     The_request_will_have_status_code,
+    mns_event_will_be_triggered_with_correct_data_for_deleted_event,
     send_delete_for_immunization_event_created,
+    trigger_update_request_with_same_unique_id_and_uri_for_deleted_record,
     valid_token_is_generated,
+    validate_delta_table_for_updated_event,
+    validate_imms_event_table_by_operation,
+    validate_mns_event_triggered_for_updated_event,
 )
-from .test_search_steps import trigger_search_request
+from .test_search_steps import (
+    send_search_post_request_with_identifier_and_elements_header,
+    trigger_search_request,
+    validate_correct_immunization_event,
+    validate_empty_immunization_event,
+)
 
 logging.basicConfig(filename="debugLog.log", level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -49,12 +61,10 @@ def validate_imms_delta_table_by_deleted_ImmsID(context):
     items = fetch_immunization_int_delta_detail_by_immsID(context.aws_profile_name, context.ImmsID, context.S3_env, 2)
     assert items, f"Items not found in response for ImmsID: {context.ImmsID}"
 
-    # Find the latest item where operation is DELETE
     deleted_items = [i for i in items if i.get("Operation") == Operation.deleted.value]
     assert deleted_items, f"No deleted item found for ImmsID: {context.ImmsID}"
 
-    # Assuming each item has a 'timestamp' field to determine the latest
-    latest_delta_record = max(deleted_items, key=lambda x: x.get("timestamp", 0))
+    latest_delta_record = max(deleted_items, key=lambda x: x.get("SequenceNumber", -1))
 
     validate_imms_delta_record_with_created_event(
         context,
@@ -109,16 +119,62 @@ def validate_location_key_and_etag_in_header(context):
         f"E-Tag header is missing in the response with Status code: {context.response.status_code}. Response: {context.response.text}"
     )
     print(f"\n Immunization ID is {context.ImmsID} and Etag is {context.eTag} \n")
+    actualLocation = location.split("/")[-1]
     check.is_true(
-        context.ImmsID == location.split("/")[-2],
-        f"Expected imms id sholud be : {context.ImmsID}, Found: {location}",
+        context.ImmsID == actualLocation,
+        f"Expected imms id sholud be : {context.ImmsID}, Found: {actualLocation}",
     )
     check.is_true(
         str(context.expected_version) == eTag.strip('"'),
         f"Expected version should be : {context.expected_version}, Found: {eTag}",
     )
+    context.eTag = eTag.strip('"')
 
 
-@then("MNS event will be triggered with correct data for Deleted event")
-def mns_event_will_be_triggered_with_correct_data_for_deleted_event(context):
+@then(
+    "IMMS event and delta tables, along with the MNS event, will be populated with correct created data for the reinstated record"
+)
+def validate_delta_table_for_create_event_for_reinstated_record(context):
+    context.update_object = copy.deepcopy(context.immunization_object)
+    context.update_object = convert_to_update(context.update_object, context.ImmsID)
+    validate_imms_event_table_by_operation(context, "created", reinstated=True)
+    validate_delta_table_for_updated_event(context)
+    validate_mns_event_triggered_for_updated_event(context)
+
+
+@then(
+    "IMMS event and delta tables, along with the MNS event, will be populated with correct updated data for the reinstated record"
+)
+def validate_delta_table_for_updated_event_for_reinstated_record(context):
+    validate_imms_event_table_by_operation(context, "updated", reinstated=True)
+    validate_delta_table_for_updated_event(context)
+    validate_mns_event_triggered_for_updated_event(context)
+
+
+@when("Trigger update request with same unique_id and unique_id_uri for the deleted record")
+def trigger_post_create_request_with_same_unique_id_and_uri(context):
+    trigger_update_request_with_same_unique_id_and_uri_for_deleted_record(context)
+
+
+@then(
+    "IMMS event and delta tables, along with the MNS event, will be populated with correct data for the deleted record"
+)
+def validate_imms_event_delta_and_mns_for_deleted_record(context):
+    validate_imms_event_table_by_operation(context, "deleted")
+    validate_imms_delta_table_by_deleted_ImmsID(context)
     mns_event_will_be_triggered_with_correct_data_for_deleted_event(context)
+
+
+@when("I send a search request with Post method using identifier parameter for the record")
+def trigger_search_request_for_deleted_record(context):
+    send_search_post_request_with_identifier_and_elements_header(context)
+
+
+@then("No immunization event is returned in the response")
+def validate_no_immunization_event_returned_in_response(context):
+    validate_empty_immunization_event(context)
+
+
+@then("reinstated record is returned in the response with correct created data")
+def validate_reinstated_record_returned_in_response_with_correct_data(context):
+    validate_correct_immunization_event(context)
