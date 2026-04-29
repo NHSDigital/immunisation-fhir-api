@@ -188,7 +188,7 @@ jobs:
         working-directory: lambdas/mock_pds
         id: mock_pds
         env:
-          PYTHONPATH: ${{ env.LAMBDA_PATH }}/mock_pds/src:${{ env.LAMBDA_PATH }}/mock_pds/tests
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/mock_pds/src
         continue-on-error: true
         run: |
           poetry install
