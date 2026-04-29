@@ -288,7 +288,7 @@ class TestSearchImmunizationsByTargetDisease(unittest.TestCase):
         self.assertIn("invalid-no-pipe", call_args[1]["invalid_target_diseases"][0])
         self.assertIn("Invalid format", call_args[1]["invalid_target_diseases"][0])
 
-    @patch("controller.fhir_controller.MAX_RESPONSE_SIZE_BYTES", 5)
+    @patch("controller.fhir_controller.MAX_SEARCH_RESPONSE_SIZE_BYTES", 5)
     def test_search_by_target_disease_returns_400_when_response_too_large(self):
         """it should return the same narrow-the-search error for oversized target-disease searches"""
         self.mock_redis.hget.side_effect = self._hget_target_disease_codes_and_mmr
