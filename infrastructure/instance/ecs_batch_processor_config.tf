@@ -114,6 +114,11 @@ resource "aws_iam_policy" "ecs_task_exec_policy" {
           "firehose:PutRecordBatch"
         ],
         "Resource" : "arn:aws:firehose:*:*:deliverystream/${module.splunk.firehose_stream_name}"
+      },
+      {
+        Effect   = "Allow",
+        Action   = "secretsmanager:GetSecretValue",
+        Resource = data.aws_secretsmanager_secret.redis_auth_token.arn
       }
     ]
   })
@@ -147,40 +152,35 @@ resource "aws_ecs_task_definition" "ecs_task" {
     name      = "${local.short_prefix}-process-records-container"
     image     = var.recordprocessor_image_uri
     essential = true
-    environment = [
-      {
-        name  = "SOURCE_BUCKET_NAME"
-        value = aws_s3_bucket.batch_data_source_bucket.bucket
-      },
-      {
-        name  = "ACK_BUCKET_NAME"
-        value = aws_s3_bucket.batch_data_destination_bucket.bucket
-      },
-      {
-        name  = "KINESIS_STREAM_ARN"
-        value = local.kinesis_arn
-      },
-      {
-        name  = "KINESIS_STREAM_NAME"
-        value = "${local.short_prefix}-processingdata-stream"
-      },
-      {
-        name  = "SPLUNK_FIREHOSE_NAME"
-        value = module.splunk.firehose_stream_name
-      },
-      {
-        name  = "AUDIT_TABLE_NAME"
-        value = aws_dynamodb_table.audit-table.name
-      },
-      {
-        name  = "REDIS_HOST"
-        value = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
-      },
-      {
-        name  = "REDIS_PORT"
-        value = tostring(data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port)
-      }
-    ]
+    environment = concat(
+      [
+        {
+          name  = "SOURCE_BUCKET_NAME"
+          value = aws_s3_bucket.batch_data_source_bucket.bucket
+        },
+        {
+          name  = "ACK_BUCKET_NAME"
+          value = aws_s3_bucket.batch_data_destination_bucket.bucket
+        },
+        {
+          name  = "KINESIS_STREAM_ARN"
+          value = local.kinesis_arn
+        },
+        {
+          name  = "KINESIS_STREAM_NAME"
+          value = "${local.short_prefix}-processingdata-stream"
+        },
+        {
+          name  = "SPLUNK_FIREHOSE_NAME"
+          value = module.splunk.firehose_stream_name
+        },
+        {
+          name  = "AUDIT_TABLE_NAME"
+          value = aws_dynamodb_table.audit-table.name
+        }
+      ],
+      local.redis_environment
+    )
     logConfiguration = {
       logDriver = "awslogs"
       options = {

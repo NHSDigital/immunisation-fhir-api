@@ -89,6 +89,11 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
         "Resource" : "arn:aws:firehose:*:*:deliverystream/${module.splunk.firehose_stream_name}"
       },
       {
+        Effect   = "Allow",
+        Action   = "secretsmanager:GetSecretValue",
+        Resource = data.aws_secretsmanager_secret.redis_auth_token.arn
+      },
+      {
         "Effect" : "Allow",
         "Action" : [
           "s3:PutObject",
@@ -240,19 +245,20 @@ resource "aws_lambda_function" "file_processor_lambda" {
   }
 
   environment {
-    variables = {
-      ACCOUNT_ID           = var.immunisation_account_id
-      DPS_ACCOUNT_ID       = var.dspp_core_account_id
-      SOURCE_BUCKET_NAME   = aws_s3_bucket.batch_data_source_bucket.bucket
-      ACK_BUCKET_NAME      = aws_s3_bucket.batch_data_destination_bucket.bucket
-      DPS_BUCKET_NAME      = var.dspp_submission_s3_bucket_name
-      QUEUE_URL            = aws_sqs_queue.batch_file_created.url
-      REDIS_HOST           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
-      REDIS_PORT           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
-      SPLUNK_FIREHOSE_NAME = module.splunk.firehose_stream_name
-      AUDIT_TABLE_NAME     = aws_dynamodb_table.audit-table.name
-      AUDIT_TABLE_TTL_DAYS = 60
-    }
+    variables = merge(
+      {
+        ACCOUNT_ID           = var.immunisation_account_id
+        DPS_ACCOUNT_ID       = var.dspp_core_account_id
+        SOURCE_BUCKET_NAME   = aws_s3_bucket.batch_data_source_bucket.bucket
+        ACK_BUCKET_NAME      = aws_s3_bucket.batch_data_destination_bucket.bucket
+        DPS_BUCKET_NAME      = var.dspp_submission_s3_bucket_name
+        QUEUE_URL            = aws_sqs_queue.batch_file_created.url
+        SPLUNK_FIREHOSE_NAME = module.splunk.firehose_stream_name
+        AUDIT_TABLE_NAME     = aws_dynamodb_table.audit-table.name
+        AUDIT_TABLE_TTL_DAYS = 60
+      },
+      local.redis_env_vars
+    )
   }
   kms_key_arn                    = data.aws_kms_key.existing_lambda_encryption_key.arn
   reserved_concurrent_executions = local.is_temp ? -1 : 20

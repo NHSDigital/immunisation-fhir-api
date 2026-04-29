@@ -89,6 +89,11 @@ resource "aws_iam_policy" "redis_sync_lambda_exec_policy" {
         Resource : "arn:aws:firehose:*:*:deliverystream/${module.splunk.firehose_stream_name}"
       },
       {
+        Effect   = "Allow",
+        Action   = "secretsmanager:GetSecretValue",
+        Resource = data.aws_secretsmanager_secret.redis_auth_token.arn
+      },
+      {
         Effect = "Allow"
         Action = "lambda:InvokeFunction"
         Resource = [
@@ -155,12 +160,13 @@ resource "aws_lambda_function" "redis_sync_lambda" {
   }
 
   environment {
-    variables = {
-      CONFIG_BUCKET_NAME   = local.config_bucket_name
-      REDIS_HOST           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
-      REDIS_PORT           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
-      SPLUNK_FIREHOSE_NAME = module.splunk.firehose_stream_name
-    }
+    variables = merge(
+      {
+        CONFIG_BUCKET_NAME   = local.config_bucket_name
+        SPLUNK_FIREHOSE_NAME = module.splunk.firehose_stream_name
+      },
+      local.redis_env_vars
+    )
   }
   kms_key_arn = data.aws_kms_key.existing_lambda_encryption_key.arn
 

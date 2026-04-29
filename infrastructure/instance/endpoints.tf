@@ -23,17 +23,18 @@ locals {
     "get_imms", "create_imms", "update_imms", "search_imms", "delete_imms", "not_found"
   ]
   imms_table_name = aws_dynamodb_table.events-dynamodb-table.name
-  imms_lambda_env_vars = {
-    "DYNAMODB_TABLE_NAME"    = local.imms_table_name,
-    "IMMUNIZATION_ENV"       = local.resource_scope,
-    "IMMUNIZATION_BASE_PATH" = strcontains(var.sub_environment, "pr-") ? "immunisation-fhir-api/FHIR/R4-${var.sub_environment}" : "immunisation-fhir-api/FHIR/R4"
-    # except for prod and ref, any other env uses PDS int environment
-    "PDS_ENV"              = var.pds_environment
-    "SPLUNK_FIREHOSE_NAME" = module.splunk.firehose_stream_name
-    "SQS_QUEUE_URL"        = "https://sqs.${var.aws_region}.amazonaws.com/${var.immunisation_account_id}/${local.short_prefix}-ack-metadata-queue.fifo"
-    "REDIS_HOST"           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
-    "REDIS_PORT"           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
-  }
+  imms_lambda_env_vars = merge(
+    {
+      "DYNAMODB_TABLE_NAME"    = local.imms_table_name,
+      "IMMUNIZATION_ENV"       = local.resource_scope,
+      "IMMUNIZATION_BASE_PATH" = strcontains(var.sub_environment, "pr-") ? "immunisation-fhir-api/FHIR/R4-${var.sub_environment}" : "immunisation-fhir-api/FHIR/R4"
+      # except for prod and ref, any other env uses PDS int environment
+      "PDS_ENV"              = var.pds_environment
+      "SPLUNK_FIREHOSE_NAME" = module.splunk.firehose_stream_name
+      "SQS_QUEUE_URL"        = "https://sqs.${var.aws_region}.amazonaws.com/${var.immunisation_account_id}/${local.short_prefix}-ack-metadata-queue.fifo"
+    },
+    local.redis_env_vars
+  )
 }
 data "aws_iam_policy_document" "imms_policy_document" {
   source_policy_documents = [

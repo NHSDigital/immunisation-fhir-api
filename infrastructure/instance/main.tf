@@ -81,8 +81,28 @@ data "aws_kms_key" "existing_dynamo_encryption_key" {
   key_id = "alias/imms-event-dynamodb-encryption"
 }
 
-data "aws_elasticache_cluster" "existing_redis" {
-  cluster_id = "immunisation-redis-cluster"
+data "aws_elasticache_replication_group" "existing_redis" {
+  replication_group_id = "immunisation-redis-cluster"
+}
+
+data "aws_secretsmanager_secret" "redis_auth_token" {
+  name = "imms/redis/auth-token"
+}
+
+locals {
+  redis_env_vars = {
+    REDIS_HOST                   = data.aws_elasticache_replication_group.existing_redis.primary_endpoint_address
+    REDIS_PORT                   = tostring(data.aws_elasticache_replication_group.existing_redis.port)
+    REDIS_SSL                    = "true"
+    REDIS_AUTH_TOKEN_SECRET_NAME = data.aws_secretsmanager_secret.redis_auth_token.name
+  }
+
+  redis_environment = [
+    for name, value in local.redis_env_vars : {
+      name  = name
+      value = value
+    }
+  ]
 }
 
 data "aws_security_group" "existing_securitygroup" {
