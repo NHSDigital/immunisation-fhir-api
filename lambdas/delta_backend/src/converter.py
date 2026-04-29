@@ -1,32 +1,29 @@
 # Main validation engine
+from typing import Any
+
 import exception_messages
 from conversion_layout import ConversionField, ConversionLayout
 from extractor import Extractor
 from mappings import ActionFlag
 
+ConversionErrorRecord = dict[str, Any]
+ConvertedRecord = dict[str, Any]
+
 
 class Converter:
-    def __init__(self, fhir_data, action_flag=ActionFlag.UPDATE, report_unexpected_exception=True):
-        self.converted = {}
-        self.error_records = []
+    def __init__(self, fhir_data: str | dict[str, Any], action_flag: str = ActionFlag.UPDATE) -> None:
+        self.converted: ConvertedRecord = {}
+        self.error_records: list[ConversionErrorRecord] = []
         self.action_flag = action_flag
-        self.report_unexpected_exception = report_unexpected_exception
 
-        try:
-            if not fhir_data:
-                raise ValueError("FHIR data is required for initialization.")
+        if not fhir_data:
+            raise ValueError("FHIR data is required for initialization.")
 
-            self.extractor = Extractor(fhir_data, self.report_unexpected_exception)
-            self.conversion_layout = ConversionLayout(self.extractor)
-        except Exception as e:
-            if report_unexpected_exception:
-                self._log_error(f"Initialization failed: [{e.__class__.__name__}] {e}")
-            raise
+        self.extractor = Extractor(fhir_data)
+        self.conversion_layout = ConversionLayout(self.extractor)
 
-    def run_conversion(self):
-        conversions = self.conversion_layout.get_conversion_layout()
-
-        for conversion in conversions:
+    def run_conversion(self) -> ConvertedRecord:
+        for conversion in self.conversion_layout.get_conversion_layout():
             self._convert_data(conversion)
 
         self.error_records.extend(self.extractor.get_error_records())
@@ -35,29 +32,33 @@ class Converter:
         self.converted["CONVERSION_ERRORS"] = self.error_records
         return self.converted
 
-    def _convert_data(self, conversion: ConversionField):
-        try:
-            flat_field = conversion.field_name_flat
+    def _convert_data(self, conversion: ConversionField) -> None:
+        flat_field = conversion.field_name_flat
 
+        try:
             if flat_field == "ACTION_FLAG":
                 self.converted[flat_field] = self.action_flag
-            else:
-                converted = conversion.expression_rule()
-                if converted is not None:
-                    self.converted[flat_field] = converted
+                return
 
-        except Exception as e:
+            if (converted := conversion.expression_rule()) is not None:
+                self.converted[flat_field] = converted
+        except Exception as error:
             self._log_error(
-                f"Conversion error [{e.__class__.__name__}]: {e}",
+                flat_field,
+                f"Conversion error [{error.__class__.__name__}]: {error}",
                 code=exception_messages.PARSING_ERROR,
             )
             self.converted[flat_field] = ""
 
-    def _log_error(self, e, code=exception_messages.UNEXPECTED_EXCEPTION):
-        error_obj = {"code": code, "message": str(e)}
+    def _log_error(self, field_name: str, e: Exception | str, code: str) -> None:
+        self.error_records.append(
+            {
+                "code": code,
+                "field": field_name,
+                "value": None,
+                "message": str(e),
+            }
+        )
 
-        if self.report_unexpected_exception:
-            self.error_records.append(error_obj)
-
-    def get_error_records(self):
+    def get_error_records(self) -> list[ConversionErrorRecord]:
         return self.error_records

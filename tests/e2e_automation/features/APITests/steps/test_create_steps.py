@@ -94,9 +94,13 @@ def createValidJsonPayloadWithProcedureMultipleCodings(context):
     valid_json_payload_is_created(context)
     procedures_list = get_all_the_vaccination_codes(VACCINATION_PROCEDURE_MAP[context.vaccine_type.upper()])
     product_list = get_all_the_vaccination_codes(VACCINE_CODE_MAP[context.vaccine_type.upper()])
+    site_list = get_all_the_vaccination_codes(SITE_MAP)
+    route_list = get_all_the_vaccination_codes(ROUTE_MAP)
 
     context.immunization_object.extension[0].valueCodeableConcept.coding = procedures_list
     context.immunization_object.vaccineCode.coding = product_list
+    context.immunization_object.site.coding = site_list
+    context.immunization_object.route.coding = route_list
 
 
 @given(
