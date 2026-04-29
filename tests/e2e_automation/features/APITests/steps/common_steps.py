@@ -277,7 +277,7 @@ def validate_imms_event_table_by_operation(context, operation: Operation, reinst
     assert int(context.expected_version) == int(context.eTag), (
         f"Expected Version: {context.expected_version}, Found: {context.eTag}"
     )
-    actualDeletedAt = "reinstated" if reinstated else None
+    actualDeletedAt = item.get("DeletedAt")
     fields_to_compare = [
         ("Operation", Operation[operation].value, item.get("Operation")),
         (
@@ -296,11 +296,26 @@ def validate_imms_event_table_by_operation(context, operation: Operation, reinst
             item.get("PatientSK"),
         ),
         ("Version", int(context.expected_version), int(item.get("Version"))),
-        ("DeletedAt", actualDeletedAt, item.get("DeletedAt")),
     ]
 
     for name, expected, actual in fields_to_compare:
         check.is_true(expected == actual, f"Expected {name}: {expected}, Actual {actual}")
+
+    if Operation[operation].value == "delete":
+        check.is_true(
+            isinstance(actualDeletedAt, int) and actualDeletedAt > 0,
+            f"Expected DeletedAt to be a Unix timestamp, got {actualDeletedAt}",
+        )
+    elif reinstated:
+        check.is_true(
+            actualDeletedAt == "reinstated",
+            f"Expected DeletedAt: None for reinstated record, got {actualDeletedAt}",
+        )
+    else:
+        check.is_true(
+            actualDeletedAt is None,
+            f"Expected DeletedAt: None, Actual {actualDeletedAt}",
+        )
 
     validate_to_compare_request_and_response(context, create_obj, created_event, True)
 

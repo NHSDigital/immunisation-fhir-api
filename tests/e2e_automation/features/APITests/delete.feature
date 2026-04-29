@@ -115,6 +115,6 @@ Feature: Delete an immunization of a patient
         Then The request will be successful with the status code '200'
         And The location key and Etag in header will contain the  previous Immunization Id and version will be incremented by 1
         And IMMS event and delta tables, along with the MNS event, will be populated with correct updated data for the reinstated record
-        WWhen I send a search request with Post method using identifier parameter for the record
+        When I send a search request with Post method using identifier parameter for the record
         Then The request will be successful with the status code '200'
         And reinstated record is returned in the response with correct created data
