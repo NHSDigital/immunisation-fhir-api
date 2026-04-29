@@ -9,6 +9,7 @@ on:
 env:
   SHARED_PATH: ${{ github.workspace }}/lambdas/shared
   LAMBDA_PATH: ${{ github.workspace }}/lambdas
+  POETRY_INSTALLER_ONLY_BINARY: ":all:"
 
 jobs:
   lint-specification:
