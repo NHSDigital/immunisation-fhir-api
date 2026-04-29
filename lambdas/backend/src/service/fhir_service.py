@@ -3,7 +3,7 @@ import datetime
 import logging
 import os
 import uuid
-from typing import Any, cast
+from typing import Any
 from uuid import uuid4
 
 from fhir.resources.R4B.bundle import (
@@ -22,7 +22,7 @@ from fhir.resources.R4B.operationoutcome import OperationOutcome
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
 from common.get_service_url import get_service_url
-from common.models.constants import Constants
+from common.models.constants import Constants, Urls
 from common.models.errors import (
     Code,
     CustomValidationError,
@@ -62,6 +62,7 @@ class FhirService:
     _DATA_MISSING_DATE_TIME_ERROR_MSG = (
         "Data quality issue - immunisation with ID %s was found containing no occurrenceDateTime"
     )
+    _SINGLE_SNOMED_CODEABLE_CONCEPT_FIELDS = ("site", "route")
 
     def __init__(
         self,
@@ -72,6 +73,36 @@ class FhirService:
         self.authoriser = authoriser
         self.immunization_repo = imms_repo
         self.validator = validator
+
+    @staticmethod
+    def _keep_first_snomed_coding(coding: list) -> list:
+        snomed_seen = False
+        filtered_coding = []
+        for coding_entry in coding:
+            is_snomed_coding = isinstance(coding_entry, dict) and coding_entry.get("system") == Urls.SNOMED
+            if is_snomed_coding and snomed_seen:
+                continue
+
+            snomed_seen = snomed_seen or is_snomed_coding
+            filtered_coding.append(coding_entry)
+
+        return filtered_coding
+
+    @classmethod
+    def _normalize_single_snomed_codeable_concepts(cls, immunization: dict) -> None:
+        for field_name in cls._SINGLE_SNOMED_CODEABLE_CONCEPT_FIELDS:
+            field = immunization.get(field_name)
+            coding = field.get("coding") if isinstance(field, dict) else None
+            if isinstance(coding, list):
+                field["coding"] = cls._keep_first_snomed_coding(coding)
+
+    def _validate_immunization(self, immunization: dict) -> None:
+        self._normalize_single_snomed_codeable_concepts(immunization)
+
+        try:
+            self.validator.validate(immunization)
+        except (ValueError, MandatoryError) as error:
+            raise CustomValidationError(message=str(error)) from error
 
     def get_immunization_by_identifier(
         self, identifier: Identifier, supplier_name: str, elements: set[str] | None
@@ -113,36 +144,46 @@ class FhirService:
 
         return Immunization.parse_obj(resource), str(immunization_metadata.resource_version)
 
-    def create_immunization(self, immunization: dict, supplier_system: str) -> Id:
+    def create_immunization(self, immunization: dict, supplier_system: str) -> tuple[Id, int]:
         if immunization.get("id") is not None:
             raise CustomValidationError("id field must not be present for CREATE operation")
 
-        try:
-            self.validator.validate(immunization)
-        except (ValueError, MandatoryError) as error:
-            raise CustomValidationError(message=str(error)) from error
+        self._validate_immunization(immunization)
 
         vaccination_type = get_vaccine_type(immunization)
 
         if not self.authoriser.authorise(supplier_system, ApiOperationCode.CREATE, {vaccination_type}):
             raise UnauthorizedVaxError()
 
-        # Set ID for the requested new record
+        identifier = Identifier.parse_obj(immunization["identifier"][0])
+        duplicate_identifier = f"{identifier.system}#{identifier.value}"
+
+        existing_immunization_resource, existing_immunization_meta = (
+            self.immunization_repo.get_immunization_by_identifier(identifier)
+        )
+        if existing_immunization_resource:
+            if not existing_immunization_meta.is_deleted:
+                raise IdentifierDuplicationError(identifier=duplicate_identifier)
+
+            immunization_id = existing_immunization_resource["id"]
+            immunization["id"] = immunization_id
+            immunization_fhir_entity = Immunization.parse_obj(immunization)
+            updated_version = self.immunization_repo.update_immunization(
+                immunization_id,
+                immunization_fhir_entity,
+                existing_immunization_meta,
+                supplier_system,
+            )
+            return immunization_id, updated_version
+
         immunization["id"] = str(uuid.uuid4())
-
         immunization_fhir_entity = Immunization.parse_obj(immunization)
-        identifier = cast(Identifier, immunization_fhir_entity.identifier[0])
 
-        if self.immunization_repo.check_immunization_identifier_exists(identifier.system, identifier.value):
-            raise IdentifierDuplicationError(identifier=f"{identifier.system}#{identifier.value}")
-
-        return self.immunization_repo.create_immunization(immunization_fhir_entity, supplier_system)
+        created_id = self.immunization_repo.create_immunization(immunization_fhir_entity, supplier_system)
+        return created_id, 1
 
     def update_immunization(self, imms_id: str, immunization: dict, supplier_system: str, resource_version: int) -> int:
-        try:
-            self.validator.validate(immunization)
-        except (ValueError, MandatoryError) as error:
-            raise CustomValidationError(message=str(error)) from error
+        self._validate_immunization(immunization)
 
         immunization_to_update = Immunization.parse_obj(immunization)
 
