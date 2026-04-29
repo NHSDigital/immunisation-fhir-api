@@ -49,3 +49,20 @@ Feature: Delete an immunization of a patient
         When same delete request is triggered again
         Then The request will be unsuccessful with the status code '404'
         And The Response JSONs should contain correct error message for Imms_id 'not_found'
+
+    @smoke
+    @vaccine_type_HEPB @patient_id_Random @supplier_name_TPP
+    Scenario: Verify that the create request will be reinstated successfully after the record is soft deleted
+        Given I have created a valid vaccination record
+        When Send a delete for Immunization event created
+        Then The request will be successful with the status code '204'
+        And The X-Request-ID and X-Correlation-ID keys in header will populate correctly
+        And The imms event table will be populated with the correct data for 'deleted' event
+        And The delta table will be populated with the correct data for deleted event
+        And MNS event will be triggered with correct data for Deleted event
+        When Trigger another post create request with same unique_id and unique_id_uri
+        Then The request will be successful with the status code '201'
+        And The location key and Etag in header will contain the  previous Immunization Id and version will be incremented by 1
+        And The imms event table will be populated with the correct data for 'updated' event
+        And The delta table will be populated with the correct data for updated event
+        And MNS event will be triggered with correct data for Updated event

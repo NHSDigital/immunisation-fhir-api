@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 from venv import logger
 
 import pytest_check as check
-from pytest_bdd import given, parsers, scenarios, then, when
+from pytest_bdd import given, parsers, scenarios, then
 from src.dynamoDB.dynamo_db_helper import (
     fetch_immunization_events_detail,
     fetch_immunization_int_delta_detail_by_immsID,
@@ -32,7 +32,7 @@ from utilities.vaccination_constants import (
     VACCINE_CODE_MAP,
 )
 
-from .common_steps import Trigger_the_post_create_request, valid_json_payload_is_created
+from .common_steps import valid_json_payload_is_created
 
 scenarios("APITests/create.feature")
 
@@ -337,8 +337,3 @@ def create_request_with_invalid_gender(context, gender):
 def create_request_with_empty_nam(context):
     valid_json_payload_is_created(context)
     context.immunization_object.contained[1].name = None
-
-
-@when("Trigger another post create request with same unique_id and unique_id_uri")
-def trigger_post_create_with_same_unique_id(context):
-    Trigger_the_post_create_request(context)

@@ -2,6 +2,7 @@ import logging
 import uuid
 
 from pytest_bdd import parsers, scenarios, then, when
+from pytest_check.context_manager import check
 from src.dynamoDB.dynamo_db_helper import (
     fetch_immunization_int_delta_detail_by_immsID,
     validate_imms_delta_record_with_created_event,
@@ -92,3 +93,32 @@ def validate_deleted_immunization_event_not_present_using_post(context):
     assert context.created_event is None, (
         f"Immunization event with ID {context.ImmsID} should not be present in the search response after deletion."
     )
+
+
+@then(
+    "The location key and Etag in header will contain the  previous Immunization Id and version will be incremented by 1"
+)
+def validate_location_key_and_etag_in_header(context):
+    location = context.response.headers["location"]
+    eTag = context.response.headers["E-Tag"]
+    context.expected_version += 1
+    assert "location" in context.response.headers, (
+        f"Location header is missing in the response with Status code: {context.response.status_code}. Response: {context.response.text}"
+    )
+    assert "E-Tag" in context.response.headers, (
+        f"E-Tag header is missing in the response with Status code: {context.response.status_code}. Response: {context.response.text}"
+    )
+    print(f"\n Immunization ID is {context.ImmsID} and Etag is {context.eTag} \n")
+    check.is_true(
+        context.ImmsID == location.split("/")[-2],
+        f"Expected imms id sholud be : {context.ImmsID}, Found: {location}",
+    )
+    check.is_true(
+        str(context.expected_version) == eTag.strip('"'),
+        f"Expected version should be : {context.expected_version}, Found: {eTag}",
+    )
+
+
+@then("MNS event will be triggered with correct data for Deleted event")
+def mns_event_will_be_triggered_with_correct_data_for_deleted_event(context):
+    mns_event_will_be_triggered_with_correct_data_for_deleted_event(context)

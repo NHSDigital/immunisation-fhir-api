@@ -401,6 +401,11 @@ def validate_mns_event_not_triggered_for_updated_event(context):
     mns_event_will_not_be_triggered_for_the_event(context)
 
 
+@when("Trigger another post create request with same unique_id and unique_id_uri")
+def trigger_post_create_with_same_unique_id(context):
+    Trigger_the_post_create_request(context)
+
+
 def trigger_the_updated_request(context):
     context.expected_version = int(context.expected_version) + 1
     context.create_object = context.update_object
