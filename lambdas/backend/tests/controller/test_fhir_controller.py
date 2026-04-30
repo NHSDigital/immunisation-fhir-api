@@ -1207,7 +1207,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
                 )
                 self.service.search_immunizations.assert_not_called()
 
-    @patch("controller.fhir_controller.MAX_RESPONSE_SIZE_BYTES", 5)
+    @patch("controller.fhir_controller.MAX_SEARCH_RESPONSE_SIZE_BYTES", 5)
     def test_search_immunizations_raises_error_if_too_many_results_found(self):
         """it should return an error if there are too many results in the response for Lambda to handle. In reality,
         highly unlikely. If a concern, pagination should be implemented."""
