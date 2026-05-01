@@ -1,0 +1,35 @@
+✅ Pipe-delimited file saved to: /home/runner/work/immunisation-fhir-api/immunisation-fhir-api/tests/e2e_automation/batch_files_directory/RSV_Vaccinations_v5_X8E5B_20260501T13221300.csv
+Batch file created: RSV_Vaccinations_v5_X8E5B_20260501T13221300.csv
+Upload successful: RSV_Vaccinations_v5_X8E5B_20260501T13221300.csv → immunisation-batch-internal-qa-data-sources
+Batch file uploaded to S3: RSV_Vaccinations_v5_X8E5B_20260501T13221300.csv
+Waiting for file in archive: s3://immunisation-batch-internal-qa-data-sources/archive/RSV_Vaccinations_v5_X8E5B_20260501T13221300.csv
+Still waiting... (0s)
+Still waiting... (5s)
+Still waiting... (10s)
+Still waiting... (15s)
+Still waiting... (20s)
+Still waiting... (25s)
+Still waiting... (30s)
+Still waiting... (35s)
+File found in archive: archive/RSV_Vaccinations_v5_X8E5B_20260501T13221300.csv
+Waiting for ACK files starting with 'ack/RSV_Vaccinations_v5_X8E5B_20260501T13221300' in bucket: immunisation-batch-internal-qa-data-destinations
+[MODE] Expecting ONLY CSV ACK file
+[FOUND] .csv file located: ack/RSV_Vaccinations_v5_X8E5B_20260501T13221300_InfAck_20260501T13221400.csv
+[COMPLETE] All expected ACK files received
+Waiting for ACK files starting with 'forwardedFile/RSV_Vaccinations_v5_X8E5B_20260501T13221300' in bucket: immunisation-batch-internal-qa-data-destinations
+[MODE] Expecting BOTH CSV and JSON ACK files
+[FOUND] .csv file located: forwardedFile/RSV_Vaccinations_v5_X8E5B_20260501T13221300_BusAck_20260501T13221400.csv
+[FOUND] .json file located: forwardedFile/RSV_Vaccinations_v5_X8E5B_20260501T13221300_BusAck_20260501T13221400.json
+[COMPLETE] All expected ACK files received
+No rows found in BUS ACK file for successful records
+Attempt 1: Found 1 items
+
+Found Audit detail for filename=RSV_Vaccinations_v5_X8E5B_20260501T13221300.csv
+
+
+ Imms Event response is {'Items': [{'Version': Decimal('2'), 'IdentifierPK': 'https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk#reinstate_with_update-20260501T132213', 'Operation': 'UPDATE', 'PK': 'Immunization#39499c13-d4dd-41bc-aba5-ef1eae4c01ac', 'PatientPK': 'Patient#9737316460', 'UpdatedAt': Decimal('1777641770'), 'Resource': '{"resourceType": "Immunization", "status": "completed", "protocolApplied": [{"targetDisease": [{"coding": [{"system": "http://snomed.info/sct", "code": "55735004", "display": "Respiratory syncytial virus infection"}]}], "doseNumberPositiveInt": 1}], "reasonCode": [{"coding": [{"system": "http://snomed.info/sct", "code": "443684005"}]}], "recorded": "2026-05-01", "identifier": [{"value": "reinstate_with_update-20260501T132213", "system": "https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk"}], "patient": {"reference": "#Patient1"}, "contained": [{"id": "Patient1", "resourceType": "Patient", "birthDate": "1960-08-19", "gender": "female", "address": [{"postalCode": "LS17 5NF"}], "identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9737316460"}], "name": [{"family": "MOXON", "given": ["IRIS"]}]}, {"resourceType": "Practitioner", "id": "Practitioner1", "name": [{"family": "Tests", "given": ["Automation"]}]}], "vaccineCode": {"coding": [{"system": "http://snomed.info/sct", "code": "42605811000001109", "display": "Abrysvo vaccine powder and solvent for solution for injection 0.5ml vials (Pfizer Ltd)"}]}, "manufacturer": {"display": "Pfizer Ltd"}, "expirationDate": "2026-05-01", "lotNumber": "362570", "extension": [{"url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure", "valueCodeableConcept": {"coding": [{"system": "http://snomed.info/sct", "code": "1303503001", "display": "Administration of RSV (respiratory syncytial virus) vaccine"}]}}], "occurrenceDateTime": "2026-05-01T13:21:23+00:00", "primarySource": true, "site": {"coding": [{"system": "http://snomed.info/sct", "code": "368208006", "display": "Left upper arm structure"}]}, "route": {"coding": [{"system": "http://snomed.info/sct", "code": "78421000", "display": "Intramuscular"}]}, "doseQuantity": {"value": 0.5, "unit": "millilitre", "system": "http://snomed.info/sct", "code": "ml"}, "performer": [{"actor": {"type": "Organization", "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "X99999"}}}, {"actor": {"reference": "#Practitioner1"}}], "location": {"identifier": {"value": "X99999", "system": "https://fhir.nhs.uk/Id/ods-organization-code"}}, "id": "39499c13-d4dd-41bc-aba5-ef1eae4c01ac"}', 'PatientSK': 'RSV#39499c13-d4dd-41bc-aba5-ef1eae4c01ac', 'DeletedAt': 'reinstated', 'SupplierSystem': 'RAVS'}], 'Count': 1, 'ScannedCount': 1, 'ResponseMetadata': {'RequestId': 'SQMOTLANDPHK9A3R28GBDDR8BVVV4KQNSO5AEMVJF66Q9ASUAAJG', 'HTTPStatusCode': 200, 'HTTPHeaders': {'server': 'Server', 'date': 'Fri, 01 May 2026 13:22:56 GMT', 'content-type': 'application/x-amz-json-1.0', 'content-length': '3029', 'connection': 'keep-alive', 'x-amzn-requestid': 'SQMOTLANDPHK9A3R28GBDDR8BVVV4KQNSO5AEMVJF66Q9ASUAAJG', 'x-amz-crc32': '3132105388'}, 'RetryAttempts': 0}} 
+
+Attempt 1: Found 3 items
+
+Found Immunization Delta items for ImmsID=39499c13-d4dd-41bc-aba5-ef1eae4c01ac
+

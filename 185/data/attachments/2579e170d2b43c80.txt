@@ -1,0 +1,2 @@
+❌ Step failed! **IMMS event and delta tables, along with the MNS event, will be populated with correct data for the deleted record** 
+ Error: 'ScenarioContext' object has no attribute 'patient_age'
