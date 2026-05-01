@@ -36,6 +36,15 @@ locals {
     local.redis_env_vars
   )
 }
+
+data "aws_iam_policy_document" "redis_auth_token_policy_document" {
+  statement {
+    effect    = "Allow"
+    actions   = ["secretsmanager:GetSecretValue"]
+    resources = [data.aws_secretsmanager_secret.redis_auth_token.arn]
+  }
+}
+
 data "aws_iam_policy_document" "imms_policy_document" {
   source_policy_documents = [
     templatefile("${local.policy_path}/dynamodb.json", {
@@ -55,6 +64,7 @@ data "aws_iam_policy_document" "imms_policy_document" {
     templatefile("${local.policy_path}/secret_manager.json", {
       "account_id" : data.aws_caller_identity.current.account_id
     }),
+    data.aws_iam_policy_document.redis_auth_token_policy_document.json,
     file("${local.policy_path}/ec2_network_interfaces.json")
   ]
 }

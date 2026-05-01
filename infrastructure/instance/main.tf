@@ -82,7 +82,7 @@ data "aws_kms_key" "existing_dynamo_encryption_key" {
 }
 
 data "aws_elasticache_replication_group" "existing_redis" {
-  replication_group_id = "immunisation-redis-cluster"
+  replication_group_id = "immunisation-redis-replication-group"
 }
 
 data "aws_secretsmanager_secret" "redis_auth_token" {

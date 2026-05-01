@@ -57,6 +57,8 @@ locals {
   # ECS (cluster names match instance short_prefix: imms-<sub_env>-ecs-cluster)
   ecs_clusters = [for sub_env in local.sub_environments_map[var.environment] : "imms-${sub_env}-ecs-cluster"]
 
+  redis_cache_cluster_id = "immunisation-redis-replication-group-001"
+
   # Alarms
   alarms = [
     "_create_imms-lambda-error",
@@ -745,7 +747,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
           "view" : "timeSeries",
           "stacked" : false,
           "metrics" : [
-            ["AWS/ElastiCache", "CacheHits", "CacheClusterId", "immunisation-redis-cluster", "CacheNodeId", "0001"]
+            ["AWS/ElastiCache", "CacheHits", "CacheClusterId", local.redis_cache_cluster_id, "CacheNodeId", "0001"]
           ],
           "region" : var.aws_region,
           "title" : "ElastiCache - CacheHits",
@@ -760,7 +762,7 @@ resource "aws_cloudwatch_dashboard" "imms-metrics-dashboard" {
         "height" : 6,
         "properties" : {
           "metrics" : [
-            ["AWS/ElastiCache", "CPUUtilization", "CacheClusterId", "immunisation-redis-cluster", "CacheNodeId", "0001"]
+            ["AWS/ElastiCache", "CPUUtilization", "CacheClusterId", local.redis_cache_cluster_id, "CacheNodeId", "0001"]
           ],
           "view" : "timeSeries",
           "stacked" : false,
