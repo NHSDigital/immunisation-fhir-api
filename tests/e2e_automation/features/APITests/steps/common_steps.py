@@ -301,9 +301,9 @@ def validate_imms_event_table_by_operation(context, operation: Operation, reinst
     for name, expected, actual in fields_to_compare:
         check.is_true(expected == actual, f"Expected {name}: {expected}, Actual {actual}")
 
-    if Operation[operation].value == "delete":
+    if Operation[operation].value == "DELETE":
         check.is_true(
-            isinstance(actualDeletedAt, int) and actualDeletedAt > 0,
+            actualDeletedAt is not None and actualDeletedAt > 0,
             f"Expected DeletedAt to be a Unix timestamp, got {actualDeletedAt}",
         )
     elif reinstated:

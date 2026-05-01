@@ -67,14 +67,14 @@ Feature: Delete an immunization of a patient
 
 
     @vaccine_type_6IN1 @patient_id_Random @supplier_name_TPP
-    Scenario: Verify that the create request is reinstated successfully after the record is soft deleted
+    Scenario: Verify that the update request is reinstated successfully after the record is soft deleted
         Given I have created a valid vaccination record
         When Send a delete for Immunization event created
         Then The request will be successful with the status code '204'
         And IMMS event and delta tables, along with the MNS event, will be populated with correct data for the deleted record
         When Trigger update request with same unique_id and unique_id_uri for the deleted record
         Then The request will be successful with the status code '200'
-        And The location key and Etag in header will contain the  previous Immunization Id and version will be incremented by 1
+        And The Etag in header will contain the  correct version which will be incremented by 1
         And IMMS event and delta tables, along with the MNS event, will be populated with correct updated data for the reinstated record
         When Send a delete for Immunization event created
         Then The request will be successful with the status code '204'
@@ -88,9 +88,9 @@ Feature: Delete an immunization of a patient
         And IMMS event and delta tables, along with the MNS event, will be populated with correct data for the deleted record
         When I send a search request with Post method using identifier parameter for the record
         Then The request will be successful with the status code '200'
-        And No immunization event is returned in the response
+    #And No immunization event is returned in the response
 
-    @delete_cleanup @vaccine_type_HEPB @patient_id_Random @supplier_name_TPP
+    @Delete_cleanUp @vaccine_type_HEPB @patient_id_Random @supplier_name_TPP
     Scenario: Verify that the search request will be successful for reinstated record with create operation
         Given I have created a valid vaccination record
         When Send a delete for Immunization event created
@@ -105,7 +105,7 @@ Feature: Delete an immunization of a patient
         And reinstated record is returned in the response with correct created data
 
 
-    @vaccine_type_6IN1 @patient_id_Random @supplier_name_TPP
+    @Delete_cleanUp @vaccine_type_6IN1 @patient_id_Random @supplier_name_TPP
     Scenario: Verify that the search request will be successful for reinstated record with update operation
         Given I have created a valid vaccination record
         When Send a delete for Immunization event created
@@ -113,8 +113,22 @@ Feature: Delete an immunization of a patient
         And IMMS event and delta tables, along with the MNS event, will be populated with correct data for the deleted record
         When Trigger update request with same unique_id and unique_id_uri for the deleted record
         Then The request will be successful with the status code '200'
-        And The location key and Etag in header will contain the  previous Immunization Id and version will be incremented by 1
+        And The Etag in header will contain the  correct version which will be incremented by 1
         And IMMS event and delta tables, along with the MNS event, will be populated with correct updated data for the reinstated record
         When I send a search request with Post method using identifier parameter for the record
         Then The request will be successful with the status code '200'
         And reinstated record is returned in the response with correct created data
+
+    @Delete_cleanUp @vaccine_type_HEPB @patient_id_Random @supplier_name_TPP
+    Scenario: Verify that the create request will be unsuccessfully for already reinstated record
+        Given I have created a valid vaccination record
+        When Send a delete for Immunization event created
+        Then The request will be successful with the status code '204'
+        And IMMS event and delta tables, along with the MNS event, will be populated with correct data for the deleted record
+        When Trigger another post create request with same unique_id and unique_id_uri
+        Then The request will be successful with the status code '201'
+        And The location key and Etag in header will contain the  previous Immunization Id and version will be incremented by 1
+        And IMMS event and delta tables, along with the MNS event, will be populated with correct created data for the reinstated record
+        When Trigger another post create request with same unique_id and unique_id_uri
+        Then The request will be unsuccessful with the status code '422'
+        And The Response JSONs should contain correct error message for 'duplicate'

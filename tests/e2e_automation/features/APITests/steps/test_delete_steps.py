@@ -28,7 +28,7 @@ from .common_steps import (
     validate_mns_event_triggered_for_updated_event,
 )
 from .test_search_steps import (
-    send_search_post_request_with_identifier_and_elements_header,
+    send_search_post_request_with_identifier_header,
     trigger_search_request,
     validate_correct_immunization_event,
     validate_empty_immunization_event,
@@ -131,13 +131,27 @@ def validate_location_key_and_etag_in_header(context):
     context.eTag = eTag.strip('"')
 
 
+@then("The Etag in header will contain the  correct version which will be incremented by 1")
+def validate_etag_in_header(context):
+    eTag = context.response.headers["E-Tag"]
+    assert "E-Tag" in context.response.headers, (
+        f"E-Tag header is missing in the response with Status code: {context.response.status_code}. Response: {context.response.text}"
+    )
+    print(f"\n Etag is {context.eTag} \n")
+    check.is_true(
+        str(context.expected_version) == eTag.strip('"'),
+        f"Expected version should be : {context.expected_version}, Found: {eTag}",
+    )
+    context.eTag = eTag.strip('"')
+
+
 @then(
     "IMMS event and delta tables, along with the MNS event, will be populated with correct created data for the reinstated record"
 )
 def validate_delta_table_for_create_event_for_reinstated_record(context):
     context.update_object = copy.deepcopy(context.immunization_object)
     context.update_object = convert_to_update(context.update_object, context.ImmsID)
-    validate_imms_event_table_by_operation(context, "created", reinstated=True)
+    validate_imms_event_table_by_operation(context, "updated", reinstated=True)
     validate_delta_table_for_updated_event(context)
     validate_mns_event_triggered_for_updated_event(context)
 
@@ -167,7 +181,7 @@ def validate_imms_event_delta_and_mns_for_deleted_record(context):
 
 @when("I send a search request with Post method using identifier parameter for the record")
 def trigger_search_request_for_deleted_record(context):
-    send_search_post_request_with_identifier_and_elements_header(context)
+    send_search_post_request_with_identifier_header(context)
 
 
 @then("No immunization event is returned in the response")

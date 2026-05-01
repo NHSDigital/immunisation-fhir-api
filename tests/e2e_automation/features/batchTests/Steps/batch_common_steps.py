@@ -270,6 +270,7 @@ def validate_imms_delta_table_for_dpsfull_records(context):
         )
 
 
+@then("The delta table will be populated with the correct data for reinstated record")
 @then("The delta table will be populated with the correct data for all updated records in batch file")
 def validate_imms_delta_table_for_updated_records(context):
     if context.delta_cache is None:
@@ -289,14 +290,63 @@ def validate_imms_delta_table_for_deleted_records(context):
         "The imms event table will be populated with the correct data for '{operation}' event for records in batch file"
     )
 )
-def validate_imms_event_table_for_all_records_in_batch_file(context, operation: Operation):
+def validate_imms_event_table_for_given_operation_event(context, operation):
+    validate_imms_event_table_for_all_records_in_batch_file(context, operation)
+
+
+@then("The imms event table will be populated with the correct data for reinstated record in batch file")
+def validate_imms_event_table_for_reinstated_event(context):
+    validate_imms_event_table_for_all_records_in_batch_file(context, "updated", reinstated=True)
+
+
+@then("all rejected records are listed in the csv bus ack file and no imms id is generated")
+def all_record_are_rejected_for_given_field_name(context):
+    file_rows = read_and_validate_csv_bus_ack_file_content(context)
+    all_valid = validate_bus_ack_file_for_error(context, file_rows)
+    assert all_valid, "One or more records failed validation checks"
+
+
+@then(parsers.parse("MNS event will be triggered with correct data for all '{event_type}' events where NHS is not null"))
+def mns_event_will_be_triggered_with_correct_data_for_created_events_in_batch_file(context, event_type):
+    if context.mns_validation_required.strip().lower() != "true":
+        print(
+            f"MNS event validation is skipped since mns_validation_required is set to {context.mns_validation_required}"
+        )
+        return
+
+    action = event_type.upper() if event_type.upper() in ["CREATE", "UPDATE"] else "CREATE"
+
+    df = context.vaccine_df.dropna(subset=["IMMS_ID"]).copy()
+    df["IMMS_ID_CLEAN"] = df["IMMS_ID"].astype(str).str.replace("Immunization#", "", regex=False)
+
+    valid_rows = list(df.itertuples(index=False))
+
+    if not valid_rows:
+        print("No valid NHS rows found — skipping MNS validation.")
+        return
+
+    mns_event_will_be_triggered_for_batch_record(context=context, action=action, valid_rows=valid_rows)
+
+
+@then("Api updated event will trigger MNS event with correct data")
+def mns_event_will_be_triggered_with_correct_data_for_api_updated_events(context):
+    mns_event_will_be_triggered_with_correct_data(context=context, action="UPDATE")
+
+
+def normalize(value):
+    return "" if pd.isna(value) or value == "" else value
+
+
+def validate_imms_event_table_for_all_records_in_batch_file(context, operation: Operation, reinstated=False):
     mapping = ActionMap[operation.lower()]
     df = context.vaccine_df[context.vaccine_df["ACTION_FLAG"].str.lower() == mapping.action_flag.value.lower()]
 
     df["UNIQUE_ID_COMBINED"] = df["UNIQUE_ID_URI"].astype(str) + "#" + df["UNIQUE_ID"].astype(str)
     valid_rows = df[df["UNIQUE_ID_COMBINED"].notnull() & (df["UNIQUE_ID_COMBINED"] != "nan#nan")]
 
-    for idx, row in valid_rows.iterrows():
+    unique_rows = valid_rows.drop_duplicates(subset=["UNIQUE_ID_COMBINED"])
+
+    for idx, row in unique_rows.iterrows():
         unique_id_combined = row["UNIQUE_ID_COMBINED"]
         batch_record = {k: normalize(v) for k, v in row.to_dict().items()}
 
@@ -339,48 +389,28 @@ def validate_imms_event_table_for_all_records_in_batch_file(context, operation: 
             ("Version", int(context.expected_version), int(item.get("Version"))),
         ]
 
+        actualDeletedAt = item.get("DeletedAt")
+
         for name, expected, actual in fields_to_compare:
             check.is_true(expected == actual, f"Expected {name}: {expected}, Actual {actual}")
 
+        if Operation[operation].value == "DELETE":
+            check.is_true(
+                actualDeletedAt is not None and actualDeletedAt > 0,
+                f"Expected DeletedAt to be a Unix timestamp, got {actualDeletedAt}",
+            )
+        elif reinstated:
+            check.is_true(
+                actualDeletedAt == "reinstated",
+                f"Expected DeletedAt: None for reinstated record, got {actualDeletedAt}",
+            )
+        else:
+            check.is_true(
+                actualDeletedAt is None,
+                f"Expected DeletedAt: None, Actual {actualDeletedAt}",
+            )
+
         validate_to_compare_batch_record_with_event_table_record(context, batch_record, created_event)
-
-
-@then("all rejected records are listed in the csv bus ack file and no imms id is generated")
-def all_record_are_rejected_for_given_field_name(context):
-    file_rows = read_and_validate_csv_bus_ack_file_content(context)
-    all_valid = validate_bus_ack_file_for_error(context, file_rows)
-    assert all_valid, "One or more records failed validation checks"
-
-
-@then(parsers.parse("MNS event will be triggered with correct data for all '{event_type}' events where NHS is not null"))
-def mns_event_will_be_triggered_with_correct_data_for_created_events_in_batch_file(context, event_type):
-    if context.mns_validation_required.strip().lower() != "true":
-        print(
-            f"MNS event validation is skipped since mns_validation_required is set to {context.mns_validation_required}"
-        )
-        return
-
-    action = event_type.upper() if event_type.upper() in ["CREATE", "UPDATE"] else "CREATE"
-
-    df = context.vaccine_df.dropna(subset=["IMMS_ID"]).copy()
-    df["IMMS_ID_CLEAN"] = df["IMMS_ID"].astype(str).str.replace("Immunization#", "", regex=False)
-
-    valid_rows = list(df.itertuples(index=False))
-
-    if not valid_rows:
-        print("No valid NHS rows found — skipping MNS validation.")
-        return
-
-    mns_event_will_be_triggered_for_batch_record(context=context, action=action, valid_rows=valid_rows)
-
-
-@then("Api updated event will trigger MNS event with correct data")
-def mns_event_will_be_triggered_with_correct_data_for_api_updated_events(context):
-    mns_event_will_be_triggered_with_correct_data(context=context, action="UPDATE")
-
-
-def normalize(value):
-    return "" if pd.isna(value) or value == "" else value
 
 
 def create_batch_file(context, file_ext: str = "csv", fileName: str = None, delimiter: str = "|"):
@@ -450,7 +480,7 @@ def preload_delta_data(context):
         context.delta_cache[clean_id] = {"rows": group, "delta_items": delta_items}
 
 
-def validate_imms_delta_table_for_newly_created_records_in_batch_file(context):
+def validate_imms_delta_table_for_newly_created_records_in_batch_file(context, expected_number_of_items=1):
     for clean_id, data in context.delta_cache.items():
         rows = data["rows"]
         delta_items = data["delta_items"]
@@ -458,11 +488,11 @@ def validate_imms_delta_table_for_newly_created_records_in_batch_file(context):
         create_items = [i for i in delta_items if i.get("Operation") == "CREATE"]
 
         check.is_true(
-            len(create_items) == 1,
-            f"Expected exactly 1 CREATE record for IMMS_ID {clean_id}, found {len(create_items)}",
+            len(create_items) == expected_number_of_items,
+            f"Expected exactly {expected_number_of_items} CREATE record(s) for IMMS_ID {clean_id}, found {len(create_items)}",
         )
 
-        create_item = create_items[0]
+        create_item = max(create_items, key=lambda x: x.get("SequenceNumber", -1))
 
         for _, row in rows[rows["ACTION_FLAG"] == "NEW"].iterrows():
             batch_record = {k: normalize(v) for k, v in row.to_dict().items()}
@@ -497,23 +527,29 @@ def validate_imms_delta_table_for_updated_records_in_batch_file(context):
             )
 
 
-def validate_imms_delta_table_for_deleted_records_in_batch_file(context):
+def validate_imms_delta_table_for_deleted_records_in_batch_file(context, expected_number_of_items=1):
     for clean_id, data in context.delta_cache.items():
         rows = data["rows"]
         delta_items = data["delta_items"]
 
-        delete_item = next((i for i in delta_items if i.get("Operation") == "DELETE"), None)
+        delete_items = [i for i in delta_items if i.get("Operation") == "DELETE"]
 
-        check.is_true(delete_item, f"No DELETE record for IMMS_ID {clean_id}")
+        check.is_true(
+            len(delete_items) == expected_number_of_items,
+            f"Expected exactly {expected_number_of_items} DELETE record(s) for IMMS_ID {clean_id}, found {len(delete_items)}",
+        )
+
+        delete_item = max(delete_items, key=lambda x: x.get("SequenceNumber", -1))
 
         delete_rows = rows[rows["ACTION_FLAG"] == "DELETE"]
 
         check.is_true(
-            len(delete_rows) == 1,
-            f"Expected exactly 1 DELETE row in batch file for IMMS_ID {clean_id}, found {len(delete_rows)}",
+            len(delete_rows) == expected_number_of_items,
+            f"Expected exactly {expected_number_of_items} DELETE row(s) in batch file for IMMS_ID {clean_id}, found {len(delete_rows)}",
         )
 
         row = delete_rows.iloc[0]
+
         batch_record = {k: normalize(v) for k, v in row.to_dict().items()}
 
         validate_imms_delta_record_with_batch_record(
