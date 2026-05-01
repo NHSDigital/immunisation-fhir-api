@@ -11,7 +11,7 @@ from fhir.resources.R4B.bundle import Bundle
 from fhir.resources.R4B.identifier import Identifier
 
 from common.get_service_url import get_service_url
-from constants import MAX_RESPONSE_SIZE_BYTES
+from constants import MAX_SEARCH_RESPONSE_SIZE_BYTES
 from controller.aws_apig_event_utils import (
     get_multi_value_query_params,
     get_path_parameter,
@@ -89,12 +89,17 @@ class FhirController:
         except JSONDecodeError as e:
             raise InvalidJsonError(message=str(f"Request's body contains malformed JSON: {e}"))
 
-        created_resource_id = self.fhir_service.create_immunization(immunisation, supplier_system)
+        created_resource_id, created_resource_version = self.fhir_service.create_immunization(
+            immunisation, supplier_system
+        )
 
         return create_response(
             status_code=201,
             body=None,
-            headers={"Location": f"{self._API_SERVICE_URL}/Immunization/{created_resource_id}", "E-Tag": "1"},
+            headers={
+                "Location": f"{self._API_SERVICE_URL}/Immunization/{created_resource_id}",
+                "E-Tag": str(created_resource_version),
+            },
         )
 
     @fhir_api_exception_handler
@@ -208,7 +213,7 @@ class FhirController:
     def _create_search_response(self, search_bundle: Bundle) -> dict:
         search_response_json = search_bundle.json(use_decimal=True)
 
-        if len(search_response_json) > MAX_RESPONSE_SIZE_BYTES:
+        if len(search_response_json) > MAX_SEARCH_RESPONSE_SIZE_BYTES:
             raise TooManyResultsError("Search returned too many results. Please narrow down the search")
 
         prepared_search_bundle = self._prepare_search_bundle(search_response_json)
