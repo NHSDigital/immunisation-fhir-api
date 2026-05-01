@@ -36,10 +36,19 @@ from test_common.testing_utils.values_for_tests import ValidValues
 NHS_NUMBER_USED_IN_SAMPLE_DATA = "9000000009"
 
 
-def add_snomed_coding(immunization: dict, field_name: str, code: str, display: str) -> dict:
-    first_coding = deepcopy(immunization[field_name]["coding"][0])
-    immunization[field_name]["coding"].append({"system": first_coding["system"], "code": code, "display": display})
-    return first_coding
+def add_duplicate_snomed_with_leading_non_snomed_coding(
+    immunization: dict, field_name: str, code: str, display: str
+) -> list:
+    first_snomed_coding = deepcopy(immunization[field_name]["coding"][0])
+    leading_non_snomed_coding = deepcopy(first_snomed_coding)
+    leading_non_snomed_coding["system"] = "http://snomed.info/test"
+    duplicate_snomed_coding = {**first_snomed_coding, "code": code, "display": display}
+    immunization[field_name]["coding"] = [
+        leading_non_snomed_coding,
+        first_snomed_coding,
+        duplicate_snomed_coding,
+    ]
+    return deepcopy(immunization[field_name]["coding"])
 
 
 class TestFhirServiceBase(unittest.TestCase):
@@ -354,6 +363,7 @@ class TestCreateImmunization(TestFhirServiceBase):
 
         nhs_number = VALID_NHS_NUMBER
         req_imms = create_covid_immunization_dict_no_id(nhs_number)
+        expected_validated_imms = deepcopy(req_imms)
 
         # When
         created_id, created_version = self.fhir_service.create_immunization(req_imms, "Test")
@@ -366,12 +376,12 @@ class TestCreateImmunization(TestFhirServiceBase):
         self.assertEqual(create_identifier.value, "ACME-vacc123456")
         self.imms_repo.create_immunization.assert_called_once_with(Immunization.parse_obj(req_imms), "Test")
 
-        self.validator.validate.assert_called_once_with(req_imms)
+        self.validator.validate.assert_called_once_with(expected_validated_imms)
         self.assertEqual(self._MOCK_NEW_UUID, created_id)
         self.assertEqual(1, created_version)
 
-    def test_create_immunization_keeps_first_site_and_route_snomed_coding(self):
-        """it should keep the first SNOMED coding for site and route during API create"""
+    def test_create_immunization_persists_all_site_and_route_codings(self):
+        """it should validate against the first SNOMED coding and persist all codings during API create"""
         self.mock_redis.hget.return_value = "COVID"
         self.mock_redis_getter.return_value = self.mock_redis
         self.authoriser.authorise.return_value = True
@@ -379,17 +389,18 @@ class TestCreateImmunization(TestFhirServiceBase):
         self.imms_repo.create_immunization.return_value = self._MOCK_NEW_UUID
 
         req_imms = create_covid_immunization_dict_no_id(VALID_NHS_NUMBER)
-        first_site_coding = add_snomed_coding(req_imms, "site", "999999999", "Replacement site that should be ignored")
-        first_route_coding = add_snomed_coding(
+        expected_site_codings = add_duplicate_snomed_with_leading_non_snomed_coding(
+            req_imms, "site", "999999999", "Replacement site that should be ignored"
+        )
+        expected_route_codings = add_duplicate_snomed_with_leading_non_snomed_coding(
             req_imms, "route", "888888888", "Replacement route that should be ignored"
         )
 
         created_id, created_version = self.pre_validate_fhir_service.create_immunization(req_imms, "Test")
 
         self.assertEqual(self._MOCK_NEW_UUID, created_id)
-        self.assertEqual(1, created_version)
-        self.assertEqual(req_imms["site"]["coding"], [first_site_coding])
-        self.assertEqual(req_imms["route"]["coding"], [first_route_coding])
+        self.assertEqual(req_imms["site"]["coding"], expected_site_codings)
+        self.assertEqual(req_imms["route"]["coding"], expected_route_codings)
         self.imms_repo.create_immunization.assert_called_once_with(Immunization.parse_obj(req_imms), "Test")
 
     def test_create_immunization_with_id_throws_error(self):
@@ -510,6 +521,7 @@ class TestCreateImmunization(TestFhirServiceBase):
 
         nhs_number = VALID_NHS_NUMBER
         req_imms = create_covid_immunization_dict_no_id(nhs_number)
+        expected_validated_imms = deepcopy(req_imms)
 
         # When
         with self.assertRaises(IdentifierDuplicationError) as error:
@@ -522,8 +534,7 @@ class TestCreateImmunization(TestFhirServiceBase):
         self.assertEqual(duplicate_identifier.system, "https://supplierABC/identifiers/vacc")
         self.assertEqual(duplicate_identifier.value, "ACME-vacc123456")
         self.imms_repo.create_immunization.assert_not_called()
-        self.imms_repo.update_immunization.assert_not_called()
-        self.validator.validate.assert_called_once_with(req_imms)
+        self.validator.validate.assert_called_once_with(expected_validated_imms)
         self.assertEqual(
             "The provided identifier: https://supplierABC/identifiers/vacc#ACME-vacc123456 is duplicated",
             str(error.exception),
@@ -613,8 +624,8 @@ class TestUpdateImmunization(TestFhirServiceBase):
         self.assertEqual(call_args[3], "Test")
         self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.UPDATE, {"COVID"})
 
-    def test_update_immunization_keeps_first_site_and_route_snomed_coding(self):
-        """it should keep the first SNOMED coding for site and route during API update"""
+    def test_update_immunization_persists_all_site_and_route_codings(self):
+        """it should validate against the first SNOMED coding and persist all codings during API update"""
         imms_id = "an-id"
         original_immunisation = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER)
         identifier = Identifier(
@@ -622,10 +633,10 @@ class TestUpdateImmunization(TestFhirServiceBase):
             value=original_immunisation["identifier"][0]["value"],
         )
         updated_immunisation = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER, "2021-02-07T13:28:00+00:00")
-        first_site_coding = add_snomed_coding(
+        expected_site_codings = add_duplicate_snomed_with_leading_non_snomed_coding(
             updated_immunisation, "site", "999999999", "Replacement site that should be ignored"
         )
-        first_route_coding = add_snomed_coding(
+        expected_route_codings = add_duplicate_snomed_with_leading_non_snomed_coding(
             updated_immunisation, "route", "888888888", "Replacement route that should be ignored"
         )
         existing_resource_meta = ImmunizationRecordMetadata(
@@ -642,9 +653,11 @@ class TestUpdateImmunization(TestFhirServiceBase):
         updated_version = self.fhir_service.update_immunization(imms_id, updated_immunisation, "Test", 1)
 
         self.assertEqual(updated_version, 2)
-        self.assertEqual(updated_immunisation["site"]["coding"], [first_site_coding])
-        self.assertEqual(updated_immunisation["route"]["coding"], [first_route_coding])
+        self.assertEqual(updated_immunisation["site"]["coding"], expected_site_codings)
+        self.assertEqual(updated_immunisation["route"]["coding"], expected_route_codings)
         self.imms_repo.update_immunization.assert_called_once()
+        call_args = self.imms_repo.update_immunization.call_args[0]
+        self.assertEqual(call_args[1], Immunization.parse_obj(updated_immunisation))
 
     def test_update_immunization_raises_validation_exception_when_nhs_number_invalid(self):
         """it should raise a CustomValidationError when the patient's NHS number in the payload is invalid"""
