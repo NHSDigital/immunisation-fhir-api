@@ -66,11 +66,30 @@ state_has_resource() {
   terraform state show "${address}" >/dev/null 2>&1
 }
 
+delete_mapping() {
+  local mapping_uuid="$1"
+
+  aws lambda delete-event-source-mapping --uuid "${mapping_uuid}" >/dev/null
+
+  for _ in {1..30}; do
+    if ! aws lambda get-event-source-mapping --uuid "${mapping_uuid}" >/dev/null 2>&1; then
+      return 0
+    fi
+
+    sleep 2
+  done
+
+  echo "Timed out waiting for event source mapping ${mapping_uuid} to be deleted."
+  exit 1
+}
+
 adopt_mapping() {
   local address="$1"
   local event_source_arn="$2"
   local target_function_name="$3"
   local counterpart_function_name="${4:-}"
+  local target_mapping_uuid=""
+  local counterpart_mapping_uuid=""
   local mapping_uuid=""
 
   shift 4
@@ -80,9 +99,19 @@ adopt_mapping() {
     return 0
   fi
 
-  mapping_uuid="$(lookup_mapping_uuid "${event_source_arn}" "${target_function_name}")"
-  if [[ -z "${mapping_uuid}" && -n "${counterpart_function_name}" ]]; then
-    mapping_uuid="$(lookup_mapping_uuid "${event_source_arn}" "${counterpart_function_name}")"
+  target_mapping_uuid="$(lookup_mapping_uuid "${event_source_arn}" "${target_function_name}")"
+
+  if [[ -n "${counterpart_function_name}" ]]; then
+    counterpart_mapping_uuid="$(lookup_mapping_uuid "${event_source_arn}" "${counterpart_function_name}")"
+  fi
+
+  if [[ -n "${counterpart_mapping_uuid}" ]]; then
+    if [[ -n "${target_mapping_uuid}" ]]; then
+      delete_mapping "${target_mapping_uuid}"
+    fi
+    mapping_uuid="${counterpart_mapping_uuid}"
+  else
+    mapping_uuid="${target_mapping_uuid}"
   fi
 
   if [[ -z "${mapping_uuid}" ]]; then
