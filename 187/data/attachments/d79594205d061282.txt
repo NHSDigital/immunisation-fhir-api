@@ -1,0 +1,2 @@
+❌ Step failed! **batch file is created for below data as full dataset** 
+ Error: 'code'

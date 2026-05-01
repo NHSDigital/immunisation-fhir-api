@@ -1,0 +1,115 @@
+✅ Pipe-delimited file saved to: /home/runner/work/immunisation-fhir-api/immunisation-fhir-api/tests/e2e_automation/batch_files_directory/MMR_Vaccinations_v5_YGA_20260501T15461900.csv
+Batch file created: MMR_Vaccinations_v5_YGA_20260501T15461900.csv
+Upload successful: MMR_Vaccinations_v5_YGA_20260501T15461900.csv → immunisation-batch-internal-qa-data-sources
+Batch file uploaded to S3: MMR_Vaccinations_v5_YGA_20260501T15461900.csv
+Waiting for file in archive: s3://immunisation-batch-internal-qa-data-sources/archive/MMR_Vaccinations_v5_YGA_20260501T15461900.csv
+Still waiting... (0s)
+Still waiting... (5s)
+Still waiting... (10s)
+Still waiting... (15s)
+Still waiting... (20s)
+Still waiting... (25s)
+Still waiting... (30s)
+File found in archive: archive/MMR_Vaccinations_v5_YGA_20260501T15461900.csv
+Waiting for ACK files starting with 'ack/MMR_Vaccinations_v5_YGA_20260501T15461900' in bucket: immunisation-batch-internal-qa-data-destinations
+[MODE] Expecting ONLY CSV ACK file
+[FOUND] .csv file located: ack/MMR_Vaccinations_v5_YGA_20260501T15461900_InfAck_20260501T15462000.csv
+[COMPLETE] All expected ACK files received
+Waiting for ACK files starting with 'forwardedFile/MMR_Vaccinations_v5_YGA_20260501T15461900' in bucket: immunisation-batch-internal-qa-data-destinations
+[MODE] Expecting BOTH CSV and JSON ACK files
+[FOUND] .csv file located: forwardedFile/MMR_Vaccinations_v5_YGA_20260501T15461900_BusAck_20260501T15462000.csv
+[FOUND] .json file located: forwardedFile/MMR_Vaccinations_v5_YGA_20260501T15461900_BusAck_20260501T15462000.json
+[COMPLETE] All expected ACK files received
+No rows found in BUS ACK file for successful records
+Attempt 1: Found 1 items
+
+Found Audit detail for filename=MMR_Vaccinations_v5_YGA_20260501T15461900.csv
+
+
+ Imms Event response is {'Items': [{'Operation': 'CREATE', 'IdentifierPK': 'https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk#Valid_NhsNumber-20260501T154619', 'PK': 'Immunization#e0126b14-ef99-4256-81b9-14893d4a5644', 'Version': Decimal('1'), 'PatientPK': 'Patient#9734835491', 'SupplierSystem': 'TPP', 'Resource': '{"resourceType": "Immunization", "status": "completed", "protocolApplied": [{"targetDisease": [{"coding": [{"system": "http://snomed.info/sct", "code": "14189004", "display": "Measles"}]}, {"coding": [{"system": "http://snomed.info/sct", "code": "36989005", "display": "Mumps"}]}, {"coding": [{"system": "http://snomed.info/sct", "code": "36653000", "display": "Rubella"}]}], "doseNumberString": "Dose sequence not recorded"}], "recorded": "2026-05-01", "identifier": [{"value": "Valid_NhsNumber-20260501T154619", "system": "https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk"}], "patient": {"reference": "#Patient1"}, "contained": [{"id": "Patient1", "resourceType": "Patient", "birthDate": "1961-10-20", "gender": "male", "address": [{"postalCode": "LS17 9AY"}], "identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9734835491"}], "name": [{"family": "REGAN", "given": ["NOEL"]}]}], "vaccineCode": {"coding": [{"system": "http://terminology.hl7.org/CodeSystem/v3-NullFlavor", "code": "NAVU", "display": "Not available"}]}, "extension": [{"url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure", "valueCodeableConcept": {"coding": [{"system": "http://snomed.info/sct", "code": "38598009"}]}}], "occurrenceDateTime": "2026-05-01T15:45:29+00:00", "primarySource": true, "performer": [{"actor": {"type": "Organization", "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "X99999"}}}], "location": {"identifier": {"value": "X99999", "system": "https://fhir.nhs.uk/Id/ods-organization-code"}}, "id": "e0126b14-ef99-4256-81b9-14893d4a5644"}', 'PatientSK': 'MMR#e0126b14-ef99-4256-81b9-14893d4a5644'}], 'Count': 1, 'ScannedCount': 1, 'ResponseMetadata': {'RequestId': 'CBGSBO4K57E2275EJK8JLQN06BVV4KQNSO5AEMVJF66Q9ASUAAJG', 'HTTPStatusCode': 200, 'HTTPHeaders': {'server': 'Server', 'date': 'Fri, 01 May 2026 15:46:57 GMT', 'content-type': 'application/x-amz-json-1.0', 'content-length': '2248', 'connection': 'keep-alive', 'x-amzn-requestid': 'CBGSBO4K57E2275EJK8JLQN06BVV4KQNSO5AEMVJF66Q9ASUAAJG', 'x-amz-crc32': '810657346'}, 'RetryAttempts': 0}} 
+
+
+ Imms Event response is {'Items': [{'Version': Decimal('1'), 'SupplierSystem': 'TPP', 'PK': 'Immunization#32779846-49fb-4231-bc12-0772ace4f8e8', 'PatientPK': 'Patient#7085531614', 'PatientSK': 'MMR#32779846-49fb-4231-bc12-0772ace4f8e8', 'Resource': '{"resourceType": "Immunization", "status": "completed", "protocolApplied": [{"targetDisease": [{"coding": [{"system": "http://snomed.info/sct", "code": "14189004", "display": "Measles"}]}, {"coding": [{"system": "http://snomed.info/sct", "code": "36989005", "display": "Mumps"}]}, {"coding": [{"system": "http://snomed.info/sct", "code": "36653000", "display": "Rubella"}]}], "doseNumberString": "Dose sequence not recorded"}], "recorded": "2026-05-01", "identifier": [{"value": "InvalidInPDS_NhsNumber-20260501T154619", "system": "https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk"}], "patient": {"reference": "#Patient1"}, "contained": [{"id": "Patient1", "resourceType": "Patient", "birthDate": "1980-11-01", "gender": "unknown", "address": [{"postalCode": "LS01 1AB"}], "identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "7085531614"}], "name": [{"family": "test1", "given": ["test2"]}]}], "vaccineCode": {"coding": [{"system": "http://terminology.hl7.org/CodeSystem/v3-NullFlavor", "code": "NAVU", "display": "Not available"}]}, "extension": [{"url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure", "valueCodeableConcept": {"coding": [{"system": "http://snomed.info/sct", "code": "38598009"}]}}], "occurrenceDateTime": "2026-05-01T15:45:29+00:00", "primarySource": true, "performer": [{"actor": {"type": "Organization", "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "X99999"}}}], "location": {"identifier": {"value": "X99999", "system": "https://fhir.nhs.uk/Id/ods-organization-code"}}, "id": "32779846-49fb-4231-bc12-0772ace4f8e8"}', 'IdentifierPK': 'https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk#InvalidInPDS_NhsNumber-20260501T154619', 'Operation': 'CREATE'}], 'Count': 1, 'ScannedCount': 1, 'ResponseMetadata': {'RequestId': '224D12KRA2TTAF42KVLI68CMKNVV4KQNSO5AEMVJF66Q9ASUAAJG', 'HTTPStatusCode': 200, 'HTTPHeaders': {'server': 'Server', 'date': 'Fri, 01 May 2026 15:46:57 GMT', 'content-type': 'application/x-amz-json-1.0', 'content-length': '2266', 'connection': 'keep-alive', 'x-amzn-requestid': '224D12KRA2TTAF42KVLI68CMKNVV4KQNSO5AEMVJF66Q9ASUAAJG', 'x-amz-crc32': '2821227766'}, 'RetryAttempts': 0}} 
+
+
+ Imms Event response is {'Items': [{'PatientSK': 'MMR#3f537c0b-68f8-4fd9-9372-839987e8c853', 'SupplierSystem': 'TPP', 'Operation': 'CREATE', 'IdentifierPK': 'https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk#SFlag_NhsNumber-20260501T154619', 'PatientPK': 'Patient#9449310475', 'Resource': '{"resourceType": "Immunization", "status": "completed", "protocolApplied": [{"targetDisease": [{"coding": [{"system": "http://snomed.info/sct", "code": "14189004", "display": "Measles"}]}, {"coding": [{"system": "http://snomed.info/sct", "code": "36989005", "display": "Mumps"}]}, {"coding": [{"system": "http://snomed.info/sct", "code": "36653000", "display": "Rubella"}]}], "doseNumberString": "Dose sequence not recorded"}], "recorded": "2026-05-01", "identifier": [{"value": "SFlag_NhsNumber-20260501T154619", "system": "https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk"}], "patient": {"reference": "#Patient1"}, "contained": [{"id": "Patient1", "resourceType": "Patient", "birthDate": "1980-11-01", "gender": "unknown", "address": [{"postalCode": "LS01 1AB"}], "identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9449310475"}], "name": [{"family": "test1", "given": ["test2"]}]}], "vaccineCode": {"coding": [{"system": "http://terminology.hl7.org/CodeSystem/v3-NullFlavor", "code": "NAVU", "display": "Not available"}]}, "extension": [{"url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure", "valueCodeableConcept": {"coding": [{"system": "http://snomed.info/sct", "code": "170433008"}]}}], "occurrenceDateTime": "2026-05-01T15:45:29+00:00", "primarySource": true, "performer": [{"actor": {"type": "Organization", "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "X99999"}}}], "location": {"identifier": {"value": "X99999", "system": "https://fhir.nhs.uk/Id/ods-organization-code"}}, "id": "3f537c0b-68f8-4fd9-9372-839987e8c853"}', 'PK': 'Immunization#3f537c0b-68f8-4fd9-9372-839987e8c853', 'Version': Decimal('1')}], 'Count': 1, 'ScannedCount': 1, 'ResponseMetadata': {'RequestId': 'B50EGV93KEDKEV6PIGMEFQPNP7VV4KQNSO5AEMVJF66Q9ASUAAJG', 'HTTPStatusCode': 200, 'HTTPHeaders': {'server': 'Server', 'date': 'Fri, 01 May 2026 15:46:57 GMT', 'content-type': 'application/x-amz-json-1.0', 'content-length': '2253', 'connection': 'keep-alive', 'x-amzn-requestid': 'B50EGV93KEDKEV6PIGMEFQPNP7VV4KQNSO5AEMVJF66Q9ASUAAJG', 'x-amz-crc32': '2058078405'}, 'RetryAttempts': 0}} 
+
+
+ Imms Event response is {'Items': [{'Operation': 'CREATE', 'Resource': '{"resourceType": "Immunization", "status": "completed", "protocolApplied": [{"targetDisease": [{"coding": [{"system": "http://snomed.info/sct", "code": "14189004", "display": "Measles"}]}, {"coding": [{"system": "http://snomed.info/sct", "code": "36989005", "display": "Mumps"}]}, {"coding": [{"system": "http://snomed.info/sct", "code": "36653000", "display": "Rubella"}]}], "doseNumberString": "Dose sequence not recorded"}], "recorded": "2026-05-01", "identifier": [{"value": "Mod11_NhSNumber-20260501T154619", "system": "https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk"}], "patient": {"reference": "#Patient1"}, "contained": [{"id": "Patient1", "resourceType": "Patient", "birthDate": "2007-11-25", "gender": "unknown", "address": [{"postalCode": "LS8 4HS"}], "identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "5309741852"}], "name": [{"family": "STERLING", "given": ["Sally"]}]}], "vaccineCode": {"coding": [{"system": "http://terminology.hl7.org/CodeSystem/v3-NullFlavor", "code": "NAVU", "display": "Not available"}]}, "extension": [{"url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure", "valueCodeableConcept": {"coding": [{"system": "http://snomed.info/sct", "code": "38598009"}]}}], "occurrenceDateTime": "2026-05-01T15:45:29+00:00", "primarySource": true, "performer": [{"actor": {"type": "Organization", "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "X99999"}}}], "location": {"identifier": {"value": "X99999", "system": "https://fhir.nhs.uk/Id/ods-organization-code"}}, "id": "404452b3-f138-45d0-b9d1-8ee58976e65a"}', 'SupplierSystem': 'TPP', 'PatientSK': 'MMR#404452b3-f138-45d0-b9d1-8ee58976e65a', 'IdentifierPK': 'https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk#Mod11_NhSNumber-20260501T154619', 'PK': 'Immunization#404452b3-f138-45d0-b9d1-8ee58976e65a', 'PatientPK': 'Patient#5309741852', 'Version': Decimal('1')}], 'Count': 1, 'ScannedCount': 1, 'ResponseMetadata': {'RequestId': 'MKEISM9O1L67K3QLQOPHAREUARVV4KQNSO5AEMVJF66Q9ASUAAJG', 'HTTPStatusCode': 200, 'HTTPHeaders': {'server': 'Server', 'date': 'Fri, 01 May 2026 15:46:58 GMT', 'content-type': 'application/x-amz-json-1.0', 'content-length': '2254', 'connection': 'keep-alive', 'x-amzn-requestid': 'MKEISM9O1L67K3QLQOPHAREUARVV4KQNSO5AEMVJF66Q9ASUAAJG', 'x-amz-crc32': '99094334'}, 'RetryAttempts': 0}} 
+
+
+ Imms Event response is {'Items': [{'PatientSK': 'MMR#dc89b997-8d1e-495b-9db2-b0aa2e850a25', 'PK': 'Immunization#dc89b997-8d1e-495b-9db2-b0aa2e850a25', 'IdentifierPK': 'https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk#NullNHS_NhsNumber-20260501T154619', 'Version': Decimal('1'), 'Operation': 'CREATE', 'SupplierSystem': 'TPP', 'Resource': '{"resourceType": "Immunization", "status": "completed", "protocolApplied": [{"targetDisease": [{"coding": [{"system": "http://snomed.info/sct", "code": "14189004", "display": "Measles"}]}, {"coding": [{"system": "http://snomed.info/sct", "code": "36989005", "display": "Mumps"}]}, {"coding": [{"system": "http://snomed.info/sct", "code": "36653000", "display": "Rubella"}]}], "doseNumberString": "Dose sequence not recorded"}], "recorded": "2026-05-01", "identifier": [{"value": "NullNHS_NhsNumber-20260501T154619", "system": "https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk"}], "patient": {"reference": "#Patient1"}, "contained": [{"id": "Patient1", "resourceType": "Patient", "birthDate": "1981-12-01", "gender": "unknown", "address": [{"postalCode": "LS01 1AB"}], "name": [{"family": "test1", "given": ["test2"]}]}], "vaccineCode": {"coding": [{"system": "http://terminology.hl7.org/CodeSystem/v3-NullFlavor", "code": "NAVU", "display": "Not available"}]}, "extension": [{"url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure", "valueCodeableConcept": {"coding": [{"system": "http://snomed.info/sct", "code": "170433008"}]}}], "occurrenceDateTime": "2026-05-01T15:45:29+00:00", "primarySource": true, "performer": [{"actor": {"type": "Organization", "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "X99999"}}}], "location": {"identifier": {"value": "X99999", "system": "https://fhir.nhs.uk/Id/ods-organization-code"}}, "id": "dc89b997-8d1e-495b-9db2-b0aa2e850a25"}', 'PatientPK': 'Patient#TBC'}], 'Count': 1, 'ScannedCount': 1, 'ResponseMetadata': {'RequestId': 'UA9OJQM86NRCEO6044R62DMCP7VV4KQNSO5AEMVJF66Q9ASUAAJG', 'HTTPStatusCode': 200, 'HTTPHeaders': {'server': 'Server', 'date': 'Fri, 01 May 2026 15:46:58 GMT', 'content-type': 'application/x-amz-json-1.0', 'content-length': '2152', 'connection': 'keep-alive', 'x-amzn-requestid': 'UA9OJQM86NRCEO6044R62DMCP7VV4KQNSO5AEMVJF66Q9ASUAAJG', 'x-amz-crc32': '4263203755'}, 'RetryAttempts': 0}} 
+
+
+ Imms Event response is {'Items': [{'Version': Decimal('1'), 'IdentifierPK': 'https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk#OldNHS_NhsNumber-20260501T154619', 'SupplierSystem': 'TPP', 'PK': 'Immunization#4a0fba02-45e4-44e5-9b97-7cafa3c20eb3', 'PatientSK': 'MMR#4a0fba02-45e4-44e5-9b97-7cafa3c20eb3', 'Operation': 'CREATE', 'PatientPK': 'Patient#9452372230', 'Resource': '{"resourceType": "Immunization", "status": "completed", "protocolApplied": [{"targetDisease": [{"coding": [{"system": "http://snomed.info/sct", "code": "14189004", "display": "Measles"}]}, {"coding": [{"system": "http://snomed.info/sct", "code": "36989005", "display": "Mumps"}]}, {"coding": [{"system": "http://snomed.info/sct", "code": "36653000", "display": "Rubella"}]}], "doseNumberString": "Dose sequence not recorded"}], "recorded": "2026-05-01", "identifier": [{"value": "OldNHS_NhsNumber-20260501T154619", "system": "https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk"}], "patient": {"reference": "#Patient1"}, "contained": [{"id": "Patient1", "resourceType": "Patient", "birthDate": "1980-11-01", "gender": "unknown", "address": [{"postalCode": "LS01 1AB"}], "identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9452372230"}], "name": [{"family": "test1", "given": ["test2"]}]}], "vaccineCode": {"coding": [{"system": "http://terminology.hl7.org/CodeSystem/v3-NullFlavor", "code": "NAVU", "display": "Not available"}]}, "extension": [{"url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure", "valueCodeableConcept": {"coding": [{"system": "http://snomed.info/sct", "code": "170433008"}]}}], "occurrenceDateTime": "2026-05-01T15:45:29+00:00", "primarySource": true, "performer": [{"actor": {"type": "Organization", "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "X99999"}}}], "location": {"identifier": {"value": "X99999", "system": "https://fhir.nhs.uk/Id/ods-organization-code"}}, "id": "4a0fba02-45e4-44e5-9b97-7cafa3c20eb3"}'}], 'Count': 1, 'ScannedCount': 1, 'ResponseMetadata': {'RequestId': 'RBR2M2P7574L8HS66S55I988D3VV4KQNSO5AEMVJF66Q9ASUAAJG', 'HTTPStatusCode': 200, 'HTTPHeaders': {'server': 'Server', 'date': 'Fri, 01 May 2026 15:46:58 GMT', 'content-type': 'application/x-amz-json-1.0', 'content-length': '2255', 'connection': 'keep-alive', 'x-amzn-requestid': 'RBR2M2P7574L8HS66S55I988D3VV4KQNSO5AEMVJF66Q9ASUAAJG', 'x-amz-crc32': '2706990240'}, 'RetryAttempts': 0}} 
+
+
+ Imms Event response is {'Items': [{'Version': Decimal('1'), 'PatientPK': 'Patient#9737366689', 'SupplierSystem': 'TPP', 'PK': 'Immunization#c2f60be2-504e-409b-9646-f17309d5a48b', 'Operation': 'CREATE', 'Resource': '{"resourceType": "Immunization", "status": "completed", "protocolApplied": [{"targetDisease": [{"coding": [{"system": "http://snomed.info/sct", "code": "14189004", "display": "Measles"}]}, {"coding": [{"system": "http://snomed.info/sct", "code": "36989005", "display": "Mumps"}]}, {"coding": [{"system": "http://snomed.info/sct", "code": "36653000", "display": "Rubella"}]}], "doseNumberString": "Dose sequence not recorded"}], "recorded": "2026-05-01", "identifier": [{"value": "NO_GP_NhsNumber-20260501T154619", "system": "https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk"}], "patient": {"reference": "#Patient1"}, "contained": [{"id": "Patient1", "resourceType": "Patient", "birthDate": "2021-07-21", "gender": "female", "address": [{"postalCode": "LS12 2QS"}], "identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9737366689"}], "name": [{"family": "ERNEST", "given": ["MILMIN"]}]}], "vaccineCode": {"coding": [{"system": "http://terminology.hl7.org/CodeSystem/v3-NullFlavor", "code": "NAVU", "display": "Not available"}]}, "extension": [{"url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure", "valueCodeableConcept": {"coding": [{"system": "http://snomed.info/sct", "code": "170433008"}]}}], "occurrenceDateTime": "2026-05-01T15:45:29+00:00", "primarySource": true, "performer": [{"actor": {"type": "Organization", "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "X99999"}}}], "location": {"identifier": {"value": "X99999", "system": "https://fhir.nhs.uk/Id/ods-organization-code"}}, "id": "c2f60be2-504e-409b-9646-f17309d5a48b"}', 'IdentifierPK': 'https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk#NO_GP_NhsNumber-20260501T154619', 'PatientSK': 'MMR#c2f60be2-504e-409b-9646-f17309d5a48b'}], 'Count': 1, 'ScannedCount': 1, 'ResponseMetadata': {'RequestId': 'GC5KH9VDBS7A2LKTDVH6T3N26FVV4KQNSO5AEMVJF66Q9ASUAAJG', 'HTTPStatusCode': 200, 'HTTPHeaders': {'server': 'Server', 'date': 'Fri, 01 May 2026 15:46:59 GMT', 'content-type': 'application/x-amz-json-1.0', 'content-length': '2254', 'connection': 'keep-alive', 'x-amzn-requestid': 'GC5KH9VDBS7A2LKTDVH6T3N26FVV4KQNSO5AEMVJF66Q9ASUAAJG', 'x-amz-crc32': '812147927'}, 'RetryAttempts': 0}} 
+
+Attempt 1: Found 1 items
+
+Found Immunization Delta items for ImmsID=32779846-49fb-4231-bc12-0772ace4f8e8
+
+Attempt 1: Found 1 items
+
+Found Immunization Delta items for ImmsID=3f537c0b-68f8-4fd9-9372-839987e8c853
+
+Attempt 1: Found 1 items
+
+Found Immunization Delta items for ImmsID=404452b3-f138-45d0-b9d1-8ee58976e65a
+
+Attempt 1: Found 1 items
+
+Found Immunization Delta items for ImmsID=4a0fba02-45e4-44e5-9b97-7cafa3c20eb3
+
+Attempt 1: Found 1 items
+
+Found Immunization Delta items for ImmsID=c2f60be2-504e-409b-9646-f17309d5a48b
+
+Attempt 1: Found 1 items
+
+Found Immunization Delta items for ImmsID=dc89b997-8d1e-495b-9db2-b0aa2e850a25
+
+Attempt 1: Found 1 items
+
+Found Immunization Delta items for ImmsID=e0126b14-ef99-4256-81b9-14893d4a5644
+
+Expecting 6 messages for 6 NHS numbers
+Polling SQS (notification)...
+Polling SQS (notification)...
+Matched: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/32779846-49fb-4231-bc12-0772ace4f8e8
+Polling SQS (notification)...
+Matched: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/4a0fba02-45e4-44e5-9b97-7cafa3c20eb3
+Polling SQS (notification)...
+Matched: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/e0126b14-ef99-4256-81b9-14893d4a5644
+Polling SQS (notification)...
+Matched: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/404452b3-f138-45d0-b9d1-8ee58976e65a
+Matched: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/3f537c0b-68f8-4fd9-9372-839987e8c853
+Polling SQS (notification)...
+Matched: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/c2f60be2-504e-409b-9646-f17309d5a48b
+Read 6 CREATE message(s) from SQS
+Validating message for NHS 7085531614, IMMS ID 32779846-49fb-4231-bc12-0772ace4f8e8
+Validating message for NHS 9452372230, IMMS ID 4a0fba02-45e4-44e5-9b97-7cafa3c20eb3
+Validating message for NHS 9734835491, IMMS ID e0126b14-ef99-4256-81b9-14893d4a5644
+Validating message for NHS 5309741852, IMMS ID 404452b3-f138-45d0-b9d1-8ee58976e65a
+Validating message for NHS 9449310475, IMMS ID 3f537c0b-68f8-4fd9-9372-839987e8c853
+Validating message for NHS 9737366689, IMMS ID c2f60be2-504e-409b-9646-f17309d5a48b
+Expecting 2 messages for 1 NHS numbers
+Polling SQS (notification)...
+No messages returned — continuing to poll...
+Stopping — reached max wait time.
+Sending DELETE request to: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/e0126b14-ef99-4256-81b9-14893d4a5644
+Deleted e0126b14-ef99-4256-81b9-14893d4a5644 successfully.
+Sending DELETE request to: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/32779846-49fb-4231-bc12-0772ace4f8e8
+Deleted 32779846-49fb-4231-bc12-0772ace4f8e8 successfully.
+Sending DELETE request to: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/3f537c0b-68f8-4fd9-9372-839987e8c853
+Deleted 3f537c0b-68f8-4fd9-9372-839987e8c853 successfully.
+Sending DELETE request to: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/404452b3-f138-45d0-b9d1-8ee58976e65a
+Deleted 404452b3-f138-45d0-b9d1-8ee58976e65a successfully.
+Sending DELETE request to: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/dc89b997-8d1e-495b-9db2-b0aa2e850a25
+Deleted dc89b997-8d1e-495b-9db2-b0aa2e850a25 successfully.
+Sending DELETE request to: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/4a0fba02-45e4-44e5-9b97-7cafa3c20eb3
+Deleted 4a0fba02-45e4-44e5-9b97-7cafa3c20eb3 successfully.
+Sending DELETE request to: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/c2f60be2-504e-409b-9646-f17309d5a48b
+Deleted c2f60be2-504e-409b-9646-f17309d5a48b successfully.
+Batch cleanup finished.

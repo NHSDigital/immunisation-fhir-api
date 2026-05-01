@@ -1,0 +1,3 @@
+"BROKEN","EPIC","FAILED","FEATURE","PASSED","SKIPPED","STORY","UNKNOWN"
+"0","Immunization Service","0","Create the immunization event for a patient through batch file","15","0","","0"
+"2","Immunization Service","1","Create the immunization event for a patient through batch file and update the record from batch or Api calls","5","0","","0"
