@@ -568,22 +568,25 @@ def validate_sqs_message(context, message_body, action):
 
 
 def mns_event_will_be_triggered_with_correct_data_for_deleted_event(context):
-    if context.patient.identifier[0].value is None:
-        message_body = read_message(
-            context,
-            queue_type="notification",
-            wait_time_seconds=5,
-            max_total_wait_seconds=20,
-        )
-        print(
-            "No MNS delete event is created as expected since NHS number is not present in the original immunization event"
-        )
-        assert message_body is None, "Not expected a message but queue returned a message"
+    if context.mns_validation_required.strip().lower() == "true":
+        if context.patient.identifier[0].value is None:
+            message_body = read_message(
+                context,
+                queue_type="notification",
+                wait_time_seconds=5,
+                max_total_wait_seconds=20,
+            )
+            print(
+                "No MNS delete event is created as expected since NHS number is not present in the original immunization event"
+            )
+            assert message_body is None, "Not expected a message but queue returned a message"
+        else:
+            message_body = read_message(context, queue_type="notification")
+            print(f"Read deleted message from SQS: {message_body}")
+            assert message_body is not None, "Expected a  delete message but queue returned empty"
+            validate_sqs_message(context, message_body, "DELETE")
     else:
-        message_body = read_message(context, queue_type="notification")
-        print(f"Read deleted message from SQS: {message_body}")
-        assert message_body is not None, "Expected a  delete message but queue returned empty"
-        validate_sqs_message(context, message_body, "DELETE")
+        print("MNS validation not required, skipping MNS event verification for deleted event.")
 
 
 def mns_event_will_be_triggered_with_correct_data(context, action):
