@@ -97,10 +97,11 @@ class FhirService:
                 field["coding"] = cls._keep_first_snomed_coding(coding)
 
     def _validate_immunization(self, immunization: dict) -> None:
-        self._normalize_single_snomed_codeable_concepts(immunization)
+        immunization_to_validate = copy.deepcopy(immunization)
+        self._normalize_single_snomed_codeable_concepts(immunization_to_validate)
 
         try:
-            self.validator.validate(immunization)
+            self.validator.validate(immunization_to_validate)
         except (ValueError, MandatoryError) as error:
             raise CustomValidationError(message=str(error)) from error
 
