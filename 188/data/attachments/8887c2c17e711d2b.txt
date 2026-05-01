@@ -1,0 +1,6 @@
+❌ Step failed! **The delta table will use the first valid SNOMED site and route coding** 
+ Error: Expected site of vaccination term 'Test Value string site 222', but got 'Test String for site'
+assert 'Test String for site' == 'Test Value string site 222'
+  
+  - Test Value string site 222
+  + Test String for site

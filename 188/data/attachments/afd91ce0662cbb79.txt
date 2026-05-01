@@ -1,0 +1,1 @@
+✅ Step Passed: **batch file is received for below data form DPS with all three action flag for each record
