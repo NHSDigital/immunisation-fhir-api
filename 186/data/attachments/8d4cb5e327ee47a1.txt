@@ -1,0 +1,1 @@
+✅ Step Passed: **IMMS event and delta tables, along with the MNS event, will be populated with correct created data for the reinstated record
