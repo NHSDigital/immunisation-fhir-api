@@ -4,18 +4,6 @@ resource "aws_elasticache_subnet_group" "redis_subnet_group" {
   subnet_ids = values(aws_subnet.private)[*].id
 }
 
-resource "aws_elasticache_cluster" "redis_cluster" {
-  cluster_id           = "immunisation-redis-cluster"
-  engine               = "redis"
-  engine_version       = "7.0"
-  node_type            = "cache.t2.micro"
-  num_cache_nodes      = 1
-  parameter_group_name = "default.redis7"
-  port                 = 6379
-  security_group_ids   = [aws_security_group.lambda_redis_sg.id]
-  subnet_group_name    = aws_elasticache_subnet_group.redis_subnet_group.name
-}
-
 # CloudFormation dynamic references keep the generated auth token out of Terraform state.
 resource "aws_cloudformation_stack" "redis_replication_group" {
   name = "immunisation-redis-replication-group"
