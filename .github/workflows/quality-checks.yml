@@ -157,6 +157,7 @@ jobs:
         id: id_sync
         env:
           PYTHONPATH: ${{ env.LAMBDA_PATH }}/id_sync/src:${{ env.LAMBDA_PATH }}/id_sync/tests:${{ env.SHARED_PATH }}/src
+          POETRY_INSTALLER_ONLY_BINARY: ""
         continue-on-error: true
         run: |
           poetry install
@@ -179,6 +180,7 @@ jobs:
         id: mnspublisher
         env:
           PYTHONPATH: ${{ env.LAMBDA_PATH }}/mns_publisher/src:${{ env.LAMBDA_PATH }}/mns_publisher/tests:${{ env.SHARED_PATH }}/src
+          POETRY_INSTALLER_ONLY_BINARY: ""
         continue-on-error: true
         run: |
           poetry install
@@ -235,6 +237,7 @@ jobs:
         id: shared
         env:
           PYTHONPATH: ${{ env.SHARED_PATH }}/src
+          POETRY_INSTALLER_ONLY_BINARY: ""
           GITHUB_WORKSPACE: ${{ github.workspace }}
         continue-on-error: true
         run: |
