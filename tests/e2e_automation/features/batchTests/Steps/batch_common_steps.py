@@ -487,9 +487,8 @@ def validate_imms_delta_table_for_newly_created_records_in_batch_file(context, e
 
         create_items = [i for i in delta_items if i.get("Operation") == "CREATE"]
 
-        check.is_true(
-            len(create_items) == expected_number_of_items,
-            f"Expected exactly {expected_number_of_items} CREATE record(s) for IMMS_ID {clean_id}, found {len(create_items)}",
+        assert len(create_items) == expected_number_of_items, (
+            f"Expected exactly {expected_number_of_items} CREATE record(s) for IMMS_ID {clean_id}, found {len(create_items)}"
         )
 
         create_item = max(create_items, key=lambda x: x.get("SequenceNumber", -1))
@@ -534,18 +533,12 @@ def validate_imms_delta_table_for_deleted_records_in_batch_file(context, expecte
 
         delete_items = [i for i in delta_items if i.get("Operation") == "DELETE"]
 
-        check.is_true(
-            len(delete_items) == expected_number_of_items,
-            f"Expected exactly {expected_number_of_items} DELETE record(s) for IMMS_ID {clean_id}, found {len(delete_items)}",
-        )
-
         delete_item = max(delete_items, key=lambda x: x.get("SequenceNumber", -1))
 
         delete_rows = rows[rows["ACTION_FLAG"] == "DELETE"]
 
-        check.is_true(
-            len(delete_rows) == expected_number_of_items,
-            f"Expected exactly {expected_number_of_items} DELETE row(s) in batch file for IMMS_ID {clean_id}, found {len(delete_rows)}",
+        assert len(delete_rows) == expected_number_of_items, (
+            f"Expected exactly {expected_number_of_items} DELETE row(s) in batch file for IMMS_ID {clean_id}, found {len(delete_rows)}"
         )
 
         row = delete_rows.iloc[0]
