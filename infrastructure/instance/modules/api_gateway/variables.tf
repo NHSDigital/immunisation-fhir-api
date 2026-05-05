@@ -16,3 +16,7 @@ variable "aws_region" {
 }
 variable "immunisation_account_id" {}
 variable "csoc_account_id" {}
+variable "access_log_target_bucket" {
+  type    = string
+  default = null
+}
