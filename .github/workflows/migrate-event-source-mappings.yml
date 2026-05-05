@@ -1,0 +1,111 @@
+name: Migrate Event Source Mappings
+
+on:
+  workflow_dispatch:
+    inputs:
+      apigee_environment:
+        type: choice
+        description: Select the Apigee proxy environment for dev state buckets
+        options:
+          - internal-dev
+          - internal-qa
+          - ref
+        default: internal-dev
+      environment:
+        type: choice
+        description: Select the AWS backend environment
+        options:
+          - dev
+          - preprod
+          - prod
+      sub_environment:
+        type: string
+        description: Set the sub-environment name, e.g. internal-dev, int-blue, blue
+        required: true
+      confirm_event_source_mapping_migration:
+        type: boolean
+        description: Confirm this is the controlled one-time migration for the selected environment
+        required: true
+        default: false
+
+env:
+  APIGEE_ENVIRONMENT: ${{ inputs.apigee_environment }}
+  ENVIRONMENT: ${{ inputs.environment }}
+  SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
+
+run-name: Migrate Event Source Mappings - ${{ inputs.environment }} ${{ inputs.sub_environment }}
+
+concurrency:
+  group: deploy-backend-${{ github.repository }}-${{ inputs.environment }}-${{ (inputs.environment == 'preprod' || inputs.environment == 'prod') && 'shared-trigger' || inputs.sub_environment }}
+  cancel-in-progress: false
+
+jobs:
+  migrate-event-source-mappings:
+    permissions:
+      id-token: write
+      contents: read
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+    steps:
+      - name: Confirm controlled migration
+        run: |
+          set -euo pipefail
+
+          if [ "${CONFIRM_EVENT_SOURCE_MAPPING_MIGRATION}" != "true" ]; then
+            echo "This workflow is only for the controlled one-time event source mapping migration."
+            echo "Set confirm_event_source_mapping_migration to true to continue."
+            exit 1
+          fi
+        env:
+          CONFIRM_EVENT_SOURCE_MAPPING_MIGRATION: ${{ inputs.confirm_event_source_mapping_migration }}
+
+      - name: Checkout
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
+
+      - name: Connect to AWS
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37
+        with:
+          aws-region: eu-west-2
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
+          role-session-name: github-actions
+
+      - uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85
+        with:
+          terraform_version: "1.12.2"
+
+      - name: Terraform Init
+        working-directory: infrastructure/event_source_mappings
+        run: make init
+
+      - name: Adopt Existing Event Source Mappings
+        working-directory: infrastructure/event_source_mappings
+        env:
+          ALLOW_EVENT_SOURCE_MAPPING_ADOPTION: "true"
+        run: make adopt
+
+      - name: Terraform Format Check
+        working-directory: infrastructure/event_source_mappings
+        run: make fmt-check
+
+      - name: Terraform Validate
+        working-directory: infrastructure/event_source_mappings
+        run: make validate
+
+      - name: Terraform Plan
+        working-directory: infrastructure/event_source_mappings
+        run: make plan-ci
+
+      - name: Save Terraform Plan
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: ${{ env.ENVIRONMENT }}-${{ env.SUB_ENVIRONMENT }}-event-source-mappings-migration-tfplan
+          path: infrastructure/event_source_mappings/tfplan
+
+      - name: Terraform Apply
+        working-directory: infrastructure/event_source_mappings
+        run: make apply-ci
+
+      - name: Verify Event Source Mappings
+        working-directory: infrastructure/event_source_mappings
+        run: make verify

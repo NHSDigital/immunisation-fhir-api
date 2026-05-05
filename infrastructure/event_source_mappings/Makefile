@@ -7,6 +7,7 @@ sub_environment_dir := $(if $(findstring pr-,$(sub_environment)),pr,$(sub_enviro
 tf_var_file        := ../instance/environments/$(environment)/$(sub_environment_dir)/variables.tfvars
 has_sub_environment_scope = $(shell awk -F= '/^has_sub_environment_scope/ { gsub(/[[:space:]]/, "", $$2); print $$2 }' "$(tf_var_file)")
 workspace_name = $(if $(filter false,$(has_sub_environment_scope)),$(environment),$(sub_environment))
+allow_shared_scope_destroy ?= $(ALLOW_SHARED_SCOPE_DESTROY)
 
 tf_cmd = AWS_PROFILE=$(AWS_PROFILE) terraform
 
@@ -29,13 +30,34 @@ workspace:
 adopt: workspace
 	ENVIRONMENT='$(environment)' SUB_ENVIRONMENT='$(sub_environment)' RESOURCE_SCOPE='$(workspace_name)' bash ../../utilities/scripts/adopt_event_source_mappings.sh $(tf_vars)
 
+fmt-check:
+	$(tf_cmd) fmt -check
+
+validate: workspace
+	$(tf_cmd) validate
+
 plan: workspace
 	$(tf_cmd) plan $(tf_vars)
+
+plan-ci: workspace
+	$(tf_cmd) plan $(tf_vars) -out=tfplan -input=false
 
 apply: workspace
 	$(tf_cmd) apply $(tf_vars) --auto-approve
 
-destroy: workspace
+apply-ci: workspace
+	$(tf_cmd) apply $(tf_vars) -input=false tfplan
+
+verify:
+	ENVIRONMENT='$(environment)' SUB_ENVIRONMENT='$(sub_environment)' RESOURCE_SCOPE='$(workspace_name)' EVENT_SOURCE_MAPPING_ACTION=verify bash ../../utilities/scripts/adopt_event_source_mappings.sh
+
+ensure-destroy-allowed:
+	@if [ "$(has_sub_environment_scope)" = "false" ] && [ "$(allow_shared_scope_destroy)" != "true" ]; then \
+		echo "Refusing to destroy shared event source mappings in workspace $(workspace_name). Set ALLOW_SHARED_SCOPE_DESTROY=true for controlled teardown."; \
+		exit 1; \
+	fi
+
+destroy: workspace ensure-destroy-allowed
 	$(tf_cmd) destroy $(tf_vars) -auto-approve
 	$(tf_cmd) workspace select default
 	$(tf_cmd) workspace delete $(workspace_name)
@@ -43,4 +65,4 @@ destroy: workspace
 output:
 	$(tf_cmd) output -raw $(name)
 
-.PHONY : init workspace adopt plan apply destroy output
+.PHONY : init workspace adopt fmt-check validate plan plan-ci apply apply-ci verify ensure-destroy-allowed destroy output

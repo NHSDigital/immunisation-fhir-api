@@ -36,4 +36,78 @@ E.g. `pr-57`. You can use this to test out changes when tests fail in CI.
 
 ## Lambda Trigger Handoff
 
-The `delta_trigger` and `id_sync_sqs_trigger` event source mappings are managed from `../event_source_mappings` so the main instance plan does not rewrite shared backend state. The deploy workflow applies the main instance first, then adopts or updates the trigger mappings from the dedicated trigger workspace.
+The `delta_trigger` and `id_sync_sqs_trigger` event source mappings are managed from `../event_source_mappings` so the main instance plan does not rewrite shared backend state. The deploy workflow applies the main instance first, then updates the trigger mappings from the dedicated trigger workspace. Existing mappings are imported only through the controlled migration workflow.
+
+### First Cutover
+
+Use the `Migrate Event Source Mappings` workflow once per environment before relying on the normal backend deploy for trigger changes. Select the target `environment` and `sub_environment`, then set `confirm_event_source_mapping_migration` to `true`. The migration workflow imports existing mappings, runs `terraform validate`, saves a dedicated trigger `tfplan` artifact, applies that saved plan, and verifies the final Lambda targets.
+
+Before starting, check for duplicate or stale mappings. Replace the variable values with the shared scope and target sub-environment:
+
+```bash
+RESOURCE_SCOPE=preprod
+SUB_ENVIRONMENT=int-blue
+COUNTERPART_SUB_ENVIRONMENT=int-green
+
+EVENTS_STREAM_ARN="$(aws dynamodb describe-table \
+  --table-name "imms-${RESOURCE_SCOPE}-imms-events" \
+  --query 'Table.LatestStreamArn' \
+  --output text)"
+
+ID_SYNC_QUEUE_URL="$(aws sqs get-queue-url \
+  --queue-name "imms-${RESOURCE_SCOPE}-id-sync-queue" \
+  --query 'QueueUrl' \
+  --output text)"
+
+ID_SYNC_QUEUE_ARN="$(aws sqs get-queue-attributes \
+  --queue-url "${ID_SYNC_QUEUE_URL}" \
+  --attribute-names QueueArn \
+  --query 'Attributes.QueueArn' \
+  --output text)"
+
+aws lambda list-event-source-mappings \
+  --event-source-arn "${EVENTS_STREAM_ARN}" \
+  --function-name "imms-${SUB_ENVIRONMENT}-delta-lambda"
+
+aws lambda list-event-source-mappings \
+  --event-source-arn "${EVENTS_STREAM_ARN}" \
+  --function-name "imms-${COUNTERPART_SUB_ENVIRONMENT}-delta-lambda"
+
+aws lambda list-event-source-mappings \
+  --event-source-arn "${ID_SYNC_QUEUE_ARN}" \
+  --function-name "imms-${SUB_ENVIRONMENT}-id-sync-lambda"
+
+aws lambda list-event-source-mappings \
+  --event-source-arn "${ID_SYNC_QUEUE_ARN}" \
+  --function-name "imms-${COUNTERPART_SUB_ENVIRONMENT}-id-sync-lambda"
+```
+
+### Rollback
+
+If the cutover applies cleanly but the target sub-environment must be rolled back, rerun the migration workflow with the previous active sub-environment selected. The workflow should update the managed mappings back to the previous Lambda targets through a saved trigger plan. Verify the final UUIDs, Lambda ARNs, and states with:
+
+```bash
+cd infrastructure/event_source_mappings
+make init
+make workspace
+terraform output delta_trigger_uuid
+terraform output delta_trigger_function_arn
+terraform output delta_trigger_state
+terraform output id_sync_sqs_trigger_uuid
+terraform output id_sync_sqs_trigger_function_arn
+terraform output id_sync_sqs_trigger_state
+make verify
+```
+
+### Failed Apply Recovery
+
+If the migration fails after import but before apply, rerun the same migration workflow for the same environment and sub-environment. The import step is idempotent for resources already in state and does not delete AWS mappings.
+
+If verification fails, inspect live AWS mappings before retrying:
+
+```bash
+aws lambda get-event-source-mapping --uuid "<mapping-uuid>"
+aws lambda list-event-source-mappings --event-source-arn "<event-source-arn>"
+```
+
+Do not run `make destroy` for shared blue/green trigger workspaces unless this is a controlled teardown. Shared-scope destroys require `ALLOW_SHARED_SCOPE_DESTROY=true`.

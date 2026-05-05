@@ -110,6 +110,10 @@ env: # Sonarcloud - do not allow direct usage of untrusted data
 
 run-name: Deploy Backend - ${{ inputs.environment }} ${{ inputs.sub_environment }}
 
+concurrency:
+  group: deploy-backend-${{ github.repository }}-${{ inputs.environment }}-${{ (inputs.environment == 'preprod' || inputs.environment == 'prod') && 'shared-trigger' || inputs.sub_environment }}
+  cancel-in-progress: false
+
 jobs:
   deploy-lambda-images:
     name: Deploy ${{ matrix.lambda_name }} image
@@ -310,13 +314,39 @@ jobs:
           make apply-ci
           echo "ID_SYNC_QUEUE_ARN=$(make -s output name=id_sync_queue_arn)" >> $GITHUB_ENV
 
-      - name: Apply Lambda event source mappings
+      - name: Terraform Init Event Source Mappings
+        if: ${{ !failure() }}
+        working-directory: infrastructure/event_source_mappings
+        run: make init
+
+      - name: Terraform Format Check Event Source Mappings
+        if: ${{ !failure() }}
+        working-directory: infrastructure/event_source_mappings
+        run: make fmt-check
+
+      - name: Terraform Validate Event Source Mappings
+        if: ${{ !failure() }}
+        working-directory: infrastructure/event_source_mappings
+        run: make validate
+
+      - name: Terraform Plan Event Source Mappings
+        if: ${{ !failure() }}
+        working-directory: infrastructure/event_source_mappings
+        run: make plan-ci
+
+      - name: Save Event Source Mapping Terraform Plan
+        if: ${{ !failure() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: ${{ env.ENVIRONMENT }}-${{ env.SUB_ENVIRONMENT }}-event-source-mappings-tfplan
+          path: infrastructure/event_source_mappings/tfplan
+
+      - name: Terraform Apply Event Source Mappings
         if: ${{ !failure() }}
         working-directory: infrastructure/event_source_mappings
         run: |
-          make init
-          make adopt
-          make apply
+          make apply-ci
+          make verify
 
       - name: Install poetry
         if: ${{ inputs.environment == 'dev' && inputs.create_mns_subscription }}
