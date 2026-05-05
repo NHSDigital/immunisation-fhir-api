@@ -1,0 +1,50 @@
+✅ Pipe-delimited file saved to: /home/runner/work/immunisation-fhir-api/immunisation-fhir-api/tests/e2e_automation/batch_files_directory/BCG_Vaccinations_v5_YGA_20260505T09340300.csv
+Batch file created: BCG_Vaccinations_v5_YGA_20260505T09340300.csv
+Upload successful: BCG_Vaccinations_v5_YGA_20260505T09340300.csv → immunisation-batch-internal-qa-data-sources
+Batch file uploaded to S3: BCG_Vaccinations_v5_YGA_20260505T09340300.csv
+Waiting for file in archive: s3://immunisation-batch-internal-qa-data-sources/archive/BCG_Vaccinations_v5_YGA_20260505T09340300.csv
+Still waiting... (0s)
+Still waiting... (5s)
+Still waiting... (10s)
+Still waiting... (15s)
+Still waiting... (20s)
+Still waiting... (25s)
+Still waiting... (30s)
+File found in archive: archive/BCG_Vaccinations_v5_YGA_20260505T09340300.csv
+Waiting for ACK files starting with 'ack/BCG_Vaccinations_v5_YGA_20260505T09340300' in bucket: immunisation-batch-internal-qa-data-destinations
+[MODE] Expecting ONLY CSV ACK file
+[FOUND] .csv file located: ack/BCG_Vaccinations_v5_YGA_20260505T09340300_InfAck_20260505T09340400.csv
+[COMPLETE] All expected ACK files received
+Waiting for ACK files starting with 'forwardedFile/BCG_Vaccinations_v5_YGA_20260505T09340300' in bucket: immunisation-batch-internal-qa-data-destinations
+[MODE] Expecting BOTH CSV and JSON ACK files
+[FOUND] .json file located: forwardedFile/BCG_Vaccinations_v5_YGA_20260505T09340300_BusAck_20260505T09340400.json
+[FOUND] .csv file located: forwardedFile/BCG_Vaccinations_v5_YGA_20260505T09340300_BusAck_20260505T09340400.csv
+[COMPLETE] All expected ACK files received
+No rows found in BUS ACK file for successful records
+Attempt 1: Found 1 items
+
+Found Audit detail for filename=BCG_Vaccinations_v5_YGA_20260505T09340300.csv
+
+
+ Imms Event response is {'Items': [{'PatientPK': 'Patient#9734506544', 'Resource': '{"resourceType": "Immunization", "status": "completed", "protocolApplied": [{"targetDisease": [{"coding": [{"system": "http://snomed.info/sct", "code": "56717001", "display": "Tuberculosis"}]}], "doseNumberPositiveInt": 1}], "reasonCode": [{"coding": [{"system": "http://snomed.info/sct", "code": "443684005"}]}], "recorded": "2026-05-05", "identifier": [{"value": "empty_performer_forename-20260505T093403", "system": "https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk"}], "patient": {"reference": "#Patient1"}, "contained": [{"id": "Patient1", "resourceType": "Patient", "birthDate": "1977-08-31", "gender": "male", "address": [{"postalCode": "LS23 6RD"}], "identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9734506544"}], "name": [{"family": "GAHAN", "given": ["TED"]}]}, {"resourceType": "Practitioner", "id": "Practitioner1", "name": [{"family": "Tests"}]}], "vaccineCode": {"coding": [{"system": "http://snomed.info/sct", "code": "9316511000001100", "display": "BCG vaccine powder and solvent for suspension for injection vials 10 vial (Pfizer Ltd)"}]}, "manufacturer": {"display": "Pfizer Ltd"}, "expirationDate": "2026-05-05", "lotNumber": "115872", "extension": [{"url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure", "valueCodeableConcept": {"coding": [{"system": "http://snomed.info/sct", "code": "42284007", "display": "Administration of vaccine product containing only live attenuated Mycobacterium bovis antigen"}]}}], "occurrenceDateTime": "2026-05-05T09:33:13+00:00", "primarySource": true, "site": {"coding": [{"system": "http://snomed.info/sct", "code": "368208006", "display": "Left upper arm structure"}]}, "route": {"coding": [{"system": "http://snomed.info/sct", "code": "78421000", "display": "Intramuscular"}]}, "doseQuantity": {"value": 0.5, "unit": "millilitre", "system": "http://snomed.info/sct", "code": "ml"}, "performer": [{"actor": {"type": "Organization", "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "X99999"}}}, {"actor": {"reference": "#Practitioner1"}}], "location": {"identifier": {"value": "X99999", "system": "https://fhir.nhs.uk/Id/ods-organization-code"}}, "id": "0507c575-6315-418b-a051-63d932ac38ff"}', 'IdentifierPK': 'https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk#empty_performer_forename-20260505T093403', 'Operation': 'CREATE', 'Version': Decimal('1'), 'SupplierSystem': 'TPP', 'PatientSK': 'BCG#0507c575-6315-418b-a051-63d932ac38ff', 'PK': 'Immunization#0507c575-6315-418b-a051-63d932ac38ff'}], 'Count': 1, 'ScannedCount': 1, 'ResponseMetadata': {'RequestId': 'J8FTS9DKHPEA6L3MC70O64K1FFVV4KQNSO5AEMVJF66Q9ASUAAJG', 'HTTPStatusCode': 200, 'HTTPHeaders': {'server': 'Server', 'date': 'Tue, 05 May 2026 09:34:43 GMT', 'content-type': 'application/x-amz-json-1.0', 'content-length': '2946', 'connection': 'keep-alive', 'x-amzn-requestid': 'J8FTS9DKHPEA6L3MC70O64K1FFVV4KQNSO5AEMVJF66Q9ASUAAJG', 'x-amz-crc32': '2982638675'}, 'RetryAttempts': 0}} 
+
+
+ Imms Event response is {'Items': [{'IdentifierPK': 'https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk#empty_performer_Surname-20260505T093403', 'PatientPK': 'Patient#9734154303', 'Operation': 'CREATE', 'Version': Decimal('1'), 'PatientSK': 'BCG#5ac7d231-30b9-42c4-bb9f-2601be7a8a83', 'SupplierSystem': 'TPP', 'Resource': '{"resourceType": "Immunization", "status": "completed", "protocolApplied": [{"targetDisease": [{"coding": [{"system": "http://snomed.info/sct", "code": "56717001", "display": "Tuberculosis"}]}], "doseNumberPositiveInt": 1}], "reasonCode": [{"coding": [{"system": "http://snomed.info/sct", "code": "443684005"}]}], "recorded": "2026-05-05", "identifier": [{"value": "empty_performer_Surname-20260505T093403", "system": "https://fhir.nhs.uk/Id/Automation-vaccine-administered-event-uk"}], "patient": {"reference": "#Patient1"}, "contained": [{"id": "Patient1", "resourceType": "Patient", "birthDate": "1986-12-22", "gender": "male", "address": [{"postalCode": "CM9 4UF"}], "identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9734154303"}], "name": [{"family": "PPZ-DEC-PDS-ALPHA-ZERO", "given": ["SHANE"]}]}, {"resourceType": "Practitioner", "id": "Practitioner1", "name": [{"given": ["Automation"]}]}], "vaccineCode": {"coding": [{"system": "http://snomed.info/sct", "code": "9316511000001100", "display": "BCG vaccine powder and solvent for suspension for injection vials 10 vial (Pfizer Ltd)"}]}, "manufacturer": {"display": "Pfizer Ltd"}, "expirationDate": "2026-05-05", "lotNumber": "457347", "extension": [{"url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure", "valueCodeableConcept": {"coding": [{"system": "http://snomed.info/sct", "code": "42284007", "display": "Administration of vaccine product containing only live attenuated Mycobacterium bovis antigen"}]}}], "occurrenceDateTime": "2026-05-05T09:33:13+00:00", "primarySource": true, "site": {"coding": [{"system": "http://snomed.info/sct", "code": "368209003", "display": "Right upper arm structure"}]}, "route": {"coding": [{"system": "http://snomed.info/sct", "code": "78421000", "display": "Intramuscular"}]}, "doseQuantity": {"value": 0.5, "unit": "millilitre", "system": "http://snomed.info/sct", "code": "ml"}, "performer": [{"actor": {"type": "Organization", "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "X99999"}}}, {"actor": {"reference": "#Practitioner1"}}], "location": {"identifier": {"value": "X99999", "system": "https://fhir.nhs.uk/Id/ods-organization-code"}}, "id": "5ac7d231-30b9-42c4-bb9f-2601be7a8a83"}', 'PK': 'Immunization#5ac7d231-30b9-42c4-bb9f-2601be7a8a83'}], 'Count': 1, 'ScannedCount': 1, 'ResponseMetadata': {'RequestId': 'RA508EHJ4O8RI6OMVGGAM8SJ9RVV4KQNSO5AEMVJF66Q9ASUAAJG', 'HTTPStatusCode': 200, 'HTTPHeaders': {'server': 'Server', 'date': 'Tue, 05 May 2026 09:34:43 GMT', 'content-type': 'application/x-amz-json-1.0', 'content-length': '2969', 'connection': 'keep-alive', 'x-amzn-requestid': 'RA508EHJ4O8RI6OMVGGAM8SJ9RVV4KQNSO5AEMVJF66Q9ASUAAJG', 'x-amz-crc32': '1219723689'}, 'RetryAttempts': 0}} 
+
+Attempt 1: Found 1 items
+
+Found Immunization Delta items for ImmsID=0507c575-6315-418b-a051-63d932ac38ff
+
+Attempt 1: Found 1 items
+
+Found Immunization Delta items for ImmsID=5ac7d231-30b9-42c4-bb9f-2601be7a8a83
+
+Expecting 2 messages for 2 NHS numbers
+Polling SQS (notification)...
+Matched: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/0507c575-6315-418b-a051-63d932ac38ff
+Polling SQS (notification)...
+Matched: https://internal-qa.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/5ac7d231-30b9-42c4-bb9f-2601be7a8a83
+Read 2 CREATE message(s) from SQS
+Validating message for NHS 9734506544, IMMS ID 0507c575-6315-418b-a051-63d932ac38ff
+Validating message for NHS 9734154303, IMMS ID 5ac7d231-30b9-42c4-bb9f-2601be7a8a83
+No NullNHS rows — skipping negative MNS check.
