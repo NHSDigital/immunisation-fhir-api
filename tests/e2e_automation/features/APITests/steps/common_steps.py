@@ -169,8 +169,6 @@ def The_request_will_have_status_code(context, statusCode):
 
 @then("The location key and Etag in header will contain the Immunization Id and version")
 def validateCreateLocation(context):
-    location = context.response.headers["location"]
-    eTag = context.response.headers["E-Tag"]
     body = get_response_body_for_display(context.response)
     assert "location" in context.response.headers, (
         f"Location header is missing in the response with Status code: {context.response.status_code}. Response: {body}"
@@ -178,6 +176,9 @@ def validateCreateLocation(context):
     assert "E-Tag" in context.response.headers, (
         f"E-Tag header is missing in the response with Status code: {context.response.status_code}. Response: {body}"
     )
+    location = context.response.headers["location"]
+    eTag = context.response.headers["E-Tag"]
+
     context.ImmsID = location.split("/")[-1]
     context.eTag = eTag.strip('"')
     print(f"\n Immunization ID is {context.ImmsID} and Etag is {context.eTag} \n")

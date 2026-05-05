@@ -105,9 +105,6 @@ def validate_deleted_immunization_event_not_present_using_post(context):
     "The location key and Etag in header will contain the  previous Immunization Id and version will be incremented by 1"
 )
 def validate_location_key_and_etag_in_header(context):
-    location = context.response.headers["location"]
-    eTag = context.response.headers["E-Tag"]
-    context.expected_version += 1
     assert "location" in context.response.headers, (
         f"Location header is missing in the response with Status code: {context.response.status_code}. Response: {context.response.text}"
     )
@@ -115,6 +112,9 @@ def validate_location_key_and_etag_in_header(context):
         f"E-Tag header is missing in the response with Status code: {context.response.status_code}. Response: {context.response.text}"
     )
     print(f"\n Immunization ID is {context.ImmsID} and Etag is {context.eTag} \n")
+    location = context.response.headers["location"]
+    eTag = context.response.headers["E-Tag"]
+    context.expected_version += 1
     actualLocation = location.split("/")[-1]
     check.is_true(
         context.ImmsID == actualLocation,
