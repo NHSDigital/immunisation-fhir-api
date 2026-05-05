@@ -1,4 +1,3 @@
-import logging
 import uuid
 
 from pytest_bdd import scenarios, then, when
@@ -8,9 +7,6 @@ from utilities.api_fhir_immunization_helper import (
 )
 from utilities.api_get_header import get_read_url_header
 from utilities.http_requests_session import http_requests_session
-
-logging.basicConfig(filename="debugLog.log", level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 scenarios("APITests/read.feature")
 

@@ -4,7 +4,6 @@ import random
 import uuid
 from datetime import UTC, datetime, timedelta
 from urllib.parse import parse_qs
-from venv import logger
 
 import pytest_check as check
 from pytest_bdd import given, parsers, then, when
@@ -267,8 +266,7 @@ def validate_imms_event_table_by_operation(context, operation: Operation, reinst
 
     try:
         resource = json.loads(resource_json_str)
-    except (TypeError, json.JSONDecodeError) as e:
-        logger.error(f"Failed to parse Resource from item: {e}")
+    except (TypeError, json.JSONDecodeError):
         raise AssertionError("Failed to parse Resource from response item.")
 
     assert resource is not None, "Resource is None in the response"
@@ -421,6 +419,8 @@ def validate_mns_event_not_triggered_for_updated_event(context):
 
 @when("Trigger another post create request with same unique_id and unique_id_uri")
 def trigger_post_create_with_same_unique_id(context):
+    context.immunization_object.contained[1].address[0].city = "Updated City"
+    context.immunization_object.contained[1].address[0].state = "Updated State"
     Trigger_the_post_create_request(context)
 
 

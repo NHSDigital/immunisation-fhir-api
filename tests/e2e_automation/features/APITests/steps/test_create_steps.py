@@ -1,7 +1,6 @@
 import json
 import random
 from datetime import UTC, datetime, timedelta
-from venv import logger
 
 import pytest_check as check
 from pytest_bdd import given, parsers, scenarios, then
@@ -242,8 +241,7 @@ def validate_imms_event_table(context):
 
     try:
         resource = json.loads(resource_json_str)
-    except (TypeError, json.JSONDecodeError) as e:
-        logger.error(f"Failed to parse Resource from item: {e}")
+    except (TypeError, json.JSONDecodeError):
         raise AssertionError("Failed to parse Resource from response item.")
 
     assert resource is not None, "Resource is None in the response"

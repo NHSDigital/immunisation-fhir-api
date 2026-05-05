@@ -1,5 +1,4 @@
 import copy
-import logging
 import uuid
 
 from pytest_bdd import parsers, scenarios, then, when
@@ -34,10 +33,6 @@ from .test_search_steps import (
     validate_correct_immunization_event,
     validate_empty_immunization_event,
 )
-
-logging.basicConfig(filename="debugLog.log", level=logging.INFO)
-logger = logging.getLogger(__name__)
-
 
 scenarios("APITests/delete.feature")
 
@@ -147,6 +142,9 @@ def validate_etag_in_header(context):
 
 
 @then(
+    "IMMS event and delta tables, along with the MNS event, will be populated with correct updated data for the reinstated record"
+)
+@then(
     "IMMS event and delta tables, along with the MNS event, will be populated with correct created data for the reinstated record"
 )
 def validate_delta_table_for_create_event_for_reinstated_record(context):
@@ -165,6 +163,9 @@ def validate_delta_table_for_updated_event_for_reinstated_record(context):
 
 @when("Trigger update request with same unique_id and unique_id_uri for the deleted record")
 def trigger_post_create_request_with_same_unique_id_and_uri(context):
+    context.immunization_object.contained[1].address[0].city = "Updated City"
+    context.immunization_object.contained[1].address[0].state = "Updated State"
+    context.immunization_object.contained[1].address[0].postalCode = "X99 3ZA"
     trigger_update_request_with_same_unique_id_and_uri_for_deleted_record(context)
 
 
