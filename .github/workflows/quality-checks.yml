@@ -240,6 +240,7 @@ jobs:
           poetry install
           poetry run coverage run --rcfile=.coveragerc --source=src -m unittest discover -s tests -p "test_*.py" -v || echo "shared tests failed" >> ../../failed_tests.txt
           poetry run coverage xml -o ../../shared-coverage.xml
+          sed -i 's|filename="src/|filename="lambdas/shared/src/|g' ../../shared-coverage.xml
 
       - name: Run Test Failure Summary
         id: check_failure
