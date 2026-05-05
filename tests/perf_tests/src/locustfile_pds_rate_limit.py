@@ -1,3 +1,10 @@
+"""Locust load generator for validating local mock PDS rate-limit behavior.
+
+This module drives two profiles against the local stub server:
+- average: sustained load around the threshold
+- spike: warmup, burst, and recovery phases
+"""
+
 import math
 import os
 import random
@@ -10,6 +17,7 @@ MOCK_PDS_BASE_URL = os.getenv("MOCK_PDS_BASE_URL", "http://127.0.0.1:18080").str
 
 
 def _validate_mock_pds_base_url(base_url: str) -> str:
+    """Validate that the target URL is an absolute HTTP(S) endpoint."""
     if "<" in base_url or ">" in base_url:
         raise ValueError(
             "MOCK_PDS_BASE_URL still contains a placeholder. Set it to the real Lambda Function URL, "
@@ -44,14 +52,18 @@ RATE_LIMIT_MESSAGE = "Mock PDS rate limit has been exceeded"
 
 
 def _users_for_target_rps(target_rps: int) -> int:
+    """Convert an RPS target into the number of Locust users to spawn."""
     per_user_rps = PERF_MOCK_PDS_RPS_PER_USER if PERF_MOCK_PDS_RPS_PER_USER > 0 else 1
     return max(1, math.ceil(target_rps / per_user_rps))
 
 
 class MockPdsRateLimitShape(LoadTestShape):
+    """Dynamic load shape used for average and spike rate-limit scenarios."""
+
     abstract = PERF_LOAD_PROFILE not in {"average", "spike"}
 
     def tick(self):
+        """Return `(user_count, spawn_rate)` for the current run time stage."""
         run_time = self.get_run_time()
 
         if PERF_LOAD_PROFILE == "average":
@@ -78,18 +90,23 @@ class MockPdsRateLimitShape(LoadTestShape):
 
 
 class MockPdsUser(HttpUser):
+    """Locust user that repeatedly calls mock PDS Patient lookup endpoints."""
+
     wait_time = constant_throughput(PERF_MOCK_PDS_RPS_PER_USER)
     host = MOCK_PDS_BASE_URL
 
     def on_start(self):
+        """Apply configured TLS verification behavior to the HTTP client."""
         self.client.verify = MOCK_PDS_VERIFY_TLS
 
     @staticmethod
     def _random_nhs_number() -> str:
+        """Generate a pseudo NHS number for request variation during load tests."""
         return f"99{random.randint(10_000_000, 99_999_999)}"
 
     @task
     def get_patient(self):
+        """Execute one lookup request and classify outcomes for test reporting."""
         with self.client.get(
             f"/Patient/{self._random_nhs_number()}",
             headers={"Accept": "application/fhir+json"},

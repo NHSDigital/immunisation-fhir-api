@@ -1,3 +1,11 @@
+"""Local HTTP stub that emulates PDS rate-limit behavior for perf tests.
+
+The server exposes `GET /Patient/<nhs_number>` and applies fixed-window
+average and spike limits, returning:
+- 200 with empty body when allowed
+- 429 JSON error when throttled
+"""
+
 import json
 import os
 import threading
@@ -9,12 +17,16 @@ RATE_LIMIT_MESSAGE = "Mock PDS rate limit has been exceeded"
 
 
 class LoadFriendlyThreadingHTTPServer(ThreadingHTTPServer):
+    """Threaded HTTP server configured for high local request concurrency."""
+
     daemon_threads = True
     allow_reuse_address = True
     request_queue_size = 256
 
 
 class FixedWindowRateLimiter:
+    """In-memory fixed-window limiter for average and spike traffic windows."""
+
     def __init__(
         self,
         average_limit: int,
@@ -31,6 +43,7 @@ class FixedWindowRateLimiter:
         self._counts: dict[str, int] = {}
 
     def check(self, scope: str) -> tuple[bool, str, int, int, int]:
+        """Evaluate current request count for each window and return decision metadata."""
         with self._lock:
             decision = None
             for name, limit, seconds in self._windows:
@@ -46,6 +59,7 @@ class FixedWindowRateLimiter:
             return decision
 
     def _cleanup_old_buckets(self) -> None:
+        """Prune old buckets to keep memory usage bounded during long runs."""
         now = int(time.time())
         keys_to_delete = []
         for key in self._counts:
@@ -63,10 +77,13 @@ class FixedWindowRateLimiter:
 
 
 class MockPdsHandler(BaseHTTPRequestHandler):
+    """Request handler for mock PDS endpoints used in local load tests."""
+
     rate_limiter: FixedWindowRateLimiter
     protocol_version = "HTTP/1.1"
 
     def _write_json(self, status: HTTPStatus, payload: dict) -> None:
+        """Send a JSON response with explicit content length and connection close."""
         body = json.dumps(payload).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
@@ -76,12 +93,14 @@ class MockPdsHandler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def _write_empty_200(self) -> None:
+        """Send an empty 200 response body to mirror acceptance criteria."""
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Length", "0")
         self.send_header("Connection", "close")
         self.end_headers()
 
     def do_GET(self):
+        """Handle patient lookup requests and apply rate-limit responses."""
         if not self.path.startswith("/Patient/"):
             self._write_json(HTTPStatus.BAD_REQUEST, {"code": 400, "message": "Patient id is required"})
             return
@@ -95,10 +114,12 @@ class MockPdsHandler(BaseHTTPRequestHandler):
         self._write_empty_200()
 
     def log_message(self, format: str, *args):
+        """Suppress default HTTP request logs for cleaner perf test output."""
         return
 
 
 def main() -> None:
+    """Load config from env, initialize limiter, and start the stub server."""
     host = os.getenv("MOCK_PDS_BIND_HOST", "127.0.0.1")
     port = int(os.getenv("MOCK_PDS_BIND_PORT", "18080"))
     average_limit = int(os.getenv("MOCK_PDS_AVERAGE_LIMIT", "125"))
