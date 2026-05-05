@@ -347,8 +347,8 @@ def validate_procedure_term_correct_coding_in_delta_table(context):
 @then("The delta table will use the first valid SNOMED site and route coding")
 def validate_delta_table_uses_first_valid_snomed_site_route_coding(context):
     actual_terms = get_all_term_text(context)
-    expected_site_term = context.create_object.site.coding[1].extension[0].valueString
-    expected_route_term = context.create_object.route.coding[1].extension[0].valueString
+    expected_site_term = context.create_object.site.text
+    expected_route_term = context.create_object.route.text
     assert actual_terms["site_term"] == expected_site_term, (
         f"Expected site of vaccination term '{expected_site_term}', but got '{actual_terms['site_term']}'"
     )

@@ -81,14 +81,24 @@ Feature: Delete an immunization of a patient
         And IMMS event and delta tables, along with the MNS event, will be populated with correct data for the deleted record
 
     @vaccine_type_HEPB @patient_id_Random @supplier_name_TPP
-    Scenario: Verify that the search request will have empty response for deleted record
+    Scenario: Verify that the identifier search request will have empty response for deleted record
         Given I have created a valid vaccination record
         When Send a delete for Immunization event created
         Then The request will be successful with the status code '204'
         And IMMS event and delta tables, along with the MNS event, will be populated with correct data for the deleted record
         When I send a search request with Post method using identifier parameter for the record
         Then The request will be successful with the status code '200'
-    #And No immunization event is returned in the response
+    #And No immunization event is returned in the response - defect need fixing for this VED-1263
+
+    @vaccine_type_HEPB @patient_id_Random @supplier_name_TPP
+    Scenario: Verify that the search request will have empty response for deleted record
+        Given I have created a valid vaccination record
+        When Send a delete for Immunization event created
+        Then The request will be successful with the status code '204'
+        And IMMS event and delta tables, along with the MNS event, will be populated with correct data for the deleted record
+        When Send a search request with post method using patient.identifier and target-disease for Immunization event deleted
+        Then The request will be successful with the status code '200'
+        And No immunization event is returned in the response
 
     @Delete_cleanUp @vaccine_type_HEPB @patient_id_Random @supplier_name_TPP
     Scenario: Verify that the search request will be successful for reinstated record with create operation

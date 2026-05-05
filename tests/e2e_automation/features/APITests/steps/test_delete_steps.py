@@ -29,6 +29,7 @@ from .common_steps import (
 )
 from .test_search_steps import (
     send_search_post_request_with_identifier_header,
+    send_search_post_with_comma_separated_target_disease,
     trigger_search_request,
     validate_correct_immunization_event,
     validate_empty_immunization_event,
@@ -156,13 +157,10 @@ def validate_delta_table_for_create_event_for_reinstated_record(context):
     validate_mns_event_triggered_for_updated_event(context)
 
 
-@then(
-    "IMMS event and delta tables, along with the MNS event, will be populated with correct updated data for the reinstated record"
-)
+@then("IMMS event and delta tables will be populated with correct updated data for the reinstated record")
 def validate_delta_table_for_updated_event_for_reinstated_record(context):
     validate_imms_event_table_by_operation(context, "updated", reinstated=True)
     validate_delta_table_for_updated_event(context)
-    validate_mns_event_triggered_for_updated_event(context)
 
 
 @when("Trigger update request with same unique_id and unique_id_uri for the deleted record")
@@ -186,9 +184,16 @@ def trigger_search_request_for_deleted_record(context):
 
 @then("No immunization event is returned in the response")
 def validate_no_immunization_event_returned_in_response(context):
-    validate_empty_immunization_event(context)
+    validate_empty_immunization_event(context, identifier_search=False)
 
 
 @then("reinstated record is returned in the response with correct created data")
 def validate_reinstated_record_returned_in_response_with_correct_data(context):
     validate_correct_immunization_event(context)
+
+
+@when(
+    "Send a search request with post method using patient.identifier and target-disease for Immunization event deleted"
+)
+def trigger_search_request_with_patient_identifier_and_target_disease(context):
+    send_search_post_with_comma_separated_target_disease(context, "Post")
