@@ -9,7 +9,7 @@ on:
       lambda_build_flags:
         description: >
           JSON map of lambda_name -> force-build flag.
-          e.g. {"backend":true,"recordprocessor":true,"ack-backend":false,"mock_pds":false}
+          e.g. {"backend":true,"recordprocessor":true,"ack-backend":false}
         required: false
         type: string
         default: "{}"
@@ -73,7 +73,7 @@ on:
       lambda_build_flags:
         description: >
           JSON map of lambda_name -> force-build flag.
-          e.g. {"backend":true,"recordprocessor":true,"ack-backend":false,"mock_pds":false}
+          e.g. {"backend":true,"recordprocessor":true,"ack-backend":false}
         required: false
         type: string
         default: "{}"
@@ -151,9 +151,6 @@ jobs:
           - lambda_name: ack-backend
             ecr_repository: imms-ackbackend-repo
             lambda_dir: ack_backend
-          - lambda_name: mock_pds
-            ecr_repository: imms-mock-pds-repo
-            lambda_dir: mock_pds
     uses: ./.github/workflows/deploy-lambda-artifact.yml
     with:
       lambda_name: ${{ matrix.lambda_name }}

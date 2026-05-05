@@ -31,7 +31,6 @@ jobs:
         recordprocessor:imms-recordprocessor-repo
         recordforwarder:imms-recordforwarder-repo
         ack_backend:imms-ackbackend-repo
-        mock_pds:imms-mock-pds-repo
         redis_sync:imms-redis-sync-repo
     permissions:
       id-token: write

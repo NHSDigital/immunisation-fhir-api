@@ -13,6 +13,31 @@ For read-only search load, use `make test-read-only` (runs the `SearchUser` Locu
 
 For MNS-with-mocked-PDS capacity work, use the `CreateUser` profile so downstream publishing and PDS lookup activity is exercised.
 
+For direct mock-PDS rate limit testing, use the local test-only mock server in this folder.
+
+1. Start the local mock server in one terminal:
+   `make mockserver`
+2. Run mock rate tests in another terminal:
+   `make mockpdstest-average`, `make mockpdstest-boundary`, or `make mockpdstest-spike`
+
+The rate presets are baked in:
+
+- `make mockpdstest-average` runs at `125 rps`
+- `make mockpdstest-boundary` runs at `130 rps`
+
+Or run both in one command (starts local mock server and opens Locust UI):
+`PERF_LOAD_PROFILE=average make mockpdstest-ui`
+or
+`PERF_LOAD_PROFILE=spike make mockpdstest-ui`
+
+`src/locustfile_pds_rate_limit.py` defaults to `http://127.0.0.1:18080`.
+Set `MOCK_PDS_BASE_URL` explicitly only if you intentionally want to target a non-local endpoint.
+
+Local mock profile defaults are tuned for parity with earlier ref checks:
+
+- Average profile duration default: `180s`
+- Spike profile stages default: `10s warmup + 20s spike + 10s recovery`
+
 Available load profiles:
 
 - `make baseline`: holds traffic around the average acceptance threshold. Defaults to `125 rps` for `300s`.
@@ -25,13 +50,7 @@ Supported environment variables:
 - `PERF_BASELINE_RPS`, `PERF_BASELINE_DURATION_SECONDS`
 - `PERF_SPIKE_WARMUP_RPS`, `PERF_SPIKE_RPS`, `PERF_SPIKE_WARMUP_SECONDS`, `PERF_SPIKE_DURATION_SECONDS`, `PERF_SPIKE_RECOVERY_SECONDS`
 - `PERF_RAMP_START_RPS`, `PERF_RAMP_STEP_RPS`, `PERF_RAMP_MAX_RPS`, `PERF_RAMP_STEP_DURATION_SECONDS`
-- `RESULTS_DIR`: output directory for Locust CSV summaries.
-
-Each headless profile writes Locust CSV output to `results/<profile>*`. Review:
-
-- request counts and failures to quantify the percentage of 429 responses
-- `*_stats.csv` for p50/p95/p99 latency
-- `*_failures.csv` for error mix and throttle onset timing
+  UI mode is used for perf runs in this folder.
 
 Suggested ref runbook:
 

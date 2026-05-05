@@ -15,7 +15,7 @@ module "mns_publisher" {
   secrets_manager_policy_path        = "${local.policy_path}/secret_manager.json"
   account_id                         = data.aws_caller_identity.current.account_id
   pds_environment                    = var.pds_environment
-  pds_base_url                       = local.mock_pds_base_url
+  pds_base_url                       = ""
   mns_environment                    = var.mns_environment
 
   private_subnet_ids = local.private_subnet_ids
