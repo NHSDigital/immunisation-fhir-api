@@ -14,7 +14,7 @@ python = "~3.11"
 aws-lambda-typing = "~2.20.0"
 coverage          = "^7.13.2"
 pyjwt = { version = "^2.12.0", extras = ["crypto"] }
-requests          = "^2.31.0"
+requests          = "^2.33.0"
 boto3 = "~1.42.37"
 mypy-boto3-dynamodb = "^1.42.33"
 moto = "~5.1.20"

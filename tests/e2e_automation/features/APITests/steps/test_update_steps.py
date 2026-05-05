@@ -1,3 +1,4 @@
+import copy
 import uuid
 
 from pytest_bdd import parsers, scenarios, then, when
@@ -58,7 +59,8 @@ def validate_delta_table_for_updated_event(context):
 )
 def send_update_for_immunization_event_with_occurrenceDateTime(context, DateText):
     get_update_url_header(context, str(context.expected_version))
-    context.update_object = convert_to_update(context.immunization_object, context.ImmsID)
+    context.update_object = copy.deepcopy(context.immunization_object)
+    context.update_object = convert_to_update(context.update_object, context.ImmsID)
     context.update_object.occurrenceDateTime = generate_date(DateText)
     trigger_the_updated_request(context)
 
@@ -66,7 +68,8 @@ def send_update_for_immunization_event_with_occurrenceDateTime(context, DateText
 @when(parsers.parse("Send a update for Immunization event created with recorded being updated to '{DateText}'"))
 def send_update_for_immunization_event_with_recorded_date_update(context, DateText):
     get_update_url_header(context, str(context.expected_version))
-    context.update_object = convert_to_update(context.immunization_object, context.ImmsID)
+    context.update_object = copy.deepcopy(context.immunization_object)
+    context.update_object = convert_to_update(context.update_object, context.ImmsID)
     context.update_object.recorded = generate_date(DateText)
     trigger_the_updated_request(context)
 
@@ -76,7 +79,8 @@ def send_update_for_immunization_event_with_recorded_date_update(context, DateTe
 )
 def send_update_for_immunization_event_with_dob_update(context, DateText):
     get_update_url_header(context, str(context.expected_version))
-    context.update_object = convert_to_update(context.immunization_object, context.ImmsID)
+    context.update_object = copy.deepcopy(context.immunization_object)
+    context.update_object = convert_to_update(context.update_object, context.ImmsID)
     context.update_object.contained[1].birthDate = generate_date(DateText)
     trigger_the_updated_request(context)
 
@@ -84,7 +88,8 @@ def send_update_for_immunization_event_with_dob_update(context, DateText):
 @when(parsers.parse("Send a update for Immunization event created with expiration date being updated to '{DateText}'"))
 def send_update_for_immunization_event_with_expiration_date_update(context, DateText):
     get_update_url_header(context, str(context.expected_version))
-    context.update_object = convert_to_update(context.immunization_object, context.ImmsID)
+    context.update_object = copy.deepcopy(context.immunization_object)
+    context.update_object = convert_to_update(context.update_object, context.ImmsID)
     context.update_object.expirationDate = generate_date(DateText)
     trigger_the_updated_request(context)
 
@@ -94,7 +99,8 @@ def send_update_request_for_invalid_immunization_id(context):
     valid_json_payload_is_created(context)
     context.ImmsID = str(uuid.uuid4())
     get_update_url_header(context, str(context.expected_version))
-    context.update_object = convert_to_update(context.immunization_object, context.ImmsID)
+    context.update_object = copy.deepcopy(context.immunization_object)
+    context.update_object = convert_to_update(context.update_object, context.ImmsID)
     trigger_the_updated_request(context)
 
 
@@ -104,7 +110,8 @@ def send_update_request_for_invalid_etag(context, Etag):
     context.ImmsID = str(uuid.uuid4())
     context.version = Etag
     get_update_url_header(context, Etag)
-    context.update_object = convert_to_update(context.immunization_object, context.ImmsID)
+    context.update_object = copy.deepcopy(context.immunization_object)
+    context.update_object = convert_to_update(context.update_object, context.ImmsID)
     trigger_the_updated_request(context)
 
 

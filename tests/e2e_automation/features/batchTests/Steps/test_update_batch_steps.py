@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 import pandas as pd
 from pytest_bdd import given, scenarios, then, when
@@ -30,6 +31,7 @@ from features.APITests.steps.test_update_steps import (
 )
 
 from .batch_common_steps import (
+    build_batch_row_from_api_object,
     build_dataFrame_using_datatable,
     create_batch_file,
 )
@@ -69,33 +71,14 @@ def create_valid_vaccination_record_with_missing_mandatory_fields(context):
 @when("An update to above  vaccination record is made through batch file upload")
 def upload_batch_file_to_s3_for_update(context):
     record = build_batch_file(context)
-    context.vaccine_df = pd.DataFrame([record.dict()])
-    context.vaccine_df.loc[
-        0,
-        [
-            "NHS_NUMBER",
-            "PERSON_FORENAME",
-            "PERSON_SURNAME",
-            "PERSON_GENDER_CODE",
-            "PERSON_DOB",
-            "PERSON_POSTCODE",
-            "ACTION_FLAG",
-            "UNIQUE_ID",
-            "UNIQUE_ID_URI",
-        ],
-    ] = [
-        context.create_object.contained[1].identifier[0].value,
-        context.create_object.contained[1].name[0].given[0],
-        context.create_object.contained[1].name[0].family,
-        context.create_object.contained[1].gender,
-        context.create_object.contained[1].birthDate.replace("-", ""),
-        context.create_object.contained[1].address[0].postalCode,
-        "UPDATE",
-        context.create_object.identifier[0].value,
-        context.create_object.identifier[0].system,
-    ]
-    context.expected_version = 2
+    df = pd.DataFrame([record.dict()])
+
+    batch_fields = build_batch_row_from_api_object(context, "UPDATE")
+    df.loc[0, list(batch_fields.keys())] = list(batch_fields.values())
+
+    context.vaccine_df = df
     create_batch_file(context)
+    context.expected_version = 2
 
 
 @then("The delta and imms event table will be populated with the correct data for api created event")
@@ -121,6 +104,14 @@ def send_update_for_immunization_event_with_vaccination_detail_updated(context):
     context.immunization_object.contained[1].address[0].postalCode = row["PERSON_POSTCODE"]
     context.immunization_object.identifier[0].value = row["UNIQUE_ID"]
     context.immunization_object.identifier[0].system = row["UNIQUE_ID_URI"]
+    context.immunization_object.performer[1].actor.identifier.value = row["SITE_CODE"]
+    base_date = row["DATE_AND_TIME"][:15]
+    frac = row["DATE_AND_TIME"][15:]
+    dt = datetime.strptime(base_date, "%Y%m%dT%H%M%S")
+
+    formatted = dt.strftime(f"%Y-%m-%dT%H:%M:%S.{frac}+00:00")
+
+    context.immunization_object.occurrenceDateTime = formatted
     send_update_for_immunization_event(context)
 
 

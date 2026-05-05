@@ -9,6 +9,7 @@ from aws_lambda_typing.events.sqs import SQSMessage
 from common.api_clients.constants import MnsNotificationPayload
 from common.api_clients.get_pds_details import pds_get_patient_details
 from common.clients import logger
+from common.converter_utils import timestamp_to_rfc3339
 from common.get_service_url import get_service_url
 from constants import IMMUNISATION_EVENT_SOURCE, IMMUNISATION_EVENT_TYPE, SPEC_VERSION
 
@@ -41,13 +42,14 @@ def create_mns_notification(sqs_event: SQSMessage) -> MnsNotificationPayload:
 
     patient_age = calculate_age_at_vaccination(person_dob, date_and_time)
     gp_ods_code = get_practitioner_details_from_pds(nhs_number)
+    mns_timestamp = timestamp_to_rfc3339(date_and_time)
 
     return {
         "specversion": SPEC_VERSION,
         "id": str(uuid.uuid4()),
         "source": IMMUNISATION_EVENT_SOURCE,
         "type": IMMUNISATION_EVENT_TYPE,
-        "time": date_and_time,
+        "time": mns_timestamp,
         "subject": nhs_number,
         "dataref": f"{immunisation_url}/Immunization/{imms_id}",
         "filtering": {

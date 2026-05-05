@@ -747,6 +747,45 @@ class TestForwardLambdaHandler(TestCase):
                 self.assert_values_in_sqs_messages(self.mock_sqs_client.send_message, [test_case])
                 self.assert_dynamo_item(test_case["expected_dynamo_item"])
 
+    def test_forward_lambda_handler_reinstates_deleted_record_on_create(self):
+        """it should treat a create row for a deleted identifier as a reinstate update"""
+        self.mock_redis.hget.return_value = "RSV"
+        self.mock_redis_getter.return_value = self.mock_redis
+
+        pk_test_update = "Immunization#4d2ac1eb-080f-4e54-9598-f2d53334687r"
+        self.table.put_item(
+            Item={
+                "PK": pk_test_update,
+                "PatientPK": "Patient#9177036360",
+                "IdentifierPK": "https://www.ravs.england.nhs.uk/#UPDATE_TEST",
+                "Version": 2,
+                "DeletedAt": "20210101",
+            }
+        )
+
+        event = self.generate_event(
+            [
+                {
+                    "input": self.generate_input(
+                        row_id=1,
+                        operation_requested="CREATE",
+                        include_fhir_json=True,
+                        identifier_value="UPDATE_TEST",
+                    )
+                }
+            ]
+        )
+
+        forward_lambda_handler(event, {})
+
+        self.mock_sqs_client.send_message.assert_not_called()
+        self.assert_dynamo_item(
+            {
+                "PK": pk_test_update,
+                **ForwarderValues.EXPECTED_TABLE_ITEM_REINSTATED,
+            }
+        )
+
     def test_create_diagnostics_dictionary(self):
         """Tests diagnostics dictionary returns the correct output"""
 

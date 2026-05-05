@@ -22,7 +22,7 @@ Feature: Update the immunization of a patient
         And The Response JSONs should contain correct error message for 'forbidden' access
 
 
-    @delete_cleanup @vaccine_type_RSV @patient_id_NullNHS @supplier_name_RAVS
+    @delete_cleanup @vaccine_type_RSV @patient_id_Random @supplier_name_RAVS
     Scenario: verify that vaccination record can be updated with valid vaccination detail
         Given I have created a valid vaccination record
         When I update the address of the original immunization event
@@ -31,7 +31,7 @@ Feature: Update the immunization of a patient
         And The X-Request-ID and X-Correlation-ID keys in header will populate correctly
         And The imms event table will be populated with the correct data for 'updated' event
         And The delta table will be populated with the correct data for updated event
-        And MNS event will not be triggered for the update event
+        And MNS event will be triggered with correct data for Updated event
 
 
     @smoke
@@ -80,6 +80,7 @@ Feature: Update the immunization of a patient
         When Send a update for Immunization event created with occurrenceDateTime being updated to '<Date>'
         Then The request will be unsuccessful with the status code '400'
         And The Response JSONs should contain correct error message for 'invalid_OccurrenceDateTime'
+        And MNS event will not be triggered for the update event
         Examples:
             | Date              |
             | future_occurrence |

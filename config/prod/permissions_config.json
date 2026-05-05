@@ -25,7 +25,12 @@
   },
   {
     "supplier": "RAVS",
-    "permissions": ["MMR.CRUDS", "RSV.CRUDS", "PNEUMOCOCCAL.CRUDS"],
+    "permissions": [
+      "MENB.CRUDS",
+      "MMR.CRUDS",
+      "RSV.CRUDS",
+      "PNEUMOCOCCAL.CRUDS"
+    ],
     "ods_codes": ["X26", "X8E5B"]
   },
   {
@@ -44,6 +49,7 @@
     "supplier": "EMIS",
     "permissions": [
       "3IN1.CRUDS",
+      "COVID.CRUDS",
       "FLU.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
@@ -60,6 +66,7 @@
     "supplier": "TPP",
     "permissions": [
       "3IN1.CRUDS",
+      "COVID.CRUDS",
       "FLU.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
@@ -76,6 +83,7 @@
     "supplier": "MEDICUS",
     "permissions": [
       "3IN1.CRUDS",
+      "COVID.CRUDS",
       "FLU.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",

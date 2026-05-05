@@ -68,6 +68,10 @@ on:
           - sandbox
           - proxy_smoke
           - Batch_File_Validation_Feature
+      mns_validation_required:
+        description: Set to true if you want the MNS validation to be performed as part of the tests. please keep in mind it will increase execution time.
+        default: false
+        type: boolean
 
 env:
   APIGEE_AUTH_ENV: ${{ inputs.apigee_environment == 'int' && inputs.apigee_environment || 'internal-dev' }}
@@ -78,6 +82,7 @@ env:
   PROXY_NAME: ${{ startsWith(inputs.sub_environment, 'pr-') && format('immunisation-fhir-api-{0}', inputs.sub_environment) || format('immunisation-fhir-api-{0}', inputs.apigee_environment) }}
   STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}
   SOURCE_COMMIT_ID: ${{ github.sha }}
+  MNS_VALIDATION_REQUIRED: ${{ inputs.mns_validation_required || startsWith(inputs.sub_environment, 'pr-') || inputs.apigee_environment == 'internal-dev' }}
 
 jobs:
   wait-for-deployment:
@@ -146,7 +151,7 @@ jobs:
 
       - name: Connect to AWS
         if: ${{ env.TF_OUTPUTS_REQUIRED == 'true' }}
-        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37
         with:
           aws-region: eu-west-2
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
@@ -208,7 +213,7 @@ jobs:
           echo "::add-mask::$token"
           echo "APIGEE_ACCESS_TOKEN=$token" >> $GITHUB_ENV
 
-      - name: Run Pytest-BDD ${{ inputs.service_under_test }} tests with the ${{ inputs.suite_to_run }} filter
+      - name: Run Pytest-BDD ${{ inputs.service_under_test }} tests with the ${{ inputs.suite_to_run }} filter and MNS validation set to ${{ env.MNS_VALIDATION_REQUIRED }}
         working-directory: tests/e2e_automation
         env:
           S3_env: ${{ startsWith(inputs.sub_environment, 'int-') && 'preprod' || inputs.sub_environment }}
@@ -235,12 +240,13 @@ jobs:
           MEDICUS_client_Id: ${{ secrets.MEDICUS_client_Id }}
           MEDICUS_client_Secret: ${{ secrets.MEDICUS_client_Secret }}
           aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
+          mns_validation_required: ${{ env.MNS_VALIDATION_REQUIRED }}
           TEST_PATH: ${{ inputs.service_under_test == 'batch' && 'features/batchTests' || inputs.service_under_test == 'fhir_api' && 'features/APITests' || 'features' }}
           TEST_FILTER: ${{ inputs.suite_to_run == 'proxy_smoke' && 'Status_feature' || inputs.suite_to_run }}
         run: poetry run pytest "$TEST_PATH" -m "$TEST_FILTER" --junitxml=output/test-results.xml --alluredir=output/allure-results
 
       - name: Upload e2e automation test artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
         with:
           name: ${{ env.ENVIRONMENT }}-${{ env.SUB_ENVIRONMENT }}-${{ env.APIGEE_ENVIRONMENT }}-e2e-test-output
@@ -300,7 +306,7 @@ jobs:
 
       - name: Add link to Allure report
         if: github.event_name == 'workflow_dispatch'
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const url = `https://${context.repo.owner}.github.io/${context.repo.repo}/${context.runNumber}/`;

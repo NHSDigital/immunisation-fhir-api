@@ -7,8 +7,7 @@ from copy import deepcopy
 from datetime import datetime
 from unittest.mock import patch
 
-from boto3 import client as boto3_client
-from moto import mock_firehose, mock_s3
+from moto import mock_aws
 
 from utils_for_recordprocessor_tests.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
@@ -21,7 +20,6 @@ from utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
 )
 
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from common.clients import REGION_NAME
     from file_level_validation import file_level_validation
     from models.errors import InvalidHeaders, NoOperationPermissions
 
@@ -29,10 +27,11 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
 from utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
     GenericSetUp,
     GenericTearDown,
+    create_boto3_clients,
 )
 
-s3_client = boto3_client("s3", region_name=REGION_NAME)
-firehose_client = boto3_client("firehose", region_name=REGION_NAME)
+s3_client = None
+firehose_client = None
 MOCK_FILE_DETAILS = MockFileDetails.flu_emis
 COMMON_LOG_DATA = {
     "function_name": "record_processor_file_level_validation",
@@ -45,14 +44,15 @@ COMMON_LOG_DATA = {
 }
 
 
-@mock_s3
-@mock_firehose
+@mock_aws
 @patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
 class TestLoggingDecorator(unittest.TestCase):
     """Tests for the logging_decorator and its helper functions"""
 
     def setUp(self):
         """Set up the S3 buckets and upload the valid FLU/EMIS file example"""
+        global s3_client, firehose_client
+        s3_client, firehose_client = create_boto3_clients("s3", "firehose")
         GenericSetUp(s3_client, firehose_client)
 
     def tearDown(self):

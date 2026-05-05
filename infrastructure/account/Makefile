@@ -6,6 +6,13 @@ tf_cmd = AWS_PROFILE=$(AWS_PROFILE) terraform
 tf_state= -backend-config="bucket=$(BUCKET_NAME)"
 tf_vars= -var-file=environments/$(ENVIRONMENT)/variables.tfvars
 
+define require_bucket_name
+	@if [ -z "$(strip $(BUCKET_NAME))" ]; then \
+		echo "BUCKET_NAME variable not set. Use 'make init ENVIRONMENT=... BUCKET_NAME=...'"; \
+		exit 1; \
+	fi
+endef
+
 .PHONY: lock-provider workspace init plan apply clean destroy output tf-%
 
 lock-provider:
@@ -17,16 +24,24 @@ workspace:
 	$(tf_cmd) workspace select -or-create $(ENVIRONMENT) && echo "Switched to workspace/environment: $(ENVIRONMENT)"
 
 init:
+	$(require_bucket_name)
 	$(tf_cmd) init $(tf_state) -upgrade $(tf_vars)
 
 init-reconfigure:
+	$(require_bucket_name)
 	$(tf_cmd) init $(tf_state) -upgrade $(tf_vars) -reconfigure
 
 plan: workspace
 	 $(tf_cmd) plan $(tf_vars)
 
+plan-ci: workspace
+	$(tf_cmd) plan $(tf_vars) -out=tfplan -input=false
+
 apply: workspace
 	$(tf_cmd) apply $(tf_vars) -auto-approve
+
+apply-ci: workspace
+	$(tf_cmd) apply -input=false tfplan
 
 clean:
 	rm -rf build .terraform upload-key

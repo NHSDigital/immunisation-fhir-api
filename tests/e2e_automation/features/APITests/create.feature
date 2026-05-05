@@ -75,7 +75,7 @@ Feature: Create the immunization event for a patient
         And MNS event will be triggered with correct data for created event
 
     @Delete_cleanUp @vaccine_type_BCG @patient_id_InvalidInPDS @supplier_name_EMIS
-    Scenario: Verify that VACCINATION_PROCEDURE_TERM, VACCINE_PRODUCT_TERM fields are mapped to first instance of coding.display fields in imms delta table
+    Scenario: Verify that VACCINATION_PROCEDURE_TERM, VACCINE_PRODUCT_TERM , SITE_OF_VACCINATION_TERM, ROUTE_OF_VACCINATION_TERM fields are mapped to first instance of coding.display fields in imms delta table
         Given Valid json payload is created where vaccination terms has multiple instances of coding
         When Trigger the post create request
         Then The request will be successful with the status code '201'
@@ -91,6 +91,16 @@ Feature: Create the immunization event for a patient
         And The location key and Etag in header will contain the Immunization Id and version
         And The terms are mapped to correct instance of coding.display fields in imms delta table
         And MNS event will not be triggered for the event
+
+    @Delete_cleanUp @vaccine_type_RSV @patient_id_Random @supplier_name_Postman_Auth
+    Scenario: Verify that site and route codings are preserved in imms event table when the first coding system is invalid
+        Given Valid json payload is created where site and route have multiple SNOMED codings after an invalid system
+        When Trigger the post create request
+        Then The request will be successful with the status code '201'
+        And The location key and Etag in header will contain the Immunization Id and version
+        And The delta table will use the first valid SNOMED site and route coding
+        And The imms event table will preserve every site and route coding from the request
+        And MNS event will be triggered with correct data for created event
 
     @smoke
     @Delete_cleanUp @vaccine_type_PERTUSSIS @patient_id_Random @supplier_name_EMIS

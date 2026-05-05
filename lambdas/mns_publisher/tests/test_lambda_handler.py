@@ -282,7 +282,6 @@ class TestLambdaHandlerIntegration(unittest.TestCase):
 
         sqs_event = {"Records": [self.sample_sqs_record]}
         result = lambda_handler(sqs_event, Mock())
-
         self.assertEqual(result, {"batchItemFailures": []})
 
         self.assertEqual(mns_response.call_count, 1)

@@ -20,13 +20,25 @@ jobs:
       APIGEE_ENVIRONMENT: internal-dev
       BACKEND_ENVIRONMENT: dev
       BACKEND_SUB_ENVIRONMENT: pr-${{ github.event_name == 'pull_request' && github.event.pull_request.number || inputs.pr_number }}
+      LAMBDA_IMAGE_REPOSITORIES: |
+        backend:imms-backend-repo
+        batch_processor_filter:imms-batch-processor-filter-repo
+        delta_backend:imms-delta-backend-repo
+        filenameprocessor:imms-filenameprocessor-repo
+        id_sync:imms-id-sync-repo
+        mesh_processor:imms-mesh-processor-repo
+        mns_publisher:imms-mns-publisher-repo
+        recordprocessor:imms-recordprocessor-repo
+        recordforwarder:imms-recordforwarder-repo
+        ack_backend:imms-ackbackend-repo
+        redis_sync:imms-redis-sync-repo
     permissions:
       id-token: write
       contents: read
 
     steps:
       - name: Connect to AWS
-        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37
         with:
           aws-region: eu-west-2
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
@@ -48,6 +60,15 @@ jobs:
           make init apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
           make workspace apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
           echo "ID_SYNC_QUEUE_ARN=$(make -s output name=id_sync_queue_arn)" >> $GITHUB_ENV
+          # Destroy still evaluates variable validation, so provide a non-empty fallback when output is unavailable.
+          resolve_or_placeholder() {
+            local uri="$(make -s output "name=$1" 2>/dev/null || true)"
+            echo "${uri:-placeholder.dkr.ecr.eu-west-2.amazonaws.com/$2@sha256:0000000000000000000000000000000000000000000000000000000000000000}"
+          }
+          while IFS=: read -r lambda_name repository_name; do
+            [ -n "${lambda_name}" ] || continue
+            echo "TF_VAR_${lambda_name}_image_uri=$(resolve_or_placeholder "${lambda_name}_image_uri" "${repository_name}")" >> $GITHUB_ENV
+          done <<< "${LAMBDA_IMAGE_REPOSITORIES}"
 
       - name: Install poetry
         run: pip install poetry==2.1.4
@@ -75,3 +96,55 @@ jobs:
         working-directory: infrastructure/instance
         run: |
           make destroy apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
+
+      - name: Cleanup PR ECR images by prefix
+        env:
+          AWS_REGION: eu-west-2
+          IMAGE_TAG_PREFIX: ${{ env.BACKEND_SUB_ENVIRONMENT }}-
+        run: |
+          set -euo pipefail
+
+          cleanup_repo_by_prefix() {
+            local repository_name="$1"
+            local image_tags
+            local image_ids_args=""
+
+            if ! aws ecr describe-repositories \
+              --repository-names "${repository_name}" \
+              --region "${AWS_REGION}" \
+              >/dev/null 2>&1; then
+              echo "Repository '${repository_name}' does not exist. Skipping."
+              return
+            fi
+
+            image_tags=$(
+              aws ecr list-images \
+                --repository-name "${repository_name}" \
+                --region "${AWS_REGION}" \
+                --filter tagStatus=TAGGED \
+                --query "imageIds[?starts_with(imageTag, \`${IMAGE_TAG_PREFIX}\`)].imageTag" \
+                --output text
+            )
+
+            if [ -z "${image_tags}" ] || [ "${image_tags}" = "None" ]; then
+              echo "No images found in '${repository_name}' for prefix '${IMAGE_TAG_PREFIX}'."
+              return
+            fi
+
+            for image_tag in ${image_tags}; do
+              echo "Queueing image tag '${image_tag}' from '${repository_name}' for deletion..."
+              image_ids_args="${image_ids_args} imageTag=${image_tag}"
+            done
+
+            aws ecr batch-delete-image \
+              --repository-name "${repository_name}" \
+              --region "${AWS_REGION}" \
+              --image-ids ${image_ids_args} \
+              --output json
+          }
+
+          while IFS=: read -r lambda_name repository_name; do
+            [ -n "${lambda_name}" ] || continue
+            [ -n "${repository_name}" ] || continue
+            cleanup_repo_by_prefix "${repository_name}"
+          done <<< "${LAMBDA_IMAGE_REPOSITORIES}"

@@ -23,6 +23,7 @@ class SupplierNameWithODSCode(Enum):
     MEDICUS = "YGMYW"
     CEGEDIM = "YGM04"
     Postman_Auth = "Postman_Auth"
+    DPSFULL = "DPSFULL"
 
 
 class GenderCode(Enum):
