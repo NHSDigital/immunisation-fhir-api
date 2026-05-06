@@ -113,7 +113,6 @@ jobs:
       - name: Wait for API to be available
         if: github.event_name != 'workflow_dispatch'
         run: |
-          endpoint=""
           if [[ ${APIGEE_ENVIRONMENT} =~ "prod" ]]; then
             endpoint="https://api.service.nhs.uk/${SERVICE_BASE_PATH}/_status"
           else
@@ -145,7 +144,7 @@ jobs:
               echo "Waiting for ${endpoint} to return a 200 response with 'OK' body..."
             fi
 
-            ((counter=counter+1)) # Increment counter by 1
+            ((counter++))
             echo "Attempt ${counter}"
             sleep 30
           done

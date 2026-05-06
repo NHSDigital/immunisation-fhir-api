@@ -255,7 +255,6 @@ jobs:
           xml = xml.replace('filename="src/', 'filename="lambdas/shared/src/')
           coverage_file.write_text(xml)
           PY
-          grep -n "get_pds_details.py\|pds_service.py\|<source>" ../../shared-coverage.xml
 
       - name: Run Test Failure Summary
         id: check_failure

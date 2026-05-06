@@ -43,6 +43,4 @@ mockpdstest-ui:
 	trap 'kill $$server_pid >/dev/null 2>&1 || true' EXIT INT TERM; \
 	PERF_LOAD_PROFILE=$(PERF_LOAD_PROFILE) $(MOCK_LOCUST) MockPdsUser
 
-mocktest-ui: mockpdstest-ui
-
-.PHONY: test test-read-only baseline spike ramp mockserver mockpds mockpdstest-average mockpdstest-boundary mockpdstest-spike mockpdstest-ui mocktest-ui
+.PHONY: test test-read-only baseline spike ramp mockserver mockpds mockpdstest-average mockpdstest-boundary mockpdstest-spike mockpdstest-ui
