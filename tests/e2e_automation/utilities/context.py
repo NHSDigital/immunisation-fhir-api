@@ -50,3 +50,4 @@ class ScenarioContext:
         self.aws_account_id = None
         self.gp_code = None
         self.mns_validation_required = False
+        self.patient_age = 0

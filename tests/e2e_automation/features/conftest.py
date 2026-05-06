@@ -173,10 +173,7 @@ def pytest_bdd_after_scenario(request, feature, scenario):
                     )
 
             if context.response.status_code == 204:
-                if context.mns_validation_required.strip().lower() == "true":
-                    mns_event_will_be_triggered_with_correct_data_for_deleted_event(context)
-                else:
-                    print("MNS validation not required, skipping MNS event verification for deleted event.")
+                mns_event_will_be_triggered_with_correct_data_for_deleted_event(context)
             else:
                 print(
                     f"DELETE request failed with status code {context.response.status_code} for ImmsID {context.ImmsID}. "

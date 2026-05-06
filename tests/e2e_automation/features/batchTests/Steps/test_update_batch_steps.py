@@ -18,6 +18,7 @@ from features.APITests.steps.common_steps import (
     mns_event_will_be_triggered_with_correct_data,
     send_update_for_immunization_event,
     valid_json_payload_is_created,
+    validate_delta_table_for_updated_event,
     validate_etag_in_header,
     validate_imms_event_table_by_operation,
     validateCreateLocation,
@@ -25,9 +26,6 @@ from features.APITests.steps.common_steps import (
 )
 from features.APITests.steps.test_create_steps import (
     validate_imms_delta_table_by_ImmsID,
-)
-from features.APITests.steps.test_update_steps import (
-    validate_delta_table_for_updated_event,
 )
 
 from .batch_common_steps import (
