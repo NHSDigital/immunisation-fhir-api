@@ -467,7 +467,7 @@ def validate_correct_immunization_event_with_elements(context):
 
 
 @then("Empty immunization event is returned in the response")
-def validate_empty_immunization_event(context):
+def validate_empty_immunization_event(context, identifier_search=True):
     response = context.response.json()
     assert response.get("resourceType") == "Bundle", "resourceType should be 'Bundle'"
     assert response.get("type") == "searchset", "type should be 'searchset'"
@@ -475,9 +475,14 @@ def validate_empty_immunization_event(context):
     link = response.get("link", [{}])[0]
     link_url = link.get("url")
     assert link_url is not None, " link[0].url is missing"
-    assert link_url == f"{context.baseUrl}/Immunization?identifier=None", (
-        f"link[0].url should be '{context.baseUrl}/Immunization?identifier=None', got '{link_url}'"
-    )
+    if identifier_search:
+        assert link_url == f"{context.baseUrl}/Immunization?identifier=None", (
+            f"link[0].url should be '{context.baseUrl}/Immunization?identifier=None', got '{link_url}'"
+        )
+    else:
+        assert link_url.startswith(context.baseUrl), (
+            f"link[0].url should start with '{context.baseUrl}', got '{link_url}'"
+        )
     assert response.get("total") == 0, "total should be 0"
 
 

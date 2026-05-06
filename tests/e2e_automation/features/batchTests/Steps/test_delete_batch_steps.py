@@ -82,3 +82,20 @@ def validate_imms_event_table_for_delete_event(context):
 @then("The delta table will have delete entry with no change to record detail")
 def validate_delta_table_for_delete_event(context):
     validate_imms_delta_table_by_deleted_ImmsID(context)
+
+
+@given(
+    "batch file is created for below data as full dataset and each record delete and the followed with create/update action flag"
+)
+@ignore_if_local_run
+def valid_batch_file_is_created_with_delete_action_flag_and_create_update_action_flag(datatable, context):
+    build_dataFrame_using_datatable(datatable, context)
+    df_new = context.vaccine_df.copy()
+    df_update = df_new.copy()
+    df_update["ACTION_FLAG"] = "DELETE"
+    df_reinstated = df_new.copy()
+    df_reinstated.iloc[0, df_reinstated.columns.get_loc("ACTION_FLAG")] = "NEW"
+    df_reinstated.iloc[1, df_reinstated.columns.get_loc("ACTION_FLAG")] = "UPDATE"
+    context.vaccine_df = pd.concat([df_new, df_update, df_reinstated], ignore_index=True)
+    create_batch_file(context)
+    context.expected_version = 2

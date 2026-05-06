@@ -1,11 +1,7 @@
-import logging
 import os
 import subprocess
 
 import boto3
-
-logging.basicConfig(filename="debugLog.log", level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 
 def set_aws_session_token():
