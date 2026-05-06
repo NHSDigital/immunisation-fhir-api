@@ -529,7 +529,7 @@ class TestCreateImmunization(unittest.TestCase):
             "headers": {"SupplierSystem": "Test"},
             "body": imms.json(),
         }
-        self.service.create_immunization.return_value = imms_id
+        self.service.create_immunization.return_value = (imms_id, 1)
 
         response = self.controller.create_immunization(aws_event)
 
@@ -538,6 +538,23 @@ class TestCreateImmunization(unittest.TestCase):
         self.assertEqual(response["statusCode"], 201)
         self.assertTrue("body" not in response)
         self.assertTrue(response["headers"]["Location"].endswith(f"Immunization/{imms_id}"))
+        self.assertEqual(response["headers"]["E-Tag"], "1")
+
+    def test_create_immunization_returns_current_version_when_reinstating_deleted_record(self):
+        """it should return the existing resource location and current version for a reinstated create request"""
+        imms_id = str(uuid.uuid4())
+        imms = create_covid_immunization(imms_id)
+        aws_event = {
+            "headers": {"SupplierSystem": "Test"},
+            "body": imms.json(),
+        }
+        self.service.create_immunization.return_value = (imms_id, 3)
+
+        response = self.controller.create_immunization(aws_event)
+
+        self.assertEqual(response["statusCode"], 201)
+        self.assertTrue(response["headers"]["Location"].endswith(f"Immunization/{imms_id}"))
+        self.assertEqual(response["headers"]["E-Tag"], "3")
 
     def test_create_immunization_returns_unauthorised_error_when_supplier_system_header_missing(self):
         """it should return unauthorized error"""
@@ -1190,7 +1207,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
                 )
                 self.service.search_immunizations.assert_not_called()
 
-    @patch("controller.fhir_controller.MAX_RESPONSE_SIZE_BYTES", 5)
+    @patch("controller.fhir_controller.MAX_SEARCH_RESPONSE_SIZE_BYTES", 5)
     def test_search_immunizations_raises_error_if_too_many_results_found(self):
         """it should return an error if there are too many results in the response for Lambda to handle. In reality,
         highly unlikely. If a concern, pagination should be implemented."""

@@ -94,15 +94,57 @@ class TestCreateImmunization(TestImmunizationBatchRepository):
         """it should not create Immunization since the request is duplicate"""
         self.table.query = MagicMock(
             return_value={
-                "id": imms_id,
-                "identifier": [{"system": "test-system", "value": "12345"}],
-                "contained": [{"resourceType": "Patient", "identifier": [{"value": "98765"}]}],
                 "Count": 1,
+                "Items": [
+                    {
+                        "PK": _make_immunization_pk(imms_id),
+                        "Version": 1,
+                    }
+                ],
             }
         )
         with self.assertRaises(IdentifierDuplicationError):
             self.repository.create_immunization(self.immunization, "supplier", "vax-type", self.table, None)
         self.table.put_item.assert_not_called()
+        self.table.update_item.assert_not_called()
+
+    def test_create_immunization_reinstates_deleted_duplicate(self):
+        """it should reinstate a deleted record when a create request matches a deleted identifier"""
+        existing_pk = _make_immunization_pk(imms_id)
+        self.table.query = MagicMock(
+            return_value={
+                "Count": 1,
+                "Items": [
+                    {
+                        "PK": existing_pk,
+                        "Version": 2,
+                        "DeletedAt": "20210101",
+                    }
+                ],
+            }
+        )
+
+        response = self.repository.create_immunization(self.immunization, "supplier", "vax-type", self.table, None)
+
+        self.table.put_item.assert_not_called()
+        self.table.update_item.assert_called_once_with(
+            Key={"PK": existing_pk},
+            UpdateExpression=ANY,
+            ExpressionAttributeNames={"#imms_resource": "Resource"},
+            ExpressionAttributeValues={
+                ":timestamp": ANY,
+                ":patient_pk": ANY,
+                ":patient_sk": ANY,
+                ":imms_resource_val": json.dumps(self.immunization),
+                ":operation": "UPDATE",
+                ":version": 3,
+                ":supplier_system": "supplier",
+                ":respawn": "reinstated",
+            },
+            ReturnValues=ANY,
+            ConditionExpression=ANY,
+        )
+        self.assertEqual(response, existing_pk)
 
     def test_create_should_catch_dynamo_error(self):
         """it should throw UnhandledResponse when the response from dynamodb can't be handled"""

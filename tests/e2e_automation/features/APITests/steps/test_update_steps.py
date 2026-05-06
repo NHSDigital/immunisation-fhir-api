@@ -2,10 +2,6 @@ import copy
 import uuid
 
 from pytest_bdd import parsers, scenarios, then, when
-from src.dynamoDB.dynamo_db_helper import (
-    fetch_immunization_int_delta_detail_by_immsID,
-    validate_imms_delta_record_with_created_event,
-)
 from src.objectModels.api_immunization_builder import convert_to_update
 from utilities.api_fhir_immunization_helper import (
     parse_error_response,
@@ -13,10 +9,8 @@ from utilities.api_fhir_immunization_helper import (
 )
 from utilities.api_get_header import get_update_url_header
 from utilities.date_helper import generate_date
-from utilities.enums import ActionFlag, Operation
 
 from .common_steps import (
-    mns_event_will_be_triggered_with_correct_data,
     send_update_for_immunization_event,
     trigger_the_updated_request,
     valid_json_payload_is_created,
@@ -30,28 +24,6 @@ scenarios("APITests/update.feature")
 def send_update_for_immunization_event_by_supplier(context, Supplier):
     valid_token_is_generated(context, Supplier)
     send_update_for_immunization_event(context)
-
-
-@then("The delta table will be populated with the correct data for updated event")
-def validate_delta_table_for_updated_event(context):
-    create_obj = context.create_object
-    items = fetch_immunization_int_delta_detail_by_immsID(
-        context.aws_profile_name,
-        context.ImmsID,
-        context.S3_env,
-        context.expected_version,
-    )
-    assert items, f"Items not found in response for ImmsID: {context.ImmsID}"
-    delta_items = [i for i in items if i.get("Operation") == Operation.updated.value]
-    assert delta_items, f"No item found for ImmsID: {context.ImmsID}"
-    latest_delta_record = max(delta_items, key=lambda x: x.get("SequenceNumber", -1))
-    validate_imms_delta_record_with_created_event(
-        context,
-        create_obj,
-        latest_delta_record,
-        Operation.updated.value,
-        ActionFlag.updated.value,
-    )
 
 
 @when(
@@ -120,8 +92,3 @@ def validateForbiddenAccess(context, errorName):
     error_response = parse_error_response(context.response.json())
     validate_error_response(error_response, errorName, version=context.version)
     print(f"\n Error Response - \n {error_response}")
-
-
-@then("MNS event will be triggered with correct data for Updated event")
-def validate_mns_event_triggered_for_updated_event(context):
-    mns_event_will_be_triggered_with_correct_data(context=context, action="UPDATE")
