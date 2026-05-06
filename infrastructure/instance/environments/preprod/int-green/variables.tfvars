@@ -10,3 +10,5 @@ mesh_no_invocation_period_seconds       = 259200
 create_mesh_processor                   = true
 has_sub_environment_scope               = false
 dynamodb_point_in_time_recovery_enabled = true
+enable_s3_access_logging                = true
+s3_access_log_bucket_name               = "immunisation-preprod-s3-access-logs"

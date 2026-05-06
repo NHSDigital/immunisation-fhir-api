@@ -21,6 +21,13 @@ resource "aws_s3_bucket" "truststore_bucket" {
   force_destroy = true
 }
 
+resource "aws_s3_bucket_logging" "truststore_bucket" {
+  count         = var.access_log_target_bucket == null ? 0 : 1
+  bucket        = aws_s3_bucket.truststore_bucket.bucket
+  target_bucket = var.access_log_target_bucket
+  target_prefix = "${aws_s3_bucket.truststore_bucket.bucket}/"
+}
+
 resource "aws_s3_bucket_versioning" "truststore_bucket" {
   bucket = aws_s3_bucket.truststore_bucket.bucket
   versioning_configuration {

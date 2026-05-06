@@ -111,16 +111,17 @@ output "oas" {
 module "api_gateway" {
   source = "./modules/api_gateway"
 
-  prefix                  = local.prefix
-  short_prefix            = local.short_prefix
-  zone_id                 = data.aws_route53_zone.project_zone.zone_id
-  api_domain_name         = local.service_domain_name
-  environment             = var.environment
-  sub_environment         = var.sub_environment
-  oas                     = local.oas
-  aws_region              = var.aws_region
-  immunisation_account_id = var.immunisation_account_id
-  csoc_account_id         = var.csoc_account_id
+  prefix                   = local.prefix
+  short_prefix             = local.short_prefix
+  zone_id                  = data.aws_route53_zone.project_zone.zone_id
+  api_domain_name          = local.service_domain_name
+  environment              = var.environment
+  sub_environment          = var.sub_environment
+  oas                      = local.oas
+  aws_region               = var.aws_region
+  immunisation_account_id  = var.immunisation_account_id
+  csoc_account_id          = var.csoc_account_id
+  access_log_target_bucket = var.enable_s3_access_logging ? local.s3_access_log_bucket_name : null
 }
 
 resource "aws_lambda_permission" "api_gw" {
