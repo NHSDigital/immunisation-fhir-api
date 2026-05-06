@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 
 from jsonpath_ng.ext import parse
 
-from common.models.constants import Constants
+from common.models.constants import Constants, Urls
 from common.models.fhir_immunization import ImmunizationValidator
 from common.models.fhir_immunization_pre_validators import PreValidators
 from common.models.utils.generic_utils import (
@@ -468,6 +468,32 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
                 "999054860 ",
                 "9990  8609",
             ],
+        )
+
+    def test_pre_validate_patient_identifier_rejects_non_nhs_identifier_system(self):
+        """Test pre_validate_patient_identifier rejects non-NHS patient identifier systems"""
+        invalid_json_data = deepcopy(self.json_data)
+        invalid_json_data["contained"][1]["identifier"] = [
+            {
+                "system": "https://someother.codeableconcept.com/",
+                "value": "TVC15",
+            }
+        ]
+
+        with self.assertRaises(ValueError) as error:
+            self.validator.validate(invalid_json_data)
+
+        self.assertIn(
+            "contained[?(@.resourceType=='Patient')].identifier[0].system must equal '",
+            str(error.exception),
+        )
+
+    def test_pre_validate_patient_identifier_system(self):
+        """Test pre_validate_patient_identifier_system accepts valid values and rejects invalid values"""
+        ValidatorModelTests.test_string_value(
+            self,
+            field_location="contained[?(@.resourceType=='Patient')].identifier[0].system",
+            valid_strings_to_test=[Urls.NHS_NUMBER],
         )
 
     def test_pre_validate_patient_name(self):
