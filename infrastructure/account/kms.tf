@@ -230,4 +230,3 @@ resource "aws_kms_alias" "fhir_api_perf_alerts_sns_encryption_key" {
   name          = "alias/${var.environment}-fhir-api-perf-alerts-imms-sns-encryption"
   target_key_id = aws_kms_key.error_alerts_sns_encryption_key.key_id
 }
-

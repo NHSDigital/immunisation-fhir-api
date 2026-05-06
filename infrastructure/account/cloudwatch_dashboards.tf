@@ -100,7 +100,7 @@ locals {
   shared_alarms = var.environment == "dev" ? [] : [
     "arn:aws:cloudwatch:${var.aws_region}:${var.imms_account_id}:alarm:imms-${var.environment}-mesh-processor-no-lambda-invocation"
   ]
-  alarms_properties = concat(var.environment == "dev" ? local.dev_alarms : local.non_dev_alarms, local.shared_alarms)
+  alarms_properties = var.environment == "dev" ? local.dev_alarms : concat(local.non_dev_alarms, local.shared_alarms)
 
 }
 
