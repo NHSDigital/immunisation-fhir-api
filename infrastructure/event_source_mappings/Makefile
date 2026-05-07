@@ -5,12 +5,15 @@ environment        ?= $(ENVIRONMENT)
 sub_environment    ?= $(SUB_ENVIRONMENT)
 sub_environment_dir := $(if $(findstring pr-,$(sub_environment)),pr,$(sub_environment))
 tf_var_file        := ../instance/environments/$(environment)/$(sub_environment_dir)/variables.tfvars
-has_sub_environment_scope = $(shell awk -F= '/^[[:space:]]*has_sub_environment_scope[[:space:]]*=/ { gsub(/[[:space:]]/, "", $$2); print $$2 }' "$(tf_var_file)" 2>/dev/null)
+has_sub_environment_scope = $(shell sed -n 's/^[[:space:]]*has_sub_environment_scope[[:space:]]*=[[:space:]]*//p' "$(tf_var_file)" 2>/dev/null | sed 's/[[:space:]]*\#.*$$//' | tr -d '[:space:]' | sed -n '1p')
 targets_requiring_tf_var_scope := init workspace adopt validate plan plan-ci apply apply-ci verify ensure-destroy-allowed destroy output
 requested_targets := $(if $(MAKECMDGOALS),$(MAKECMDGOALS),init)
 ifneq ($(filter $(targets_requiring_tf_var_scope),$(requested_targets)),)
 ifeq ($(has_sub_environment_scope),)
 $(error has_sub_environment_scope not found in $(tf_var_file))
+endif
+ifneq ($(filter true false,$(has_sub_environment_scope)),$(has_sub_environment_scope))
+$(error has_sub_environment_scope in $(tf_var_file) must be true or false, got '$(has_sub_environment_scope)')
 endif
 endif
 workspace_name = $(if $(filter false,$(has_sub_environment_scope)),$(environment),$(sub_environment))
