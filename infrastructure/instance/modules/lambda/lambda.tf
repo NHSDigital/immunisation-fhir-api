@@ -24,6 +24,10 @@ module "lambda_function_container_image" {
   image_config_command  = ["${var.function_name}_handler.${var.function_name}_handler"]
 }
 
+data "aws_sns_topic" "fhir_api_perf_alerts" {
+  name = "${var.environment}-fhir-api-perf-alerts"
+}
+
 resource "aws_cloudwatch_metric_alarm" "memory_alarm" {
   alarm_name                = "${var.short_prefix}_${var.function_name} memory alarm"
   comparison_operator       = "GreaterThanOrEqualToThreshold"
@@ -34,6 +38,7 @@ resource "aws_cloudwatch_metric_alarm" "memory_alarm" {
   statistic                 = "Maximum"
   threshold                 = 256
   alarm_description         = "This metric monitors Lambda memory usage"
+  alarm_actions             = [data.aws_sns_topic.fhir_api_perf_alerts.arn]
   insufficient_data_actions = []
 
 }

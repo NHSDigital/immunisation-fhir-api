@@ -178,3 +178,33 @@ resource "aws_cloudwatch_log_group" "forwarding_lambda_log_group" {
   name              = "/aws/lambda/${local.forwarder_lambda_name}"
   retention_in_days = 30
 }
+
+resource "aws_cloudwatch_log_metric_filter" "forwarding_lambda_error_logs" {
+  count = var.error_alarm_notifications_enabled ? 1 : 0
+
+  name           = "${local.short_prefix}-ForwardingLambdaErrorLogsFilter"
+  pattern        = "%\\[ERROR\\]%"
+  log_group_name = aws_cloudwatch_log_group.forwarding_lambda_log_group.name
+
+  metric_transformation {
+    name      = "${local.short_prefix}-ForwardingLambdaErrorLogs"
+    namespace = "${local.short_prefix}-ForwardingLambda"
+    value     = "1"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "forwarding_lambda_error_alarm" {
+  count = var.error_alarm_notifications_enabled ? 1 : 0
+
+  alarm_name          = "${local.forwarder_lambda_name}-error"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = "${local.short_prefix}-ForwardingLambdaErrorLogs"
+  namespace           = "${local.short_prefix}-ForwardingLambda"
+  period              = 120
+  statistic           = "Sum"
+  threshold           = 1
+  alarm_description   = "This sets off an alarm for any error logs found in the forwarding Lambda function"
+  alarm_actions       = [data.aws_sns_topic.imms_system_alert_errors.arn]
+  treat_missing_data  = "notBreaching"
+}
