@@ -1,1 +1,0 @@
-✅ Step Passed: **Valid vaccination record is created for '9728403348' and Disease Type 'SHINGLES' with recorded date as '2023-01-15'

@@ -1,0 +1,1 @@
+✅ Step Passed: **Send a search request with 'GET' method with valid NHS Number and all invalid target-disease codes using patient identifier system 'https://fhir.nhs.uk/Id/nhs-number'

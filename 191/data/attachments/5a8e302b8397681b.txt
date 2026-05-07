@@ -1,0 +1,1 @@
+✅ Step Passed: **Send a search request with post method using patient.identifier and target-disease for Immunization event deleted

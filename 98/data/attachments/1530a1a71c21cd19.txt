@@ -1,8 +1,0 @@
-
- Search Get parameters (target-disease, 403 check) - 
- {'patient.identifier': 'https://fhir.nhs.uk/Id/nhs-number|9000000009', 'target-disease': 'http://snomed.info/sct|14189004'}
-403
-403
-
- Error Response - 
- resourceType='OperationOutcome' id='3f8ce780-4e39-4a39-83df-87d71467ec39' meta=Meta(profile=['https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome']) issue=[Issue(severity='error', code='forbidden', details=Details(coding=[Coding(system='https://fhir.nhs.uk/Codesystem/http-error-codes', code='FORBIDDEN')]), diagnostics='Unauthorized request for vaccine type')]
