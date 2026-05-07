@@ -14,6 +14,7 @@ python = "~3.11"
 boto3 = "~1.42.74"
 mypy-boto3-dynamodb = "^1.42.73"
 moto = {extras = ["s3"], version = "^5.1.22"}
+cryptography = ">=46.0.7,<47.0.0"
 coverage = "^7.13.5"
 smart-open = {extras = ["s3"], version = "^7.5.1"}
 
