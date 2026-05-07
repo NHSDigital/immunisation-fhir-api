@@ -7,31 +7,28 @@ from common.clients import logger
 
 
 class PdsService:
-    def __init__(self, authenticator: AppRestrictedAuth, environment):
+    def __init__(
+        self,
+        authenticator: AppRestrictedAuth | None,
+        environment: str,
+        base_url: str | None = None,
+    ):
         logger.info(f"PdsService init: {environment}")
         self.authenticator = authenticator
-
-        self.base_url = (
-            f"https://{environment}.api.service.nhs.uk/personal-demographics/FHIR/R4/Patient"
-            if environment != "prod"
-            else "https://api.service.nhs.uk/personal-demographics/FHIR/R4/Patient"
-        )
-
+        host = "api.service.nhs.uk" if environment == "prod" else f"{environment}.api.service.nhs.uk"
+        self.base_url = base_url.rstrip("/") if base_url else f"https://{host}/personal-demographics/FHIR/R4/Patient"
         logger.info(f"PDS Service URL: {self.base_url}")
 
     def get_patient_details(self, patient_id: str) -> dict | None:
-        access_token = self.authenticator.get_access_token()
-        request_headers = {
-            "Authorization": f"Bearer {access_token}",
-            "X-Request-ID": str(uuid.uuid4()),
-            "X-Correlation-ID": str(uuid.uuid4()),
-        }
-        response = request_with_retry_backoff("GET", f"{self.base_url}/{patient_id}", headers=request_headers)
+        headers = {"X-Request-ID": str(uuid.uuid4()), "X-Correlation-ID": str(uuid.uuid4())}
+        if self.authenticator is not None:
+            headers["Authorization"] = f"Bearer {self.authenticator.get_access_token()}"
+
+        response = request_with_retry_backoff("GET", f"{self.base_url}/{patient_id}", headers=headers)
 
         if response.status_code == 200:
             return response.json()
-        elif response.status_code == 404:
+        if response.status_code == 404:
             logger.info("Patient not found")
             return None
-        else:
-            raise_error_response(response)
+        raise_error_response(response)

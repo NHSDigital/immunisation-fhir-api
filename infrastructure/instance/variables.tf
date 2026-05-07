@@ -79,6 +79,42 @@ variable "mns_environment" {
   default = "int"
 }
 
+variable "mock_pds_enabled" {
+  description = "Enable the mock PDS Lambda in test environments."
+  type        = bool
+  default     = false
+}
+
+variable "mock_pds_average_rate_limit" {
+  description = "Average mock PDS request rate, in requests per second."
+  type        = number
+  default     = 125
+}
+
+variable "mock_pds_average_window_seconds" {
+  description = "Average mock PDS rate limiting window in seconds."
+  type        = number
+  default     = 60
+}
+
+variable "mock_pds_spike_rate_limit" {
+  description = "Spike mock PDS request rate, in requests per second."
+  type        = number
+  default     = 450
+}
+
+variable "mock_pds_spike_window_seconds" {
+  description = "Spike mock PDS rate limiting window in seconds."
+  type        = number
+  default     = 1
+}
+
+variable "mock_pds_gp_ods_code" {
+  description = "Deterministic GP ODS code returned by the mock PDS service."
+  type        = string
+  default     = "Y12345"
+}
+
 variable "mesh_no_invocation_period_seconds" {
   description = "The maximum duration the MESH Processor Lambda can go without being invoked before the no-invocation alarm is triggered."
   type        = number
@@ -133,6 +169,17 @@ variable "ack_backend_image_uri" {
   validation {
     condition     = trimspace(var.ack_backend_image_uri) != ""
     error_message = "ack_backend_image_uri must be provided."
+  }
+}
+
+variable "mock_pds_image_uri" {
+  description = "Immutable URI of the mock PDS Lambda container image in ECR. Required when mock_pds_enabled is true; supplied by CI/CD."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = !var.mock_pds_enabled || trimspace(var.mock_pds_image_uri) != ""
+    error_message = "mock_pds_image_uri must be provided when mock_pds_enabled is true."
   }
 }
 

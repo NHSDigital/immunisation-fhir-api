@@ -94,6 +94,12 @@ variable "pds_environment" {
   type = string
 }
 
+variable "pds_base_url" {
+  type        = string
+  default     = ""
+  description = "Optional override for the PDS base URL. Leave empty for normal runtime use."
+}
+
 variable "account_id" {
   type        = string
   description = "AWS account ID used for IAM policy templating (e.g., Secrets Manager ARNs)."

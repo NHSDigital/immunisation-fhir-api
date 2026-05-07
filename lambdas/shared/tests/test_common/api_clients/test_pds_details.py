@@ -9,6 +9,7 @@ class TestGetPdsPatientDetails(unittest.TestCase):
     def setUp(self):
         self.test_patient_id = "9912003888"
         get_pds_service.__globals__["_pds_service"] = None
+        get_pds_service.__globals__["_pds_service_config"] = None
 
         self.logger_patcher = patch("common.api_clients.get_pds_details.logger")
         self.mock_logger = self.logger_patcher.start()
@@ -25,6 +26,7 @@ class TestGetPdsPatientDetails(unittest.TestCase):
 
     def tearDown(self):
         get_pds_service.__globals__["_pds_service"] = None
+        get_pds_service.__globals__["_pds_service_config"] = None
         patch.stopall()
 
     def test_pds_get_patient_details_success(self):
@@ -88,3 +90,70 @@ class TestGetPdsPatientDetails(unittest.TestCase):
         self.mock_auth_class.assert_called_once()
         self.mock_pds_service_class.assert_called_once()
         self.assertEqual(self.mock_pds_service_instance.get_patient_details.call_count, 2)
+
+    @patch.dict("os.environ", {"PDS_ENV": "ref", "PDS_BASE_URL": "https://mock-pds.example/Patient"}, clear=False)
+    def test_uses_base_url_override_without_authenticator(self):
+        pds_get_patient_details(self.test_patient_id)
+
+        self.mock_auth_class.assert_not_called()
+        self.mock_pds_service_class.assert_called_once_with(
+            None,
+            "ref",
+            base_url="https://mock-pds.example/Patient",
+        )
+
+        self.mock_pds_service_instance.get_patient_details.assert_called_once_with(self.test_patient_id)
+
+    @patch.dict("os.environ", {"PDS_ENV": "ref", "PDS_BASE_URL": "  "}, clear=False)
+    def test_whitespace_only_base_url_uses_authenticator(self):
+        pds_get_patient_details(self.test_patient_id)
+
+        self.mock_auth_class.assert_called_once()
+        self.mock_pds_service_class.assert_called_once_with(
+            self.mock_auth_instance,
+            "ref",
+            base_url=None,
+        )
+
+    @patch.dict("os.environ", {"PDS_ENV": "ref", "PDS_BASE_URL": "https://mock-pds-v1.example/Patient"}, clear=False)
+    def test_rebuilds_cached_service_when_base_url_changes(self):
+        pds_get_patient_details(self.test_patient_id)
+
+        self.mock_pds_service_class.reset_mock()
+        self.mock_pds_service_instance.get_patient_details.reset_mock()
+        new_instance = MagicMock()
+        self.mock_pds_service_class.return_value = new_instance
+
+        with patch.dict("os.environ", {"PDS_BASE_URL": "https://mock-pds-v2.example/Patient"}, clear=False):
+            pds_get_patient_details("1234567890")
+
+        self.mock_auth_class.assert_not_called()
+        self.mock_pds_service_class.assert_called_once_with(
+            None,
+            "ref",
+            base_url="https://mock-pds-v2.example/Patient",
+        )
+        new_instance.get_patient_details.assert_called_once_with("1234567890")
+
+    @patch.dict("os.environ", {"PDS_ENV": "int", "PDS_BASE_URL": ""}, clear=False)
+    def test_rebuilds_cached_service_when_environment_changes(self):
+        pds_get_patient_details(self.test_patient_id)
+
+        self.mock_pds_service_class.reset_mock()
+        self.mock_auth_class.reset_mock()
+        self.mock_pds_service_instance.get_patient_details.reset_mock()
+        new_auth = MagicMock()
+        new_service = MagicMock()
+        self.mock_auth_class.return_value = new_auth
+        self.mock_pds_service_class.return_value = new_service
+
+        with patch.dict("os.environ", {"PDS_ENV": "ref", "PDS_BASE_URL": ""}, clear=False):
+            pds_get_patient_details("1234567890")
+
+        self.mock_auth_class.assert_called_once_with(secret_manager_client=unittest.mock.ANY, environment="ref")
+        self.mock_pds_service_class.assert_called_once_with(
+            new_auth,
+            "ref",
+            base_url=None,
+        )
+        new_service.get_patient_details.assert_called_once_with("1234567890")
