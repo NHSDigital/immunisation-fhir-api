@@ -110,6 +110,10 @@ env: # Sonarcloud - do not allow direct usage of untrusted data
 
 run-name: Deploy Backend - ${{ inputs.environment }} ${{ inputs.sub_environment }}
 
+concurrency:
+  group: deploy-backend-${{ github.repository }}-${{ inputs.environment }}-${{ (inputs.environment == 'preprod' || inputs.environment == 'prod') && 'shared-trigger' || inputs.sub_environment }}
+  cancel-in-progress: false
+
 jobs:
   deploy-lambda-images:
     name: Deploy ${{ matrix.lambda_name }} image
@@ -247,6 +251,10 @@ jobs:
         working-directory: infrastructure/instance
         run: make init
 
+      - name: Set Terraform workspace
+        working-directory: infrastructure/instance
+        run: make workspace
+
       - name: Terraform Plan
         # Ignore cancellations to prevent Terraform from being killed while it holds a state lock
         # A stuck process can still be killed with the force-cancel API operation
@@ -293,6 +301,10 @@ jobs:
         working-directory: infrastructure/instance
         run: make init
 
+      - name: Set Terraform workspace
+        working-directory: infrastructure/instance
+        run: make workspace
+
       - name: Terraform Apply
         # Ignore cancellations to prevent Terraform from being killed while it holds a state lock
         # A stuck process can still be killed with the force-cancel API operation
@@ -301,6 +313,47 @@ jobs:
         run: |
           make apply-ci
           echo "ID_SYNC_QUEUE_ARN=$(make -s output name=id_sync_queue_arn)" >> $GITHUB_ENV
+
+      - name: Terraform Init Event Source Mappings
+        if: ${{ !failure() }}
+        working-directory: infrastructure/event_source_mappings
+        run: make init
+
+      - name: Terraform Format Check Event Source Mappings
+        if: ${{ !failure() }}
+        working-directory: infrastructure/event_source_mappings
+        run: make fmt-check
+
+      - name: Terraform Validate Event Source Mappings
+        if: ${{ !failure() }}
+        working-directory: infrastructure/event_source_mappings
+        run: make validate
+
+      - name: Adopt Existing Event Source Mappings
+        if: ${{ !failure() }}
+        working-directory: infrastructure/event_source_mappings
+        env:
+          ALLOW_EVENT_SOURCE_MAPPING_ADOPTION: "true"
+        run: make adopt
+
+      - name: Terraform Plan Event Source Mappings
+        if: ${{ !failure() }}
+        working-directory: infrastructure/event_source_mappings
+        run: make plan-ci
+
+      - name: Save Event Source Mapping Terraform Plan
+        if: ${{ !failure() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: ${{ env.ENVIRONMENT }}-${{ env.SUB_ENVIRONMENT }}-event-source-mappings-tfplan
+          path: infrastructure/event_source_mappings/tfplan
+
+      - name: Terraform Apply Event Source Mappings
+        if: ${{ !failure() }}
+        working-directory: infrastructure/event_source_mappings
+        run: |
+          make apply-ci
+          make verify
 
       - name: Install poetry
         if: ${{ inputs.environment == 'dev' && inputs.create_mns_subscription }}

@@ -70,20 +70,6 @@ resource "aws_lambda_function" "delta_sync_lambda" {
   ]
 }
 
-
-resource "aws_lambda_event_source_mapping" "delta_trigger" {
-  event_source_arn  = aws_dynamodb_table.events-dynamodb-table.stream_arn
-  function_name     = aws_lambda_function.delta_sync_lambda.function_name
-  starting_position = "TRIM_HORIZON"
-  destination_config {
-    on_failure {
-      destination_arn = aws_sqs_queue.dlq.arn
-    }
-  }
-  maximum_retry_attempts = 0
-}
-
-
 resource "aws_sqs_queue" "dlq" {
   name = "${local.short_prefix}-${local.dlq_name}"
 }
