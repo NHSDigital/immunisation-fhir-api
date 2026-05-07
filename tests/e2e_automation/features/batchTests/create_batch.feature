@@ -151,7 +151,7 @@ Feature: Create the immunization event for a patient through batch file
         And MNS event will be triggered with correct data for all 'CREATE' events where NHS is not null
 
     @vaccine_type_ROTAVIRUS  @supplier_name_TPP
-    Scenario: verify that vaccination record will be get successful with different valid value in gender field
+    Scenario: verify that vaccination record will be get successful with different valid value in gender field and name length is within limit in batch file
         Given batch file is created for below data where person detail has valid values
             | patient_id | unique_id                                   |
             | Random     | gender_value_0                              |
