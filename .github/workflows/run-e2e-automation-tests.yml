@@ -310,3 +310,4 @@ jobs:
         with:
           script: |
             const url = `https://${context.repo.owner}.github.io/${context.repo.repo}/${context.runNumber}/`;
+            core.summary.addHeading('Allure Report').addLink('View Report', url).write();
