@@ -12,7 +12,7 @@ packages = [
 [tool.poetry.dependencies]
 python = ">=3.11,<3.12"
 locust = ">=2.42.3,<3.0.0"
-pyjwt = { version = ">=2.11.0,<3.0.0", extras = ["crypto"] }
+pyjwt = { version = ">=2.12.0,<3.0.0", extras = ["crypto"] }
 boto3 = ">=1.42.59,<2.0.0"
 shared = { path = "../../lambdas/shared", develop = true }
 pandas = "2.3.0"
