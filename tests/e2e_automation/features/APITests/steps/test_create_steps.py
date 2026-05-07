@@ -1,10 +1,9 @@
 import json
 import random
 from datetime import UTC, datetime, timedelta
-from venv import logger
 
 import pytest_check as check
-from pytest_bdd import given, parsers, scenarios, then, when
+from pytest_bdd import given, parsers, scenarios, then
 from src.dynamoDB.dynamo_db_helper import (
     fetch_immunization_events_detail,
     fetch_immunization_int_delta_detail_by_immsID,
@@ -34,7 +33,7 @@ from utilities.vaccination_constants import (
     VACCINE_CODE_MAP,
 )
 
-from .common_steps import Trigger_the_post_create_request, valid_json_payload_is_created
+from .common_steps import valid_json_payload_is_created
 
 scenarios("APITests/create.feature")
 
@@ -242,8 +241,7 @@ def validate_imms_event_table(context):
 
     try:
         resource = json.loads(resource_json_str)
-    except (TypeError, json.JSONDecodeError) as e:
-        logger.error(f"Failed to parse Resource from item: {e}")
+    except (TypeError, json.JSONDecodeError):
         raise AssertionError("Failed to parse Resource from response item.")
 
     assert resource is not None, "Resource is None in the response"
@@ -347,8 +345,8 @@ def validate_procedure_term_correct_coding_in_delta_table(context):
 @then("The delta table will use the first valid SNOMED site and route coding")
 def validate_delta_table_uses_first_valid_snomed_site_route_coding(context):
     actual_terms = get_all_term_text(context)
-    expected_site_term = context.create_object.site.coding[1].extension[0].valueString
-    expected_route_term = context.create_object.route.coding[1].extension[0].valueString
+    expected_site_term = context.create_object.site.text
+    expected_route_term = context.create_object.route.text
     assert actual_terms["site_term"] == expected_site_term, (
         f"Expected site of vaccination term '{expected_site_term}', but got '{actual_terms['site_term']}'"
     )
@@ -449,8 +447,3 @@ def create_request_with_invalid_gender(context, gender):
 def create_request_with_empty_nam(context):
     valid_json_payload_is_created(context)
     context.immunization_object.contained[1].name = None
-
-
-@when("Trigger another post create request with same unique_id and unique_id_uri")
-def trigger_post_create_with_same_unique_id(context):
-    Trigger_the_post_create_request(context)

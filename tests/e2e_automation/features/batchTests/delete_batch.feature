@@ -53,3 +53,22 @@ Feature: Create the immunization event for a patient through batch file and upda
         And Json bus ack will only contain file metadata and no failure record entry
         And The imms event table status will be updated to delete and no change to record detail
         And The delta table will have delete entry with no change to record detail
+
+
+    @vaccine_type_RSV @patient_id_Random @supplier_name_RAVS
+    Scenario: Verify that the imms event can be reinstated after soft delete through create and/or update Action Flag
+        Given batch file is created for below data as full dataset and each record delete and the followed with create/update action flag
+            | patient_id | unique_id             |
+            | Random     | reinstate_with_create |
+            | Random     | reinstate_with_update |
+        When batch file is uploaded in s3 bucket
+        Then file will be moved to destination bucket and inf ack file will be created
+        And inf ack file has success status for processed batch file
+        And bus ack files will be created
+        And CSV bus ack will not have any entry of successfully processed records
+        And Json bus ack will only contain file metadata and no failure record entry
+        And Audit table will have correct status, queue name and record count for the processed batch file
+        And The imms event table will be populated with the correct data for reinstated record in batch file
+        And The delta table will be populated with the correct data for all created records in batch file
+        And The delta table will be populated with the correct data for reinstated record
+        And The delta table will be populated with the correct data for all deleted records in batch file

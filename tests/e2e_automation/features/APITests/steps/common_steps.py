@@ -4,13 +4,14 @@ import random
 import uuid
 from datetime import UTC, datetime, timedelta
 from urllib.parse import parse_qs
-from venv import logger
 
 import pytest_check as check
 from pytest_bdd import given, parsers, then, when
 from src.dynamoDB.dynamo_db_helper import (
     fetch_immunization_events_detail,
+    fetch_immunization_int_delta_detail_by_immsID,
     parse_imms_int_imms_event_response,
+    validate_imms_delta_record_with_created_event,
 )
 from src.objectModels.api_immunization_builder import (
     build_site_route,
@@ -38,7 +39,7 @@ from utilities.api_get_header import (
     get_update_url_header,
 )
 from utilities.date_helper import is_valid_date, normalize_utc_suffix
-from utilities.enums import Operation
+from utilities.enums import ActionFlag, Operation
 from utilities.http_requests_session import http_requests_session
 from utilities.sqs_message_halder import read_message
 from utilities.vaccination_constants import ROUTE_MAP, SITE_MAP
@@ -168,8 +169,6 @@ def The_request_will_have_status_code(context, statusCode):
 
 @then("The location key and Etag in header will contain the Immunization Id and version")
 def validateCreateLocation(context):
-    location = context.response.headers["location"]
-    eTag = context.response.headers["E-Tag"]
     body = get_response_body_for_display(context.response)
     assert "location" in context.response.headers, (
         f"Location header is missing in the response with Status code: {context.response.status_code}. Response: {body}"
@@ -177,6 +176,9 @@ def validateCreateLocation(context):
     assert "E-Tag" in context.response.headers, (
         f"E-Tag header is missing in the response with Status code: {context.response.status_code}. Response: {body}"
     )
+    location = context.response.headers["location"]
+    eTag = context.response.headers["E-Tag"]
+
     context.ImmsID = location.split("/")[-1]
     context.eTag = eTag.strip('"')
     print(f"\n Immunization ID is {context.ImmsID} and Etag is {context.eTag} \n")
@@ -254,7 +256,7 @@ def validateCreateHeader(context):
 
 
 @then(parsers.parse("The imms event table will be populated with the correct data for '{operation}' event"))
-def validate_imms_event_table_by_operation(context, operation: Operation):
+def validate_imms_event_table_by_operation(context, operation: Operation, reinstated=False):
     create_obj = context.create_object
     table_query_response = fetch_immunization_events_detail(context.aws_profile_name, context.ImmsID, context.S3_env)
     assert "Item" in table_query_response, f"Item not found in response for ImmsID: {context.ImmsID}"
@@ -265,8 +267,7 @@ def validate_imms_event_table_by_operation(context, operation: Operation):
 
     try:
         resource = json.loads(resource_json_str)
-    except (TypeError, json.JSONDecodeError) as e:
-        logger.error(f"Failed to parse Resource from item: {e}")
+    except (TypeError, json.JSONDecodeError):
         raise AssertionError("Failed to parse Resource from response item.")
 
     assert resource is not None, "Resource is None in the response"
@@ -275,7 +276,7 @@ def validate_imms_event_table_by_operation(context, operation: Operation):
     assert int(context.expected_version) == int(context.eTag), (
         f"Expected Version: {context.expected_version}, Found: {context.eTag}"
     )
-
+    actualDeletedAt = item.get("DeletedAt")
     fields_to_compare = [
         ("Operation", Operation[operation].value, item.get("Operation")),
         (
@@ -298,6 +299,22 @@ def validate_imms_event_table_by_operation(context, operation: Operation):
 
     for name, expected, actual in fields_to_compare:
         check.is_true(expected == actual, f"Expected {name}: {expected}, Actual {actual}")
+
+    if Operation[operation].value == "DELETE":
+        check.is_true(
+            actualDeletedAt is not None and actualDeletedAt > 0,
+            f"Expected DeletedAt to be a Unix timestamp, got {actualDeletedAt}",
+        )
+    elif reinstated:
+        check.is_true(
+            actualDeletedAt == "reinstated",
+            f"Expected DeletedAt: None for reinstated record, got {actualDeletedAt}",
+        )
+    else:
+        check.is_true(
+            actualDeletedAt is None,
+            f"Expected DeletedAt: None, Actual {actualDeletedAt}",
+        )
 
     validate_to_compare_request_and_response(context, create_obj, created_event, True)
 
@@ -399,6 +416,40 @@ def mns_event_will_not_be_triggered_for_the_event(context):
 @then("MNS event will not be triggered for the update event")
 def validate_mns_event_not_triggered_for_updated_event(context):
     mns_event_will_not_be_triggered_for_the_event(context)
+
+
+@when("Trigger another post create request with same unique_id and unique_id_uri")
+def trigger_post_create_with_same_unique_id(context):
+    context.immunization_object.contained[1].address[0].city = "Updated City"
+    context.immunization_object.contained[1].address[0].state = "Updated State"
+    Trigger_the_post_create_request(context)
+
+
+@then("The delta table will be populated with the correct data for updated event")
+def validate_delta_table_for_updated_event(context):
+    create_obj = context.create_object
+    items = fetch_immunization_int_delta_detail_by_immsID(
+        context.aws_profile_name,
+        context.ImmsID,
+        context.S3_env,
+        context.expected_version,
+    )
+    assert items, f"Items not found in response for ImmsID: {context.ImmsID}"
+    delta_items = [i for i in items if i.get("Operation") == Operation.updated.value]
+    assert delta_items, f"No item found for ImmsID: {context.ImmsID}"
+    latest_delta_record = max(delta_items, key=lambda x: x.get("SequenceNumber", -1))
+    validate_imms_delta_record_with_created_event(
+        context,
+        create_obj,
+        latest_delta_record,
+        Operation.updated.value,
+        ActionFlag.updated.value,
+    )
+
+
+@then("MNS event will be triggered with correct data for Updated event")
+def validate_mns_event_triggered_for_updated_event(context):
+    mns_event_will_be_triggered_with_correct_data(context=context, action="UPDATE")
 
 
 def trigger_the_updated_request(context):
@@ -518,22 +569,25 @@ def validate_sqs_message(context, message_body, action):
 
 
 def mns_event_will_be_triggered_with_correct_data_for_deleted_event(context):
-    if context.patient.identifier[0].value is None:
-        message_body = read_message(
-            context,
-            queue_type="notification",
-            wait_time_seconds=5,
-            max_total_wait_seconds=20,
-        )
-        print(
-            "No MNS delete event is created as expected since NHS number is not present in the original immunization event"
-        )
-        assert message_body is None, "Not expected a message but queue returned a message"
+    if context.mns_validation_required.strip().lower() == "true":
+        if context.patient.identifier[0].value is None:
+            message_body = read_message(
+                context,
+                queue_type="notification",
+                wait_time_seconds=5,
+                max_total_wait_seconds=20,
+            )
+            print(
+                "No MNS delete event is created as expected since NHS number is not present in the original immunization event"
+            )
+            assert message_body is None, "Not expected a message but queue returned a message"
+        else:
+            message_body = read_message(context, queue_type="notification")
+            print(f"Read deleted message from SQS: {message_body}")
+            assert message_body is not None, "Expected a  delete message but queue returned empty"
+            validate_sqs_message(context, message_body, "DELETE")
     else:
-        message_body = read_message(context, queue_type="notification")
-        print(f"Read deleted message from SQS: {message_body}")
-        assert message_body is not None, "Expected a  delete message but queue returned empty"
-        validate_sqs_message(context, message_body, "DELETE")
+        print("MNS validation not required, skipping MNS event verification for deleted event.")
 
 
 def mns_event_will_be_triggered_with_correct_data(context, action):
@@ -553,3 +607,10 @@ def mns_event_will_be_triggered_with_correct_data(context, action):
         print(
             f"MNS event validation is skipped since mns_validation_required is set to {context.mns_validation_required}"
         )
+
+
+def trigger_update_request_with_same_unique_id_and_uri_for_deleted_record(context):
+    get_update_url_header(context, str(context.expected_version))
+    context.update_object = copy.deepcopy(context.immunization_object)
+    context.update_object = convert_to_update(context.update_object, context.ImmsID)
+    trigger_the_updated_request(context)
