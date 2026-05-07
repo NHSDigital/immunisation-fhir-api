@@ -34,6 +34,10 @@ locals {
   }
 }
 
+# Topic to publish alerts to when alarm is triggered
+data "aws_sns_topic" "fhir_api_perf_alerts" {
+  name = "${var.environment}-fhir-api-perf-alerts"
+}
 
 # Create Metric Alarms for each of those resources
 resource "aws_cloudwatch_metric_alarm" "ddos_protection_regional" {
@@ -41,6 +45,7 @@ resource "aws_cloudwatch_metric_alarm" "ddos_protection_regional" {
 
   alarm_name        = "imms-${var.environment}-shield_ddos_${each.key}"
   alarm_description = "Alarm when Shield detects DDoS on ${each.key}"
+  alarm_actions     = [data.aws_sns_topic.fhir_api_perf_alerts.arn]
 
   namespace           = "AWS/DDoSProtection"
   metric_name         = "DDoSDetected"
