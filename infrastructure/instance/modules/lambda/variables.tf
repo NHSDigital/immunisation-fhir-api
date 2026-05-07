@@ -42,3 +42,9 @@ variable "environment" {
   description = "The deployment environment (e.g., dev, int, internal-qa, prod)"
   type        = string
 }
+
+variable "memory_size" {
+  description = "The memory size allocated to the lambda"
+  type        = number
+  default     = 1024
+}
