@@ -110,10 +110,10 @@ resolve_mapping_uuid() {
   local target_mapping_uuid=""
   local counterpart_mapping_uuid=""
   local mapping_uuid=""
+  local resource_in_state="false"
 
   if state_has_resource "${address}"; then
-    echo "${address} is already managed in this workspace." >&2
-    return 0
+    resource_in_state="true"
   fi
 
   target_mapping_uuid="$(lookup_mapping_uuid "${event_source_arn}" "${target_function_name}")"
@@ -122,13 +122,19 @@ resolve_mapping_uuid() {
     counterpart_mapping_uuid="$(lookup_mapping_uuid "${event_source_arn}" "${counterpart_function_name}")"
   fi
 
+  if [[ -n "${target_mapping_uuid}" && -n "${counterpart_mapping_uuid}" ]]; then
+    echo "Both target and counterpart mappings exist for ${address}; refusing to continue." >&2
+    echo "Target UUID: ${target_mapping_uuid}" >&2
+    echo "Counterpart UUID: ${counterpart_mapping_uuid}" >&2
+    exit 1
+  fi
+
+  if [[ "${resource_in_state}" == "true" ]]; then
+    echo "${address} is already managed in this workspace." >&2
+    return 0
+  fi
+
   if [[ -n "${counterpart_mapping_uuid}" ]]; then
-    if [[ -n "${target_mapping_uuid}" ]]; then
-      echo "Both target and counterpart mappings exist for ${address}; refusing to delete a live mapping during adoption." >&2
-      echo "Target UUID: ${target_mapping_uuid}" >&2
-      echo "Counterpart UUID: ${counterpart_mapping_uuid}" >&2
-      exit 1
-    fi
     mapping_uuid="${counterpart_mapping_uuid}"
   else
     mapping_uuid="${target_mapping_uuid}"

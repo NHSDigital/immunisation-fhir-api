@@ -329,6 +329,13 @@ jobs:
         working-directory: infrastructure/event_source_mappings
         run: make validate
 
+      - name: Adopt Existing Event Source Mappings
+        if: ${{ !failure() }}
+        working-directory: infrastructure/event_source_mappings
+        env:
+          ALLOW_EVENT_SOURCE_MAPPING_ADOPTION: "true"
+        run: make adopt
+
       - name: Terraform Plan Event Source Mappings
         if: ${{ !failure() }}
         working-directory: infrastructure/event_source_mappings

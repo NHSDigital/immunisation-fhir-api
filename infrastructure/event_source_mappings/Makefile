@@ -5,7 +5,14 @@ environment        ?= $(ENVIRONMENT)
 sub_environment    ?= $(SUB_ENVIRONMENT)
 sub_environment_dir := $(if $(findstring pr-,$(sub_environment)),pr,$(sub_environment))
 tf_var_file        := ../instance/environments/$(environment)/$(sub_environment_dir)/variables.tfvars
-has_sub_environment_scope = $(shell awk -F= '/^has_sub_environment_scope/ { gsub(/[[:space:]]/, "", $$2); print $$2 }' "$(tf_var_file)")
+has_sub_environment_scope = $(shell awk -F= '/^[[:space:]]*has_sub_environment_scope[[:space:]]*=/ { gsub(/[[:space:]]/, "", $$2); print $$2 }' "$(tf_var_file)" 2>/dev/null)
+targets_requiring_tf_var_scope := init workspace adopt validate plan plan-ci apply apply-ci verify ensure-destroy-allowed destroy output
+requested_targets := $(if $(MAKECMDGOALS),$(MAKECMDGOALS),init)
+ifneq ($(filter $(targets_requiring_tf_var_scope),$(requested_targets)),)
+ifeq ($(has_sub_environment_scope),)
+$(error has_sub_environment_scope not found in $(tf_var_file))
+endif
+endif
 workspace_name = $(if $(filter false,$(has_sub_environment_scope)),$(environment),$(sub_environment))
 allow_shared_scope_destroy ?= $(ALLOW_SHARED_SCOPE_DESTROY)
 
@@ -13,9 +20,7 @@ tf_cmd = AWS_PROFILE=$(AWS_PROFILE) terraform
 
 bucket_name = $(if $(filter dev,$(environment)),immunisation-$(apigee_environment),immunisation-$(environment))-terraform-state-files
 
-tf_state = \
-  -backend-config="bucket=$(bucket_name)" \
-  -backend-config="key=event-source-mappings/state"
+tf_state = -backend-config="bucket=$(bucket_name)"
 
 tf_vars = \
   -var="sub_environment=$(sub_environment)" \

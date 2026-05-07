@@ -73,6 +73,15 @@ jobs:
       - name: Check formatting
         run: terraform fmt -check -recursive
 
+      - name: Validate event source mappings
+        working-directory: infrastructure/event_source_mappings
+        run: |
+          terraform init -backend=false -input=false
+          terraform validate
+
+      - name: ShellCheck event source mapping adoption script
+        run: shellcheck utilities/scripts/adopt_event_source_mappings.sh
+
   testcoverage_and_sonarcloud:
     name: Test Coverage and SonarCloud
     runs-on: ubuntu-latest

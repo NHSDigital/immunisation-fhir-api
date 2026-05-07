@@ -36,11 +36,11 @@ E.g. `pr-57`. You can use this to test out changes when tests fail in CI.
 
 ## Lambda Trigger Handoff
 
-The `delta_trigger` and `id_sync_sqs_trigger` event source mappings are managed from `../event_source_mappings` so the main instance plan does not rewrite shared backend state. The deploy workflow applies the main instance first, then updates the trigger mappings from the dedicated trigger workspace. Existing mappings are imported only through the controlled migration workflow.
+The `delta_trigger` and `id_sync_sqs_trigger` event source mappings are managed from `../event_source_mappings` so the main instance plan does not rewrite shared backend state. The deploy workflow applies the main instance first, safely adopts any existing trigger mappings into the dedicated trigger workspace, then plans and applies trigger changes from that workspace.
 
 ### First Cutover
 
-Use the `Migrate Event Source Mappings` workflow once per environment before relying on the normal backend deploy for trigger changes. Select the target `environment` and `sub_environment`, then set `confirm_event_source_mapping_migration` to `true`. The migration workflow imports existing mappings, runs `terraform validate`, saves a dedicated trigger `tfplan` artifact, applies that saved plan, and verifies the final Lambda targets.
+The normal backend deploy performs idempotent adoption before it plans trigger changes. Use the `Migrate Event Source Mappings` workflow when you want to perform the handoff separately from a full backend deploy. Select the target `environment` and `sub_environment`, then set `confirm_event_source_mapping_migration` to `true`. The migration workflow imports existing mappings, runs `terraform validate`, saves a dedicated trigger `tfplan` artifact, applies that saved plan, and verifies the final Lambda targets.
 
 Before starting, check for duplicate or stale mappings. Replace the variable values with the shared scope and target sub-environment:
 
