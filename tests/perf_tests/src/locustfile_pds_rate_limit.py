@@ -1,6 +1,6 @@
-"""Locust load generator for validating local mock PDS rate-limit behavior.
+"""Locust load generator for validating deployed mock PDS rate-limit behavior.
 
-This module drives two profiles against the local stub server:
+This module drives two profiles against the deployed mock PDS Lambda:
 - average: sustained load around the threshold
 - spike: warmup, burst, and recovery phases
 """
@@ -13,11 +13,17 @@ from urllib.parse import urlparse
 from locust import HttpUser, LoadTestShape, constant_throughput, task
 
 PERF_LOAD_PROFILE = os.getenv("PERF_LOAD_PROFILE", "").strip().lower()
-MOCK_PDS_BASE_URL = os.getenv("MOCK_PDS_BASE_URL", "http://127.0.0.1:18080").strip().rstrip("/")
+MOCK_PDS_BASE_URL = os.getenv("MOCK_PDS_BASE_URL", "").strip().rstrip("/")
 
 
 def _validate_mock_pds_base_url(base_url: str) -> str:
     """Validate that the target URL is an absolute HTTP(S) endpoint."""
+    if not base_url:
+        raise ValueError(
+            "MOCK_PDS_BASE_URL must be set to the deployed mock PDS Lambda Function URL, "
+            "for example https://abc123.lambda-url.eu-west-2.on.aws"
+        )
+
     if "<" in base_url or ">" in base_url:
         raise ValueError(
             "MOCK_PDS_BASE_URL still contains a placeholder. Set it to the real Lambda Function URL, "

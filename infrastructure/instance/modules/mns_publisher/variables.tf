@@ -97,7 +97,7 @@ variable "pds_environment" {
 variable "pds_base_url" {
   type        = string
   default     = ""
-  description = "Optional override for the PDS base URL, used by ref to route to the mock PDS endpoint."
+  description = "Optional override for the PDS base URL. Leave empty for normal runtime use."
 }
 
 variable "account_id" {

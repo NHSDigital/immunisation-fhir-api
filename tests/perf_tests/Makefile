@@ -18,9 +18,6 @@ spike:
 ramp:
 	PERF_LOAD_PROFILE=ramp $(LOCUST) CreateUser
 
-mockserver:
-	poetry run python src/pds_rate_limit_stub_server.py
-
 mockpds:
 	$(MOCK_LOCUST) MockPdsUser
 
@@ -38,9 +35,6 @@ mockpdstest-ui:
 		echo "PERF_LOAD_PROFILE must be set to average or spike"; \
 		exit 1; \
 	fi
-	@poetry run python src/pds_rate_limit_stub_server.py >/tmp/pds_rate_limit_stub_server.log 2>&1 & \
-	server_pid=$$!; \
-	trap 'kill $$server_pid >/dev/null 2>&1 || true' EXIT INT TERM; \
 	PERF_LOAD_PROFILE=$(PERF_LOAD_PROFILE) $(MOCK_LOCUST) MockPdsUser
 
-.PHONY: test test-read-only baseline spike ramp mockserver mockpds mockpdstest-average mockpdstest-boundary mockpdstest-spike mockpdstest-ui
+.PHONY: test test-read-only baseline spike ramp mockpds mockpdstest-average mockpdstest-boundary mockpdstest-spike mockpdstest-ui

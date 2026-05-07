@@ -13,11 +13,12 @@ For read-only search load, use `make test-read-only` (runs the `SearchUser` Locu
 
 For MNS-with-mocked-PDS capacity work, use the `CreateUser` profile so downstream publishing and PDS lookup activity is exercised.
 
-For direct mock-PDS rate limit testing, use the local test-only mock server in this folder.
+For direct mock-PDS rate limit testing, target the deployed mock PDS Lambda in AWS.
 
-1. Start the local mock server in one terminal:
-   `make mockserver`
-2. Run mock rate tests in another terminal:
+1. Deploy backend for the target test environment so the mock PDS Lambda exists.
+2. Retrieve the mock PDS Lambda Function URL from Terraform output or AWS.
+3. Export `MOCK_PDS_BASE_URL` to that Function URL.
+4. Run mock rate tests:
    `make mockpdstest-average`, `make mockpdstest-boundary`, or `make mockpdstest-spike`
 
 The rate presets are baked in:
@@ -25,15 +26,14 @@ The rate presets are baked in:
 - `make mockpdstest-average` runs at `125 rps`
 - `make mockpdstest-boundary` runs at `130 rps`
 
-Or run both in one command (starts local mock server and opens Locust UI):
-`PERF_LOAD_PROFILE=average make mockpdstest-ui`
+Or run Locust UI against the deployed endpoint:
+`MOCK_PDS_BASE_URL=https://abc123.lambda-url.eu-west-2.on.aws PERF_LOAD_PROFILE=average make mockpdstest-ui`
 or
-`PERF_LOAD_PROFILE=spike make mockpdstest-ui`
+`MOCK_PDS_BASE_URL=https://abc123.lambda-url.eu-west-2.on.aws PERF_LOAD_PROFILE=spike make mockpdstest-ui`
 
-`src/locustfile_pds_rate_limit.py` defaults to `http://127.0.0.1:18080`.
-Set `MOCK_PDS_BASE_URL` explicitly only if you intentionally want to target a non-local endpoint.
+`src/locustfile_pds_rate_limit.py` requires `MOCK_PDS_BASE_URL` and does not start a local server.
 
-Local mock profile defaults are tuned for parity with earlier ref checks:
+Mock PDS profile defaults are tuned for parity with earlier ref checks:
 
 - Average profile duration default: `180s`
 - Spike profile stages default: `10s warmup + 20s spike + 10s recovery`
@@ -46,6 +46,7 @@ Available load profiles:
 
 Supported environment variables:
 
+- `MOCK_PDS_BASE_URL`: deployed mock PDS Lambda Function URL
 - `PERF_LOAD_PROFILE`: `baseline`, `spike`, or `ramp`.
 - `PERF_BASELINE_RPS`, `PERF_BASELINE_DURATION_SECONDS`
 - `PERF_SPIKE_WARMUP_RPS`, `PERF_SPIKE_RPS`, `PERF_SPIKE_WARMUP_SECONDS`, `PERF_SPIKE_DURATION_SECONDS`, `PERF_SPIKE_RECOVERY_SECONDS`

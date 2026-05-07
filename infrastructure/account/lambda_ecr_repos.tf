@@ -38,6 +38,10 @@ locals {
       name                = "imms-mns-publisher-repo"
       lambda_source_names = ["*-mns-publisher-lambda"]
     }
+    mock_pds = {
+      name                = "imms-mock-pds-repo"
+      lambda_source_names = ["*-mock-pds-lambda"]
+    }
     ack_backend = {
       name                = "imms-ackbackend-repo"
       lambda_source_names = ["*-ack-lambda"]
