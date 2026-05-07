@@ -1,0 +1,1 @@
+✅ Step Passed: **correct immunization event is returned in the response

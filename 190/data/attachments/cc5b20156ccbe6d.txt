@@ -1,0 +1,1 @@
+✅ Step Passed: **batch file is created for below data as full dataset and each record has a valid update record in the same file
